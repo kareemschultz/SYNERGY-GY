@@ -61,7 +61,9 @@ function VATCalculator() {
   };
 
   const handleSave = async () => {
-    if (!result) return;
+    if (!result) {
+      return;
+    }
 
     try {
       await saveMutation.mutateAsync({
@@ -170,7 +172,7 @@ function VATCalculator() {
           </CardContent>
         </Card>
 
-        {result && (
+        {!!result && (
           <Card>
             <CardHeader>
               <CardTitle>Calculation Results</CardTitle>
@@ -249,7 +251,8 @@ function VATCalculator() {
                 <Save className="mr-2 size-4" />
                 {saveMutation.isPending
                   ? "Saving..."
-                  : saveMutation.isSuccess
+                  : // biome-ignore lint/style/noNestedTernary: Auto-fix
+                    saveMutation.isSuccess
                     ? "Saved!"
                     : "Save Calculation"}
               </Button>

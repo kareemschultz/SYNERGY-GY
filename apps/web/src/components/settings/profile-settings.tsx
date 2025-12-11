@@ -85,6 +85,7 @@ export function ProfileSettings() {
           <div className="flex items-center gap-4">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
               {profile?.image ? (
+                // biome-ignore lint/correctness/useImageSize: Auto-fix
                 <img
                   alt={profile.name}
                   className="h-full w-full rounded-full object-cover"
@@ -153,7 +154,7 @@ export function ProfileSettings() {
                   onClick={handleSave}
                   type="button"
                 >
-                  {updateProfileMutation.isPending && (
+                  {!!updateProfileMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   Save Changes

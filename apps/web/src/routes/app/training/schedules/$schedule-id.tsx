@@ -39,7 +39,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { client } from "@/utils/orpc";
 
-export const Route = createFileRoute("/app/training/schedules/$scheduleId")({
+export const Route = createFileRoute("/app/training/schedules/$schedule-id")({
   component: ScheduleDetailPage,
 });
 
@@ -170,7 +170,9 @@ function ScheduleDetailPage() {
 
   const handleEnrollClient = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedClientId) return;
+    if (!selectedClientId) {
+      return;
+    }
 
     enrollMutation.mutate({
       scheduleId,

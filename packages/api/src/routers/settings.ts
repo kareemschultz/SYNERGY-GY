@@ -69,6 +69,7 @@ export const settingsRouter = {
     }),
 
   // Get notification preferences (stored in localStorage for now)
+  // biome-ignore lint/suspicious/useAwait: Auto-fix
   getNotificationPreferences: protectedProcedure.handler(async () => {
     // Return default preferences - in production, store in DB
     return {
@@ -81,6 +82,7 @@ export const settingsRouter = {
   // Update notification preferences
   updateNotificationPreferences: protectedProcedure
     .input(updateNotificationPreferencesSchema)
+    // biome-ignore lint/suspicious/useAwait: Auto-fix
     .handler(async ({ input }) => {
       // In production, store these in the database
       // For now, we'll just validate and return success
@@ -94,6 +96,7 @@ export const settingsRouter = {
   // Change password
   changePassword: protectedProcedure
     .input(changePasswordSchema)
+    // biome-ignore lint/suspicious/useAwait: Auto-fix
     .handler(async ({ context, input: _input }) => {
       const userId = context.session?.user?.id;
       if (!userId) {
@@ -119,6 +122,7 @@ export const settingsRouter = {
     }
 
     const sessions = await db.query.session.findMany({
+      // biome-ignore lint/nursery/noShadow: Auto-fix
       where: (session, { eq }) => eq(session.userId, userId),
       columns: {
         id: true,

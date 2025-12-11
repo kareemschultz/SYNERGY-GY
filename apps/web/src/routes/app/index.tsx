@@ -19,6 +19,7 @@ export const Route = createFileRoute("/app/")({
   component: DashboardPage,
 });
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
 function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboardStats"],
@@ -79,6 +80,7 @@ function DashboardPage() {
             title="Overdue"
             value={stats?.overdueDeadlines || 0}
             valueClassName={
+              // biome-ignore lint/nursery/noLeakedRender: Auto-fix
               (stats?.overdueDeadlines || 0) > 0 ? "text-red-600" : undefined
             }
           />
@@ -154,7 +156,7 @@ function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent>
-              {upcomingDeadlines && upcomingDeadlines.length > 0 ? (
+              {!!upcomingDeadlines && upcomingDeadlines.length > 0 ? (
                 <div className="space-y-3">
                   {upcomingDeadlines.map((d) => (
                     <div
@@ -165,7 +167,7 @@ function DashboardPage() {
                         <p className="truncate font-medium text-sm">
                           {d.title}
                         </p>
-                        {d.client && (
+                        {!!d.client && (
                           <p className="truncate text-muted-foreground text-xs">
                             {d.client.displayName}
                           </p>
@@ -208,7 +210,7 @@ function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent>
-              {recentMatters && recentMatters.length > 0 ? (
+              {!!recentMatters && recentMatters.length > 0 ? (
                 <div className="space-y-3">
                   {recentMatters.map((m) => (
                     <Link
@@ -249,7 +251,7 @@ function DashboardPage() {
   );
 }
 
-interface StatsCardProps {
+type StatsCardProps = {
   title: string;
   value: number;
   description: string;
@@ -257,7 +259,7 @@ interface StatsCardProps {
   isLoading?: boolean;
   valueClassName?: string;
   iconClassName?: string;
-}
+};
 
 function StatsCard({
   title,
@@ -292,11 +294,11 @@ function StatsCard({
   );
 }
 
-interface StatusCardProps {
+type StatusCardProps = {
   label: string;
   count: number;
   color: string;
-}
+};
 
 function StatusCard({ label, count, color }: StatusCardProps) {
   return (

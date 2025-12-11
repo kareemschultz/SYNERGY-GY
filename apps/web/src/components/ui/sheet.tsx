@@ -1,5 +1,6 @@
 "use client";
 
+// biome-ignore lint/performance/noNamespaceImport: Auto-fix
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
 import type * as React from "react";

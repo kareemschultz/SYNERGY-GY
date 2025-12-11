@@ -3,11 +3,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PlaceholderPicker } from "./placeholder-picker";
 
-interface TemplateEditorProps {
+type TemplateEditorProps = {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-}
+};
 
 export function TemplateEditor({
   value,
@@ -18,7 +18,9 @@ export function TemplateEditor({
 
   const handleInsertPlaceholder = (placeholderKey: string) => {
     const textarea = textareaRef.current;
-    if (!textarea) return;
+    if (!textarea) {
+      return;
+    }
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;

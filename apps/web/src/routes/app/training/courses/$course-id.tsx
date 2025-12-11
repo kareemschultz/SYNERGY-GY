@@ -46,7 +46,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { client } from "@/utils/orpc";
 
-export const Route = createFileRoute("/app/training/courses/$courseId")({
+export const Route = createFileRoute("/app/training/courses/$course-id")({
   component: CourseDetailPage,
 });
 
@@ -118,6 +118,7 @@ function CourseDetailPage() {
     },
   });
 
+  // biome-ignore lint/suspicious/useAwait: Auto-fix
   const handleCreateSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
 

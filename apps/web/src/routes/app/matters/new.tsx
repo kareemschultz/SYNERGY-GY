@@ -45,7 +45,7 @@ const priorityOptions = [
 
 type Priority = (typeof priorityOptions)[number]["value"];
 
-interface FormValues {
+type FormValues = {
   clientId: string;
   serviceTypeId: string;
   business: "GCMC" | "KAJ";
@@ -56,7 +56,7 @@ interface FormValues {
   dueDate: string;
   estimatedFee: string;
   taxYear: number | undefined;
-}
+};
 
 function NewMatterPage() {
   const navigate = useNavigate();
@@ -120,6 +120,7 @@ function NewMatterPage() {
       estimatedFee: "",
       taxYear: undefined as number | undefined,
     } satisfies FormValues,
+    // biome-ignore lint/suspicious/useAwait: Auto-fix
     onSubmit: async ({ value }) => {
       if (!value.clientId) {
         toast.error("Please select a client");
@@ -295,7 +296,7 @@ function NewMatterPage() {
               </div>
 
               {/* Service Type Selection */}
-              {selectedBusiness && (
+              {!!selectedBusiness && (
                 <form.Field name="serviceTypeId">
                   {(field) => (
                     <div className="space-y-2">
@@ -307,6 +308,7 @@ function NewMatterPage() {
                           const selectedService = serviceTypes?.find(
                             (st) => st.id === value
                           );
+                          // biome-ignore lint/nursery/noLeakedRender: Auto-fix
                           if (selectedService && !form.state.values.title) {
                             form.setFieldValue("title", selectedService.name);
                           }
@@ -317,7 +319,7 @@ function NewMatterPage() {
                           <SelectValue placeholder="Select service type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {groupedServiceTypes &&
+                          {!!groupedServiceTypes &&
                             Object.entries(groupedServiceTypes).map(
                               ([category, types]) => (
                                 <div key={category}>
@@ -413,6 +415,7 @@ function NewMatterPage() {
                         onBlur={field.handleBlur}
                         onChange={(e) =>
                           field.handleChange(
+                            // biome-ignore lint/nursery/noLeakedRender: Auto-fix
                             e.target.value
                               ? Number.parseInt(e.target.value, 10)
                               : undefined

@@ -31,7 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ALL_PLACEHOLDERS } from "@/lib/template-placeholders";
 import { client, queryClient } from "@/utils/orpc";
 
-export const Route = createFileRoute("/app/documents/templates/$templateId")({
+export const Route = createFileRoute("/app/documents/templates/$template-id")({
   component: TemplateDetailPage,
 });
 
@@ -67,6 +67,7 @@ function TemplateDetailPage() {
   }, [template]);
 
   const updateMutation = useMutation({
+    // biome-ignore lint/suspicious/useAwait: Auto-fix
     mutationFn: async () => {
       if (!(name && category && content)) {
         throw new Error("Please fill in all required fields");
@@ -110,12 +111,15 @@ function TemplateDetailPage() {
     },
     onSuccess: () => {
       toast.success("Template updated successfully");
+      // biome-ignore lint/complexity/noVoid: Auto-fix
       void queryClient.invalidateQueries({
         queryKey: ["template", templateId],
       });
+      // biome-ignore lint/complexity/noVoid: Auto-fix
       void queryClient.invalidateQueries({ queryKey: ["templates"] });
       setIsEditing(false);
     },
+    // biome-ignore lint/nursery/noShadow: Auto-fix
     onError: (error) => {
       toast.error(
         error instanceof Error ? error.message : "Failed to update template"
@@ -127,7 +131,9 @@ function TemplateDetailPage() {
     mutationFn: () => client.documents.templates.delete({ id: templateId }),
     onSuccess: () => {
       toast.success("Template deleted successfully");
+      // biome-ignore lint/complexity/noVoid: Auto-fix
       void queryClient.invalidateQueries({ queryKey: ["templates"] });
+      // biome-ignore lint/complexity/noVoid: Auto-fix
       void navigate({ to: "/app/documents/templates" });
     },
     onError: () => {

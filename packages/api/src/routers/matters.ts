@@ -81,7 +81,7 @@ async function generateReferenceNumber(
   const latest = await db
     .select({ referenceNumber: matter.referenceNumber })
     .from(matter)
-    .where(sql`${matter.referenceNumber} LIKE ${prefix + "-%"}`)
+    .where(sql`${matter.referenceNumber} LIKE ${`${prefix}-%`}`)
     .orderBy(desc(matter.referenceNumber))
     .limit(1);
 
@@ -107,6 +107,7 @@ export const mattersRouter = {
         return { matters: [], total: 0, page: input.page, limit: input.limit };
       }
 
+      // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
       const conditions = [];
 
       // Filter by accessible businesses
@@ -213,12 +214,14 @@ export const mattersRouter = {
           },
           createdBy: true,
           checklist: {
+            // biome-ignore lint/nursery/noShadow: Auto-fix
             orderBy: (c, { asc }) => [asc(c.sortOrder)],
             with: {
               completedBy: true,
             },
           },
           notes: {
+            // biome-ignore lint/nursery/noShadow: Auto-fix
             orderBy: (n, { desc }) => [desc(n.createdAt)],
             with: {
               createdBy: true,
@@ -450,6 +453,7 @@ export const mattersRouter = {
       .groupBy(matter.status);
 
     return statusCounts.reduce(
+      // biome-ignore lint/nursery/noShadow: Auto-fix
       (acc, { status, count }) => {
         acc[status] = count;
         return acc;

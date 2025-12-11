@@ -106,6 +106,7 @@ export const serviceCatalogRouter = {
           return { categories: [] };
         }
 
+        // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
         const conditions = [];
 
         // Filter by business access
@@ -118,6 +119,7 @@ export const serviceCatalogRouter = {
           conditions.push(eq(serviceCategory.business, input.business));
         } else if (accessibleBusinesses.length === 1) {
           conditions.push(
+            // biome-ignore lint/style/noNonNullAssertion: Auto-fix
             eq(serviceCategory.business, accessibleBusinesses[0]!)
           );
         } else if (accessibleBusinesses.length > 1) {
@@ -281,6 +283,7 @@ export const serviceCatalogRouter = {
           };
         }
 
+        // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
         const conditions = [];
 
         // Filter by accessible businesses
@@ -293,6 +296,7 @@ export const serviceCatalogRouter = {
           conditions.push(eq(serviceCatalog.business, input.business));
         } else if (accessibleBusinesses.length === 1) {
           conditions.push(
+            // biome-ignore lint/style/noNonNullAssertion: Auto-fix
             eq(serviceCatalog.business, accessibleBusinesses[0]!)
           );
         } else if (accessibleBusinesses.length > 1) {
@@ -462,6 +466,7 @@ export const serviceCatalogRouter = {
           conditions.push(eq(serviceCatalog.business, input.business));
         } else if (accessibleBusinesses.length === 1) {
           conditions.push(
+            // biome-ignore lint/style/noNonNullAssertion: Auto-fix
             eq(serviceCatalog.business, accessibleBusinesses[0]!)
           );
         } else if (accessibleBusinesses.length > 1) {
@@ -615,6 +620,7 @@ export const serviceCatalogRouter = {
           conditions.push(eq(serviceCatalog.business, input.business));
         } else if (accessibleBusinesses.length === 1) {
           conditions.push(
+            // biome-ignore lint/style/noNonNullAssertion: Auto-fix
             eq(serviceCatalog.business, accessibleBusinesses[0]!)
           );
         } else if (accessibleBusinesses.length > 1) {

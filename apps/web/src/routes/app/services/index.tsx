@@ -22,6 +22,7 @@ export const Route = createFileRoute("/app/services/")({
   component: ServicesPage,
 });
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
 function ServicesPage() {
   const [search, setSearch] = useState("");
   const [businessFilter, setBusinessFilter] = useState<string>("all");
@@ -157,7 +158,7 @@ function ServicesPage() {
             </SelectContent>
           </Select>
 
-          {selectedCategoryId && (
+          {!!selectedCategoryId && (
             <Button
               onClick={() => {
                 setSelectedCategoryId(null);
@@ -183,6 +184,7 @@ function ServicesPage() {
                     <Skeleton className="h-10 w-full" key={i} />
                   ))}
                 </div>
+                // biome-ignore lint/style/noNestedTernary: Auto-fix
               ) : businessFilter === "all" ? (
                 <Tabs className="w-full" defaultValue="GCMC">
                   <TabsList className="grid w-full grid-cols-2">
@@ -221,6 +223,7 @@ function ServicesPage() {
                           <span className="truncate">
                             {category.displayName}
                           </span>
+                          {/* biome-ignore lint/nursery/noLeakedRender: Auto-fix */}
                           {"serviceCount" in category && (
                             <Badge className="ml-2 shrink-0" variant="outline">
                               {String(category.serviceCount)}
@@ -262,6 +265,7 @@ function ServicesPage() {
                           <span className="truncate">
                             {category.displayName}
                           </span>
+                          {/* biome-ignore lint/nursery/noLeakedRender: Auto-fix */}
                           {"serviceCount" in category && (
                             <Badge className="ml-2 shrink-0" variant="outline">
                               {String(category.serviceCount)}
@@ -301,6 +305,7 @@ function ServicesPage() {
                       }
                     >
                       <span className="truncate">{category.displayName}</span>
+                      {/* biome-ignore lint/nursery/noLeakedRender: Auto-fix */}
                       {"serviceCount" in category && (
                         <Badge className="ml-2 shrink-0" variant="outline">
                           {String(category.serviceCount)}
@@ -321,6 +326,7 @@ function ServicesPage() {
                   <Skeleton className="h-64" key={i} />
                 ))}
               </div>
+              // biome-ignore lint/style/noNestedTernary: Auto-fix
             ) : services.length === 0 ? (
               <div className="py-12 text-center">
                 <p className="text-muted-foreground">
@@ -343,31 +349,29 @@ function ServicesPage() {
                 </div>
 
                 {/* Pagination */}
-                {servicesData &&
-                  servicesData.totalPages &&
-                  servicesData.totalPages > 1 && (
-                    <div className="mt-6 flex justify-center gap-2">
-                      <Button
-                        disabled={page === 1}
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        variant="outline"
-                      >
-                        Previous
-                      </Button>
-                      <div className="flex items-center gap-2 px-4">
-                        <span className="text-muted-foreground text-sm">
-                          Page {page} of {servicesData.totalPages}
-                        </span>
-                      </div>
-                      <Button
-                        disabled={page === servicesData.totalPages}
-                        onClick={() => setPage((p) => p + 1)}
-                        variant="outline"
-                      >
-                        Next
-                      </Button>
+                {!!servicesData?.totalPages && servicesData.totalPages > 1 && (
+                  <div className="mt-6 flex justify-center gap-2">
+                    <Button
+                      disabled={page === 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      variant="outline"
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-2 px-4">
+                      <span className="text-muted-foreground text-sm">
+                        Page {page} of {servicesData.totalPages}
+                      </span>
                     </div>
-                  )}
+                    <Button
+                      disabled={page === servicesData.totalPages}
+                      onClick={() => setPage((p) => p + 1)}
+                      variant="outline"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </div>

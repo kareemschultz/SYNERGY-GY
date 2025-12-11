@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { client as api } from "@/utils/orpc";
 
-export const Route = createFileRoute("/portal/matters/$matterId")({
+export const Route = createFileRoute("/portal/matters/$matter-id")({
   component: PortalMatterDetail,
 });
 

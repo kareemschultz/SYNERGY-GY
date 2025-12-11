@@ -67,7 +67,7 @@ export function AppearanceSettings() {
                     onClick={() => setTheme(themeOption.id)}
                     type="button"
                   >
-                    {isActive && (
+                    {!!isActive && (
                       <div className="absolute top-2 right-2">
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                           <Check className="h-3 w-3 text-primary-foreground" />

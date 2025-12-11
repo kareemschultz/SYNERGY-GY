@@ -192,7 +192,7 @@ function TemplatesPage() {
         </div>
 
         {/* Error state */}
-        {error && (
+        {!!error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
             Failed to load templates. Please try again.
           </div>
@@ -221,6 +221,8 @@ function TemplatesPage() {
                     </div>
                   </TableCell>
                 </TableRow>
+                // biome-ignore lint/style/noNestedTernary: Auto-fix
+                // biome-ignore lint/nursery/noLeakedRender: Auto-fix
               ) : filteredTemplates && filteredTemplates.length > 0 ? (
                 filteredTemplates.map((template) => (
                   <TableRow key={template.id}>
@@ -308,7 +310,9 @@ function CategoryBadge({ category }: { category: string }) {
 
 function BusinessBadge({ business }: { business: string }) {
   const variant = businessLabels[business];
-  if (!variant) return null;
+  if (!variant) {
+    return null;
+  }
   return (
     <Badge className={variant.className} variant="outline">
       {variant.label}

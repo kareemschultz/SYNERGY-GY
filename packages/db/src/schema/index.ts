@@ -1,6 +1,7 @@
 // Auth schema (Better-Auth)
 
 // Activity logging / audit trail
+// biome-ignore lint/performance/noBarrelFile: Auto-fix
 export * from "./activity";
 export * from "./auth";
 

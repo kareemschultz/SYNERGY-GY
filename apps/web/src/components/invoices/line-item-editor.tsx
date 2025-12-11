@@ -3,20 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export interface LineItem {
+export type LineItem = {
   description: string;
   quantity: string;
   unitPrice: string;
   amount: string;
   serviceTypeId?: string;
   sortOrder?: number;
-}
+};
 
-interface LineItemEditorProps {
+type LineItemEditorProps = {
   items: LineItem[];
   onChange: (items: LineItem[]) => void;
   disabled?: boolean;
-}
+};
 
 export function LineItemEditor({
   items,

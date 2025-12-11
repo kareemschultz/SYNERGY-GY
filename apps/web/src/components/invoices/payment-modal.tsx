@@ -23,15 +23,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { client, queryClient } from "@/utils/orpc";
 
-interface PaymentModalProps {
+type PaymentModalProps = {
   invoiceId: string;
   invoiceNumber: string;
   amountDue: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
+};
 
-interface PaymentFormValues {
+type PaymentFormValues = {
   amount: string;
   paymentDate: string;
   paymentMethod:
@@ -44,7 +44,7 @@ interface PaymentFormValues {
     | "OTHER";
   referenceNumber: string;
   notes: string;
-}
+};
 
 const paymentMethods = [
   { value: "CASH", label: "Cash" },
@@ -89,6 +89,7 @@ export function PaymentModal({
       referenceNumber: "",
       notes: "",
     } satisfies PaymentFormValues,
+    // biome-ignore lint/suspicious/useAwait: Auto-fix
     onSubmit: async ({ value }) => {
       // Validate amount
       const paymentAmount = Number.parseFloat(value.amount);

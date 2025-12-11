@@ -26,7 +26,7 @@ type EntityType =
   | "NOTE"
   | "SESSION";
 
-interface LogActivityParams {
+type LogActivityParams = {
   userId?: string | null;
   staffId?: string | null;
   action: ActivityAction;
@@ -36,7 +36,7 @@ interface LogActivityParams {
   metadata?: Record<string, unknown>;
   ipAddress?: string | null;
   userAgent?: string | null;
-}
+};
 
 /**
  * Logs an activity to the activity_log table

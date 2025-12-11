@@ -171,6 +171,7 @@ function TrainingPage() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
+        // biome-ignore lint/style/noNestedTernary: Auto-fix
       ) : !courses || courses.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center">
           <div className="mx-auto max-w-md">

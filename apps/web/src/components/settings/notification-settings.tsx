@@ -14,11 +14,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { client } from "@/utils/orpc";
 
-interface NotificationPreferences {
+type NotificationPreferences = {
   emailNotifications: boolean;
   deadlineReminders: boolean;
   activityUpdates: boolean;
-}
+};
 
 export function NotificationSettings() {
   const queryClient = useQueryClient();
@@ -196,14 +196,14 @@ export function NotificationSettings() {
           )}
 
           {/* Action Buttons */}
-          {hasChanges && (
+          {!!hasChanges && (
             <div className="flex gap-2 pt-4">
               <Button
                 disabled={updatePreferencesMutation.isPending}
                 onClick={handleSave}
                 type="button"
               >
-                {updatePreferencesMutation.isPending && (
+                {!!updatePreferencesMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 Save Changes

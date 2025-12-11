@@ -32,7 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { client, queryClient } from "@/utils/orpc";
 
-export const Route = createFileRoute("/app/matters/$matterId")({
+export const Route = createFileRoute("/app/matters/$matter-id")({
   component: MatterDetailPage,
 });
 
@@ -146,7 +146,7 @@ function MatterDetailPage() {
   );
 }
 
-interface MatterData {
+type MatterData = {
   id: string;
   referenceNumber: string;
   title: string;
@@ -194,8 +194,9 @@ interface MatterData {
     createdAt: Date;
     createdBy: { name: string } | null;
   }>;
-}
+};
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
 function OverviewTab({ matter }: { matter: MatterData }) {
   const [status, setStatus] = useState(matter.status);
 
@@ -268,14 +269,14 @@ function OverviewTab({ matter }: { matter: MatterData }) {
               />
               <InfoRow label="Tax Year" value={matter.taxYear || "-"} />
             </div>
-            {matter.description && (
+            {matter.description ? (
               <div>
                 <p className="mb-1 font-medium text-muted-foreground text-sm">
                   Description
                 </p>
                 <p className="text-sm">{matter.description}</p>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 
@@ -293,16 +294,16 @@ function OverviewTab({ matter }: { matter: MatterData }) {
                 >
                   {matter.client.displayName}
                 </Link>
-                {matter.client.email && (
+                {matter.client.email ? (
                   <p className="text-muted-foreground text-sm">
                     {matter.client.email}
                   </p>
-                )}
-                {matter.client.phone && (
+                ) : null}
+                {matter.client.phone ? (
                   <p className="text-muted-foreground text-sm">
                     {matter.client.phone}
                   </p>
-                )}
+                ) : null}
               </div>
             ) : (
               <p className="text-muted-foreground">No client assigned</p>
@@ -384,7 +385,7 @@ function OverviewTab({ matter }: { matter: MatterData }) {
               </Badge>
             </div>
 
-            {totalTasks > 0 && (
+            {totalTasks > 0 ? (
               <div>
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span>Progress</span>
@@ -399,7 +400,7 @@ function OverviewTab({ matter }: { matter: MatterData }) {
                   />
                 </div>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 
@@ -426,7 +427,7 @@ function OverviewTab({ matter }: { matter: MatterData }) {
                   : "-"}
               </span>
             </div>
-            {matter.completedDate && (
+            {matter.completedDate ? (
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <span className="text-muted-foreground">Completed:</span>
@@ -434,7 +435,7 @@ function OverviewTab({ matter }: { matter: MatterData }) {
                   {new Date(matter.completedDate).toLocaleDateString()}
                 </span>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 
@@ -567,13 +568,13 @@ function ChecklistTab({ matter }: { matter: MatterData }) {
                   >
                     {item.item}
                   </p>
-                  {item.isCompleted && item.completedAt && (
+                  {!!item.isCompleted && item.completedAt ? (
                     <p className="text-muted-foreground text-xs">
                       Completed{" "}
                       {new Date(item.completedAt).toLocaleDateString()}
-                      {item.completedBy && ` by ${item.completedBy.name}`}
+                      {item.completedBy ? ` by ${item.completedBy.name}` : null}
                     </p>
-                  )}
+                  ) : null}
                 </div>
                 <Button
                   className="h-8 w-8 text-muted-foreground hover:text-red-600"

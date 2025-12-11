@@ -5,7 +5,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "lucide-react";
-import * as React from "react";
+import { useEffect, useRef } from "react";
 import {
   type DayButton,
   DayPicker,
@@ -13,6 +13,74 @@ import {
 } from "react-day-picker";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+// Extracted components to avoid nested component definitions
+function CalendarRoot({
+  className: rootClassName,
+  rootRef,
+  ...rootProps
+}: {
+  className?: string;
+  rootRef?: React.RefObject<HTMLDivElement | null>;
+} & React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn(rootClassName)}
+      data-slot="calendar"
+      ref={rootRef}
+      {...rootProps}
+    />
+  );
+}
+
+function CalendarChevron({
+  className: chevronClassName,
+  orientation,
+  ...chevronProps
+}: {
+  className?: string;
+  orientation?: string;
+} & React.SVGAttributes<SVGElement>) {
+  if (orientation === "left") {
+    return (
+      <ChevronLeftIcon
+        className={cn("size-4", chevronClassName)}
+        {...chevronProps}
+      />
+    );
+  }
+
+  if (orientation === "right") {
+    return (
+      <ChevronRightIcon
+        className={cn("size-4", chevronClassName)}
+        {...chevronProps}
+      />
+    );
+  }
+
+  return (
+    <ChevronDownIcon
+      className={cn("size-4", chevronClassName)}
+      {...chevronProps}
+    />
+  );
+}
+
+function CalendarWeekNumber({
+  children,
+  ...weekProps
+}: {
+  children?: React.ReactNode;
+} & React.TdHTMLAttributes<HTMLTableCellElement>) {
+  return (
+    <td {...weekProps}>
+      <div className="flex size-(--cell-size) items-center justify-center text-center">
+        {children}
+      </div>
+    </td>
+  );
+}
 
 function Calendar({
   className,
@@ -125,42 +193,10 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Root: ({ className, rootRef, ...props }) => (
-          <div
-            className={cn(className)}
-            data-slot="calendar"
-            ref={rootRef}
-            {...props}
-          />
-        ),
-        Chevron: ({ className, orientation, ...props }) => {
-          if (orientation === "left") {
-            return (
-              <ChevronLeftIcon className={cn("size-4", className)} {...props} />
-            );
-          }
-
-          if (orientation === "right") {
-            return (
-              <ChevronRightIcon
-                className={cn("size-4", className)}
-                {...props}
-              />
-            );
-          }
-
-          return (
-            <ChevronDownIcon className={cn("size-4", className)} {...props} />
-          );
-        },
+        Root: CalendarRoot,
+        Chevron: CalendarChevron,
         DayButton: CalendarDayButton,
-        WeekNumber: ({ children, ...props }) => (
-          <td {...props}>
-            <div className="flex size-(--cell-size) items-center justify-center text-center">
-              {children}
-            </div>
-          </td>
-        ),
+        WeekNumber: CalendarWeekNumber,
         ...components,
       }}
       formatters={{
@@ -182,10 +218,19 @@ function CalendarDayButton({
 }: React.ComponentProps<typeof DayButton>) {
   const defaultClassNames = getDefaultClassNames();
 
-  const ref = React.useRef<HTMLButtonElement>(null);
-  React.useEffect(() => {
-    if (modifiers.focused) ref.current?.focus();
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (modifiers.focused) {
+      ref.current?.focus();
+    }
   }, [modifiers.focused]);
+
+  const isSelectedSingle = Boolean(
+    modifiers.selected &&
+      !modifiers.range_start &&
+      !modifiers.range_end &&
+      !modifiers.range_middle
+  );
 
   return (
     <Button
@@ -198,12 +243,7 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       data-range-start={modifiers.range_start}
-      data-selected-single={
-        modifiers.selected &&
-        !modifiers.range_start &&
-        !modifiers.range_end &&
-        !modifiers.range_middle
-      }
+      data-selected-single={isSelectedSingle}
       ref={ref}
       size="icon"
       variant="ghost"

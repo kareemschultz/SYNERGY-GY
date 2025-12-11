@@ -184,7 +184,9 @@ export function AboutSettings() {
                   className="group flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-muted"
                   href={link.href}
                   key={link.title}
+                  // biome-ignore lint/nursery/noLeakedRender: Auto-fix
                   rel={link.external ? "noopener noreferrer" : undefined}
+                  // biome-ignore lint/nursery/noLeakedRender: Auto-fix
                   target={link.external ? "_blank" : undefined}
                 >
                   <div className="rounded bg-primary/10 p-2">
@@ -193,7 +195,7 @@ export function AboutSettings() {
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-sm">{link.title}</p>
-                      {link.external && (
+                      {!!link.external && (
                         <ExternalLink className="h-3 w-3 text-muted-foreground" />
                       )}
                     </div>

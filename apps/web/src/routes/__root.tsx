@@ -16,10 +16,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { link, type orpc } from "@/utils/orpc";
 import "../index.css";
 
-export interface RouterAppContext {
+export type RouterAppContext = {
   orpc: typeof orpc;
   queryClient: QueryClient;
-}
+};
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
@@ -44,7 +44,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootComponent() {
   const [client] = useState<AppRouterClient>(() => createORPCClient(link));
-  const [orpcUtils] = useState(() => createTanstackQueryUtils(client));
+  const [_orpcUtils] = useState(() => createTanstackQueryUtils(client));
 
   return (
     <>

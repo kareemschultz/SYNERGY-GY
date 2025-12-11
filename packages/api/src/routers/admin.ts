@@ -73,12 +73,44 @@ function getRoleDisplay(role: string): string {
   return roleMap[role] || role;
 }
 
+// Helper: Validate business access matches role
+function validateBusinessAccess(role: string, businesses: string[]): void {
+  const requiresBothBusinesses = ["OWNER", "STAFF_BOTH"].includes(role);
+  const requiresGCMC = ["GCMC_MANAGER", "STAFF_GCMC"].includes(role);
+  const requiresKAJ = ["KAJ_MANAGER", "STAFF_KAJ"].includes(role);
+
+  if (
+    requiresBothBusinesses &&
+    (businesses.length !== 2 ||
+      !businesses.includes("GCMC") ||
+      !businesses.includes("KAJ"))
+  ) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Role ${getRoleDisplay(role)} requires access to both GCMC and KAJ`,
+    });
+  }
+
+  if (requiresGCMC && !businesses.includes("GCMC")) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Role ${getRoleDisplay(role)} requires access to GCMC`,
+    });
+  }
+
+  if (requiresKAJ && !businesses.includes("KAJ")) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: `Role ${getRoleDisplay(role)} requires access to KAJ`,
+    });
+  }
+}
+
 // Admin router
 export const adminRouter = {
   staff: {
     // List all staff with pagination and filters
     list: adminProcedure.input(listStaffSchema).handler(async ({ input }) => {
-      const conditions = [];
+      const conditions: Array<
+        ReturnType<typeof eq> | ReturnType<typeof or> | ReturnType<typeof sql>
+      > = [];
 
       // Search filter
       if (input.search) {
@@ -125,12 +157,10 @@ export const adminRouter = {
       const offset = (input.page - 1) * input.limit;
 
       // Determine sort column and table
-      let orderColumn;
-      if (input.sortBy === "name" || input.sortBy === "email") {
-        orderColumn = user[input.sortBy];
-      } else {
-        orderColumn = staff[input.sortBy];
-      }
+      const orderColumn =
+        input.sortBy === "name" || input.sortBy === "email"
+          ? user[input.sortBy]
+          : staff[input.sortBy];
       const orderDirection = input.sortOrder === "asc" ? asc : desc;
 
       const results = await db
@@ -202,32 +232,7 @@ export const adminRouter = {
         }
 
         // Validate business access matches role
-        const requiresBothBusinesses = ["OWNER", "STAFF_BOTH"].includes(role);
-        const requiresGCMC = ["GCMC_MANAGER", "STAFF_GCMC"].includes(role);
-        const requiresKAJ = ["KAJ_MANAGER", "STAFF_KAJ"].includes(role);
-
-        if (
-          requiresBothBusinesses &&
-          (businesses.length !== 2 ||
-            !businesses.includes("GCMC") ||
-            !businesses.includes("KAJ"))
-        ) {
-          throw new ORPCError("BAD_REQUEST", {
-            message: `Role ${getRoleDisplay(role)} requires access to both GCMC and KAJ`,
-          });
-        }
-
-        if (requiresGCMC && !businesses.includes("GCMC")) {
-          throw new ORPCError("BAD_REQUEST", {
-            message: `Role ${getRoleDisplay(role)} requires access to GCMC`,
-          });
-        }
-
-        if (requiresKAJ && !businesses.includes("KAJ")) {
-          throw new ORPCError("BAD_REQUEST", {
-            message: `Role ${getRoleDisplay(role)} requires access to KAJ`,
-          });
-        }
+        validateBusinessAccess(role, businesses);
 
         // Use Better Auth to create user account
         // For now, we'll create user manually - in production, use Better Auth signup
@@ -291,6 +296,7 @@ export const adminRouter = {
     // Update existing staff member
     update: adminProcedure
       .input(updateStaffSchema)
+      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
       .handler(async ({ input }) => {
         const { id, name, email, role, businesses, phone, jobTitle } = input;
 
@@ -321,35 +327,7 @@ export const adminRouter = {
         // Validate business access matches role if both are being updated
         const finalRole = role || existing.role;
         const finalBusinesses = businesses || existing.businesses;
-
-        const requiresBothBusinesses = ["OWNER", "STAFF_BOTH"].includes(
-          finalRole
-        );
-        const requiresGCMC = ["GCMC_MANAGER", "STAFF_GCMC"].includes(finalRole);
-        const requiresKAJ = ["KAJ_MANAGER", "STAFF_KAJ"].includes(finalRole);
-
-        if (
-          requiresBothBusinesses &&
-          (finalBusinesses.length !== 2 ||
-            !finalBusinesses.includes("GCMC") ||
-            !finalBusinesses.includes("KAJ"))
-        ) {
-          throw new ORPCError("BAD_REQUEST", {
-            message: `Role ${getRoleDisplay(finalRole)} requires access to both GCMC and KAJ`,
-          });
-        }
-
-        if (requiresGCMC && !finalBusinesses.includes("GCMC")) {
-          throw new ORPCError("BAD_REQUEST", {
-            message: `Role ${getRoleDisplay(finalRole)} requires access to GCMC`,
-          });
-        }
-
-        if (requiresKAJ && !finalBusinesses.includes("KAJ")) {
-          throw new ORPCError("BAD_REQUEST", {
-            message: `Role ${getRoleDisplay(finalRole)} requires access to KAJ`,
-          });
-        }
+        validateBusinessAccess(finalRole, finalBusinesses as string[]);
 
         // Update user details if provided
         if (name || email) {
@@ -364,10 +342,18 @@ export const adminRouter = {
 
         // Update staff details
         const staffUpdates: Record<string, unknown> = {};
-        if (role) staffUpdates.role = role;
-        if (businesses) staffUpdates.businesses = businesses;
-        if (phone !== undefined) staffUpdates.phone = phone || null;
-        if (jobTitle !== undefined) staffUpdates.jobTitle = jobTitle || null;
+        if (role) {
+          staffUpdates.role = role;
+        }
+        if (businesses) {
+          staffUpdates.businesses = businesses;
+        }
+        if (phone !== undefined) {
+          staffUpdates.phone = phone || null;
+        }
+        if (jobTitle !== undefined) {
+          staffUpdates.jobTitle = jobTitle || null;
+        }
 
         if (Object.keys(staffUpdates).length > 0) {
           await db

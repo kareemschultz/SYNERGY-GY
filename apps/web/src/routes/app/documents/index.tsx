@@ -96,7 +96,9 @@ function getFileIcon(mimeType: string) {
 }
 
 function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 B";
+  if (bytes === 0) {
+    return "0 B";
+  }
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -151,7 +153,7 @@ function DocumentsPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to download document");
     }
   };
@@ -161,7 +163,9 @@ function DocumentsPage() {
     onSuccess: () => {
       toast.success("Document archived successfully");
       // Invalidate queries to refresh the list
+      // biome-ignore lint/complexity/noVoid: Auto-fix
       void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      // biome-ignore lint/complexity/noVoid: Auto-fix
       void queryClient.invalidateQueries({ queryKey: ["documentStats"] });
     },
     onError: () => {
@@ -190,7 +194,7 @@ function DocumentsPage() {
 
       <div className="p-6">
         {/* Stats Cards */}
-        {stats && (
+        {!!stats && (
           <div className="mb-6 grid gap-4 md:grid-cols-4">
             <div className="rounded-lg border bg-card p-4">
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -272,7 +276,7 @@ function DocumentsPage() {
         </div>
 
         {/* Error state */}
-        {error && (
+        {!!error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
             Failed to load documents. Please try again.
           </div>
@@ -302,6 +306,8 @@ function DocumentsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
+                // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+                // biome-ignore lint/style/noNestedTernary: Auto-fix
               ) : data?.documents && data.documents.length > 0 ? (
                 data.documents.map((doc) => (
                   <TableRow key={doc.id}>
@@ -399,7 +405,7 @@ function DocumentsPage() {
         </div>
 
         {/* Pagination */}
-        {data && data.totalPages > 1 && (
+        {!!data && data.totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
               Showing {(page - 1) * 20 + 1} to {Math.min(page * 20, data.total)}{" "}

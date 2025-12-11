@@ -1,0 +1,1564 @@
+apps/web/src/routes/app/admin/services/index.tsx:283:30 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    281 │                           <TableCell>
+    282 │                             // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 283 │                             {"serviceCount" in category && (
+        │                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 284 │                               <Badge variant="outline">
+         ...
+  > 288 │                               </Badge>
+  > 289 │                             )}
+        │                             ^
+    290 │                           </TableCell>
+    291 │                           <TableCell>{category.sortOrder}</TableCell>
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/admin/services/index.tsx format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    146 146 │                       ))}
+    147 147 │                     </div>
+    148     │ - ················//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+        148 │ + ··················//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+    149 149 │                   ) : services.length === 0 ? (
+    150 150 │                     <div className="py-12 text-center">
+    ······· │ 
+    247 247 │                       ))}
+    248 248 │                     </div>
+    249     │ - ················//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+        249 │ + ··················//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+    250 250 │                   ) : categories.length === 0 ? (
+    251 251 │                     <div className="py-12 text-center">
+    ······· │ 
+    280 280 │                             </TableCell>
+    281 281 │                             <TableCell>
+    282     │ - ····························//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        282 │ + ····························//·biome-ignore·lint/nursery/noLeakedRender:
+        283 │ + ····························Auto-fix
+    283 284 │                               {"serviceCount" in category && (
+    284 285 │                                 <Badge variant="outline">
+  
+
+apps/web/src/routes/app/admin/services/index.tsx:282:29 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    280 │                           </TableCell>
+    281 │                           <TableCell>
+  > 282 │                             // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    283 │                             {"serviceCount" in category && (
+    284 │                               <Badge variant="outline">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    280 280 │                             </TableCell>
+    281 281 │                             <TableCell>
+    282     │ - ····························//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        282 │ + ····························{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    283 283 │                               {"serviceCount" in category && (
+    284 284 │                                 <Badge variant="outline">
+  
+
+apps/web/src/routes/app/admin/staff/$staffId.tsx:458:29 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    456 │                               </SelectContent>
+    457 │                             </Select>
+  > 458 │                             // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    459 │                             {selectedRole && (
+    460 │                               <FormDescription>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    456 456 │                                 </SelectContent>
+    457 457 │                               </Select>
+    458     │ - ····························//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        458 │ + ····························{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    459 459 │                               {selectedRole && (
+    460 460 │                                 <FormDescription>
+  
+
+apps/web/src/routes/app/admin/staff/$staffId.tsx lint/style/useFilenamingConvention ━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    $staff-id.tsx
+  
+
+apps/web/src/routes/app/admin/staff/$staffId.tsx:459:30 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    457 │                             </Select>
+    458 │                             // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 459 │                             {selectedRole && (
+        │                              ^^^^^^^^^^^^^^^^^
+  > 460 │                               <FormDescription>
+  > 461 │                                 {roleDescriptions[selectedRole].description}
+  > 462 │                               </FormDescription>
+  > 463 │                             )}
+        │                             ^
+    464 │                             <FormMessage />
+    465 │                           </FormItem>
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/admin/staff/$staffId.tsx format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    262 262 │                         {staff.isActive ? "Deactivating..." : "Activating..."}
+    263 263 │                       </>
+    264     │ - ··················//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+        264 │ + ····················//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+    265 265 │                     ) : staff.isActive ? (
+    266 266 │                       <>
+    ······· │ 
+    456 456 │                                 </SelectContent>
+    457 457 │                               </Select>
+    458     │ - ····························//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        458 │ + ····························//·biome-ignore·lint/nursery/noLeakedRender:
+        459 │ + ····························Auto-fix
+    459 460 │                               {selectedRole && (
+    460 461 │                                 <FormDescription>
+  
+
+apps/web/src/routes/app/calendar/index.tsx:440:22 parse ━━━━━━━━━━
+
+  × expected `)` but instead found `:`
+  
+    438 │                       onComplete={() => completeMutation.mutate(d.id)}
+    439 │                     />
+  > 440 │                   )) : (
+        │                      ^
+    441 │                     <p className="text-muted-foreground text-sm">
+    442 │                       No upcoming deadlines
+  
+  i Remove :
+  
+
+apps/web/src/routes/app/calendar/index.tsx:335:21 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    333 │                     )}
+    334 │                     {/* Calendar cells */}
+  > 335 │                     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
+        │                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    336 │                     {calendarDays.map((day, index) => {
+    337 │                       const dayDeadlines = day
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    333 333 │                       )}
+    334 334 │                       {/* Calendar cells */}
+    335     │ - ····················//·biome-ignore·lint/complexity/noExcessiveCognitiveComplexity:·Auto-fix
+        335 │ + ····················{/*·biome-ignore·lint/complexity/noExcessiveCognitiveComplexity:·Auto-fix·*/}
+    336 336 │                       {calendarDays.map((day, index) => {
+    337 337 │                         const dayDeadlines = day
+  
+
+apps/web/src/routes/app/calendar/index.tsx:336:52 lint/complexity/noExcessiveCognitiveComplexity ━━━━━━━━━━
+
+  × Excessive complexity of 21 detected (max: 15).
+  
+    334 │                     {/* Calendar cells */}
+    335 │                     // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
+  > 336 │                     {calendarDays.map((day, index) => {
+        │                                                    ^^^
+    337 │                       const dayDeadlines = day
+    338 │                         ? deadlinesByDate[day.toString()]
+  
+  i Please refactor this function to reduce its complexity score from 21 to the max allowed complexity 15.
+  
+
+apps/web/src/routes/app/calendar/index.tsx:440:22 parse ━━━━━━━━━━
+
+  × expected `)` but instead found `:`
+  
+    438 │                       onComplete={() => completeMutation.mutate(d.id)}
+    439 │                     />
+  > 440 │                   )) : (
+        │                      ^
+    441 │                     <p className="text-muted-foreground text-sm">
+    442 │                       No upcoming deadlines
+  
+  i Remove :
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:224:18 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    222 │               <div className="flex flex-wrap gap-4 text-sm">
+    223 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 224 │                 {clientData.email && (
+        │                  ^^^^^^^^^^^^^^^^^^^^^
+  > 225 │                   <div className="flex items-center gap-2 text-muted-foreground">
+         ...
+  > 233 │                   </div>
+  > 234 │                 )}
+        │                 ^
+    235 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+    236 │                 {clientData.phone && (
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:223:17 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    222 │               <div className="flex flex-wrap gap-4 text-sm">
+  > 223 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    224 │                 {clientData.email && (
+    225 │                   <div className="flex items-center gap-2 text-muted-foreground">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+     221  221 │   
+     222  222 │                 <div className="flex flex-wrap gap-4 text-sm">
+     223      │ - ················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+          223 │ + ················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+     224  224 │                   {clientData.email && (
+     225  225 │                     <div className="flex items-center gap-2 text-muted-foreground">
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:235:17 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    233 │                   </div>
+    234 │                 )}
+  > 235 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    236 │                 {clientData.phone && (
+    237 │                   <div className="flex items-center gap-2 text-muted-foreground">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+     233  233 │                     </div>
+     234  234 │                   )}
+     235      │ - ················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+          235 │ + ················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+     236  236 │                   {clientData.phone && (
+     237  237 │                     <div className="flex items-center gap-2 text-muted-foreground">
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:247:17 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    245 │                   </div>
+    246 │                 )}
+  > 247 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    248 │                 {clientData.city && (
+    249 │                   <div className="flex items-center gap-2 text-muted-foreground">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+     245  245 │                     </div>
+     246  246 │                   )}
+     247      │ - ················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+          247 │ + ················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+     248  248 │                   {clientData.city && (
+     249  249 │                     <div className="flex items-center gap-2 text-muted-foreground">
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:671:19 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    669 │                     )}
+    670 │                   </div>
+  > 671 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    672 │                   {contact.relationship && (
+    673 │                     <p className="text-muted-foreground text-sm">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+     669  669 │                       )}
+     670  670 │                     </div>
+     671      │ - ··················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+          671 │ + ··················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+     672  672 │                     {contact.relationship && (
+     673  673 │                       <p className="text-muted-foreground text-sm">
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:678:21 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    676 │                   )}
+    677 │                   <div className="mt-1 flex gap-4 text-muted-foreground text-sm">
+  > 678 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    679 │                     {contact.email && <span>{contact.email}</span>}
+    680 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+     676  676 │                     )}
+     677  677 │                     <div className="mt-1 flex gap-4 text-muted-foreground text-sm">
+     678      │ - ····················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+          678 │ + ····················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+     679  679 │                       {contact.email && <span>{contact.email}</span>}
+     680  680 │                       // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:680:21 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    678 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+    679 │                     {contact.email && <span>{contact.email}</span>}
+  > 680 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    681 │                     {contact.phone && <span>{contact.phone}</span>}
+    682 │                   </div>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+     678  678 │                       // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+     679  679 │                       {contact.email && <span>{contact.email}</span>}
+     680      │ - ····················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+          680 │ + ····················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+     681  681 │                       {contact.phone && <span>{contact.phone}</span>}
+     682  682 │                     </div>
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:885:17 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    883 │                   </span>
+    884 │                 </div>
+  > 885 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    886 │                 {comm.subject && (
+    887 │                   <p className="mt-1 font-medium text-sm">{comm.subject}</p>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+     883  883 │                     </span>
+     884  884 │                   </div>
+     885      │ - ················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+          885 │ + ················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+     886  886 │                   {comm.subject && (
+     887  887 │                     <p className="mt-1 font-medium text-sm">{comm.subject}</p>
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:890:17 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    888 │                 )}
+    889 │                 <p className="mt-1 text-sm">{comm.summary}</p>
+  > 890 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    891 │                 {comm.staff?.user?.name && (
+    892 │                   <p className="mt-1 text-muted-foreground text-xs">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+     888  888 │                   )}
+     889  889 │                   <p className="mt-1 text-sm">{comm.summary}</p>
+     890      │ - ················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+          890 │ + ················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+     891  891 │                   {comm.staff?.user?.name && (
+     892  892 │                     <p className="mt-1 text-muted-foreground text-xs">
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx lint/style/useFilenamingConvention ━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    $client-id.tsx
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:236:18 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    234 │                 )}
+    235 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 236 │                 {clientData.phone && (
+        │                  ^^^^^^^^^^^^^^^^^^^^^
+  > 237 │                   <div className="flex items-center gap-2 text-muted-foreground">
+         ...
+  > 245 │                   </div>
+  > 246 │                 )}
+        │                 ^
+    247 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+    248 │                 {clientData.city && (
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:248:18 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    246 │                 )}
+    247 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 248 │                 {clientData.city && (
+        │                  ^^^^^^^^^^^^^^^^^^^^
+  > 249 │                   <div className="flex items-center gap-2 text-muted-foreground">
+  > 250 │                     <MapPin className="h-4 w-4" />
+  > 251 │                     {clientData.city}, {clientData.country}
+  > 252 │                   </div>
+  > 253 │                 )}
+        │                 ^
+    254 │               </div>
+    255 │             </div>
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:672:20 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    670 │                   </div>
+    671 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 672 │                   {contact.relationship && (
+        │                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 673 │                     <p className="text-muted-foreground text-sm">
+  > 674 │                       {contact.relationship}
+  > 675 │                     </p>
+  > 676 │                   )}
+        │                   ^
+    677 │                   <div className="mt-1 flex gap-4 text-muted-foreground text-sm">
+    678 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:679:22 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    677 │                   <div className="mt-1 flex gap-4 text-muted-foreground text-sm">
+    678 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 679 │                     {contact.email && <span>{contact.email}</span>}
+        │                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    680 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+    681 │                     {contact.phone && <span>{contact.phone}</span>}
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:681:22 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    679 │                     {contact.email && <span>{contact.email}</span>}
+    680 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 681 │                     {contact.phone && <span>{contact.phone}</span>}
+        │                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    682 │                   </div>
+    683 │                 </div>
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:886:18 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    884 │                 </div>
+    885 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 886 │                 {comm.subject && (
+        │                  ^^^^^^^^^^^^^^^^^
+  > 887 │                   <p className="mt-1 font-medium text-sm">{comm.subject}</p>
+  > 888 │                 )}
+        │                 ^
+    889 │                 <p className="mt-1 text-sm">{comm.summary}</p>
+    890 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/clients/$clientId.tsx:891:18 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    889 │                 <p className="mt-1 text-sm">{comm.summary}</p>
+    890 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 891 │                 {comm.staff?.user?.name && (
+        │                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 892 │                   <p className="mt-1 text-muted-foreground text-xs">
+  > 893 │                     by {comm.staff.user.name}
+  > 894 │                   </p>
+  > 895 │                 )}
+        │                 ^
+    896 │               </div>
+    897 │             ))}
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/clients/index.tsx:300:9 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    299 │         {/* Pagination */}
+  > 300 │         // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    301 │         {data?.totalPages && data.totalPages > 1 && (
+    302 │           <div className="mt-4 flex items-center justify-between">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    298 298 │   
+    299 299 │           {/* Pagination */}
+    300     │ - ········//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        300 │ + ········{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    301 301 │           {data?.totalPages && data.totalPages > 1 && (
+    302 302 │             <div className="mt-4 flex items-center justify-between">
+  
+
+apps/web/src/routes/app/clients/index.tsx format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    184 184 │             </Select>
+    185 185 │           </div>
+    186     │ - 
+    187 186 │           {/* Error state */}
+    188 187 │           {!!error && (
+    ······· │ 
+    191 190 │             </div>
+    192 191 │           )}
+    193     │ - 
+    194 192 │           {/* Clients Table */}
+    195 193 │           <div className="rounded-md border">
+    ······· │ 
+    216 214 │                     </TableCell>
+    217 215 │                   </TableRow>
+    218     │ - ··············//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+    219     │ - ··············//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+        216 │ + ················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        217 │ + ················//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+    220 218 │                 ) : data?.clients && data.clients.length > 0 ? (
+    221 219 │                   data.clients.map((c) => (
+    ······· │ 
+    296 294 │             </Table>
+    297 295 │           </div>
+    298     │ - 
+    299 296 │           {/* Pagination */}
+    300 297 │           // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  
+
+apps/web/src/routes/app/clients/index.tsx:301:10 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    299 │         {/* Pagination */}
+    300 │         // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 301 │         {data?.totalPages && data.totalPages > 1 && (
+        │          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    302 │           <div className="mt-4 flex items-center justify-between">
+    303 │             <p className="text-muted-foreground text-sm">
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/clients/new.tsx:482:23 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    480 │                     </p>
+    481 │                     <div className="flex gap-6">
+  > 482 │                       // biome-ignore lint/a11y/noLabelWithoutControl: Auto-fix
+        │                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    483 │                       <label className="flex cursor-pointer items-center gap-2">
+    484 │                         <Checkbox
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    480 480 │                       </p>
+    481 481 │                       <div className="flex gap-6">
+    482     │ - ······················//·biome-ignore·lint/a11y/noLabelWithoutControl:·Auto-fix
+        482 │ + ······················{/*·biome-ignore·lint/a11y/noLabelWithoutControl:·Auto-fix·*/}
+    483 483 │                         <label className="flex cursor-pointer items-center gap-2">
+    484 484 │                           <Checkbox
+  
+
+apps/web/src/routes/app/clients/new.tsx:483:23 lint/a11y/noLabelWithoutControl ━━━━━━━━━━
+
+  × A form label must be associated with an input.
+  
+    481 │                     <div className="flex gap-6">
+    482 │                       // biome-ignore lint/a11y/noLabelWithoutControl: Auto-fix
+  > 483 │                       <label className="flex cursor-pointer items-center gap-2">
+        │                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 484 │                         <Checkbox
+         ...
+  > 502 │                         </span>
+  > 503 │                       </label>
+        │                       ^^^^^^^^
+    504 │                       // biome-ignore lint/a11y/noLabelWithoutControl: Auto-fix
+    505 │                       <label className="flex cursor-pointer items-center gap-2">
+  
+  i Consider adding a `for` or `htmlFor` attribute to the label element or moving the input element to inside the label element.
+  
+
+apps/web/src/routes/app/clients/new.tsx:504:23 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    502 │                         </span>
+    503 │                       </label>
+  > 504 │                       // biome-ignore lint/a11y/noLabelWithoutControl: Auto-fix
+        │                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    505 │                       <label className="flex cursor-pointer items-center gap-2">
+    506 │                         <Checkbox
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    502 502 │                           </span>
+    503 503 │                         </label>
+    504     │ - ······················//·biome-ignore·lint/a11y/noLabelWithoutControl:·Auto-fix
+        504 │ + ······················{/*·biome-ignore·lint/a11y/noLabelWithoutControl:·Auto-fix·*/}
+    505 505 │                         <label className="flex cursor-pointer items-center gap-2">
+    506 506 │                           <Checkbox
+  
+
+apps/web/src/routes/app/clients/new.tsx:505:23 lint/a11y/noLabelWithoutControl ━━━━━━━━━━
+
+  × A form label must be associated with an input.
+  
+    503 │                       </label>
+    504 │                       // biome-ignore lint/a11y/noLabelWithoutControl: Auto-fix
+  > 505 │                       <label className="flex cursor-pointer items-center gap-2">
+        │                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 506 │                         <Checkbox
+         ...
+  > 522 │                         </span>
+  > 523 │                       </label>
+        │                       ^^^^^^^^
+    524 │                     </div>
+    525 │                   </div>
+  
+  i Consider adding a `for` or `htmlFor` attribute to the label element or moving the input element to inside the label element.
+  
+
+apps/web/src/routes/app/documents/templates/$templateId.tsx lint/style/useFilenamingConvention ━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    $template-id.tsx
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:459:22 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    457 │                     )}
+    458 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 459 │                     {invoice.notes && (
+        │                      ^^^^^^^^^^^^^^^^^^
+  > 460 │                       <div>
+         ...
+  > 467 │                       </div>
+  > 468 │                     )}
+        │                     ^
+    469 │                   </CardContent>
+    470 │                 </Card>
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:441:16 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    439 │               {/* Additional Info */}
+    440 │               // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 441 │               {(invoice.terms || invoice.notes) && (
+        │                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 442 │                 <Card>
+         ...
+  > 470 │                 </Card>
+  > 471 │               )}
+        │               ^
+    472 │             </div>
+    473 │ 
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:448:22 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    446 │                   <CardContent className="space-y-4">
+    447 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 448 │                     {invoice.terms && (
+        │                      ^^^^^^^^^^^^^^^^^^
+  > 449 │                       <div>
+         ...
+  > 456 │                       </div>
+  > 457 │                     )}
+        │                     ^
+    458 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+    459 │                     {invoice.notes && (
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:483:20 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    481 │                 <CardContent className="space-y-2">
+    482 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 483 │                   {canRecordPayment && (
+        │                    ^^^^^^^^^^^^^^^^^^^^^
+  > 484 │                     <Button
+         ...
+  > 491 │                     </Button>
+  > 492 │                   )}
+        │                   ^
+    493 │                   <Button
+    494 │                     className="w-full justify-start"
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:521:20 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    519 │                 <CardContent className="space-y-3 text-sm">
+    520 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 521 │                   {invoice.createdBy && (
+        │                    ^^^^^^^^^^^^^^^^^^^^^^
+  > 522 │                     <div>
+         ...
+  > 528 │                     </div>
+  > 529 │                   )}
+        │                   ^
+    530 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+    531 │                   {invoice.sentAt && invoice.sentBy && (
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:531:20 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    529 │                   )}
+    530 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 531 │                   {invoice.sentAt && invoice.sentBy && (
+        │                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 532 │                     <div>
+         ...
+  > 538 │                     </div>
+  > 539 │                   )}
+        │                   ^
+    540 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+    541 │                   {invoice.paidDate && (
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:531:20 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    529 │                   )}
+    530 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 531 │                   {invoice.sentAt && invoice.sentBy && (
+        │                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    532 │                     <div>
+    533 │                       <p className="text-muted-foreground">Sent By</p>
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:541:20 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    539 │                   )}
+    540 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 541 │                   {invoice.paidDate && (
+        │                    ^^^^^^^^^^^^^^^^^^^^^
+  > 542 │                     <div>
+         ...
+  > 547 │                     </div>
+  > 548 │                   )}
+        │                   ^
+    549 │                 </CardContent>
+    550 │               </Card>
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    264 264 │                         )}
+    265 265 │                       </div>
+    266     │ - 
+    267 266 │                       // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+    268 267 │                       {invoice.matter && (
+    ······· │ 
+    283 282 │                         </div>
+    284 283 │                       )}
+    285     │ - 
+    286 284 │                       <div>
+    287 285 │                         <p className="text-muted-foreground text-sm">
+    ······· │ 
+    295 293 │                         </div>
+    296 294 │                       </div>
+    297     │ - 
+    298 295 │                       <div>
+    299 296 │                         <p className="text-muted-foreground text-sm">Due Date</p>
+    ······· │ 
+    305 302 │                         </div>
+    306 303 │                       </div>
+    307     │ - 
+    308 304 │                       // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+    309 305 │                       {invoice.referenceNumber && (
+    ······· │ 
+    318 314 │                   </CardContent>
+    319 315 │                 </Card>
+    320     │ - 
+    321 316 │                 {/* Line Items */}
+    322 317 │                 <Card>
+    ······· │ 
+    388 383 │                   </CardContent>
+    389 384 │                 </Card>
+    390     │ - 
+    391 385 │                 {/* Payment History */}
+    392 386 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+    ······· │ 
+    436 430 │                   </Card>
+    437 431 │                 )}
+    438     │ - 
+    439 432 │                 {/* Additional Info */}
+    440 433 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:259:23 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    257 │                         {invoice.client.displayName}
+    258 │                       </Link>
+  > 259 │                       // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    260 │                       {invoice.client.email && (
+    261 │                         <p className="text-muted-foreground text-xs">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    257 257 │                           {invoice.client.displayName}
+    258 258 │                         </Link>
+    259     │ - ······················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        259 │ + ······················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    260 260 │                         {invoice.client.email && (
+    261 261 │                           <p className="text-muted-foreground text-xs">
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:267:21 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    265 │                     </div>
+    266 │ 
+  > 267 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    268 │                     {invoice.matter && (
+    269 │                       <div>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    265 265 │                       </div>
+    266 266 │   
+    267     │ - ····················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        267 │ + ····················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    268 268 │                       {invoice.matter && (
+    269 269 │                         <div>
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:308:21 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    306 │                     </div>
+    307 │ 
+  > 308 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    309 │                     {invoice.referenceNumber && (
+    310 │                       <div>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    306 306 │                       </div>
+    307 307 │   
+    308     │ - ····················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        308 │ + ····················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    309 309 │                       {invoice.referenceNumber && (
+    310 310 │                         <div>
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:392:15 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    391 │               {/* Payment History */}
+  > 392 │               // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    393 │               {invoice.payments && invoice.payments.length > 0 && (
+    394 │                 <Card>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    390 390 │   
+    391 391 │                 {/* Payment History */}
+    392     │ - ··············//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        392 │ + ··············{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    393 393 │                 {invoice.payments && invoice.payments.length > 0 && (
+    394 394 │                   <Card>
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:440:15 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    439 │               {/* Additional Info */}
+  > 440 │               // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    441 │               {(invoice.terms || invoice.notes) && (
+    442 │                 <Card>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    438 438 │   
+    439 439 │                 {/* Additional Info */}
+    440     │ - ··············//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        440 │ + ··············{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    441 441 │                 {(invoice.terms || invoice.notes) && (
+    442 442 │                   <Card>
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:447:21 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    445 │                   </CardHeader>
+    446 │                   <CardContent className="space-y-4">
+  > 447 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    448 │                     {invoice.terms && (
+    449 │                       <div>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    445 445 │                     </CardHeader>
+    446 446 │                     <CardContent className="space-y-4">
+    447     │ - ····················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        447 │ + ····················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    448 448 │                       {invoice.terms && (
+    449 449 │                         <div>
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:458:21 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    456 │                       </div>
+    457 │                     )}
+  > 458 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    459 │                     {invoice.notes && (
+    460 │                       <div>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    456 456 │                         </div>
+    457 457 │                       )}
+    458     │ - ····················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        458 │ + ····················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    459 459 │                       {invoice.notes && (
+    460 460 │                         <div>
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:482:19 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    480 │                 </CardHeader>
+    481 │                 <CardContent className="space-y-2">
+  > 482 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    483 │                   {canRecordPayment && (
+    484 │                     <Button
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    480 480 │                   </CardHeader>
+    481 481 │                   <CardContent className="space-y-2">
+    482     │ - ··················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        482 │ + ··················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    483 483 │                     {canRecordPayment && (
+    484 484 │                       <Button
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:520:19 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    518 │                 </CardHeader>
+    519 │                 <CardContent className="space-y-3 text-sm">
+  > 520 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    521 │                   {invoice.createdBy && (
+    522 │                     <div>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    518 518 │                   </CardHeader>
+    519 519 │                   <CardContent className="space-y-3 text-sm">
+    520     │ - ··················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        520 │ + ··················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    521 521 │                     {invoice.createdBy && (
+    522 522 │                       <div>
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:530:19 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    528 │                     </div>
+    529 │                   )}
+  > 530 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    531 │                   {invoice.sentAt && invoice.sentBy && (
+    532 │                     <div>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    528 528 │                       </div>
+    529 529 │                     )}
+    530     │ - ··················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        530 │ + ··················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    531 531 │                     {invoice.sentAt && invoice.sentBy && (
+    532 532 │                       <div>
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:540:19 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    538 │                     </div>
+    539 │                   )}
+  > 540 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    541 │                   {invoice.paidDate && (
+    542 │                     <div>
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    538 538 │                       </div>
+    539 539 │                     )}
+    540     │ - ··················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        540 │ + ··················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    541 541 │                     {invoice.paidDate && (
+    542 542 │                       <div>
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx lint/style/useFilenamingConvention ━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    $invoice-id.tsx
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:260:24 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    258 │                       </Link>
+    259 │                       // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 260 │                       {invoice.client.email && (
+        │                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 261 │                         <p className="text-muted-foreground text-xs">
+  > 262 │                           {invoice.client.email}
+  > 263 │                         </p>
+  > 264 │                       )}
+        │                       ^
+    265 │                     </div>
+    266 │ 
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:268:22 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    267 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 268 │                     {invoice.matter && (
+        │                      ^^^^^^^^^^^^^^^^^^^
+  > 269 │                       <div>
+         ...
+  > 283 │                       </div>
+  > 284 │                     )}
+        │                     ^
+    285 │ 
+    286 │                     <div>
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:309:22 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    308 │                     // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 309 │                     {invoice.referenceNumber && (
+        │                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 310 │                       <div>
+         ...
+  > 315 │                       </div>
+  > 316 │                     )}
+        │                     ^
+    317 │                   </div>
+    318 │                 </CardContent>
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/invoices/$invoiceId.tsx:393:16 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    391 │               {/* Payment History */}
+    392 │               // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 393 │               {invoice.payments && invoice.payments.length > 0 && (
+        │                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    394 │                 <Card>
+    395 │                   <CardHeader>
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/matters/$matterId.tsx:571:19 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    569 │                     {item.item}
+    570 │                   </p>
+  > 571 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    572 │                   {item.isCompleted && item.completedAt ? (
+    573 │                     <p className="text-muted-foreground text-xs">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    569 569 │                       {item.item}
+    570 570 │                     </p>
+    571     │ - ··················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        571 │ + ··················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    572 572 │                     {item.isCompleted && item.completedAt ? (
+    573 573 │                       <p className="text-muted-foreground text-xs">
+  
+
+apps/web/src/routes/app/matters/$matterId.tsx lint/style/useFilenamingConvention ━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    $matter-id.tsx
+  
+
+apps/web/src/routes/app/matters/$matterId.tsx:572:20 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    570 │                   </p>
+    571 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 572 │                   {item.isCompleted && item.completedAt ? (
+        │                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    573 │                     <p className="text-muted-foreground text-xs">
+    574 │                       Completed{" "}
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/matters/index.tsx:317:9 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    316 │         {/* Pagination */}
+  > 317 │         // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    318 │         {data?.totalPages && data.totalPages > 1 && (
+    319 │           <div className="mt-4 flex items-center justify-between">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    315 315 │   
+    316 316 │           {/* Pagination */}
+    317     │ - ········//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        317 │ + ········{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    318 318 │           {data?.totalPages && data.totalPages > 1 && (
+    319 319 │             <div className="mt-4 flex items-center justify-between">
+  
+
+apps/web/src/routes/app/matters/index.tsx:318:10 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    316 │         {/* Pagination */}
+    317 │         // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 318 │         {data?.totalPages && data.totalPages > 1 && (
+        │          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    319 │           <div className="mt-4 flex items-center justify-between">
+    320 │             <p className="text-muted-foreground text-sm">
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/matters/index.tsx format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    186 186 │             </Select>
+    187 187 │           </div>
+    188     │ - 
+    189 188 │           {/* Error state */}
+    190 189 │           {!!error && (
+    ······· │ 
+    193 192 │             </div>
+    194 193 │           )}
+    195     │ - 
+    196 194 │           {/* Matters Table */}
+    197 195 │           <div className="rounded-md border">
+    ······· │ 
+    219 217 │                     </TableCell>
+    220 218 │                   </TableRow>
+    221     │ - ··············//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+    222     │ - ··············//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+        219 │ + ················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        220 │ + ················//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+    223 221 │                 ) : data?.matters && data.matters.length > 0 ? (
+    224 222 │                   data.matters.map((m) => (
+    ······· │ 
+    313 311 │             </Table>
+    314 312 │           </div>
+    315     │ - 
+    316 313 │           {/* Pagination */}
+    317 314 │           // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  
+
+apps/web/src/routes/app/services/$serviceId.tsx lint/style/useFilenamingConvention ━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    $service-id.tsx
+  
+
+apps/web/src/routes/app/services/index.tsx:308:23 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    306 │                     >
+    307 │                       <span className="truncate">{category.displayName}</span>
+  > 308 │                       // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    309 │                       {"serviceCount" in category && (
+    310 │                         <Badge className="ml-2 shrink-0" variant="outline">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    306 306 │                       >
+    307 307 │                         <span className="truncate">{category.displayName}</span>
+    308     │ - ······················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        308 │ + ······················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    309 309 │                         {"serviceCount" in category && (
+    310 310 │                           <Badge className="ml-2 shrink-0" variant="outline">
+  
+
+apps/web/src/routes/app/services/index.tsx:352:17 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    351 │                 {/* Pagination */}
+  > 352 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    353 │                 {servicesData?.totalPages && servicesData.totalPages > 1 && (
+    354 │                   <div className="mt-6 flex justify-center gap-2">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    350 350 │   
+    351 351 │                   {/* Pagination */}
+    352     │ - ················//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        352 │ + ················{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    353 353 │                   {servicesData?.totalPages && servicesData.totalPages > 1 && (
+    354 354 │                     <div className="mt-6 flex justify-center gap-2">
+  
+
+apps/web/src/routes/app/services/index.tsx:227:28 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    225 │                           </span>
+    226 │                           // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 227 │                           {"serviceCount" in category && (
+        │                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 228 │                             <Badge className="ml-2 shrink-0" variant="outline">
+  > 229 │                               {String(category.serviceCount)}
+  > 230 │                             </Badge>
+  > 231 │                           )}
+        │                           ^
+    232 │                         </Button>
+    233 │                       ))}
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/services/index.tsx:269:28 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    267 │                           </span>
+    268 │                           // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 269 │                           {"serviceCount" in category && (
+        │                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 270 │                             <Badge className="ml-2 shrink-0" variant="outline">
+  > 271 │                               {String(category.serviceCount)}
+  > 272 │                             </Badge>
+  > 273 │                           )}
+        │                           ^
+    274 │                         </Button>
+    275 │                       ))}
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/services/index.tsx:309:24 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    307 │                       <span className="truncate">{category.displayName}</span>
+    308 │                       // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 309 │                       {"serviceCount" in category && (
+        │                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 310 │                         <Badge className="ml-2 shrink-0" variant="outline">
+  > 311 │                           {String(category.serviceCount)}
+  > 312 │                         </Badge>
+  > 313 │                       )}
+        │                       ^
+    314 │                     </Button>
+    315 │                   ))}
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/services/index.tsx:353:18 lint/nursery/noLeakedRender ━━━━━━━━━━
+
+  × Potential leaked value that might cause unintended rendering.
+  
+    351 │                 {/* Pagination */}
+    352 │                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  > 353 │                 {servicesData?.totalPages && servicesData.totalPages > 1 && (
+        │                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    354 │                   <div className="mt-6 flex justify-center gap-2">
+    355 │                     <Button
+  
+  i JavaScript's && operator returns the left value when it's falsy (e.g., 0, NaN, ''). React will render that value, causing unexpected UI output.
+  
+  i Make sure the condition is explicitly boolean.Use !!value, value > 0, or a ternary expression.
+  
+
+apps/web/src/routes/app/services/index.tsx:226:27 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    224 │                             {category.displayName}
+    225 │                           </span>
+  > 226 │                           // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    227 │                           {"serviceCount" in category && (
+    228 │                             <Badge className="ml-2 shrink-0" variant="outline">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    224 224 │                               {category.displayName}
+    225 225 │                             </span>
+    226     │ - ··························//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        226 │ + ··························{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    227 227 │                             {"serviceCount" in category && (
+    228 228 │                               <Badge className="ml-2 shrink-0" variant="outline">
+  
+
+apps/web/src/routes/app/services/index.tsx:268:27 lint/suspicious/noCommentText  FIXABLE  ━━━━━━━━━━
+
+  × Wrap comments inside children within braces.
+  
+    266 │                             {category.displayName}
+    267 │                           </span>
+  > 268 │                           // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+        │                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    269 │                           {"serviceCount" in category && (
+    270 │                             <Badge className="ml-2 shrink-0" variant="outline">
+  
+  i Unsafe fix: Wrap the comments with braces
+  
+    266 266 │                               {category.displayName}
+    267 267 │                             </span>
+    268     │ - ··························//·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix
+        268 │ + ··························{/*·biome-ignore·lint/nursery/noLeakedRender:·Auto-fix·*/}
+    269 269 │                             {"serviceCount" in category && (
+    270 270 │                               <Badge className="ml-2 shrink-0" variant="outline">
+  
+
+apps/web/src/routes/app/services/index.tsx format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    185 185 │                     ))}
+    186 186 │                   </div>
+    187     │ - ··············//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+        187 │ + ················//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+    188 188 │                 ) : businessFilter === "all" ? (
+    189 189 │                   <Tabs className="w-full" defaultValue="GCMC">
+    ······· │ 
+    327 327 │                   ))}
+    328 328 │                 </div>
+    329     │ - ············//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+        329 │ + ··············//·biome-ignore·lint/style/noNestedTernary:·Auto-fix
+    330 330 │               ) : services.length === 0 ? (
+    331 331 │                 <div className="py-12 text-center">
+    ······· │ 
+    348 348 │                     ))}
+    349 349 │                   </div>
+    350     │ - 
+    351 350 │                   {/* Pagination */}
+    352 351 │                   // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+  
+
+apps/web/src/routes/app/training/courses/$courseId.tsx lint/style/useFilenamingConvention ━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    $course-id.tsx
+  
+
+apps/web/src/routes/app/training/schedules/$scheduleId.tsx lint/style/useFilenamingConvention ━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    $schedule-id.tsx
+  
+
+apps/web/src/routes/portal/matters/$matterId.tsx lint/style/useFilenamingConvention ━━━━━━━━━━
+
+  × The filename should be in kebab-case.
+  
+  i The filename could be renamed to one of the following names:
+    $matter-id.tsx
+  
+
+Checked 171 files in 682ms. No fixes applied.
+Found 80 errors.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+Error: Ultracite check failed with status 1
+    at se (file:///home/kareem/SYNERGY-GY/node_modules/ultracite/dist/index.js:120:2466)
+    at async file:///home/kareem/SYNERGY-GY/node_modules/ultracite/dist/index.js:258:15362
+    at async resolveMiddleware (file:///home/kareem/SYNERGY-GY/node_modules/@trpc/server/dist/initTRPC-DGaJyg8t.mjs:221:17)
+    at async callRecursive (file:///home/kareem/SYNERGY-GY/node_modules/@trpc/server/dist/initTRPC-DGaJyg8t.mjs:256:18)
+    at async callRecursive (file:///home/kareem/SYNERGY-GY/node_modules/@trpc/server/dist/initTRPC-DGaJyg8t.mjs:256:18)
+    at async procedure (file:///home/kareem/SYNERGY-GY/node_modules/@trpc/server/dist/initTRPC-DGaJyg8t.mjs:281:18)
+    at async file:///home/kareem/SYNERGY-GY/node_modules/@trpc/server/dist/tracked-DBSMdVzR.mjs:298:13
+    at async Command.<anonymous> (file:///home/kareem/SYNERGY-GY/node_modules/trpc-cli/dist/index.js:352:32)
+    at async Command.parseAsync (/home/kareem/SYNERGY-GY/node_modules/commander/lib/command.js:1122:5)
+    at async Object.run (file:///home/kareem/SYNERGY-GY/node_modules/trpc-cli/dist/index.js:458:9)

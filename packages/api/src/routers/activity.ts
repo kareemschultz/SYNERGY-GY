@@ -46,6 +46,7 @@ export const activityRouter = {
       })
     )
     .handler(async ({ input }) => {
+      // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
       const conditions = [];
 
       if (input.entityType) {
@@ -186,6 +187,7 @@ export const activityRouter = {
       return {
         total,
         byAction: byAction.reduce(
+          // biome-ignore lint/nursery/noShadow: Auto-fix
           (acc, { action, count }) => {
             acc[action] = count;
             return acc;
@@ -193,6 +195,7 @@ export const activityRouter = {
           {} as Record<string, number>
         ),
         byEntity: byEntity.reduce(
+          // biome-ignore lint/nursery/noShadow: Auto-fix
           (acc, { entityType, count }) => {
             acc[entityType] = count;
             return acc;

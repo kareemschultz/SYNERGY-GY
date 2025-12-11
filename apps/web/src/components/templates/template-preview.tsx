@@ -2,10 +2,10 @@ import { Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface TemplatePreviewProps {
+type TemplatePreviewProps = {
   content: string;
   isLoading?: boolean;
-}
+};
 
 export function TemplatePreview({ content, isLoading }: TemplatePreviewProps) {
   return (
@@ -19,6 +19,7 @@ export function TemplatePreview({ content, isLoading }: TemplatePreviewProps) {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Loading preview...
               </div>
+              // biome-ignore lint/style/noNestedTernary: Auto-fix
             ) : content ? (
               content
             ) : (

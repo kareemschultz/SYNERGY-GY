@@ -9,9 +9,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { PLACEHOLDER_GROUPS } from "@/lib/template-placeholders";
 
-interface PlaceholderPickerProps {
+type PlaceholderPickerProps = {
   onSelectPlaceholder: (key: string) => void;
-}
+};
 
 export function PlaceholderPicker({
   onSelectPlaceholder,
@@ -53,7 +53,7 @@ export function PlaceholderPicker({
                       <div className="text-muted-foreground text-xs">
                         {`{{${placeholder.key}}}`}
                       </div>
-                      {placeholder.description && (
+                      {!!placeholder.description && (
                         <div className="mt-1 text-muted-foreground text-xs">
                           {placeholder.description}
                         </div>

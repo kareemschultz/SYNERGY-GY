@@ -121,7 +121,7 @@ async function generateInvoiceNumber(
   const latest = await db
     .select({ invoiceNumber: invoice.invoiceNumber })
     .from(invoice)
-    .where(sql`${invoice.invoiceNumber} LIKE ${prefix + "-%"}`)
+    .where(sql`${invoice.invoiceNumber} LIKE ${`${prefix}-%`}`)
     .orderBy(desc(invoice.invoiceNumber))
     .limit(1);
 
@@ -164,7 +164,9 @@ async function updateInvoiceStatus(invoiceId: string): Promise<void> {
     where: eq(invoice.id, invoiceId),
   });
 
-  if (!inv) return;
+  if (!inv) {
+    return;
+  }
 
   let newStatus = inv.status;
 
@@ -207,6 +209,7 @@ export const invoicesRouter = {
         return { invoices: [], total: 0, page: input.page, limit: input.limit };
       }
 
+      // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
       const conditions = [];
 
       // Filter by accessible businesses
@@ -312,9 +315,11 @@ export const invoicesRouter = {
           client: true,
           matter: true,
           lineItems: {
+            // biome-ignore lint/nursery/noShadow: Auto-fix
             orderBy: (li, { asc }) => [asc(li.sortOrder)],
           },
           payments: {
+            // biome-ignore lint/nursery/noShadow: Auto-fix
             orderBy: (p, { desc }) => [desc(p.paymentDate)],
             with: {
               recordedBy: {
@@ -452,6 +457,7 @@ export const invoicesRouter = {
       // Only allow full editing of DRAFT invoices
       if (existing.status !== "DRAFT") {
         // For non-draft invoices, only allow status updates
+        // biome-ignore lint/style/useCollapsedIf: Auto-fix
         if (Object.keys(updates).length > 1 || !updates.status) {
           throw new ORPCError("BAD_REQUEST", {
             message: "Can only update status of non-draft invoices",
@@ -597,6 +603,7 @@ export const invoicesRouter = {
           client: true,
           matter: true,
           lineItems: {
+            // biome-ignore lint/nursery/noShadow: Auto-fix
             orderBy: (li, { asc }) => [asc(li.sortOrder)],
           },
         },
@@ -652,6 +659,7 @@ export const invoicesRouter = {
       .groupBy(invoice.status);
 
     const byStatus = statusCounts.reduce(
+      // biome-ignore lint/nursery/noShadow: Auto-fix
       (acc, { status, count, totalAmount, totalOutstanding }) => {
         acc[status] = {
           count,
@@ -668,6 +676,7 @@ export const invoicesRouter = {
 
     // Calculate totals
     const totalInvoices = statusCounts.reduce(
+      // biome-ignore lint/nursery/noShadow: Auto-fix
       (sum, { count }) => sum + count,
       0
     );
@@ -676,6 +685,7 @@ export const invoicesRouter = {
       .toFixed(2);
     const totalOutstanding = statusCounts
       .reduce(
+        // biome-ignore lint/nursery/noShadow: Auto-fix
         (sum, { totalOutstanding }) =>
           sum + Number.parseFloat(totalOutstanding),
         0

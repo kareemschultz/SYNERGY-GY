@@ -28,16 +28,16 @@ import { Route as AppClientsIndexRouteImport } from './routes/app/clients/index'
 import { Route as AppCalendarIndexRouteImport } from './routes/app/calendar/index'
 import { Route as AppCalculatorsIndexRouteImport } from './routes/app/calculators/index'
 import { Route as AppAdminIndexRouteImport } from './routes/app/admin/index'
-import { Route as PortalMattersMatterIdRouteImport } from './routes/portal/matters/$matterId'
+import { Route as PortalMattersMatterIdRouteImport } from './routes/portal/matters/$matter-id'
 import { Route as AppTrainingNewRouteImport } from './routes/app/training/new'
-import { Route as AppServicesServiceIdRouteImport } from './routes/app/services/$serviceId'
+import { Route as AppServicesServiceIdRouteImport } from './routes/app/services/$service-id'
 import { Route as AppMattersNewRouteImport } from './routes/app/matters/new'
-import { Route as AppMattersMatterIdRouteImport } from './routes/app/matters/$matterId'
+import { Route as AppMattersMatterIdRouteImport } from './routes/app/matters/$matter-id'
 import { Route as AppInvoicesNewRouteImport } from './routes/app/invoices/new'
-import { Route as AppInvoicesInvoiceIdRouteImport } from './routes/app/invoices/$invoiceId'
+import { Route as AppInvoicesInvoiceIdRouteImport } from './routes/app/invoices/$invoice-id'
 import { Route as AppDocumentsUploadRouteImport } from './routes/app/documents/upload'
 import { Route as AppClientsNewRouteImport } from './routes/app/clients/new'
-import { Route as AppClientsClientIdRouteImport } from './routes/app/clients/$clientId'
+import { Route as AppClientsClientIdRouteImport } from './routes/app/clients/$client-id'
 import { Route as AppCalendarNewRouteImport } from './routes/app/calendar/new'
 import { Route as AppCalculatorsVatRouteImport } from './routes/app/calculators/vat'
 import { Route as AppCalculatorsPayeRouteImport } from './routes/app/calculators/paye'
@@ -45,12 +45,12 @@ import { Route as AppCalculatorsNisRouteImport } from './routes/app/calculators/
 import { Route as AppDocumentsTemplatesIndexRouteImport } from './routes/app/documents/templates/index'
 import { Route as AppAdminStaffIndexRouteImport } from './routes/app/admin/staff/index'
 import { Route as AppAdminServicesIndexRouteImport } from './routes/app/admin/services/index'
-import { Route as AppTrainingSchedulesScheduleIdRouteImport } from './routes/app/training/schedules/$scheduleId'
-import { Route as AppTrainingCoursesCourseIdRouteImport } from './routes/app/training/courses/$courseId'
+import { Route as AppTrainingSchedulesScheduleIdRouteImport } from './routes/app/training/schedules/$schedule-id'
+import { Route as AppTrainingCoursesCourseIdRouteImport } from './routes/app/training/courses/$course-id'
 import { Route as AppDocumentsTemplatesNewRouteImport } from './routes/app/documents/templates/new'
-import { Route as AppDocumentsTemplatesTemplateIdRouteImport } from './routes/app/documents/templates/$templateId'
+import { Route as AppDocumentsTemplatesTemplateIdRouteImport } from './routes/app/documents/templates/$template-id'
 import { Route as AppAdminStaffNewRouteImport } from './routes/app/admin/staff/new'
-import { Route as AppAdminStaffStaffIdRouteImport } from './routes/app/admin/staff/$staffId'
+import { Route as AppAdminStaffStaffIdRouteImport } from './routes/app/admin/staff/$staff-id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -148,8 +148,8 @@ const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const PortalMattersMatterIdRoute = PortalMattersMatterIdRouteImport.update({
-  id: '/portal/matters/$matterId',
-  path: '/portal/matters/$matterId',
+  id: '/portal/matters/$matter-id',
+  path: '/portal/matters/$matter-id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppTrainingNewRoute = AppTrainingNewRouteImport.update({
@@ -158,8 +158,8 @@ const AppTrainingNewRoute = AppTrainingNewRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppServicesServiceIdRoute = AppServicesServiceIdRouteImport.update({
-  id: '/services/$serviceId',
-  path: '/services/$serviceId',
+  id: '/services/$service-id',
+  path: '/services/$service-id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMattersNewRoute = AppMattersNewRouteImport.update({
@@ -168,8 +168,8 @@ const AppMattersNewRoute = AppMattersNewRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppMattersMatterIdRoute = AppMattersMatterIdRouteImport.update({
-  id: '/matters/$matterId',
-  path: '/matters/$matterId',
+  id: '/matters/$matter-id',
+  path: '/matters/$matter-id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppInvoicesNewRoute = AppInvoicesNewRouteImport.update({
@@ -178,8 +178,8 @@ const AppInvoicesNewRoute = AppInvoicesNewRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppInvoicesInvoiceIdRoute = AppInvoicesInvoiceIdRouteImport.update({
-  id: '/invoices/$invoiceId',
-  path: '/invoices/$invoiceId',
+  id: '/invoices/$invoice-id',
+  path: '/invoices/$invoice-id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDocumentsUploadRoute = AppDocumentsUploadRouteImport.update({
@@ -193,8 +193,8 @@ const AppClientsNewRoute = AppClientsNewRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppClientsClientIdRoute = AppClientsClientIdRouteImport.update({
-  id: '/clients/$clientId',
-  path: '/clients/$clientId',
+  id: '/clients/$client-id',
+  path: '/clients/$client-id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCalendarNewRoute = AppCalendarNewRouteImport.update({
@@ -235,14 +235,14 @@ const AppAdminServicesIndexRoute = AppAdminServicesIndexRouteImport.update({
 } as any)
 const AppTrainingSchedulesScheduleIdRoute =
   AppTrainingSchedulesScheduleIdRouteImport.update({
-    id: '/training/schedules/$scheduleId',
-    path: '/training/schedules/$scheduleId',
+    id: '/training/schedules/$schedule-id',
+    path: '/training/schedules/$schedule-id',
     getParentRoute: () => AppRoute,
   } as any)
 const AppTrainingCoursesCourseIdRoute =
   AppTrainingCoursesCourseIdRouteImport.update({
-    id: '/training/courses/$courseId',
-    path: '/training/courses/$courseId',
+    id: '/training/courses/$course-id',
+    path: '/training/courses/$course-id',
     getParentRoute: () => AppRoute,
   } as any)
 const AppDocumentsTemplatesNewRoute =
@@ -253,8 +253,8 @@ const AppDocumentsTemplatesNewRoute =
   } as any)
 const AppDocumentsTemplatesTemplateIdRoute =
   AppDocumentsTemplatesTemplateIdRouteImport.update({
-    id: '/documents/templates/$templateId',
-    path: '/documents/templates/$templateId',
+    id: '/documents/templates/$template-id',
+    path: '/documents/templates/$template-id',
     getParentRoute: () => AppRoute,
   } as any)
 const AppAdminStaffNewRoute = AppAdminStaffNewRouteImport.update({
@@ -263,8 +263,8 @@ const AppAdminStaffNewRoute = AppAdminStaffNewRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminStaffStaffIdRoute = AppAdminStaffStaffIdRouteImport.update({
-  id: '/admin/staff/$staffId',
-  path: '/admin/staff/$staffId',
+  id: '/admin/staff/$staff-id',
+  path: '/admin/staff/$staff-id',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -282,16 +282,16 @@ export interface FileRoutesByFullPath {
   '/app/calculators/paye': typeof AppCalculatorsPayeRoute
   '/app/calculators/vat': typeof AppCalculatorsVatRoute
   '/app/calendar/new': typeof AppCalendarNewRoute
-  '/app/clients/$clientId': typeof AppClientsClientIdRoute
+  '/app/clients/$client-id': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
-  '/app/invoices/$invoiceId': typeof AppInvoicesInvoiceIdRoute
+  '/app/invoices/$invoice-id': typeof AppInvoicesInvoiceIdRoute
   '/app/invoices/new': typeof AppInvoicesNewRoute
-  '/app/matters/$matterId': typeof AppMattersMatterIdRoute
+  '/app/matters/$matter-id': typeof AppMattersMatterIdRoute
   '/app/matters/new': typeof AppMattersNewRoute
-  '/app/services/$serviceId': typeof AppServicesServiceIdRoute
+  '/app/services/$service-id': typeof AppServicesServiceIdRoute
   '/app/training/new': typeof AppTrainingNewRoute
-  '/portal/matters/$matterId': typeof PortalMattersMatterIdRoute
+  '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
   '/app/admin': typeof AppAdminIndexRoute
   '/app/calculators': typeof AppCalculatorsIndexRoute
   '/app/calendar': typeof AppCalendarIndexRoute
@@ -302,12 +302,12 @@ export interface FileRoutesByFullPath {
   '/app/services': typeof AppServicesIndexRoute
   '/app/settings': typeof AppSettingsIndexRoute
   '/app/training': typeof AppTrainingIndexRoute
-  '/app/admin/staff/$staffId': typeof AppAdminStaffStaffIdRoute
+  '/app/admin/staff/$staff-id': typeof AppAdminStaffStaffIdRoute
   '/app/admin/staff/new': typeof AppAdminStaffNewRoute
-  '/app/documents/templates/$templateId': typeof AppDocumentsTemplatesTemplateIdRoute
+  '/app/documents/templates/$template-id': typeof AppDocumentsTemplatesTemplateIdRoute
   '/app/documents/templates/new': typeof AppDocumentsTemplatesNewRoute
-  '/app/training/courses/$courseId': typeof AppTrainingCoursesCourseIdRoute
-  '/app/training/schedules/$scheduleId': typeof AppTrainingSchedulesScheduleIdRoute
+  '/app/training/courses/$course-id': typeof AppTrainingCoursesCourseIdRoute
+  '/app/training/schedules/$schedule-id': typeof AppTrainingSchedulesScheduleIdRoute
   '/app/admin/services': typeof AppAdminServicesIndexRoute
   '/app/admin/staff': typeof AppAdminStaffIndexRoute
   '/app/documents/templates': typeof AppDocumentsTemplatesIndexRoute
@@ -325,16 +325,16 @@ export interface FileRoutesByTo {
   '/app/calculators/paye': typeof AppCalculatorsPayeRoute
   '/app/calculators/vat': typeof AppCalculatorsVatRoute
   '/app/calendar/new': typeof AppCalendarNewRoute
-  '/app/clients/$clientId': typeof AppClientsClientIdRoute
+  '/app/clients/$client-id': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
-  '/app/invoices/$invoiceId': typeof AppInvoicesInvoiceIdRoute
+  '/app/invoices/$invoice-id': typeof AppInvoicesInvoiceIdRoute
   '/app/invoices/new': typeof AppInvoicesNewRoute
-  '/app/matters/$matterId': typeof AppMattersMatterIdRoute
+  '/app/matters/$matter-id': typeof AppMattersMatterIdRoute
   '/app/matters/new': typeof AppMattersNewRoute
-  '/app/services/$serviceId': typeof AppServicesServiceIdRoute
+  '/app/services/$service-id': typeof AppServicesServiceIdRoute
   '/app/training/new': typeof AppTrainingNewRoute
-  '/portal/matters/$matterId': typeof PortalMattersMatterIdRoute
+  '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
   '/app/admin': typeof AppAdminIndexRoute
   '/app/calculators': typeof AppCalculatorsIndexRoute
   '/app/calendar': typeof AppCalendarIndexRoute
@@ -345,12 +345,12 @@ export interface FileRoutesByTo {
   '/app/services': typeof AppServicesIndexRoute
   '/app/settings': typeof AppSettingsIndexRoute
   '/app/training': typeof AppTrainingIndexRoute
-  '/app/admin/staff/$staffId': typeof AppAdminStaffStaffIdRoute
+  '/app/admin/staff/$staff-id': typeof AppAdminStaffStaffIdRoute
   '/app/admin/staff/new': typeof AppAdminStaffNewRoute
-  '/app/documents/templates/$templateId': typeof AppDocumentsTemplatesTemplateIdRoute
+  '/app/documents/templates/$template-id': typeof AppDocumentsTemplatesTemplateIdRoute
   '/app/documents/templates/new': typeof AppDocumentsTemplatesNewRoute
-  '/app/training/courses/$courseId': typeof AppTrainingCoursesCourseIdRoute
-  '/app/training/schedules/$scheduleId': typeof AppTrainingSchedulesScheduleIdRoute
+  '/app/training/courses/$course-id': typeof AppTrainingCoursesCourseIdRoute
+  '/app/training/schedules/$schedule-id': typeof AppTrainingSchedulesScheduleIdRoute
   '/app/admin/services': typeof AppAdminServicesIndexRoute
   '/app/admin/staff': typeof AppAdminStaffIndexRoute
   '/app/documents/templates': typeof AppDocumentsTemplatesIndexRoute
@@ -370,16 +370,16 @@ export interface FileRoutesById {
   '/app/calculators/paye': typeof AppCalculatorsPayeRoute
   '/app/calculators/vat': typeof AppCalculatorsVatRoute
   '/app/calendar/new': typeof AppCalendarNewRoute
-  '/app/clients/$clientId': typeof AppClientsClientIdRoute
+  '/app/clients/$client-id': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
-  '/app/invoices/$invoiceId': typeof AppInvoicesInvoiceIdRoute
+  '/app/invoices/$invoice-id': typeof AppInvoicesInvoiceIdRoute
   '/app/invoices/new': typeof AppInvoicesNewRoute
-  '/app/matters/$matterId': typeof AppMattersMatterIdRoute
+  '/app/matters/$matter-id': typeof AppMattersMatterIdRoute
   '/app/matters/new': typeof AppMattersNewRoute
-  '/app/services/$serviceId': typeof AppServicesServiceIdRoute
+  '/app/services/$service-id': typeof AppServicesServiceIdRoute
   '/app/training/new': typeof AppTrainingNewRoute
-  '/portal/matters/$matterId': typeof PortalMattersMatterIdRoute
+  '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/calculators/': typeof AppCalculatorsIndexRoute
   '/app/calendar/': typeof AppCalendarIndexRoute
@@ -390,12 +390,12 @@ export interface FileRoutesById {
   '/app/services/': typeof AppServicesIndexRoute
   '/app/settings/': typeof AppSettingsIndexRoute
   '/app/training/': typeof AppTrainingIndexRoute
-  '/app/admin/staff/$staffId': typeof AppAdminStaffStaffIdRoute
+  '/app/admin/staff/$staff-id': typeof AppAdminStaffStaffIdRoute
   '/app/admin/staff/new': typeof AppAdminStaffNewRoute
-  '/app/documents/templates/$templateId': typeof AppDocumentsTemplatesTemplateIdRoute
+  '/app/documents/templates/$template-id': typeof AppDocumentsTemplatesTemplateIdRoute
   '/app/documents/templates/new': typeof AppDocumentsTemplatesNewRoute
-  '/app/training/courses/$courseId': typeof AppTrainingCoursesCourseIdRoute
-  '/app/training/schedules/$scheduleId': typeof AppTrainingSchedulesScheduleIdRoute
+  '/app/training/courses/$course-id': typeof AppTrainingCoursesCourseIdRoute
+  '/app/training/schedules/$schedule-id': typeof AppTrainingSchedulesScheduleIdRoute
   '/app/admin/services/': typeof AppAdminServicesIndexRoute
   '/app/admin/staff/': typeof AppAdminStaffIndexRoute
   '/app/documents/templates/': typeof AppDocumentsTemplatesIndexRoute
@@ -416,16 +416,16 @@ export interface FileRouteTypes {
     | '/app/calculators/paye'
     | '/app/calculators/vat'
     | '/app/calendar/new'
-    | '/app/clients/$clientId'
+    | '/app/clients/$client-id'
     | '/app/clients/new'
     | '/app/documents/upload'
-    | '/app/invoices/$invoiceId'
+    | '/app/invoices/$invoice-id'
     | '/app/invoices/new'
-    | '/app/matters/$matterId'
+    | '/app/matters/$matter-id'
     | '/app/matters/new'
-    | '/app/services/$serviceId'
+    | '/app/services/$service-id'
     | '/app/training/new'
-    | '/portal/matters/$matterId'
+    | '/portal/matters/$matter-id'
     | '/app/admin'
     | '/app/calculators'
     | '/app/calendar'
@@ -436,12 +436,12 @@ export interface FileRouteTypes {
     | '/app/services'
     | '/app/settings'
     | '/app/training'
-    | '/app/admin/staff/$staffId'
+    | '/app/admin/staff/$staff-id'
     | '/app/admin/staff/new'
-    | '/app/documents/templates/$templateId'
+    | '/app/documents/templates/$template-id'
     | '/app/documents/templates/new'
-    | '/app/training/courses/$courseId'
-    | '/app/training/schedules/$scheduleId'
+    | '/app/training/courses/$course-id'
+    | '/app/training/schedules/$schedule-id'
     | '/app/admin/services'
     | '/app/admin/staff'
     | '/app/documents/templates'
@@ -459,16 +459,16 @@ export interface FileRouteTypes {
     | '/app/calculators/paye'
     | '/app/calculators/vat'
     | '/app/calendar/new'
-    | '/app/clients/$clientId'
+    | '/app/clients/$client-id'
     | '/app/clients/new'
     | '/app/documents/upload'
-    | '/app/invoices/$invoiceId'
+    | '/app/invoices/$invoice-id'
     | '/app/invoices/new'
-    | '/app/matters/$matterId'
+    | '/app/matters/$matter-id'
     | '/app/matters/new'
-    | '/app/services/$serviceId'
+    | '/app/services/$service-id'
     | '/app/training/new'
-    | '/portal/matters/$matterId'
+    | '/portal/matters/$matter-id'
     | '/app/admin'
     | '/app/calculators'
     | '/app/calendar'
@@ -479,12 +479,12 @@ export interface FileRouteTypes {
     | '/app/services'
     | '/app/settings'
     | '/app/training'
-    | '/app/admin/staff/$staffId'
+    | '/app/admin/staff/$staff-id'
     | '/app/admin/staff/new'
-    | '/app/documents/templates/$templateId'
+    | '/app/documents/templates/$template-id'
     | '/app/documents/templates/new'
-    | '/app/training/courses/$courseId'
-    | '/app/training/schedules/$scheduleId'
+    | '/app/training/courses/$course-id'
+    | '/app/training/schedules/$schedule-id'
     | '/app/admin/services'
     | '/app/admin/staff'
     | '/app/documents/templates'
@@ -503,16 +503,16 @@ export interface FileRouteTypes {
     | '/app/calculators/paye'
     | '/app/calculators/vat'
     | '/app/calendar/new'
-    | '/app/clients/$clientId'
+    | '/app/clients/$client-id'
     | '/app/clients/new'
     | '/app/documents/upload'
-    | '/app/invoices/$invoiceId'
+    | '/app/invoices/$invoice-id'
     | '/app/invoices/new'
-    | '/app/matters/$matterId'
+    | '/app/matters/$matter-id'
     | '/app/matters/new'
-    | '/app/services/$serviceId'
+    | '/app/services/$service-id'
     | '/app/training/new'
-    | '/portal/matters/$matterId'
+    | '/portal/matters/$matter-id'
     | '/app/admin/'
     | '/app/calculators/'
     | '/app/calendar/'
@@ -523,12 +523,12 @@ export interface FileRouteTypes {
     | '/app/services/'
     | '/app/settings/'
     | '/app/training/'
-    | '/app/admin/staff/$staffId'
+    | '/app/admin/staff/$staff-id'
     | '/app/admin/staff/new'
-    | '/app/documents/templates/$templateId'
+    | '/app/documents/templates/$template-id'
     | '/app/documents/templates/new'
-    | '/app/training/courses/$courseId'
-    | '/app/training/schedules/$scheduleId'
+    | '/app/training/courses/$course-id'
+    | '/app/training/schedules/$schedule-id'
     | '/app/admin/services/'
     | '/app/admin/staff/'
     | '/app/documents/templates/'
@@ -681,10 +681,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/portal/matters/$matterId': {
-      id: '/portal/matters/$matterId'
-      path: '/portal/matters/$matterId'
-      fullPath: '/portal/matters/$matterId'
+    '/portal/matters/$matter-id': {
+      id: '/portal/matters/$matter-id'
+      path: '/portal/matters/$matter-id'
+      fullPath: '/portal/matters/$matter-id'
       preLoaderRoute: typeof PortalMattersMatterIdRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -695,10 +695,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTrainingNewRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/services/$serviceId': {
-      id: '/app/services/$serviceId'
-      path: '/services/$serviceId'
-      fullPath: '/app/services/$serviceId'
+    '/app/services/$service-id': {
+      id: '/app/services/$service-id'
+      path: '/services/$service-id'
+      fullPath: '/app/services/$service-id'
       preLoaderRoute: typeof AppServicesServiceIdRouteImport
       parentRoute: typeof AppRoute
     }
@@ -709,10 +709,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMattersNewRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/matters/$matterId': {
-      id: '/app/matters/$matterId'
-      path: '/matters/$matterId'
-      fullPath: '/app/matters/$matterId'
+    '/app/matters/$matter-id': {
+      id: '/app/matters/$matter-id'
+      path: '/matters/$matter-id'
+      fullPath: '/app/matters/$matter-id'
       preLoaderRoute: typeof AppMattersMatterIdRouteImport
       parentRoute: typeof AppRoute
     }
@@ -723,10 +723,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInvoicesNewRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/invoices/$invoiceId': {
-      id: '/app/invoices/$invoiceId'
-      path: '/invoices/$invoiceId'
-      fullPath: '/app/invoices/$invoiceId'
+    '/app/invoices/$invoice-id': {
+      id: '/app/invoices/$invoice-id'
+      path: '/invoices/$invoice-id'
+      fullPath: '/app/invoices/$invoice-id'
       preLoaderRoute: typeof AppInvoicesInvoiceIdRouteImport
       parentRoute: typeof AppRoute
     }
@@ -744,10 +744,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientsNewRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/clients/$clientId': {
-      id: '/app/clients/$clientId'
-      path: '/clients/$clientId'
-      fullPath: '/app/clients/$clientId'
+    '/app/clients/$client-id': {
+      id: '/app/clients/$client-id'
+      path: '/clients/$client-id'
+      fullPath: '/app/clients/$client-id'
       preLoaderRoute: typeof AppClientsClientIdRouteImport
       parentRoute: typeof AppRoute
     }
@@ -800,17 +800,17 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminServicesIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/training/schedules/$scheduleId': {
-      id: '/app/training/schedules/$scheduleId'
-      path: '/training/schedules/$scheduleId'
-      fullPath: '/app/training/schedules/$scheduleId'
+    '/app/training/schedules/$schedule-id': {
+      id: '/app/training/schedules/$schedule-id'
+      path: '/training/schedules/$schedule-id'
+      fullPath: '/app/training/schedules/$schedule-id'
       preLoaderRoute: typeof AppTrainingSchedulesScheduleIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/training/courses/$courseId': {
-      id: '/app/training/courses/$courseId'
-      path: '/training/courses/$courseId'
-      fullPath: '/app/training/courses/$courseId'
+    '/app/training/courses/$course-id': {
+      id: '/app/training/courses/$course-id'
+      path: '/training/courses/$course-id'
+      fullPath: '/app/training/courses/$course-id'
       preLoaderRoute: typeof AppTrainingCoursesCourseIdRouteImport
       parentRoute: typeof AppRoute
     }
@@ -821,10 +821,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDocumentsTemplatesNewRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/documents/templates/$templateId': {
-      id: '/app/documents/templates/$templateId'
-      path: '/documents/templates/$templateId'
-      fullPath: '/app/documents/templates/$templateId'
+    '/app/documents/templates/$template-id': {
+      id: '/app/documents/templates/$template-id'
+      path: '/documents/templates/$template-id'
+      fullPath: '/app/documents/templates/$template-id'
       preLoaderRoute: typeof AppDocumentsTemplatesTemplateIdRouteImport
       parentRoute: typeof AppRoute
     }
@@ -835,10 +835,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminStaffNewRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/admin/staff/$staffId': {
-      id: '/app/admin/staff/$staffId'
-      path: '/admin/staff/$staffId'
-      fullPath: '/app/admin/staff/$staffId'
+    '/app/admin/staff/$staff-id': {
+      id: '/app/admin/staff/$staff-id'
+      path: '/admin/staff/$staff-id'
+      fullPath: '/app/admin/staff/$staff-id'
       preLoaderRoute: typeof AppAdminStaffStaffIdRouteImport
       parentRoute: typeof AppRoute
     }

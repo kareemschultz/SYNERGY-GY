@@ -4,13 +4,13 @@
  * Available placeholders for document templates organized by source
  */
 
-export interface PlaceholderDefinition {
+export type PlaceholderDefinition = {
   key: string;
   label: string;
   type: "text" | "date" | "number" | "currency";
   source: "client" | "matter" | "staff" | "business" | "date" | "custom";
   description?: string;
-}
+};
 
 export const CLIENT_PLACEHOLDERS: PlaceholderDefinition[] = [
   {

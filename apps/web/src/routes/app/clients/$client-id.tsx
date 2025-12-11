@@ -49,7 +49,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { client, queryClient } from "@/utils/orpc";
 
-export const Route = createFileRoute("/app/clients/$clientId")({
+export const Route = createFileRoute("/app/clients/$client-id")({
   component: ClientDetailPage,
 });
 
@@ -106,6 +106,7 @@ function ClientDetailPage() {
       setShowInviteDialog(false);
       setInviteEmail("");
     },
+    // biome-ignore lint/nursery/noShadow: Auto-fix
     onError: (error: Error) => {
       toast.error("Failed to send portal invite", {
         description: error.message,
@@ -219,7 +220,7 @@ function ClientDetailPage() {
               </div>
 
               <div className="flex flex-wrap gap-4 text-sm">
-                {clientData.email && (
+                {!!clientData.email && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Mail className="h-4 w-4" />
                     <a
@@ -230,7 +231,7 @@ function ClientDetailPage() {
                     </a>
                   </div>
                 )}
-                {clientData.phone && (
+                {!!clientData.phone && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="h-4 w-4" />
                     <a
@@ -241,7 +242,7 @@ function ClientDetailPage() {
                     </a>
                   </div>
                 )}
-                {clientData.city && (
+                {!!clientData.city && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="h-4 w-4" />
                     {clientData.city}, {clientData.country}
@@ -518,7 +519,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-interface Contact {
+type Contact = {
   id: string;
   name: string;
   relationship?: string | null;
@@ -526,7 +527,7 @@ interface Contact {
   phone?: string | null;
   isPrimary?: string | null;
   notes?: string | null;
-}
+};
 
 function ContactsSection({
   clientId,
@@ -664,14 +665,14 @@ function ContactsSection({
                       <Badge variant="secondary">Primary</Badge>
                     )}
                   </div>
-                  {contact.relationship && (
+                  {!!contact.relationship && (
                     <p className="text-muted-foreground text-sm">
                       {contact.relationship}
                     </p>
                   )}
                   <div className="mt-1 flex gap-4 text-muted-foreground text-sm">
-                    {contact.email && <span>{contact.email}</span>}
-                    {contact.phone && <span>{contact.phone}</span>}
+                    {!!contact.email && <span>{contact.email}</span>}
+                    {!!contact.phone && <span>{contact.phone}</span>}
                   </div>
                 </div>
                 <Button
@@ -690,7 +691,7 @@ function ContactsSection({
   );
 }
 
-interface Communication {
+type Communication = {
   id: string;
   type: string;
   direction: string;
@@ -702,7 +703,7 @@ interface Communication {
       name?: string | null;
     } | null;
   } | null;
-}
+};
 
 function CommunicationsSection({
   clientId,
@@ -875,11 +876,11 @@ function CommunicationsSection({
                     {new Date(comm.communicatedAt).toLocaleString()}
                   </span>
                 </div>
-                {comm.subject && (
+                {!!comm.subject && (
                   <p className="mt-1 font-medium text-sm">{comm.subject}</p>
                 )}
                 <p className="mt-1 text-sm">{comm.summary}</p>
-                {comm.staff?.user?.name && (
+                {!!comm.staff?.user?.name && (
                   <p className="mt-1 text-muted-foreground text-xs">
                     by {comm.staff.user.name}
                   </p>

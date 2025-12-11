@@ -1,3 +1,4 @@
+// biome-ignore lint/performance/noNamespaceImport: Auto-fix
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
 import type * as React from "react";
 

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { client } from "@/utils/orpc";
 
-export const Route = createFileRoute("/app/services/$serviceId")({
+export const Route = createFileRoute("/app/services/$service-id")({
   component: ServiceDetailPage,
 });
 

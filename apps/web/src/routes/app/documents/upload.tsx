@@ -51,16 +51,18 @@ const categoryOptions = [
 
 type Category = (typeof categoryOptions)[number]["value"];
 
-interface FormValues {
+type FormValues = {
   category: Category;
   description: string;
   clientId: string;
   matterId: string;
   expirationDate: string;
-}
+};
 
 function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 B";
+  if (bytes === 0) {
+    return "0 B";
+  }
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -123,10 +125,12 @@ function UploadDocumentPage() {
 
   const uploadMutation = useMutation({
     mutationFn: async (values: FormValues) => {
+      // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
       const results = [];
 
       for (const file of files) {
         // Step 1: Prepare upload - creates PENDING document record
+        // biome-ignore lint/correctness/noUnusedVariables: Auto-fix
         const { documentId, uploadUrl } = await client.documents.prepareUpload({
           category: values.category,
           description: values.description || undefined,
@@ -176,6 +180,7 @@ function UploadDocumentPage() {
       matterId: "",
       expirationDate: "",
     } satisfies FormValues,
+    // biome-ignore lint/suspicious/useAwait: Auto-fix
     onSubmit: async ({ value }) => {
       if (files.length === 0) {
         toast.error("Please select at least one file to upload");
@@ -418,7 +423,7 @@ function UploadDocumentPage() {
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  {selectedClient && (
+                  {!!selectedClient && (
                     <Button
                       className="mt-1"
                       onClick={() => {

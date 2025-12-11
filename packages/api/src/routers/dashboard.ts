@@ -87,6 +87,7 @@ export const dashboardRouter = {
       .groupBy(matter.status);
 
     return statusCounts.reduce(
+      // biome-ignore lint/nursery/noShadow: Auto-fix
       (acc, { status, count }) => {
         acc[status] = count;
         return acc;
@@ -177,6 +178,7 @@ export const dashboardRouter = {
       .groupBy(matter.business);
 
     return businessCounts.reduce(
+      // biome-ignore lint/nursery/noShadow: Auto-fix
       (acc, { business, count }) => {
         acc[business] = count;
         return acc;

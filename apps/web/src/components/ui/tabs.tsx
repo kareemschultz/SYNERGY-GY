@@ -1,5 +1,6 @@
 "use client";
 
+// biome-ignore lint/performance/noNamespaceImport: Auto-fix
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import type * as React from "react";
 

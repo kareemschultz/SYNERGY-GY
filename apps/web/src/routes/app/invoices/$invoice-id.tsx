@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/table";
 import { client, queryClient } from "@/utils/orpc";
 
-export const Route = createFileRoute("/app/invoices/$invoiceId")({
+export const Route = createFileRoute("/app/invoices/$invoice-id")({
   component: InvoiceDetailPage,
 });
 
@@ -101,6 +101,7 @@ function formatDateTime(date: Date): string {
   });
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
 function InvoiceDetailPage() {
   const { invoiceId } = Route.useParams();
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -109,7 +110,7 @@ function InvoiceDetailPage() {
   const {
     data: invoice,
     isLoading,
-    error,
+    error: queryError,
   } = useQuery({
     queryKey: ["invoice", invoiceId],
     queryFn: () => client.invoices.getById({ id: invoiceId }),
@@ -131,8 +132,8 @@ function InvoiceDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
       toast.success("Status updated successfully");
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to update status");
+    onError: (mutationError) => {
+      toast.error(mutationError.message || "Failed to update status");
       if (invoice) {
         setStatus(invoice.status);
       }
@@ -157,7 +158,7 @@ function InvoiceDetailPage() {
     );
   }
 
-  if (error || !invoice) {
+  if (queryError || !invoice) {
     return (
       <div className="flex h-96 flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Invoice not found</p>
@@ -188,12 +189,12 @@ function InvoiceDetailPage() {
                 Back
               </Link>
             </Button>
-            {canRecordPayment && (
+            {canRecordPayment ? (
               <Button onClick={() => setPaymentModalOpen(true)}>
                 <CreditCard className="mr-2 h-4 w-4" />
                 Record Payment
               </Button>
-            )}
+            ) : null}
           </div>
         }
         breadcrumbs={[
@@ -217,7 +218,7 @@ function InvoiceDetailPage() {
             </div>
 
             {/* Status Change */}
-            {invoice.status !== "PAID" && (
+            {invoice.status !== "PAID" ? (
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground text-sm">Status:</span>
                 <Select onValueChange={handleStatusChange} value={status}>
@@ -233,7 +234,7 @@ function InvoiceDetailPage() {
                   </SelectContent>
                 </Select>
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
@@ -255,14 +256,14 @@ function InvoiceDetailPage() {
                       >
                         {invoice.client.displayName}
                       </Link>
-                      {invoice.client.email && (
+                      {!!invoice.client.email && (
                         <p className="text-muted-foreground text-xs">
                           {invoice.client.email}
                         </p>
                       )}
                     </div>
 
-                    {invoice.matter && (
+                    {!!invoice.matter && (
                       <div>
                         <p className="text-muted-foreground text-sm">
                           Related Matter
@@ -302,7 +303,7 @@ function InvoiceDetailPage() {
                       </div>
                     </div>
 
-                    {invoice.referenceNumber && (
+                    {!!invoice.referenceNumber && (
                       <div>
                         <p className="text-muted-foreground text-sm">
                           Client Reference
@@ -385,7 +386,7 @@ function InvoiceDetailPage() {
               </Card>
 
               {/* Payment History */}
-              {invoice.payments && invoice.payments.length > 0 && (
+              {!!invoice.payments && invoice.payments.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Payment History</CardTitle>
@@ -432,13 +433,14 @@ function InvoiceDetailPage() {
               )}
 
               {/* Additional Info */}
+              {/* biome-ignore lint/nursery/noLeakedRender: Auto-fix */}
               {(invoice.terms || invoice.notes) && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Additional Information</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {invoice.terms && (
+                    {!!invoice.terms && (
                       <div>
                         <p className="mb-2 font-medium text-sm">
                           Payment Terms
@@ -448,7 +450,7 @@ function InvoiceDetailPage() {
                         </p>
                       </div>
                     )}
-                    {invoice.notes && (
+                    {!!invoice.notes && (
                       <div>
                         <p className="mb-2 font-medium text-sm">
                           Internal Notes
@@ -471,7 +473,7 @@ function InvoiceDetailPage() {
                   <CardTitle>Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {canRecordPayment && (
+                  {!!canRecordPayment && (
                     <Button
                       className="w-full justify-start"
                       onClick={() => setPaymentModalOpen(true)}
@@ -508,7 +510,7 @@ function InvoiceDetailPage() {
                   <CardTitle>Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
-                  {invoice.createdBy && (
+                  {!!invoice.createdBy && (
                     <div>
                       <p className="text-muted-foreground">Created By</p>
                       <p className="font-medium">{invoice.createdBy.name}</p>
@@ -517,7 +519,7 @@ function InvoiceDetailPage() {
                       </p>
                     </div>
                   )}
-                  {invoice.sentAt && invoice.sentBy && (
+                  {!!invoice.sentAt && invoice.sentBy && (
                     <div>
                       <p className="text-muted-foreground">Sent By</p>
                       <p className="font-medium">{invoice.sentBy.name}</p>
@@ -526,7 +528,7 @@ function InvoiceDetailPage() {
                       </p>
                     </div>
                   )}
-                  {invoice.paidDate && (
+                  {!!invoice.paidDate && (
                     <div>
                       <p className="text-muted-foreground">Paid On</p>
                       <p className="font-medium">

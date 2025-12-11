@@ -76,7 +76,7 @@ type DeadlineType = (typeof typeOptions)[number]["value"];
 type Priority = (typeof priorityOptions)[number]["value"];
 type Recurrence = (typeof recurrenceOptions)[number]["value"];
 
-interface FormValues {
+type FormValues = {
   title: string;
   description: string;
   type: DeadlineType;
@@ -88,7 +88,7 @@ interface FormValues {
   recurrencePattern: Recurrence;
   recurrenceEndDate: string;
   priority: Priority;
-}
+};
 
 function NewDeadlinePage() {
   const navigate = useNavigate();
@@ -126,6 +126,7 @@ function NewDeadlinePage() {
   });
 
   const createMutation = useMutation({
+    // biome-ignore lint/suspicious/useAwait: Auto-fix
     mutationFn: async (values: FormValues) => {
       const dueDateTime = values.dueTime
         ? `${values.dueDate}T${values.dueTime}:00`
@@ -171,6 +172,7 @@ function NewDeadlinePage() {
       recurrenceEndDate: "",
       priority: "NORMAL" as Priority,
     } satisfies FormValues,
+    // biome-ignore lint/suspicious/useAwait: Auto-fix
     onSubmit: async ({ value }) => {
       if (!value.title.trim()) {
         toast.error("Please enter a title");
@@ -263,7 +265,7 @@ function NewDeadlinePage() {
       >
         <div className="mx-auto max-w-4xl space-y-6">
           {/* Guyana Tax Templates */}
-          {showTemplates && templates && templates.length > 0 && (
+          {!!showTemplates && templates && templates.length > 0 && (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">

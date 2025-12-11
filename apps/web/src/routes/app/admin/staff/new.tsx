@@ -135,6 +135,7 @@ function NewStaffPage() {
 
   const createMutation = useMutation({
     mutationFn: (values: CreateStaffFormValues) => {
+      // biome-ignore lint/correctness/noUnusedVariables: Auto-fix
       const { confirmPassword, ...data } = values;
       return client.admin.staff.create(data);
     },
@@ -322,7 +323,7 @@ function NewStaffPage() {
                             )}
                           </SelectContent>
                         </Select>
-                        {selectedRole && (
+                        {!!selectedRole && (
                           <FormDescription>
                             {roleDescriptions[selectedRole].description}
                           </FormDescription>
@@ -355,6 +356,7 @@ function NewStaffPage() {
                                   <Checkbox
                                     checked={field.value?.includes("GCMC")}
                                     disabled={
+                                      // biome-ignore lint/nursery/noLeakedRender: Auto-fix
                                       selectedRole &&
                                       roleDescriptions[selectedRole]
                                         .requiredBusiness === "BOTH"
@@ -399,6 +401,7 @@ function NewStaffPage() {
                                   <Checkbox
                                     checked={field.value?.includes("KAJ")}
                                     disabled={
+                                      // biome-ignore lint/nursery/noLeakedRender: Auto-fix
                                       selectedRole &&
                                       roleDescriptions[selectedRole]
                                         .requiredBusiness === "BOTH"

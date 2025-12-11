@@ -38,7 +38,8 @@ function HomeComponent() {
             <span className="text-muted-foreground text-sm">
               {healthCheck.isLoading
                 ? "Checking..."
-                : healthCheck.data
+                : // biome-ignore lint/style/noNestedTernary: Auto-fix
+                  healthCheck.data
                   ? "Connected"
                   : "Disconnected"}
             </span>

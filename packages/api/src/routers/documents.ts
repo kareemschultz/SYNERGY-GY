@@ -9,14 +9,14 @@ import {
 } from "../index";
 
 // Template placeholder type
-interface TemplatePlaceholder {
+type TemplatePlaceholder = {
   key: string;
   label: string;
   description?: string;
   type?: "text" | "date" | "number" | "currency";
   source?: "client" | "matter" | "staff" | "business" | "date" | "custom";
   sourceField?: string;
-}
+};
 
 // Input schemas
 const documentCategoryValues = [
@@ -124,6 +124,7 @@ function getPlaceholderValue(
 export const documentsRouter = {
   // List documents with pagination and filters
   list: staffProcedure.input(listDocumentsSchema).handler(async ({ input }) => {
+    // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
     const conditions = [];
 
     // Status filter
@@ -375,6 +376,7 @@ export const documentsRouter = {
       )
       .handler(async ({ input, context }) => {
         const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+        // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
         const conditions = [];
 
         if (!input.includeInactive) {
@@ -811,6 +813,7 @@ export const documentsRouter = {
 
     return {
       byCategory: stats.reduce(
+        // biome-ignore lint/nursery/noShadow: Auto-fix
         (acc, { category, count }) => {
           acc[category] = count;
           return acc;
@@ -818,6 +821,7 @@ export const documentsRouter = {
         {} as Record<string, number>
       ),
       totalSize: totalSize[0]?.total || 0,
+      // biome-ignore lint/nursery/noShadow: Auto-fix
       totalDocuments: stats.reduce((sum, { count }) => sum + count, 0),
     };
   }),

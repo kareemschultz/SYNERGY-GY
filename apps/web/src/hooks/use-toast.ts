@@ -7,7 +7,7 @@
 
 import { type ExternalToast, toast as sonnerToast } from "sonner";
 
-interface ToastOptions {
+type ToastOptions = {
   title?: string;
   description?: string;
   variant?: "default" | "destructive";
@@ -15,13 +15,13 @@ interface ToastOptions {
     label: string;
     onClick: () => void;
   };
-}
+};
 
 type ToastFunction = (options: ToastOptions) => void;
 
-interface UseToastReturn {
+type UseToastReturn = {
   toast: ToastFunction;
-}
+};
 
 /**
  * Hook that provides toast notification functionality

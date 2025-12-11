@@ -6,6 +6,7 @@ export const o = os.$context<Context>();
 export const publicProcedure = o;
 
 // Middleware: Require authenticated user
+// biome-ignore lint/suspicious/useAwait: Auto-fix
 const requireAuth = o.middleware(async ({ context, next }) => {
   if (!context.session?.user) {
     throw new ORPCError("UNAUTHORIZED");
@@ -53,6 +54,7 @@ const KAJ_ROLES: StaffRole[] = [
 ];
 
 // Middleware: Require staff profile (must be a staff member)
+// biome-ignore lint/suspicious/useAwait: Auto-fix
 const requireStaff = o.middleware(async ({ context, next }) => {
   if (!context.session?.user) {
     throw new ORPCError("UNAUTHORIZED");
@@ -79,6 +81,7 @@ export const staffProcedure = publicProcedure.use(requireStaff);
 
 // Middleware factory: Require specific roles
 const requireRole = (allowedRoles: StaffRole[]) =>
+  // biome-ignore lint/suspicious/useAwait: Auto-fix
   o.middleware(async ({ context, next }) => {
     if (!context.session?.user) {
       throw new ORPCError("UNAUTHORIZED");
@@ -123,12 +126,20 @@ export function canAccessBusiness(
   staff: Staff | null,
   business: "GCMC" | "KAJ"
 ): boolean {
-  if (!staff?.isActive) return false;
+  if (!staff?.isActive) {
+    return false;
+  }
   const role = staff.role as StaffRole;
 
-  if (role === "OWNER") return true;
-  if (business === "GCMC") return GCMC_ROLES.includes(role);
-  if (business === "KAJ") return KAJ_ROLES.includes(role);
+  if (role === "OWNER") {
+    return true;
+  }
+  if (business === "GCMC") {
+    return GCMC_ROLES.includes(role);
+  }
+  if (business === "KAJ") {
+    return KAJ_ROLES.includes(role);
+  }
   return false;
 }
 
@@ -136,12 +147,20 @@ export function canAccessBusiness(
 export function getAccessibleBusinesses(
   staff: Staff | null
 ): ("GCMC" | "KAJ")[] {
-  if (!staff?.isActive) return [];
+  if (!staff?.isActive) {
+    return [];
+  }
   const role = staff.role as StaffRole;
 
-  if (role === "OWNER" || role === "STAFF_BOTH") return ["GCMC", "KAJ"];
-  if (GCMC_ROLES.includes(role) && !KAJ_ROLES.includes(role)) return ["GCMC"];
-  if (KAJ_ROLES.includes(role) && !GCMC_ROLES.includes(role)) return ["KAJ"];
+  if (role === "OWNER" || role === "STAFF_BOTH") {
+    return ["GCMC", "KAJ"];
+  }
+  if (GCMC_ROLES.includes(role) && !KAJ_ROLES.includes(role)) {
+    return ["GCMC"];
+  }
+  if (KAJ_ROLES.includes(role) && !GCMC_ROLES.includes(role)) {
+    return ["KAJ"];
+  }
   return [];
 }
 

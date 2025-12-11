@@ -149,6 +149,7 @@ export function EnrollmentList({
                       )}
                     </div>
                   </div>
+                  // biome-ignore lint/style/noNestedTernary: Auto-fix
                 ) : enrollment.status === "ATTENDED" ? (
                   <Button
                     onClick={() => onIssueCertificate?.(enrollment.id)}

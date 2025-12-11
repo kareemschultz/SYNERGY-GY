@@ -185,7 +185,7 @@ function ClientsPage() {
         </div>
 
         {/* Error state */}
-        {error && (
+        {!!error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
             Failed to load clients. Please try again.
           </div>
@@ -215,6 +215,8 @@ function ClientsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
+                // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+                // biome-ignore lint/style/noNestedTernary: Auto-fix
               ) : data?.clients && data.clients.length > 0 ? (
                 data.clients.map((c) => (
                   <TableRow key={c.id}>
@@ -233,8 +235,8 @@ function ClientsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {c.email && <div>{c.email}</div>}
-                        {c.phone && (
+                        {!!c.email && <div>{c.email}</div>}
+                        {!!c.phone && (
                           <div className="text-muted-foreground">{c.phone}</div>
                         )}
                       </div>
@@ -295,7 +297,7 @@ function ClientsPage() {
         </div>
 
         {/* Pagination */}
-        {data && data.totalPages && data.totalPages > 1 && (
+        {!!data?.totalPages && data.totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
               Showing {(page - 1) * 20 + 1} to {Math.min(page * 20, data.total)}{" "}

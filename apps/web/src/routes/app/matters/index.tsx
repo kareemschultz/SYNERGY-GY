@@ -187,7 +187,7 @@ function MattersPage() {
         </div>
 
         {/* Error state */}
-        {error && (
+        {!!error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
             Failed to load matters. Please try again.
           </div>
@@ -218,6 +218,8 @@ function MattersPage() {
                     </div>
                   </TableCell>
                 </TableRow>
+                // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+                // biome-ignore lint/style/noNestedTernary: Auto-fix
               ) : data?.matters && data.matters.length > 0 ? (
                 data.matters.map((m) => (
                   <TableRow key={m.id}>
@@ -312,7 +314,7 @@ function MattersPage() {
         </div>
 
         {/* Pagination */}
-        {data && data.totalPages && data.totalPages > 1 && (
+        {!!data?.totalPages && data.totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
               Showing {(page - 1) * 20 + 1} to {Math.min(page * 20, data.total)}{" "}

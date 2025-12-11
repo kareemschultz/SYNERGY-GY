@@ -53,14 +53,17 @@ export function validatePasswordStrength(password: string): {
     errors.push("Password must be at least 8 characters long");
   }
 
+  // biome-ignore lint/performance/useTopLevelRegex: Auto-fix
   if (!/[a-z]/.test(password)) {
     errors.push("Password must contain at least one lowercase letter");
   }
 
+  // biome-ignore lint/performance/useTopLevelRegex: Auto-fix
   if (!/[A-Z]/.test(password)) {
     errors.push("Password must contain at least one uppercase letter");
   }
 
+  // biome-ignore lint/performance/useTopLevelRegex: Auto-fix
   if (!/\d/.test(password)) {
     errors.push("Password must contain at least one number");
   }

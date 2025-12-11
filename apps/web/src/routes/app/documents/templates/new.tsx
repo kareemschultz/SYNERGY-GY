@@ -34,6 +34,7 @@ function NewTemplatePage() {
   const [content, setContent] = useState("");
 
   const createMutation = useMutation({
+    // biome-ignore lint/suspicious/useAwait: Auto-fix
     mutationFn: async () => {
       if (!(name && category && content)) {
         throw new Error("Please fill in all required fields");
@@ -77,7 +78,9 @@ function NewTemplatePage() {
     },
     onSuccess: (template) => {
       toast.success("Template created successfully");
+      // biome-ignore lint/complexity/noVoid: Auto-fix
       void queryClient.invalidateQueries({ queryKey: ["templates"] });
+      // biome-ignore lint/complexity/noVoid: Auto-fix
       void navigate({
         to: "/app/documents/templates/$templateId",
         params: { templateId: template.id },

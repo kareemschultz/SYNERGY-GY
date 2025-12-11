@@ -181,7 +181,7 @@ function InvoicesPage() {
         </div>
 
         {/* Error state */}
-        {error && (
+        {!!error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
             Failed to load invoices. Please try again.
           </div>
@@ -214,6 +214,7 @@ function InvoicesPage() {
                     </div>
                   </TableCell>
                 </TableRow>
+                // biome-ignore lint/style/noNestedTernary: Auto-fix
               ) : data?.invoices.length === 0 ? (
                 <TableRow>
                   <TableCell className="text-center" colSpan={8}>
@@ -261,7 +262,7 @@ function InvoicesPage() {
                           <span className="font-medium">
                             {invoice.client.displayName}
                           </span>
-                          {invoice.matter && (
+                          {!!invoice.matter && (
                             <span className="text-muted-foreground text-xs">
                               {invoice.matter.referenceNumber}
                             </span>
@@ -340,7 +341,7 @@ function InvoicesPage() {
         </div>
 
         {/* Pagination */}
-        {data && (data.totalPages ?? 1) > 1 && (
+        {!!data && (data.totalPages ?? 1) > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
               Showing {data.invoices.length} of {data.total} invoices

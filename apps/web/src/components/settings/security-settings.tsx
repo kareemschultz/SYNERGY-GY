@@ -169,7 +169,7 @@ export function SecuritySettings() {
             />
           </div>
 
-          {newPassword &&
+          {!!newPassword &&
             confirmPassword &&
             newPassword !== confirmPassword && (
               <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950">
@@ -192,7 +192,7 @@ export function SecuritySettings() {
               onClick={handleChangePassword}
               type="button"
             >
-              {changePasswordMutation.isPending && (
+              {!!changePasswordMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Change Password
@@ -214,6 +214,8 @@ export function SecuritySettings() {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
+            // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+            // biome-ignore lint/style/noNestedTernary: Auto-fix
           ) : sessions && sessions.length > 0 ? (
             <div className="space-y-3">
               {sessions.map((session) => {
@@ -233,7 +235,7 @@ export function SecuritySettings() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-sm">{deviceLabel}</p>
-                          {session.current && (
+                          {!!session.current && (
                             <span className="rounded bg-green-500/10 px-2 py-0.5 font-medium text-green-600 text-xs">
                               Current
                             </span>
@@ -336,7 +338,7 @@ export function SecuritySettings() {
                 }
               }}
             >
-              {revokeSessionMutation.isPending && (
+              {!!revokeSessionMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Revoke Session

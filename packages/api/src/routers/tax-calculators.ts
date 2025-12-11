@@ -18,13 +18,13 @@ import { protectedProcedure } from "../index";
 import { nanoid } from "../lib/nanoid";
 
 // Type definitions
-interface PAYEInput {
+type PAYEInput = {
   monthlyIncome: number;
   personalAllowance?: number;
   otherDeductions?: number;
-}
+};
 
-interface PAYEResult {
+type PAYEResult = {
   monthlyIncome: number;
   annualIncome: number;
   personalAllowance: number;
@@ -33,27 +33,27 @@ interface PAYEResult {
   monthlyTax: number;
   netIncome: number;
   effectiveRate: number;
-}
+};
 
-interface VATInput {
+type VATInput = {
   amount: number;
   includesVAT: boolean;
-}
+};
 
-interface VATResult {
+type VATResult = {
   amount: number;
   vatAmount: number;
   totalWithVAT: number;
   totalWithoutVAT: number;
   vatRate: number;
-}
+};
 
-interface NISInput {
+type NISInput = {
   monthlyIncome: number;
   contributionType: "employee" | "employer" | "both";
-}
+};
 
-interface NISResult {
+type NISResult = {
   monthlyIncome: number;
   cappedIncome: number;
   employeeContribution: number;
@@ -62,7 +62,7 @@ interface NISResult {
   employeeRate: number;
   employerRate: number;
   ceiling: number;
-}
+};
 
 /**
  * Guyana Tax Rates (2025)

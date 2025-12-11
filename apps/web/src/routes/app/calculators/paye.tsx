@@ -75,7 +75,9 @@ function PAYECalculator() {
   };
 
   const handleSave = async () => {
-    if (!result) return;
+    if (!result) {
+      return;
+    }
 
     try {
       await saveMutation.mutateAsync({
@@ -200,7 +202,7 @@ function PAYECalculator() {
           </CardContent>
         </Card>
 
-        {result && (
+        {!!result && (
           <Card>
             <CardHeader>
               <CardTitle>Calculation Results</CardTitle>
@@ -288,7 +290,8 @@ function PAYECalculator() {
                 <Save className="mr-2 size-4" />
                 {saveMutation.isPending
                   ? "Saving..."
-                  : saveMutation.isSuccess
+                  : // biome-ignore lint/style/noNestedTernary: Auto-fix
+                    saveMutation.isSuccess
                     ? "Saved!"
                     : "Save Calculation"}
               </Button>

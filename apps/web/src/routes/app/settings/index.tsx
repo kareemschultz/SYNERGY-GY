@@ -21,11 +21,11 @@ type SettingsSection =
   | "security"
   | "about";
 
-interface NavItem {
+type NavItem = {
   id: SettingsSection;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-}
+};
 
 const navItems: NavItem[] = [
   { id: "profile", label: "Profile", icon: User },

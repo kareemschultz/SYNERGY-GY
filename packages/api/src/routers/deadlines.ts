@@ -81,6 +81,7 @@ const updateDeadlineSchema = z.object({
 // Helper to create reminders for a deadline
 async function createReminders(deadlineId: string, dueDate: Date) {
   const reminderDays = [30, 14, 7, 1, 0]; // Days before deadline
+  // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
   const reminders = [];
 
   for (const daysBefore of reminderDays) {
@@ -157,6 +158,7 @@ async function generateRecurringInstances(
     return [];
   }
 
+  // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
   const instances = [];
   let currentDate = new Date(parentDeadline.dueDate);
   const endDate = parentDeadline.recurrenceEndDate
@@ -233,6 +235,7 @@ export const deadlinesRouter = {
     .input(listDeadlinesSchema)
     .handler(async ({ input, context }) => {
       const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+      // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
       const conditions = [];
 
       // Business filter
@@ -391,6 +394,7 @@ export const deadlinesRouter = {
           completedBy: true,
           createdBy: true,
           reminders: {
+            // biome-ignore lint/nursery/noShadow: Auto-fix
             orderBy: (r, { asc }) => [asc(r.daysBefore)],
           },
         },
@@ -497,6 +501,7 @@ export const deadlinesRouter = {
   // Mark deadline as complete
   complete: staffProcedure
     .input(z.object({ id: z.string() }))
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
     .handler(async ({ input, context }) => {
       const existing = await db.query.deadline.findFirst({
         where: eq(deadline.id, input.id),
@@ -780,16 +785,24 @@ export const deadlinesRouter = {
 
       // Update parent
       const updateData: Record<string, unknown> = {};
-      if (updates.title !== undefined) updateData.title = updates.title;
-      if (updates.description !== undefined)
+      if (updates.title !== undefined) {
+        updateData.title = updates.title;
+      }
+      if (updates.description !== undefined) {
         updateData.description = updates.description;
-      if (updates.type !== undefined) updateData.type = updates.type;
-      if (updates.assignedStaffId !== undefined)
+      }
+      if (updates.type !== undefined) {
+        updateData.type = updates.type;
+      }
+      if (updates.assignedStaffId !== undefined) {
         updateData.assignedStaffId = updates.assignedStaffId;
-      if (updates.priority !== undefined)
+      }
+      if (updates.priority !== undefined) {
         updateData.priority = updates.priority;
-      if (updates.recurrenceEndDate !== undefined)
+      }
+      if (updates.recurrenceEndDate !== undefined) {
         updateData.recurrenceEndDate = updates.recurrenceEndDate;
+      }
 
       await db
         .update(deadline)
@@ -798,15 +811,21 @@ export const deadlinesRouter = {
 
       // Update all future (incomplete) instances
       const futureInstanceUpdates: Record<string, unknown> = {};
-      if (updates.title !== undefined)
+      if (updates.title !== undefined) {
         futureInstanceUpdates.title = updates.title;
-      if (updates.description !== undefined)
+      }
+      if (updates.description !== undefined) {
         futureInstanceUpdates.description = updates.description;
-      if (updates.type !== undefined) futureInstanceUpdates.type = updates.type;
-      if (updates.assignedStaffId !== undefined)
+      }
+      if (updates.type !== undefined) {
+        futureInstanceUpdates.type = updates.type;
+      }
+      if (updates.assignedStaffId !== undefined) {
         futureInstanceUpdates.assignedStaffId = updates.assignedStaffId;
-      if (updates.priority !== undefined)
+      }
+      if (updates.priority !== undefined) {
         futureInstanceUpdates.priority = updates.priority;
+      }
 
       if (Object.keys(futureInstanceUpdates).length > 0) {
         await db

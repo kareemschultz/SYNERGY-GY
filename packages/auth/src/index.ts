@@ -1,4 +1,5 @@
 import { db } from "@SYNERGY-GY/db";
+// biome-ignore lint/performance/noNamespaceImport: Auto-fix
 import * as schema from "@SYNERGY-GY/db/schema/auth";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";

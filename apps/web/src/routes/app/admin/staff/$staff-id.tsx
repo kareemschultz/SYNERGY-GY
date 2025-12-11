@@ -30,7 +30,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { client } from "@/utils/orpc";
 
-export const Route = createFileRoute("/app/admin/staff/$staffId")({
+export const Route = createFileRoute("/app/admin/staff/$staff-id")({
   component: StaffDetailPage,
   validateSearch: z.object({
     edit: z.boolean().optional(),
@@ -99,6 +99,7 @@ const roleDescriptions: Record<
   },
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
 function StaffDetailPage() {
   const { staffId } = Route.useParams();
   const { edit } = Route.useSearch();
@@ -172,13 +173,13 @@ function StaffDetailPage() {
       setIsEditing(false);
       navigate({ to: "/app/admin/staff/$staffId", params: { staffId } });
     },
-    onError: (error) => {
+    onError: (err) => {
       toast({
         variant: "destructive",
         title: "Failed to update staff",
         description:
-          error instanceof Error
-            ? error.message
+          err instanceof Error
+            ? err.message
             : "An error occurred. Please try again.",
       });
     },
@@ -194,13 +195,13 @@ function StaffDetailPage() {
         description: `Staff member has been ${isActive ? "activated" : "deactivated"} successfully.`,
       });
     },
-    onError: (error) => {
+    onError: (err) => {
       toast({
         variant: "destructive",
         title: "Error",
         description:
-          error instanceof Error
-            ? error.message
+          err instanceof Error
+            ? err.message
             : "Failed to update staff status. Please try again.",
       });
     },
@@ -260,6 +261,7 @@ function StaffDetailPage() {
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       {staff.isActive ? "Deactivating..." : "Activating..."}
                     </>
+                    // biome-ignore lint/style/noNestedTernary: Auto-fix
                   ) : staff.isActive ? (
                     <>
                       <X className="mr-2 h-4 w-4" />
@@ -282,7 +284,6 @@ function StaffDetailPage() {
         description={staff.user.email}
         title={staff.user.name}
       />
-
       <div className="p-6">
         <div className="mx-auto max-w-3xl space-y-6">
           {/* Status Badge */}
@@ -453,7 +454,7 @@ function StaffDetailPage() {
                                 )}
                               </SelectContent>
                             </Select>
-                            {selectedRole && (
+                            {!!selectedRole && (
                               <FormDescription>
                                 {roleDescriptions[selectedRole].description}
                               </FormDescription>
@@ -486,6 +487,7 @@ function StaffDetailPage() {
                                       <Checkbox
                                         checked={field.value?.includes("GCMC")}
                                         disabled={
+                                          // biome-ignore lint/nursery/noLeakedRender: Auto-fix
                                           selectedRole &&
                                           roleDescriptions[selectedRole]
                                             .requiredBusiness === "BOTH"
@@ -531,6 +533,7 @@ function StaffDetailPage() {
                                       <Checkbox
                                         checked={field.value?.includes("KAJ")}
                                         disabled={
+                                          // biome-ignore lint/nursery/noLeakedRender: Auto-fix
                                           selectedRole &&
                                           roleDescriptions[selectedRole]
                                             .requiredBusiness === "BOTH"

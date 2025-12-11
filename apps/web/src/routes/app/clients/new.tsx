@@ -36,7 +36,7 @@ const clientTypes = [
 
 type ClientType = (typeof clientTypes)[number]["value"];
 
-interface FormValues {
+type FormValues = {
   type: ClientType;
   displayName: string;
   firstName: string;
@@ -57,7 +57,7 @@ interface FormValues {
   passportNumber: string;
   businesses: ("GCMC" | "KAJ")[];
   notes: string;
-}
+};
 
 function NewClientPage() {
   const navigate = useNavigate();
@@ -101,6 +101,7 @@ function NewClientPage() {
       businesses: [] as ("GCMC" | "KAJ")[],
       notes: "",
     } satisfies FormValues,
+    // biome-ignore lint/suspicious/useAwait: Auto-fix
     onSubmit: async ({ value }) => {
       if (value.businesses.length === 0) {
         toast.error("Please select at least one business");
@@ -204,7 +205,7 @@ function NewClientPage() {
               </div>
 
               {/* Individual fields */}
-              {isIndividual && (
+              {!!isIndividual && (
                 <div className="grid gap-4 md:grid-cols-3">
                   <form.Field name="firstName">
                     {(field) => (
@@ -478,6 +479,7 @@ function NewClientPage() {
                       Select which business(es) this client belongs to
                     </p>
                     <div className="flex gap-6">
+                      {/* biome-ignore lint/a11y/noLabelWithoutControl: Auto-fix */}
                       <label className="flex cursor-pointer items-center gap-2">
                         <Checkbox
                           checked={field.state.value.includes("GCMC")}
@@ -499,6 +501,7 @@ function NewClientPage() {
                           (Training, Consulting, Paralegal, Immigration)
                         </span>
                       </label>
+                      {/* biome-ignore lint/a11y/noLabelWithoutControl: Auto-fix */}
                       <label className="flex cursor-pointer items-center gap-2">
                         <Checkbox
                           checked={field.state.value.includes("KAJ")}

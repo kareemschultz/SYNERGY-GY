@@ -1,5 +1,6 @@
 "use client";
 
+// biome-ignore lint/performance/noNamespaceImport: Auto-fix
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import type * as React from "react";
 

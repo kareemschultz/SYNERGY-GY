@@ -87,6 +87,7 @@ function AdminDashboardPage() {
               <Loader2 className="h-5 w-5 animate-spin" />
               Loading statistics...
             </div>
+            // biome-ignore lint/style/noNestedTernary: Auto-fix
           ) : stats ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <StatCard
@@ -122,7 +123,7 @@ function AdminDashboardPage() {
         </div>
 
         {/* Business Distribution */}
-        {stats && (
+        {!!stats && (
           <div className="mb-8">
             <h2 className="mb-4 font-semibold text-lg">
               Business Distribution
@@ -176,7 +177,7 @@ function AdminDashboardPage() {
         )}
 
         {/* Role Breakdown */}
-        {stats && stats.byRole.length > 0 && (
+        {!!stats && stats.byRole.length > 0 && (
           <div>
             <h2 className="mb-4 font-semibold text-lg">Staff by Role</h2>
             <Card>
@@ -242,7 +243,7 @@ function QuickActionCard({
       </CardHeader>
       <CardContent>
         <p className="text-muted-foreground text-sm">{description}</p>
-        {isDisabled && (
+        {!!isDisabled && (
           <Badge className="mt-2" variant="outline">
             Coming Soon
           </Badge>

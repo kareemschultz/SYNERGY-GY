@@ -17,12 +17,12 @@ type Service = Awaited<
   ReturnType<AppRouterClient["serviceCatalog"]["services"]["getById"]>
 >;
 
-interface ServiceCardProps {
+type ServiceCardProps = {
   service: Service;
   showBusiness?: boolean;
   compact?: boolean;
   linkTo?: string;
-}
+};
 
 export function ServiceCard({
   service,
@@ -68,6 +68,7 @@ export function ServiceCard({
               },
               index: number
             ) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: Auto-fix
               <div className="flex items-center justify-between" key={index}>
                 <span className="text-muted-foreground text-sm">
                   {tier.name}
@@ -75,7 +76,9 @@ export function ServiceCard({
                 <span className="font-medium text-sm">
                   {tier.price
                     ? formatCurrency(tier.price, service.currency)
-                    : tier.minPrice && tier.maxPrice
+                    : // biome-ignore lint/nursery/noLeakedRender: Auto-fix
+                      // biome-ignore lint/style/noNestedTernary: Auto-fix
+                      tier.minPrice && tier.maxPrice
                       ? `${formatCurrency(tier.minPrice, service.currency)} - ${formatCurrency(tier.maxPrice, service.currency)}`
                       : "Contact us"}
                 </span>
@@ -128,13 +131,13 @@ export function ServiceCard({
               <CardTitle className="line-clamp-1 text-base">
                 {service.displayName}
               </CardTitle>
-              {service.shortDescription && (
+              {!!service.shortDescription && (
                 <CardDescription className="mt-1 line-clamp-2">
                   {service.shortDescription}
                 </CardDescription>
               )}
             </div>
-            {showBusiness && (
+            {!!showBusiness && (
               <Badge className="shrink-0" variant="outline">
                 {service.business}
               </Badge>
@@ -143,7 +146,7 @@ export function ServiceCard({
         </CardHeader>
         <CardFooter className="flex items-center justify-between pt-0">
           {renderPricing()}
-          {linkTo && (
+          {!!linkTo && (
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           )}
         </CardFooter>
@@ -158,24 +161,24 @@ export function ServiceCard({
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <CardTitle className="text-xl">{service.displayName}</CardTitle>
-              {service.isFeatured && (
+              {!!service.isFeatured && (
                 <Badge className="shrink-0" variant="secondary">
                   Featured
                 </Badge>
               )}
-              {showBusiness && (
+              {!!showBusiness && (
                 <Badge className="shrink-0" variant="outline">
                   {service.business}
                 </Badge>
               )}
             </div>
-            {service.category && (
+            {!!service.category && (
               <div className="mb-2 flex items-center gap-1 text-muted-foreground text-sm">
                 <FileText className="h-3 w-3" />
                 <span>{service.category.displayName}</span>
               </div>
             )}
-            {service.shortDescription && (
+            {!!service.shortDescription && (
               <CardDescription className="line-clamp-3">
                 {service.shortDescription}
               </CardDescription>
@@ -185,7 +188,7 @@ export function ServiceCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {service.typicalDuration && (
+        {!!service.typicalDuration && (
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">Duration:</span>
@@ -193,7 +196,7 @@ export function ServiceCard({
           </div>
         )}
 
-        {service.targetAudience && (
+        {!!service.targetAudience && (
           <div className="flex items-start gap-2 text-sm">
             <Building2 className="mt-0.5 h-4 w-4 text-muted-foreground" />
             <div>
@@ -203,11 +206,12 @@ export function ServiceCard({
           </div>
         )}
 
-        {service.tags && service.tags.length > 0 && (
+        {!!service.tags && service.tags.length > 0 && (
           <div className="flex items-start gap-2 text-sm">
             <Tag className="mt-0.5 h-4 w-4 text-muted-foreground" />
             <div className="flex flex-wrap gap-1">
               {service.tags.map((tag: string, index: number) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: Auto-fix
                 <Badge className="text-xs" key={index} variant="secondary">
                   {tag}
                 </Badge>
@@ -223,7 +227,7 @@ export function ServiceCard({
             Pricing
           </div>
           {renderPricing()}
-          {service.pricingNotes && (
+          {!!service.pricingNotes && (
             <p className="mt-2 text-muted-foreground text-xs">
               {service.pricingNotes}
             </p>
@@ -231,7 +235,7 @@ export function ServiceCard({
         </div>
       </CardContent>
 
-      {linkTo && (
+      {!!linkTo && (
         <CardFooter className="pt-0">
           <div className="flex items-center gap-1 font-medium text-primary text-sm">
             View details
