@@ -222,7 +222,7 @@ export const invoicesRouter = {
         conditions.push(eq(invoice.business, input.business));
       } else {
         conditions.push(
-          sql`${invoice.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
         );
       }
 
@@ -644,7 +644,7 @@ export const invoicesRouter = {
       };
     }
 
-    const whereClause = sql`${invoice.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`;
+    const whereClause = sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`;
 
     // Get counts by status
     const statusCounts = await db

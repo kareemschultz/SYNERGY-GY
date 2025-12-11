@@ -120,7 +120,7 @@ export const mattersRouter = {
         conditions.push(eq(matter.business, input.business));
       } else {
         conditions.push(
-          sql`${matter.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+          sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
         );
       }
 
@@ -349,7 +349,7 @@ export const mattersRouter = {
           and(
             eq(serviceType.isActive, true),
             Array.isArray(businessFilter)
-              ? sql`${serviceType.business} = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
+              ? sql`${serviceType.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
               : eq(serviceType.business, businessFilter)
           )
         )
@@ -448,7 +448,7 @@ export const mattersRouter = {
       })
       .from(matter)
       .where(
-        sql`${matter.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+        sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
       )
       .groupBy(matter.status);
 

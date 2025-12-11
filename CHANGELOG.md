@@ -33,6 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **TypeScript**: Fixed critical type errors in training router, service details, and calendar components.
 
 ### Fixed
+- **PostgreSQL Enum/Text Comparison** - Fixed 500 Internal Server errors across all API routers
+  - Cast enum columns to text before array comparison in raw SQL queries
+  - Affected routers: dashboard, invoices, deadlines, matters, documents
+  - Error was `operator does not exist: business = text` when comparing enum to text[]
+- **Breadcrumb HTML Nesting** - Fixed React hydration error from invalid HTML
+  - Changed `BreadcrumbSeparator` from `<li>` to `<span>` element
+  - Prevents `<li>` being nested inside another `<li>` (BreadcrumbItem)
+- **Database Schema Enum Conflict** - Renamed `service_category` enum to `service_type_category`
+  - Resolved conflict with `service_category` table name in service-catalog schema
 - **Training Router**: Fixed potential undefined object access in course deletion check.
 - **Calendar Component**: Resolved type mismatch for `CalendarRoot` with React Day Picker v8.
 - **Service Detail**: Added missing argument to `renderPricing` function.

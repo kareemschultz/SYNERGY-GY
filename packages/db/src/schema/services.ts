@@ -15,8 +15,8 @@ import { user } from "./auth";
 import { client } from "./clients";
 import { businessEnum, staff } from "./core";
 
-// Service category enum
-export const serviceCategoryEnum = pgEnum("service_category", [
+// Service category enum (for service_type table)
+export const serviceCategoryEnum = pgEnum("service_type_category", [
   "TAX",
   "ACCOUNTING",
   "IMMIGRATION",

@@ -9,8 +9,8 @@ export const dashboardRouter = {
   getStats: staffProcedure.handler(async ({ context }) => {
     const accessibleBusinesses = getAccessibleBusinesses(context.staff);
     const businessFilter = sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`;
-    const matterBusinessFilter = sql`${matter.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`;
-    const deadlineBusinessFilter = sql`(${deadline.business} IS NULL OR ${deadline.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`;
+    const matterBusinessFilter = sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`;
+    const deadlineBusinessFilter = sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`;
 
     // Active clients
     const activeClientsResult = await db
@@ -82,7 +82,7 @@ export const dashboardRouter = {
       })
       .from(matter)
       .where(
-        sql`${matter.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+        sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
       )
       .groupBy(matter.status);
 
@@ -103,7 +103,7 @@ export const dashboardRouter = {
       const accessibleBusinesses = getAccessibleBusinesses(context.staff);
 
       const matters = await db.query.matter.findMany({
-        where: sql`${matter.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+        where: sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
         orderBy: (m, { desc }) => [desc(m.createdAt)],
         limit: input.limit,
         with: {
@@ -124,7 +124,7 @@ export const dashboardRouter = {
     .input(z.object({ limit: z.number().default(5) }))
     .handler(async ({ input, context }) => {
       const accessibleBusinesses = getAccessibleBusinesses(context.staff);
-      const deadlineBusinessFilter = sql`(${deadline.business} IS NULL OR ${deadline.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`;
+      const deadlineBusinessFilter = sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`;
 
       const deadlines = await db.query.deadline.findMany({
         where: and(
@@ -173,7 +173,7 @@ export const dashboardRouter = {
       })
       .from(matter)
       .where(
-        sql`${matter.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+        sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
       )
       .groupBy(matter.business);
 
