@@ -63,6 +63,16 @@ External service integrations and advanced reporting.
 
 ---
 
+## Design & UX
+
+| Document | Description |
+|----------|-------------|
+| [Design System](./design-system.md) | Design tokens, colors, typography, spacing |
+| [UX Guidelines](./ux-guidelines.md) | Error handling, feedback, accessibility |
+| [UI Components](./ui-components.md) | Component specifications and patterns |
+
+---
+
 ## Architecture
 
 | Document | Description |
