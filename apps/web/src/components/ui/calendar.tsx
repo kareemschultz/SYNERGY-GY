@@ -193,7 +193,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Root: CalendarRoot,
+        // biome-ignore lint/suspicious/noExplicitAny: Workaround for React Day Picker v8 type mismatch
+        Root: CalendarRoot as any,
         Chevron: CalendarChevron,
         DayButton: CalendarDayButton,
         WeekNumber: CalendarWeekNumber,

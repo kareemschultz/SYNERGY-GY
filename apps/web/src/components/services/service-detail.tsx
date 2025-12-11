@@ -303,7 +303,7 @@ export function ServiceDetail({ service }: ServiceDetailProps) {
           <CardTitle>Pricing</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {renderPricing()}
+          {renderPricing(service)}
 
           {!!service.pricingNotes && (
             <div className="rounded-lg bg-muted/50 p-4">

@@ -80,7 +80,7 @@ function TrainingPage() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     navigate({
-      search: (prev) => ({
+      search: (prev: Record<string, unknown>) => ({
         ...prev,
         search: searchInput || undefined,
       }),
@@ -89,7 +89,7 @@ function TrainingPage() {
 
   const handleCategoryChange = (value: string) => {
     navigate({
-      search: (prev) => ({
+      search: (prev: Record<string, unknown>) => ({
         ...prev,
         category: value as z.infer<typeof trainingSearchSchema>["category"],
       }),
@@ -98,7 +98,7 @@ function TrainingPage() {
 
   const handleStatusChange = (value: string) => {
     navigate({
-      search: (prev) => ({
+      search: (prev: Record<string, unknown>) => ({
         ...prev,
         isActive: value as z.infer<typeof trainingSearchSchema>["isActive"],
       }),
