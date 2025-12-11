@@ -101,7 +101,7 @@ const roleDescriptions: Record<
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
 function StaffDetailPage() {
-  const { staffId } = Route.useParams();
+  const { "staff-id": staffId } = Route.useParams();
   const { edit } = Route.useSearch();
   const navigate = useNavigate();
   const { toast } = useToast();

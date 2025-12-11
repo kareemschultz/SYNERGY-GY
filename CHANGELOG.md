@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **File Structure**: Renamed route files to follow kebab-case convention (e.g., `$courseId.tsx` → `$course-id.tsx`).
+- **Route Parameters**: Updated route parameter access to match new kebab-case filenames (e.g., `params['course-id']`).
+- **Linting**: Resolved comprehensive linting issues including `noLeakedRender`, `noNestedTernary`, and file naming conventions.
+- **TypeScript**: Fixed critical type errors in training router, service details, and calendar components.
+
+### Fixed
+- **Training Router**: Fixed potential undefined object access in course deletion check.
+- **Calendar Component**: Resolved type mismatch for `CalendarRoot` with React Day Picker v8.
+- **Service Detail**: Added missing argument to `renderPricing` function.
+- **Route Tree**: Regenerated route tree to reflect renamed file structure.
+
 ### Completed (December 2024)
 
 #### Phase 1 Polish - ✅ ALL COMPLETE

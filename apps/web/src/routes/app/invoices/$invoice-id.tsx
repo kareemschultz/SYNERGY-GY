@@ -103,7 +103,7 @@ function formatDateTime(date: Date): string {
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
 function InvoiceDetailPage() {
-  const { invoiceId } = Route.useParams();
+  const { "invoice-id": invoiceId } = Route.useParams();
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [status, setStatus] = useState<string>("");
 

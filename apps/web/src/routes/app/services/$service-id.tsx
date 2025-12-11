@@ -12,7 +12,7 @@ export const Route = createFileRoute("/app/services/$service-id")({
 });
 
 function ServiceDetailPage() {
-  const { serviceId } = Route.useParams();
+  const { "service-id": serviceId } = Route.useParams();
 
   const {
     data: service,

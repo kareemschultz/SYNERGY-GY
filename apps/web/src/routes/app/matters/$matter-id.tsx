@@ -62,7 +62,7 @@ const priorityStyles: Record<string, string> = {
 };
 
 function MatterDetailPage() {
-  const { matterId } = Route.useParams();
+  const { "matter-id": matterId } = Route.useParams();
 
   const {
     data: matter,

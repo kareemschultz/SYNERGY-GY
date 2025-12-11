@@ -61,7 +61,7 @@ const STATUS_VARIANTS: Record<
 };
 
 function ScheduleDetailPage() {
-  const { scheduleId } = Route.useParams();
+  const { "schedule-id": scheduleId } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();

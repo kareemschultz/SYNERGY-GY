@@ -59,7 +59,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 function CourseDetailPage() {
-  const { courseId } = useParams({ from: "/app/training/courses/$courseId" });
+  const { "course-id": courseId } = useParams({
+    from: "/app/training/courses/$course-id",
+  });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();

@@ -31,7 +31,7 @@ type Matter = {
 
 function PortalMatterDetail() {
   const navigate = useNavigate();
-  const { matterId } = Route.useParams();
+  const { "matter-id": matterId } = Route.useParams();
 
   const [matter, setMatter] = useState<Matter | null>(null);
   const [isLoading, setIsLoading] = useState(true);

@@ -79,7 +79,7 @@ const communicationDirections = [
 ];
 
 function ClientDetailPage() {
-  const { clientId } = Route.useParams();
+  const { "client-id": clientId } = Route.useParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");

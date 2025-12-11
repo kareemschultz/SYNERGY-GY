@@ -36,7 +36,7 @@ export const Route = createFileRoute("/app/documents/templates/$template-id")({
 });
 
 function TemplateDetailPage() {
-  const { templateId } = Route.useParams();
+  const { "template-id": templateId } = Route.useParams();
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
