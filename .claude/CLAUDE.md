@@ -121,3 +121,40 @@ Biome's linter will catch most issues automatically. Focus your attention on:
 ---
 
 Most formatting and common issues are automatically fixed by Biome. Run `npx ultracite fix` before committing to ensure compliance.
+
+---
+
+## GK-Nexus Project Rules
+
+> These rules are MANDATORY for all development on this project.
+
+### Change Tracking
+1. **Always reference GitHub issues** - Every change must link to an issue
+2. **Update CHANGELOG.md** - Add entries under [Unreleased] for any feature/fix
+3. **Use conventional commits** - `type(scope): description (#issue)`
+
+### Before Making Changes
+1. Check if a GitHub issue exists for the task
+2. If not, suggest creating one first
+3. Reference issue number in commits
+
+### Documentation Requirements
+- Update `/specs/` for feature changes
+- Update API docs for endpoint changes
+- Keep CHANGELOG.md current
+
+### Code Quality
+- Run `npx ultracite fix` before committing
+- No `any` types
+- Explicit error handling with user-friendly messages
+- Loading and error states for all UI
+
+### GitHub Workflow
+- Branch naming: `feature/issue-number-description`
+- PR must link to issue
+- CHANGELOG entry required
+
+### Error Handling
+- Always provide user-friendly error messages
+- Explain WHY something failed
+- Suggest next steps for user
