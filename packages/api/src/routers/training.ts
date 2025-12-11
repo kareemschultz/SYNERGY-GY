@@ -214,7 +214,7 @@ export const trainingRouter = {
           )
         );
 
-      if (schedulesWithEnrollments[0]?.count > 0) {
+      if ((schedulesWithEnrollments[0]?.count ?? 0) > 0) {
         throw new Error(
           "Cannot delete course with existing enrollments. Consider deactivating instead."
         );
