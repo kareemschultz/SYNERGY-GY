@@ -356,6 +356,67 @@ export const documentsRouter = {
       }),
   },
 
+  // Prepare upload - creates a PENDING document record and returns upload URL
+  prepareUpload: staffProcedure
+    .input(
+      z.object({
+        category: z.enum(documentCategoryValues),
+        description: z.string().optional(),
+        clientId: z.string().optional(),
+        matterId: z.string().optional(),
+        expirationDate: z.string().optional(),
+      })
+    )
+    .handler(async ({ input, context }) => {
+      // Create document record in PENDING status
+      const [newDoc] = await db
+        .insert(document)
+        .values({
+          fileName: "pending", // Will be updated after upload
+          originalName: "pending",
+          mimeType: "pending",
+          fileSize: 0,
+          storagePath: "pending",
+          category: input.category,
+          description: input.description,
+          clientId: input.clientId,
+          matterId: input.matterId,
+          expirationDate: input.expirationDate,
+          status: "PENDING",
+          uploadedById: context.session.user.id,
+        })
+        .returning();
+
+      return {
+        documentId: newDoc.id,
+        uploadUrl: `/api/upload/${newDoc.id}`,
+      };
+    }),
+
+  // Get download URL for a document
+  getDownloadUrl: staffProcedure
+    .input(z.object({ id: z.string() }))
+    .handler(async ({ input }) => {
+      const doc = await db.query.document.findFirst({
+        where: eq(document.id, input.id),
+      });
+
+      if (!doc) {
+        throw new ORPCError("NOT_FOUND", { message: "Document not found" });
+      }
+
+      if (doc.status !== "ACTIVE") {
+        throw new ORPCError("NOT_FOUND", { message: "Document not available" });
+      }
+
+      return {
+        downloadUrl: `/api/download/${doc.id}`,
+        fileName: doc.originalName,
+        mimeType: doc.mimeType,
+        fileSize: doc.fileSize,
+      };
+    }),
+
   // Get category statistics
   getStats: staffProcedure.handler(async () => {
     const stats = await db
