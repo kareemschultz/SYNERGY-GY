@@ -12,5 +12,11 @@ export * from "./core";
 export * from "./deadlines";
 // Document management
 export * from "./documents";
+// Invoicing and billing
+export * from "./invoices";
+// Client portal
+export * from "./portal";
+// Service catalog and pricing
+export * from "./service-catalog";
 // Services and matter tracking
 export * from "./services";

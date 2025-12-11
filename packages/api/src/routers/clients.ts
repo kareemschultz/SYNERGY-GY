@@ -188,10 +188,12 @@ export const clientsRouter = {
         conditions.length > 0 ? and(...conditions) : undefined;
 
       // Get total count
-      const [{ total }] = await db
+      const countResult = await db
         .select({ total: count() })
         .from(client)
         .where(whereClause);
+
+      const total = countResult[0]?.total ?? 0;
 
       // Get paginated results
       const offset = (input.page - 1) * input.limit;
@@ -476,10 +478,12 @@ export const clientsRouter = {
       .handler(async ({ input }) => {
         const offset = (input.page - 1) * input.limit;
 
-        const [{ total }] = await db
+        const countResult = await db
           .select({ total: count() })
           .from(clientCommunication)
           .where(eq(clientCommunication.clientId, input.clientId));
+
+        const total = countResult[0]?.total ?? 0;
 
         const communications = await db.query.clientCommunication.findMany({
           where: eq(clientCommunication.clientId, input.clientId),

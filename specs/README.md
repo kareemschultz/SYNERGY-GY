@@ -2,6 +2,8 @@
 
 Unified business management platform for GCMC (training, consulting, paralegal, immigration) and KAJ (tax, accounting, financial services) in Guyana.
 
+**Developed by:** Kareem Schultz, Karetech Solutions
+
 ## Project Overview
 
 | Attribute | Value |
@@ -10,16 +12,17 @@ Unified business management platform for GCMC (training, consulting, paralegal, 
 | **Scale** | 200-500 clients, 5-10 staff |
 | **Deployment** | Docker containers on self-managed VPS (Vultr) |
 | **Storage** | Local filesystem + S3/R2 cloud backup |
+| **Developer** | Kareem Schultz, Karetech Solutions |
 
 ## Businesses
 
-### GCMC (Guyana Career & Management Consultants)
+### GCMC (Green Crescent Management Consultancy)
 - Professional Training & Development
 - Business Consulting
 - Paralegal Services
 - Immigration Services
 
-### KAJ (KAJ Tax & Accounting Services)
+### KAJ (Kareem Abdul-Jabar Tax & Accounting Services)
 - Tax Preparation & Filing
 - Accounting Services
 - Financial Planning
@@ -40,13 +43,19 @@ Foundation modules for managing clients, matters, documents, and deadlines.
 | Deadline Calendar | ✅ Complete | [Spec](./phase-1/04-deadline-calendar.md) |
 | Dashboard | ✅ Complete | [Spec](./phase-1/05-dashboard.md) |
 
-### [Phase 2: Advanced Features](./phase-2/00-overview.md) - PLANNED
+### [Phase 2: Advanced Features](./phase-2/00-overview.md) - IN PROGRESS
 Extended functionality for client self-service and business operations.
 
 | Module | Status | Documentation |
 |--------|--------|---------------|
-| Client Portal | Planned | [Spec](./phase-2/01-client-portal.md) |
-| Invoicing & Payments | Planned | [Spec](./phase-2/02-invoicing.md) |
+| Admin Panel | ✅ Complete | [Spec](./admin-panel.md) |
+| Settings Page | ✅ Complete | [Implementation](./implementations/) |
+| Mobile Sidebar | ✅ Complete | [Implementation](./implementations/mobile-sidebar.md) |
+| File Upload Handler | ✅ Complete | Server-side upload/download |
+| Email Integration | ✅ Complete | Resend API with templates |
+| Service Catalog | ✅ Complete | Backend + Frontend routes |
+| Invoicing & Payments | ✅ Complete | [Spec](./phase-2/02-invoicing.md) |
+| Client Portal | 🚧 In Progress | [Spec](./phase-2/01-client-portal.md) |
 | Tax Calculators | Planned | [Spec](./phase-2/03-tax-calculators.md) |
 | Training Management | Planned | [Spec](./phase-2/04-training-management.md) |
 | Appointments | Planned | [Spec](./phase-2/05-appointments.md) |
@@ -70,6 +79,8 @@ External service integrations and advanced reporting.
 | [Design System](./design-system.md) | Design tokens, colors, typography, spacing |
 | [UX Guidelines](./ux-guidelines.md) | Error handling, feedback, accessibility |
 | [UI Components](./ui-components.md) | Component specifications and patterns |
+| [Data Import/Export](./data-import-export.md) | CSV, Excel, PDF export; data import workflows |
+| [Production Readiness](./production-readiness.md) | Launch checklist and deployment requirements |
 
 ---
 
@@ -112,6 +123,10 @@ External service integrations and advanced reporting.
 | Document Router | `/packages/api/src/routers/documents.ts` |
 | Deadline Router | `/packages/api/src/routers/deadlines.ts` |
 | Dashboard Router | `/packages/api/src/routers/dashboard.ts` |
+| Admin Router | `/packages/api/src/routers/admin.ts` |
+| Portal Router | `/packages/api/src/routers/portal.ts` |
+| Settings Router | `/packages/api/src/routers/settings.ts` |
+| Portal Schema | `/packages/db/src/schema/portal.ts` |
 | Auth Layout | `/apps/web/src/routes/_authenticated.tsx` |
 | Sidebar | `/apps/web/src/components/layout/sidebar.tsx` |
 
@@ -219,6 +234,81 @@ External service integrations and advanced reporting.
 - Database monitoring: Connection pool, query performance
 - Backup verification: Weekly restore tests
 - Security updates: Monthly dependency audits
+
+---
+
+---
+
+## ⚠️ Critical Development Policy: NO MOCK DATA
+
+> **MANDATORY**: This policy applies to ALL development, testing, and documentation.
+
+### Policy Statement
+
+**This application must NEVER contain mock data, fake data, seed data, or placeholder content.**
+
+All data in the system—whether in development, staging, or production—must be:
+- **Manually created** by users through the UI
+- **Imported** from real external sources (with user consent)
+- **Generated** by legitimate business operations
+
+### What This Means
+
+| ❌ NOT ALLOWED | ✅ REQUIRED |
+|----------------|-------------|
+| Hardcoded fake clients | Empty database on fresh install |
+| Seed scripts with dummy data | Manual data entry through UI |
+| Mock API responses | Real API calls to database |
+| Placeholder documents | Actual uploaded files |
+| Auto-generated test records | User-created test data |
+| Default demo accounts | Admin creates all accounts |
+
+### Rationale
+
+1. **Data Integrity**: Mock data can accidentally persist to production
+2. **Security**: Fake accounts can be exploited as backdoors
+3. **Compliance**: Client data must be traceable and auditable
+4. **Testing**: Real-world workflows must be tested, not synthetic flows
+5. **Professionalism**: No risk of exposing fake data to clients
+
+### Implementation Requirements
+
+#### Database
+- Schema migrations only (no seed data)
+- Service type definitions are metadata, not mock data (allowed)
+- Enum values and lookup tables are configuration (allowed)
+
+#### API Development
+- Return empty arrays for empty collections
+- Return proper 404 for missing resources
+- Never return fake/placeholder responses
+
+#### UI Development
+- Always implement empty states with helpful guidance
+- Show "No data yet" messages with clear CTAs
+- Never pre-populate forms with fake values
+- Loading states must be real (not simulated delays)
+
+#### Testing
+- Use transient test data created within test scope
+- Clean up test data after test completion
+- Document how to manually create test scenarios
+- E2E tests create their own data, then delete it
+
+#### Documentation
+- Screenshots must use realistic but anonymized data
+- Examples should use clearly fictional names (e.g., "Acme Corp")
+- Never include real client information in docs
+
+### Compliance Checklist
+
+Before any PR merge, verify:
+- [ ] No hardcoded data arrays in source code
+- [ ] No seed scripts that create fake records
+- [ ] Empty states are properly implemented
+- [ ] API returns empty results gracefully
+- [ ] Tests create and clean up their own data
+- [ ] No demo/test accounts in auth system
 
 ---
 

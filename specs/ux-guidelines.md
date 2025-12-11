@@ -2,6 +2,8 @@
 
 This document outlines the user experience requirements and design standards for the GK-Nexus platform.
 
+> **⚠️ NO MOCK DATA POLICY**: All UI states must be designed for real, user-created data only. Never use mock data, placeholder content, or fake records. See [NO MOCK DATA Policy](./README.md#critical-development-policy-no-mock-data).
+
 ---
 
 ## 1. Design Principles
@@ -443,14 +445,40 @@ Help
 - Icons: 24px with 44px touch target area
 - Spacing between targets: 8px minimum
 
-### Collapsible Sidebar
+### Collapsible Sidebar (CRITICAL)
 
-**Mobile navigation:**
+> **⚠️ IMPLEMENTATION REQUIRED**: Mobile sidebar collapse is mandatory for production readiness.
+
+**Mobile navigation (< 640px):**
 - Hide sidebar by default on mobile
-- Hamburger menu button in header
-- Slide-in overlay when opened
+- Hamburger menu button in header (top-left)
+- Slide-in overlay when opened (from left, 280px width)
+- Semi-transparent backdrop (click to close)
 - Close on selection or backdrop click
-- Swipe gesture to close
+- Swipe gesture to close (optional enhancement)
+- Trap focus within sidebar when open
+- Escape key closes sidebar
+
+**Implementation Checklist:**
+- [ ] Sidebar hidden on mobile viewports
+- [ ] Hamburger button visible in header
+- [ ] Slide-in animation (200ms ease-out)
+- [ ] Backdrop overlay with z-index layering
+- [ ] Focus trap for accessibility
+- [ ] ARIA attributes (aria-expanded, aria-hidden)
+
+**Technical Requirements:**
+```tsx
+// Required breakpoint behavior
+// < 640px: Sidebar hidden, hamburger visible
+// >= 640px: Sidebar visible, hamburger hidden
+
+// State management
+const [sidebarOpen, setSidebarOpen] = useState(false);
+
+// Viewport detection
+useMediaQuery("(min-width: 640px)");
+```
 
 ### Responsive Tables
 

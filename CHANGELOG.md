@@ -7,15 +7,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Completed (December 2024)
+
+#### Phase 1 Polish - ✅ ALL COMPLETE
+- **Mobile Sidebar** - ✅ Complete - Hamburger menu with slide-in drawer for mobile viewports
+  - Responsive design with < 640px breakpoint
+  - 280px slide-in drawer from left
+  - Semi-transparent backdrop with blur effect
+  - 200ms ease-out animations
+  - Closes on navigation, backdrop click, or Escape key
+  - Full accessibility with ARIA attributes and focus trap
+  - Hamburger button in header with proper aria-expanded state
+- **Admin Panel** - ✅ Complete - Staff management UI with full CRUD operations
+  - Staff list with search and role filtering
+  - Create new staff with email invitations
+  - Edit staff details and roles
+  - Activate/deactivate staff accounts
+- **Settings Page** - ✅ Complete - User preferences, theme toggle, profile settings, security, and about sections
+- **Activity Logging API** - ✅ Complete - Activity router with stats and filtering
+- **File Upload Handler** - ✅ Complete - Server-side upload/download handlers with validation
+
+#### Phase 2 Features - ✅ HIGH PRIORITY COMPLETE
+- **Client Portal** (#6) - ✅ Complete - Full self-service portal for clients
+  - Portal user authentication with secure sessions
+  - Portal invite system with email notifications
+  - Password reset flow with secure tokens
+  - Client matter viewing with pagination
+  - Document download for client's own files
+  - Matter detail pages with document associations
+- **Email Integration** (#11) - ✅ Complete - Resend integration for portal invites, password resets, and staff onboarding
+  - Email service utility with Resend SDK
+  - Professional HTML and plain text email templates
+  - Portal invite emails with personalized links
+  - Password reset emails with secure tokens
+  - Staff password setup emails for onboarding
+  - Document request and upload confirmation templates
+  - Graceful fallback: logs to console in development without API key
+  - Environment variable configuration (RESEND_API_KEY, EMAIL_FROM)
+- **Service Catalog & Pricing** - ✅ Complete - Comprehensive service catalog system for GCMC and KAJ
+  - Database schema with serviceCategory and serviceCatalog tables
+  - Support for multiple pricing types (Fixed, Range, Tiered, Custom/Quote-based)
+  - Flexible pricing tiers with conditions (e.g., "2 Days", "5 Days", "10+ participants")
+  - Service metadata: target audience, topics covered, document requirements, deliverables, workflow
+  - Government agencies and fees tracking
+  - Tags, featured services, and category organization
+  - API router with full CRUD operations (admin-only write, staff read)
+  - Service catalog browse page with category sidebar and search
+  - Featured services section on main catalog page
+  - Individual service detail page with comprehensive information display
+  - Admin service management interface (view-only, CRUD to be implemented)
+  - ServiceCard and ServiceDetail reusable components
+  - Currency formatting utility (GYD support)
+- **Invoice Generation System** - ✅ Complete - Comprehensive invoicing and billing system for both businesses
+  - Database schema: invoice, invoiceLineItem, and invoicePayment tables
+  - Status tracking: DRAFT, SENT, PAID, OVERDUE, CANCELLED
+  - Payment methods: Cash, Cheque, Bank Transfer, Credit/Debit Card, Mobile Money
+  - Auto-generated invoice numbers (GK-2024-0001 format) per business per year
+  - Line item editor with automatic amount calculation
+  - Tax support with customizable tax amounts
+  - Payment recording with partial and full payment tracking
+  - Automatic status updates based on payments and due dates
+  - Invoice list page with search, filters, and pagination
+  - Invoice detail page with full information display
+  - New invoice creation page with client and matter linking
+  - Payment modal for recording payments with validation
+  - Invoice section in client detail page showing all client invoices
+  - API router with full CRUD operations and business access control
+  - Currency formatting in GYD (Guyanese Dollar)
+  - Invoice summary statistics endpoint
+  - PDF generation placeholder (to be implemented with PDF library)
+
+### Code Quality
+- **TypeScript Strict Mode** - ✅ Complete - All TypeScript errors resolved
+  - Fixed 60+ backend TypeScript errors in API routers
+  - Fixed 70+ frontend TypeScript errors across all routes
+  - Proper type definitions for form components and hooks
+  - Created missing UI components (Alert, AlertDialog, Form)
+  - Added use-toast hook compatible with sonner
+
 ### Planned Features
-- Client portal for self-service document access
-- Invoice generation and payment tracking
 - Tax calculation utilities (Guyana-specific)
 - Training course management system
 - Appointment scheduling and calendar sync
-- Email notifications via Resend (deadline reminders, status updates)
 - Cloud storage backup integration (S3/R2)
-- Mobile-responsive optimizations
 - Advanced reporting and analytics dashboard
 - Document OCR and automated data extraction
 - WhatsApp integration for client communications

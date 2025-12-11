@@ -1,0 +1,492 @@
+import { db, staff, user } from "@SYNERGY-GY/db";
+import { randomUUID } from "node:crypto";
+import { ORPCError } from "@orpc/server";
+import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { z } from "zod";
+import { adminProcedure } from "../index";
+import { sendStaffPasswordSetup } from "../utils/email";
+import { generateSecureToken } from "../utils/password";
+
+// Staff role values
+const staffRoleValues = [
+  "OWNER",
+  "GCMC_MANAGER",
+  "KAJ_MANAGER",
+  "STAFF_GCMC",
+  "STAFF_KAJ",
+  "STAFF_BOTH",
+  "RECEPTIONIST",
+] as const;
+
+const businessValues = ["GCMC", "KAJ"] as const;
+
+// Zod schemas
+const createStaffSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Valid email is required"),
+  role: z.enum(staffRoleValues),
+  businesses: z
+    .array(z.enum(businessValues))
+    .min(1, "At least one business required"),
+  phone: z.string().optional(),
+  jobTitle: z.string().optional(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+const updateStaffSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  role: z.enum(staffRoleValues).optional(),
+  businesses: z.array(z.enum(businessValues)).min(1).optional(),
+  phone: z.string().optional(),
+  jobTitle: z.string().optional(),
+});
+
+const listStaffSchema = z.object({
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(20),
+  search: z.string().optional(),
+  role: z.enum(staffRoleValues).optional(),
+  business: z.enum(businessValues).optional(),
+  isActive: z.boolean().optional(),
+  sortBy: z.enum(["name", "email", "createdAt"]).default("name"),
+  sortOrder: z.enum(["asc", "desc"]).default("asc"),
+});
+
+const toggleActiveSchema = z.object({
+  id: z.string(),
+  isActive: z.boolean(),
+});
+
+// Helper: Get role display name
+function getRoleDisplay(role: string): string {
+  const roleMap: Record<string, string> = {
+    OWNER: "Owner",
+    GCMC_MANAGER: "GCMC Manager",
+    KAJ_MANAGER: "KAJ Manager",
+    STAFF_GCMC: "GCMC Staff",
+    STAFF_KAJ: "KAJ Staff",
+    STAFF_BOTH: "Staff (Both)",
+    RECEPTIONIST: "Receptionist",
+  };
+  return roleMap[role] || role;
+}
+
+// Admin router
+export const adminRouter = {
+  staff: {
+    // List all staff with pagination and filters
+    list: adminProcedure.input(listStaffSchema).handler(async ({ input }) => {
+      const conditions = [];
+
+      // Search filter
+      if (input.search) {
+        const searchTerm = `%${input.search}%`;
+        conditions.push(
+          or(
+            ilike(user.name, searchTerm),
+            ilike(user.email, searchTerm),
+            ilike(staff.jobTitle, searchTerm)
+          )
+        );
+      }
+
+      // Role filter
+      if (input.role) {
+        conditions.push(eq(staff.role, input.role));
+      }
+
+      // Business filter - staff must have access to the business
+      if (input.business) {
+        conditions.push(
+          sql`${staff.businesses} && ARRAY[${input.business}]::text[]`
+        );
+      }
+
+      // Active filter
+      if (input.isActive !== undefined) {
+        conditions.push(eq(staff.isActive, input.isActive));
+      }
+
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
+
+      // Get total count
+      const countResult = await db
+        .select({ total: count() })
+        .from(staff)
+        .innerJoin(user, eq(staff.userId, user.id))
+        .where(whereClause);
+
+      const total = countResult[0]?.total ?? 0;
+
+      // Get paginated results with user details
+      const offset = (input.page - 1) * input.limit;
+
+      // Determine sort column and table
+      let orderColumn;
+      if (input.sortBy === "name" || input.sortBy === "email") {
+        orderColumn = user[input.sortBy];
+      } else {
+        orderColumn = staff[input.sortBy];
+      }
+      const orderDirection = input.sortOrder === "asc" ? asc : desc;
+
+      const results = await db
+        .select({
+          id: staff.id,
+          userId: staff.userId,
+          role: staff.role,
+          businesses: staff.businesses,
+          phone: staff.phone,
+          jobTitle: staff.jobTitle,
+          isActive: staff.isActive,
+          createdAt: staff.createdAt,
+          updatedAt: staff.updatedAt,
+          userName: user.name,
+          userEmail: user.email,
+          userImage: user.image,
+        })
+        .from(staff)
+        .innerJoin(user, eq(staff.userId, user.id))
+        .where(whereClause)
+        .orderBy(orderDirection(orderColumn))
+        .limit(input.limit)
+        .offset(offset);
+
+      return {
+        staff: results,
+        total,
+        page: input.page,
+        limit: input.limit,
+        totalPages: Math.ceil(total / input.limit),
+      };
+    }),
+
+    // Get single staff by ID with full details
+    getById: adminProcedure
+      .input(z.object({ id: z.string() }))
+      .handler(async ({ input }) => {
+        const result = await db.query.staff.findFirst({
+          where: eq(staff.id, input.id),
+          with: {
+            user: true,
+          },
+        });
+
+        if (!result) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Staff member not found",
+          });
+        }
+
+        return result;
+      }),
+
+    // Create new staff member (creates user + staff profile)
+    create: adminProcedure
+      .input(createStaffSchema)
+      .handler(async ({ input, context }) => {
+        const { name, email, role, businesses, phone, jobTitle } = input;
+
+        // Check if email already exists
+        const existingUser = await db.query.user.findFirst({
+          where: eq(user.email, email),
+        });
+
+        if (existingUser) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "A user with this email already exists",
+          });
+        }
+
+        // Validate business access matches role
+        const requiresBothBusinesses = ["OWNER", "STAFF_BOTH"].includes(role);
+        const requiresGCMC = ["GCMC_MANAGER", "STAFF_GCMC"].includes(role);
+        const requiresKAJ = ["KAJ_MANAGER", "STAFF_KAJ"].includes(role);
+
+        if (
+          requiresBothBusinesses &&
+          (businesses.length !== 2 ||
+            !businesses.includes("GCMC") ||
+            !businesses.includes("KAJ"))
+        ) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: `Role ${getRoleDisplay(role)} requires access to both GCMC and KAJ`,
+          });
+        }
+
+        if (requiresGCMC && !businesses.includes("GCMC")) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: `Role ${getRoleDisplay(role)} requires access to GCMC`,
+          });
+        }
+
+        if (requiresKAJ && !businesses.includes("KAJ")) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: `Role ${getRoleDisplay(role)} requires access to KAJ`,
+          });
+        }
+
+        // Use Better Auth to create user account
+        // For now, we'll create user manually - in production, use Better Auth signup
+        // Generate a unique ID for the user using UUID
+        const userId = randomUUID();
+
+        const newUserResult = await db
+          .insert(user)
+          .values({
+            id: userId,
+            name,
+            email,
+            emailVerified: true, // Auto-verify admin-created accounts
+          })
+          .returning();
+
+        const newUser = newUserResult[0];
+        if (!newUser) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to create user account",
+          });
+        }
+
+        // Create staff profile
+        const [newStaff] = await db
+          .insert(staff)
+          .values({
+            userId: newUser.id,
+            role,
+            businesses,
+            phone: phone || null,
+            jobTitle: jobTitle || null,
+            isActive: true,
+          })
+          .returning();
+
+        // Generate password setup token (we'll use a simple approach for now)
+        // In production, this should integrate with Better Auth's password reset flow
+        const setupToken = generateSecureToken();
+        const appUrl = process.env.BETTER_AUTH_URL || "http://localhost:5173";
+        const setupUrl = `${appUrl}/staff/setup-password?token=${setupToken}&email=${encodeURIComponent(email)}`;
+
+        // Get the name of the admin who created this staff member
+        const invitedByName = context.session.user.name || "GK-Nexus Admin";
+
+        // Send password setup email
+        await sendStaffPasswordSetup({
+          staffName: name,
+          email,
+          setupUrl,
+          expiresInHours: 24,
+          invitedBy: invitedByName,
+        });
+
+        return {
+          ...newStaff,
+          user: newUser,
+        };
+      }),
+
+    // Update existing staff member
+    update: adminProcedure
+      .input(updateStaffSchema)
+      .handler(async ({ input }) => {
+        const { id, name, email, role, businesses, phone, jobTitle } = input;
+
+        // Check staff exists
+        const existing = await db.query.staff.findFirst({
+          where: eq(staff.id, id),
+          with: { user: true },
+        });
+
+        if (!existing) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Staff member not found",
+          });
+        }
+
+        // If updating email, check it's not taken
+        if (email && email !== existing.user.email) {
+          const emailTaken = await db.query.user.findFirst({
+            where: eq(user.email, email),
+          });
+          if (emailTaken) {
+            throw new ORPCError("BAD_REQUEST", {
+              message: "Email is already in use by another user",
+            });
+          }
+        }
+
+        // Validate business access matches role if both are being updated
+        const finalRole = role || existing.role;
+        const finalBusinesses = businesses || existing.businesses;
+
+        const requiresBothBusinesses = ["OWNER", "STAFF_BOTH"].includes(
+          finalRole
+        );
+        const requiresGCMC = ["GCMC_MANAGER", "STAFF_GCMC"].includes(finalRole);
+        const requiresKAJ = ["KAJ_MANAGER", "STAFF_KAJ"].includes(finalRole);
+
+        if (
+          requiresBothBusinesses &&
+          (finalBusinesses.length !== 2 ||
+            !finalBusinesses.includes("GCMC") ||
+            !finalBusinesses.includes("KAJ"))
+        ) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: `Role ${getRoleDisplay(finalRole)} requires access to both GCMC and KAJ`,
+          });
+        }
+
+        if (requiresGCMC && !finalBusinesses.includes("GCMC")) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: `Role ${getRoleDisplay(finalRole)} requires access to GCMC`,
+          });
+        }
+
+        if (requiresKAJ && !finalBusinesses.includes("KAJ")) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: `Role ${getRoleDisplay(finalRole)} requires access to KAJ`,
+          });
+        }
+
+        // Update user details if provided
+        if (name || email) {
+          await db
+            .update(user)
+            .set({
+              name: name || existing.user.name,
+              email: email || existing.user.email,
+            })
+            .where(eq(user.id, existing.userId));
+        }
+
+        // Update staff details
+        const staffUpdates: Record<string, unknown> = {};
+        if (role) staffUpdates.role = role;
+        if (businesses) staffUpdates.businesses = businesses;
+        if (phone !== undefined) staffUpdates.phone = phone || null;
+        if (jobTitle !== undefined) staffUpdates.jobTitle = jobTitle || null;
+
+        if (Object.keys(staffUpdates).length > 0) {
+          await db
+            .update(staff)
+            .set(staffUpdates)
+            .where(eq(staff.id, id))
+            .returning();
+
+          // Fetch complete updated record
+          const result = await db.query.staff.findFirst({
+            where: eq(staff.id, id),
+            with: { user: true },
+          });
+
+          return result;
+        }
+
+        // If nothing to update, return existing
+        return existing;
+      }),
+
+    // Toggle staff active/inactive status
+    toggleActive: adminProcedure
+      .input(toggleActiveSchema)
+      .handler(async ({ input, context }) => {
+        const { id, isActive } = input;
+
+        // Check staff exists
+        const existing = await db.query.staff.findFirst({
+          where: eq(staff.id, id),
+          with: { user: true },
+        });
+
+        if (!existing) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Staff member not found",
+          });
+        }
+
+        // Prevent deactivating self
+        if (context.staff?.id === id && !isActive) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "You cannot deactivate your own account",
+          });
+        }
+
+        // Update status
+        const [updated] = await db
+          .update(staff)
+          .set({ isActive })
+          .where(eq(staff.id, id))
+          .returning();
+
+        return {
+          ...updated,
+          user: existing.user,
+        };
+      }),
+
+    // Get staff statistics
+    stats: adminProcedure.handler(async () => {
+      // Total staff count
+      const totalStaffResult = await db
+        .select({ totalStaff: count() })
+        .from(staff);
+      const totalStaff = totalStaffResult[0]?.totalStaff ?? 0;
+
+      // Active staff count
+      const activeStaffResult = await db
+        .select({ activeStaff: count() })
+        .from(staff)
+        .where(eq(staff.isActive, true));
+      const activeStaff = activeStaffResult[0]?.activeStaff ?? 0;
+
+      // Staff by role
+      const byRole = await db
+        .select({
+          role: staff.role,
+          count: count(),
+        })
+        .from(staff)
+        .where(eq(staff.isActive, true))
+        .groupBy(staff.role);
+
+      // Staff by business
+      const gcmcStaff = await db
+        .select({ count: count() })
+        .from(staff)
+        .where(
+          and(
+            eq(staff.isActive, true),
+            sql`${staff.businesses} && ARRAY['GCMC']::text[]`
+          )
+        );
+
+      const kajStaff = await db
+        .select({ count: count() })
+        .from(staff)
+        .where(
+          and(
+            eq(staff.isActive, true),
+            sql`${staff.businesses} && ARRAY['KAJ']::text[]`
+          )
+        );
+
+      return {
+        totalStaff,
+        activeStaff,
+        inactiveStaff: totalStaff - activeStaff,
+        byRole: byRole.map((r) => ({
+          role: r.role,
+          roleDisplay: getRoleDisplay(r.role),
+          count: r.count,
+        })),
+        byBusiness: {
+          GCMC: gcmcStaff[0]?.count || 0,
+          KAJ: kajStaff[0]?.count || 0,
+        },
+      };
+    }),
+  },
+};

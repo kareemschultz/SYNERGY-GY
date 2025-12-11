@@ -134,6 +134,10 @@ app.post("/api/upload/:documentId", async (c) => {
     .where(eq(documentTable.id, documentId))
     .returning();
 
+  if (!updated) {
+    return c.json({ error: "Failed to update document record" }, 500);
+  }
+
   return c.json({
     success: true,
     document: {

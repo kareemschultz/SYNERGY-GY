@@ -6,7 +6,9 @@ This document provides an overview of the GK-Nexus platform development, milesto
 
 ## Project Overview
 
-**GK-Nexus** is a unified business management platform for GCMC (Guyana Career & Management Consultants) and KAJ (KAJ Tax & Accounting Services) in Guyana.
+**GK-Nexus** is a unified business management platform for GCMC (Green Crescent Management Consultancy) and KAJ (Kareem Abdul-Jabar Tax & Accounting Services) in Guyana.
+
+**Developed by:** Kareem Schultz, Karetech Solutions
 
 **Technology Stack:**
 - **Frontend:** React 19 + TanStack Router
@@ -81,11 +83,22 @@ All development work is tracked through GitHub Issues. Each issue corresponds to
 | #4 | Deadline Calendar | [04-deadline-calendar.md](/specs/phase-1/04-deadline-calendar.md) | ✅ Complete | `phase-1`, `feature`, `api`, `frontend`, `database` |
 | #5 | Dashboard | [05-dashboard.md](/specs/phase-1/05-dashboard.md) | ✅ Complete | `phase-1`, `feature`, `api`, `frontend` |
 
-### Phase 2 Issues (PLANNED)
+### Phase 1 Polish Issues (IN PROGRESS)
+
+These items were identified during QA testing and must be completed for production readiness:
+
+| Issue # | Module | Description | Status | Labels |
+|---------|--------|-------------|--------|--------|
+| #15 | Mobile Sidebar | Hamburger menu with slide-in drawer for mobile viewports | 🔄 In Progress | `phase-1`, `enhancement`, `frontend`, `priority-high` |
+| #16 | Admin Panel | Staff management UI with CRUD operations | 🔄 In Progress | `phase-1`, `feature`, `frontend`, `api`, `priority-high` |
+| #17 | Settings Page | User preferences, theme toggle, profile settings | 🔄 In Progress | `phase-1`, `feature`, `frontend`, `priority-medium` |
+| #18 | Activity Logging API | Complete activity router with stats and filtering | ✅ Complete | `phase-1`, `feature`, `api` |
+
+### Phase 2 Issues (IN PROGRESS)
 
 | Issue # | Module | Spec | Status | Labels |
 |---------|--------|------|--------|--------|
-| #6 | Client Portal | [01-client-portal.md](/specs/phase-2/01-client-portal.md) | 📋 Planned | `phase-2`, `feature`, `priority-high`, `api`, `frontend`, `database` |
+| #6 | Client Portal | [01-client-portal.md](/specs/phase-2/01-client-portal.md) | 🔄 In Progress | `phase-2`, `feature`, `priority-high`, `api`, `frontend`, `database` |
 | #7 | Invoicing | [02-invoicing.md](/specs/phase-2/02-invoicing.md) | 📋 Planned | `phase-2`, `feature`, `priority-high`, `api`, `frontend`, `database` |
 | #8 | Tax Calculators | [03-tax-calculators.md](/specs/phase-2/03-tax-calculators.md) | 📋 Planned | `phase-2`, `feature`, `priority-medium`, `frontend` |
 | #9 | Training Management | [04-training-management.md](/specs/phase-2/04-training-management.md) | 📋 Planned | `phase-2`, `feature`, `priority-medium`, `api`, `frontend`, `database` |

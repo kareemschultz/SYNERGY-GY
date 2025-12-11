@@ -67,10 +67,12 @@ export const activityRouter = {
       const whereClause =
         conditions.length > 0 ? and(...conditions) : undefined;
 
-      const [{ total }] = await db
+      const countResult = await db
         .select({ total: count() })
         .from(activityLog)
         .where(whereClause);
+
+      const total = countResult[0]?.total ?? 0;
 
       const offset = (input.page - 1) * input.limit;
 
@@ -174,10 +176,12 @@ export const activityRouter = {
         .groupBy(activityLog.entityType);
 
       // Total count
-      const [{ total }] = await db
+      const totalResult = await db
         .select({ total: count() })
         .from(activityLog)
         .where(sql`${activityLog.createdAt} >= ${cutoffDate}`);
+
+      const total = totalResult[0]?.total ?? 0;
 
       return {
         total,

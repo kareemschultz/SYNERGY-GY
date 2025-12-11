@@ -204,13 +204,56 @@ Phase 1 establishes the foundational modules for GK-Nexus, enabling day-to-day c
 - Loading states and error handling complete
 - UI/UX refinements done
 
+## Known Gaps from Testing (Dec 2024)
+
+The following gaps were identified during visual QA testing with Playwright:
+
+### Mobile Responsiveness Issues
+- **Sidebar Collapse**: ✅ **RESOLVED** - Mobile-responsive sidebar implemented (Dec 11, 2024)
+  - Hamburger menu button in header (< 640px viewports)
+  - Slide-in drawer with overlay
+  - Focus trap and ARIA attributes
+  - Closes on navigation or Escape key
+  - Implementation: `/apps/web/src/components/layout/sidebar.tsx`, `/apps/web/src/hooks/use-media-query.ts`
+
+### Permission/Access Issues
+- **403 Errors for Non-Staff Users**: Test users without staff role receive 403 errors
+  - Required: Proper role assignment flow during user setup
+  - Status: Admin panel needed for staff management (Phase 2)
+
+### UI Polish Items
+- **Hydration Warning**: Minor React hydration mismatch on nested `<li>` elements
+  - Required: Fix HTML structure in affected components
+
+### Missing Admin Features
+- **Staff Management**: No UI to create/manage staff users
+- **Settings Page**: No application settings interface
+- **User Role Management**: No way to assign roles through UI
+
+---
+
+## Data Policy Compliance
+
+> **⚠️ NO MOCK DATA POLICY**: This application contains no mock data, seed data, or placeholder content.
+
+All data displayed in the application is:
+- Manually created by users through the UI
+- Real data from actual business operations
+- Never auto-generated or pre-seeded
+
+See [NO MOCK DATA Policy](../README.md#critical-development-policy-no-mock-data) for full details.
+
+---
+
 ## Next Steps
 
 Phase 1 is complete. Proceed to [Phase 2](../phase-2/00-overview.md) for advanced features.
 
-### Deferred Items
-- Server-side file upload handler
+### Deferred Items (Moved to Phase 2)
+- Server-side file upload handler (partially complete)
 - Document template generation
 - Recurring deadline instances
 - Background reminder jobs
 - Cloud backup integration
+- Admin panel for staff/user management
+- Application settings page

@@ -1,6 +1,6 @@
 # KAJ Financial Services
 
-**Business:** KAJ Financial Services
+**Business:** Kareem Abdul-Jabar Tax & Accounting Services (KAJ)
 **License:** GRA Licensed Accountant
 **Focus:** Tax Compliance, Accounting, NIS Services, Financial Statements, Audit Services
 **Client Base:** Individuals, small businesses, corporations, NGOs, co-operative societies
@@ -9,7 +9,7 @@
 
 ## Overview
 
-KAJ Financial Services provides comprehensive accounting, tax compliance, and audit services to individuals and organizations in Guyana. As a GRA Licensed Accountant, we specialize in navigating the complex requirements of the Guyana Revenue Authority (GRA) and National Insurance Scheme (NIS).
+Kareem Abdul-Jabar Tax & Accounting Services (KAJ) provides comprehensive accounting, tax compliance, and audit services to individuals and organizations in Guyana. As a GRA Licensed Accountant, we specialize in navigating the complex requirements of the Guyana Revenue Authority (GRA) and National Insurance Scheme (NIS).
 
 ### Core Service Areas
 

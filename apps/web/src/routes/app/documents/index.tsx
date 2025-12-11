@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Archive,
@@ -14,6 +14,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { client } from "@/utils/orpc";
+import { client, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/documents/")({
   component: DocumentsPage,
@@ -134,6 +135,38 @@ function DocumentsPage() {
   const { data: stats } = useQuery({
     queryKey: ["documentStats"],
     queryFn: () => client.documents.getStats(),
+  });
+
+  const handleDownload = async (docId: string) => {
+    try {
+      const { downloadUrl } = await client.documents.getDownloadUrl({
+        id: docId,
+      });
+
+      // Open download URL in new window
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      toast.error("Failed to download document");
+    }
+  };
+
+  const archiveMutation = useMutation({
+    mutationFn: (docId: string) => client.documents.archive({ id: docId }),
+    onSuccess: () => {
+      toast.success("Document archived successfully");
+      // Invalidate queries to refresh the list
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      void queryClient.invalidateQueries({ queryKey: ["documentStats"] });
+    },
+    onError: () => {
+      toast.error("Failed to archive document");
+    },
   });
 
   return (
@@ -321,15 +354,22 @@ function DocumentsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDownload(doc.id)}
+                          >
                             <Eye className="mr-2 h-4 w-4" />
                             View
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDownload(doc.id)}
+                          >
                             <Download className="mr-2 h-4 w-4" />
                             Download
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => archiveMutation.mutate(doc.id)}
+                          >
                             <Archive className="mr-2 h-4 w-4" />
                             Archive
                           </DropdownMenuItem>

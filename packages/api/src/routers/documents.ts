@@ -95,10 +95,12 @@ export const documentsRouter = {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get total count
-    const [{ total }] = await db
+    const countResult = await db
       .select({ total: count() })
       .from(document)
       .where(whereClause);
+
+    const total = countResult[0]?.total ?? 0;
 
     // Get paginated results
     const offset = (input.page - 1) * input.limit;
@@ -317,25 +319,34 @@ export const documentsRouter = {
 
         // Filter by business or null (both)
         if (input.business) {
-          conditions.push(
-            or(
-              eq(documentTemplate.business, input.business),
-              isNull(documentTemplate.business)
-            )
+          const businessFilter = or(
+            eq(documentTemplate.business, input.business),
+            isNull(documentTemplate.business)
           );
+          if (businessFilter) {
+            conditions.push(businessFilter);
+          }
+        } else if (accessibleBusinesses.length > 0) {
+          // Build business filter - show templates with null business or accessible businesses
+          const businessFilter = or(
+            isNull(documentTemplate.business),
+            sql`${documentTemplate.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+          );
+          if (businessFilter) {
+            conditions.push(businessFilter);
+          }
         } else {
-          conditions.push(
-            or(
-              isNull(documentTemplate.business),
-              sql`${documentTemplate.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
-            )
-          );
+          // No accessible businesses - only show templates with null business
+          conditions.push(isNull(documentTemplate.business));
         }
+
+        const whereClause =
+          conditions.length > 0 ? and(...conditions) : undefined;
 
         const templates = await db
           .select()
           .from(documentTemplate)
-          .where(and(...conditions))
+          .where(whereClause)
           .orderBy(asc(documentTemplate.sortOrder), asc(documentTemplate.name));
 
         return templates;
@@ -369,7 +380,7 @@ export const documentsRouter = {
     )
     .handler(async ({ input, context }) => {
       // Create document record in PENDING status
-      const [newDoc] = await db
+      const docResult = await db
         .insert(document)
         .values({
           fileName: "pending", // Will be updated after upload
@@ -386,6 +397,13 @@ export const documentsRouter = {
           uploadedById: context.session.user.id,
         })
         .returning();
+
+      const newDoc = docResult[0];
+      if (!newDoc) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to create document record",
+        });
+      }
 
       return {
         documentId: newDoc.id,

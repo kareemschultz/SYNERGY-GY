@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines legal and regulatory compliance requirements for the GK-Nexus platform serving GCMC (Guyana Career & Management Consultants) and KAJ (Tax & Accounting Services).
+This document outlines legal and regulatory compliance requirements for the GK-Nexus platform serving GCMC (Green Crescent Management Consultancy) and KAJ (Kareem Abdul-Jabar Tax & Accounting Services).
 
 **Last Updated:** 2025-12-10
 **Review Frequency:** Quarterly or upon regulatory changes

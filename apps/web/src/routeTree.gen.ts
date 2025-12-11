@@ -13,17 +13,33 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PortalIndexRouteImport } from './routes/portal/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as PortalRegisterRouteImport } from './routes/portal/register'
+import { Route as PortalLoginRouteImport } from './routes/portal/login'
+import { Route as PortalDocumentsRouteImport } from './routes/portal/documents'
+import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
+import { Route as AppServicesIndexRouteImport } from './routes/app/services/index'
 import { Route as AppMattersIndexRouteImport } from './routes/app/matters/index'
+import { Route as AppInvoicesIndexRouteImport } from './routes/app/invoices/index'
 import { Route as AppDocumentsIndexRouteImport } from './routes/app/documents/index'
 import { Route as AppClientsIndexRouteImport } from './routes/app/clients/index'
 import { Route as AppCalendarIndexRouteImport } from './routes/app/calendar/index'
+import { Route as AppAdminIndexRouteImport } from './routes/app/admin/index'
+import { Route as PortalMattersMatterIdRouteImport } from './routes/portal/matters/$matterId'
+import { Route as AppServicesServiceIdRouteImport } from './routes/app/services/$serviceId'
 import { Route as AppMattersNewRouteImport } from './routes/app/matters/new'
 import { Route as AppMattersMatterIdRouteImport } from './routes/app/matters/$matterId'
+import { Route as AppInvoicesNewRouteImport } from './routes/app/invoices/new'
+import { Route as AppInvoicesInvoiceIdRouteImport } from './routes/app/invoices/$invoiceId'
 import { Route as AppDocumentsUploadRouteImport } from './routes/app/documents/upload'
 import { Route as AppClientsNewRouteImport } from './routes/app/clients/new'
 import { Route as AppClientsClientIdRouteImport } from './routes/app/clients/$clientId'
 import { Route as AppCalendarNewRouteImport } from './routes/app/calendar/new'
+import { Route as AppAdminStaffIndexRouteImport } from './routes/app/admin/staff/index'
+import { Route as AppAdminServicesIndexRouteImport } from './routes/app/admin/services/index'
+import { Route as AppAdminStaffNewRouteImport } from './routes/app/admin/staff/new'
+import { Route as AppAdminStaffStaffIdRouteImport } from './routes/app/admin/staff/$staffId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -45,14 +61,49 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/portal/',
+  path: '/portal/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const PortalRegisterRoute = PortalRegisterRouteImport.update({
+  id: '/portal/register',
+  path: '/portal/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalLoginRoute = PortalLoginRouteImport.update({
+  id: '/portal/login',
+  path: '/portal/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalDocumentsRoute = PortalDocumentsRouteImport.update({
+  id: '/portal/documents',
+  path: '/portal/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppServicesIndexRoute = AppServicesIndexRouteImport.update({
+  id: '/services/',
+  path: '/services/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMattersIndexRoute = AppMattersIndexRouteImport.update({
   id: '/matters/',
   path: '/matters/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInvoicesIndexRoute = AppInvoicesIndexRouteImport.update({
+  id: '/invoices/',
+  path: '/invoices/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDocumentsIndexRoute = AppDocumentsIndexRouteImport.update({
@@ -70,6 +121,21 @@ const AppCalendarIndexRoute = AppCalendarIndexRouteImport.update({
   path: '/calendar/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AppRoute,
+} as any)
+const PortalMattersMatterIdRoute = PortalMattersMatterIdRouteImport.update({
+  id: '/portal/matters/$matterId',
+  path: '/portal/matters/$matterId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppServicesServiceIdRoute = AppServicesServiceIdRouteImport.update({
+  id: '/services/$serviceId',
+  path: '/services/$serviceId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMattersNewRoute = AppMattersNewRouteImport.update({
   id: '/matters/new',
   path: '/matters/new',
@@ -78,6 +144,16 @@ const AppMattersNewRoute = AppMattersNewRouteImport.update({
 const AppMattersMatterIdRoute = AppMattersMatterIdRouteImport.update({
   id: '/matters/$matterId',
   path: '/matters/$matterId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInvoicesNewRoute = AppInvoicesNewRouteImport.update({
+  id: '/invoices/new',
+  path: '/invoices/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInvoicesInvoiceIdRoute = AppInvoicesInvoiceIdRouteImport.update({
+  id: '/invoices/$invoiceId',
+  path: '/invoices/$invoiceId',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDocumentsUploadRoute = AppDocumentsUploadRouteImport.update({
@@ -100,39 +176,91 @@ const AppCalendarNewRoute = AppCalendarNewRouteImport.update({
   path: '/calendar/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminStaffIndexRoute = AppAdminStaffIndexRouteImport.update({
+  id: '/admin/staff/',
+  path: '/admin/staff/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminServicesIndexRoute = AppAdminServicesIndexRouteImport.update({
+  id: '/admin/services/',
+  path: '/admin/services/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminStaffNewRoute = AppAdminStaffNewRouteImport.update({
+  id: '/admin/staff/new',
+  path: '/admin/staff/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminStaffStaffIdRoute = AppAdminStaffStaffIdRouteImport.update({
+  id: '/admin/staff/$staffId',
+  path: '/admin/staff/$staffId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/login': typeof PortalLoginRoute
+  '/portal/register': typeof PortalRegisterRoute
   '/app/': typeof AppIndexRoute
+  '/portal': typeof PortalIndexRoute
   '/app/calendar/new': typeof AppCalendarNewRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
+  '/app/invoices/$invoiceId': typeof AppInvoicesInvoiceIdRoute
+  '/app/invoices/new': typeof AppInvoicesNewRoute
   '/app/matters/$matterId': typeof AppMattersMatterIdRoute
   '/app/matters/new': typeof AppMattersNewRoute
+  '/app/services/$serviceId': typeof AppServicesServiceIdRoute
+  '/portal/matters/$matterId': typeof PortalMattersMatterIdRoute
+  '/app/admin': typeof AppAdminIndexRoute
   '/app/calendar': typeof AppCalendarIndexRoute
   '/app/clients': typeof AppClientsIndexRoute
   '/app/documents': typeof AppDocumentsIndexRoute
+  '/app/invoices': typeof AppInvoicesIndexRoute
   '/app/matters': typeof AppMattersIndexRoute
+  '/app/services': typeof AppServicesIndexRoute
+  '/app/settings': typeof AppSettingsIndexRoute
+  '/app/admin/staff/$staffId': typeof AppAdminStaffStaffIdRoute
+  '/app/admin/staff/new': typeof AppAdminStaffNewRoute
+  '/app/admin/services': typeof AppAdminServicesIndexRoute
+  '/app/admin/staff': typeof AppAdminStaffIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/login': typeof PortalLoginRoute
+  '/portal/register': typeof PortalRegisterRoute
   '/app': typeof AppIndexRoute
+  '/portal': typeof PortalIndexRoute
   '/app/calendar/new': typeof AppCalendarNewRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
+  '/app/invoices/$invoiceId': typeof AppInvoicesInvoiceIdRoute
+  '/app/invoices/new': typeof AppInvoicesNewRoute
   '/app/matters/$matterId': typeof AppMattersMatterIdRoute
   '/app/matters/new': typeof AppMattersNewRoute
+  '/app/services/$serviceId': typeof AppServicesServiceIdRoute
+  '/portal/matters/$matterId': typeof PortalMattersMatterIdRoute
+  '/app/admin': typeof AppAdminIndexRoute
   '/app/calendar': typeof AppCalendarIndexRoute
   '/app/clients': typeof AppClientsIndexRoute
   '/app/documents': typeof AppDocumentsIndexRoute
+  '/app/invoices': typeof AppInvoicesIndexRoute
   '/app/matters': typeof AppMattersIndexRoute
+  '/app/services': typeof AppServicesIndexRoute
+  '/app/settings': typeof AppSettingsIndexRoute
+  '/app/admin/staff/$staffId': typeof AppAdminStaffStaffIdRoute
+  '/app/admin/staff/new': typeof AppAdminStaffNewRoute
+  '/app/admin/services': typeof AppAdminServicesIndexRoute
+  '/app/admin/staff': typeof AppAdminStaffIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,17 +268,33 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/login': typeof PortalLoginRoute
+  '/portal/register': typeof PortalRegisterRoute
   '/app/': typeof AppIndexRoute
+  '/portal/': typeof PortalIndexRoute
   '/app/calendar/new': typeof AppCalendarNewRoute
   '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
+  '/app/invoices/$invoiceId': typeof AppInvoicesInvoiceIdRoute
+  '/app/invoices/new': typeof AppInvoicesNewRoute
   '/app/matters/$matterId': typeof AppMattersMatterIdRoute
   '/app/matters/new': typeof AppMattersNewRoute
+  '/app/services/$serviceId': typeof AppServicesServiceIdRoute
+  '/portal/matters/$matterId': typeof PortalMattersMatterIdRoute
+  '/app/admin/': typeof AppAdminIndexRoute
   '/app/calendar/': typeof AppCalendarIndexRoute
   '/app/clients/': typeof AppClientsIndexRoute
   '/app/documents/': typeof AppDocumentsIndexRoute
+  '/app/invoices/': typeof AppInvoicesIndexRoute
   '/app/matters/': typeof AppMattersIndexRoute
+  '/app/services/': typeof AppServicesIndexRoute
+  '/app/settings/': typeof AppSettingsIndexRoute
+  '/app/admin/staff/$staffId': typeof AppAdminStaffStaffIdRoute
+  '/app/admin/staff/new': typeof AppAdminStaffNewRoute
+  '/app/admin/services/': typeof AppAdminServicesIndexRoute
+  '/app/admin/staff/': typeof AppAdminStaffIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,50 +303,98 @@ export interface FileRouteTypes {
     | '/app'
     | '/dashboard'
     | '/login'
+    | '/portal/documents'
+    | '/portal/login'
+    | '/portal/register'
     | '/app/'
+    | '/portal'
     | '/app/calendar/new'
     | '/app/clients/$clientId'
     | '/app/clients/new'
     | '/app/documents/upload'
+    | '/app/invoices/$invoiceId'
+    | '/app/invoices/new'
     | '/app/matters/$matterId'
     | '/app/matters/new'
+    | '/app/services/$serviceId'
+    | '/portal/matters/$matterId'
+    | '/app/admin'
     | '/app/calendar'
     | '/app/clients'
     | '/app/documents'
+    | '/app/invoices'
     | '/app/matters'
+    | '/app/services'
+    | '/app/settings'
+    | '/app/admin/staff/$staffId'
+    | '/app/admin/staff/new'
+    | '/app/admin/services'
+    | '/app/admin/staff'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
     | '/login'
+    | '/portal/documents'
+    | '/portal/login'
+    | '/portal/register'
     | '/app'
+    | '/portal'
     | '/app/calendar/new'
     | '/app/clients/$clientId'
     | '/app/clients/new'
     | '/app/documents/upload'
+    | '/app/invoices/$invoiceId'
+    | '/app/invoices/new'
     | '/app/matters/$matterId'
     | '/app/matters/new'
+    | '/app/services/$serviceId'
+    | '/portal/matters/$matterId'
+    | '/app/admin'
     | '/app/calendar'
     | '/app/clients'
     | '/app/documents'
+    | '/app/invoices'
     | '/app/matters'
+    | '/app/services'
+    | '/app/settings'
+    | '/app/admin/staff/$staffId'
+    | '/app/admin/staff/new'
+    | '/app/admin/services'
+    | '/app/admin/staff'
   id:
     | '__root__'
     | '/'
     | '/app'
     | '/dashboard'
     | '/login'
+    | '/portal/documents'
+    | '/portal/login'
+    | '/portal/register'
     | '/app/'
+    | '/portal/'
     | '/app/calendar/new'
     | '/app/clients/$clientId'
     | '/app/clients/new'
     | '/app/documents/upload'
+    | '/app/invoices/$invoiceId'
+    | '/app/invoices/new'
     | '/app/matters/$matterId'
     | '/app/matters/new'
+    | '/app/services/$serviceId'
+    | '/portal/matters/$matterId'
+    | '/app/admin/'
     | '/app/calendar/'
     | '/app/clients/'
     | '/app/documents/'
+    | '/app/invoices/'
     | '/app/matters/'
+    | '/app/services/'
+    | '/app/settings/'
+    | '/app/admin/staff/$staffId'
+    | '/app/admin/staff/new'
+    | '/app/admin/services/'
+    | '/app/admin/staff/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,6 +402,11 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  PortalDocumentsRoute: typeof PortalDocumentsRoute
+  PortalLoginRoute: typeof PortalLoginRoute
+  PortalRegisterRoute: typeof PortalRegisterRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+  PortalMattersMatterIdRoute: typeof PortalMattersMatterIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -242,6 +439,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/': {
+      id: '/portal/'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/': {
       id: '/app/'
       path: '/'
@@ -249,11 +453,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/portal/register': {
+      id: '/portal/register'
+      path: '/portal/register'
+      fullPath: '/portal/register'
+      preLoaderRoute: typeof PortalRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/login': {
+      id: '/portal/login'
+      path: '/portal/login'
+      fullPath: '/portal/login'
+      preLoaderRoute: typeof PortalLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/documents': {
+      id: '/portal/documents'
+      path: '/portal/documents'
+      fullPath: '/portal/documents'
+      preLoaderRoute: typeof PortalDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/settings/': {
+      id: '/app/settings/'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/services/': {
+      id: '/app/services/'
+      path: '/services'
+      fullPath: '/app/services'
+      preLoaderRoute: typeof AppServicesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/matters/': {
       id: '/app/matters/'
       path: '/matters'
       fullPath: '/app/matters'
       preLoaderRoute: typeof AppMattersIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/invoices/': {
+      id: '/app/invoices/'
+      path: '/invoices'
+      fullPath: '/app/invoices'
+      preLoaderRoute: typeof AppInvoicesIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/documents/': {
@@ -277,6 +523,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCalendarIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin/': {
+      id: '/app/admin/'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/portal/matters/$matterId': {
+      id: '/portal/matters/$matterId'
+      path: '/portal/matters/$matterId'
+      fullPath: '/portal/matters/$matterId'
+      preLoaderRoute: typeof PortalMattersMatterIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/services/$serviceId': {
+      id: '/app/services/$serviceId'
+      path: '/services/$serviceId'
+      fullPath: '/app/services/$serviceId'
+      preLoaderRoute: typeof AppServicesServiceIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/matters/new': {
       id: '/app/matters/new'
       path: '/matters/new'
@@ -289,6 +556,20 @@ declare module '@tanstack/react-router' {
       path: '/matters/$matterId'
       fullPath: '/app/matters/$matterId'
       preLoaderRoute: typeof AppMattersMatterIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/invoices/new': {
+      id: '/app/invoices/new'
+      path: '/invoices/new'
+      fullPath: '/app/invoices/new'
+      preLoaderRoute: typeof AppInvoicesNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/invoices/$invoiceId': {
+      id: '/app/invoices/$invoiceId'
+      path: '/invoices/$invoiceId'
+      fullPath: '/app/invoices/$invoiceId'
+      preLoaderRoute: typeof AppInvoicesInvoiceIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/documents/upload': {
@@ -319,6 +600,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCalendarNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin/staff/': {
+      id: '/app/admin/staff/'
+      path: '/admin/staff'
+      fullPath: '/app/admin/staff'
+      preLoaderRoute: typeof AppAdminStaffIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/services/': {
+      id: '/app/admin/services/'
+      path: '/admin/services'
+      fullPath: '/app/admin/services'
+      preLoaderRoute: typeof AppAdminServicesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/staff/new': {
+      id: '/app/admin/staff/new'
+      path: '/admin/staff/new'
+      fullPath: '/app/admin/staff/new'
+      preLoaderRoute: typeof AppAdminStaffNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin/staff/$staffId': {
+      id: '/app/admin/staff/$staffId'
+      path: '/admin/staff/$staffId'
+      fullPath: '/app/admin/staff/$staffId'
+      preLoaderRoute: typeof AppAdminStaffStaffIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -328,12 +637,23 @@ interface AppRouteChildren {
   AppClientsClientIdRoute: typeof AppClientsClientIdRoute
   AppClientsNewRoute: typeof AppClientsNewRoute
   AppDocumentsUploadRoute: typeof AppDocumentsUploadRoute
+  AppInvoicesInvoiceIdRoute: typeof AppInvoicesInvoiceIdRoute
+  AppInvoicesNewRoute: typeof AppInvoicesNewRoute
   AppMattersMatterIdRoute: typeof AppMattersMatterIdRoute
   AppMattersNewRoute: typeof AppMattersNewRoute
+  AppServicesServiceIdRoute: typeof AppServicesServiceIdRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
   AppCalendarIndexRoute: typeof AppCalendarIndexRoute
   AppClientsIndexRoute: typeof AppClientsIndexRoute
   AppDocumentsIndexRoute: typeof AppDocumentsIndexRoute
+  AppInvoicesIndexRoute: typeof AppInvoicesIndexRoute
   AppMattersIndexRoute: typeof AppMattersIndexRoute
+  AppServicesIndexRoute: typeof AppServicesIndexRoute
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+  AppAdminStaffStaffIdRoute: typeof AppAdminStaffStaffIdRoute
+  AppAdminStaffNewRoute: typeof AppAdminStaffNewRoute
+  AppAdminServicesIndexRoute: typeof AppAdminServicesIndexRoute
+  AppAdminStaffIndexRoute: typeof AppAdminStaffIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -342,12 +662,23 @@ const AppRouteChildren: AppRouteChildren = {
   AppClientsClientIdRoute: AppClientsClientIdRoute,
   AppClientsNewRoute: AppClientsNewRoute,
   AppDocumentsUploadRoute: AppDocumentsUploadRoute,
+  AppInvoicesInvoiceIdRoute: AppInvoicesInvoiceIdRoute,
+  AppInvoicesNewRoute: AppInvoicesNewRoute,
   AppMattersMatterIdRoute: AppMattersMatterIdRoute,
   AppMattersNewRoute: AppMattersNewRoute,
+  AppServicesServiceIdRoute: AppServicesServiceIdRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
   AppCalendarIndexRoute: AppCalendarIndexRoute,
   AppClientsIndexRoute: AppClientsIndexRoute,
   AppDocumentsIndexRoute: AppDocumentsIndexRoute,
+  AppInvoicesIndexRoute: AppInvoicesIndexRoute,
   AppMattersIndexRoute: AppMattersIndexRoute,
+  AppServicesIndexRoute: AppServicesIndexRoute,
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
+  AppAdminStaffStaffIdRoute: AppAdminStaffStaffIdRoute,
+  AppAdminStaffNewRoute: AppAdminStaffNewRoute,
+  AppAdminServicesIndexRoute: AppAdminServicesIndexRoute,
+  AppAdminStaffIndexRoute: AppAdminStaffIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -357,6 +688,11 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  PortalDocumentsRoute: PortalDocumentsRoute,
+  PortalLoginRoute: PortalLoginRoute,
+  PortalRegisterRoute: PortalRegisterRoute,
+  PortalIndexRoute: PortalIndexRoute,
+  PortalMattersMatterIdRoute: PortalMattersMatterIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

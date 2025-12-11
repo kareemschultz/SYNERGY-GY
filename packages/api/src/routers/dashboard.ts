@@ -13,13 +13,13 @@ export const dashboardRouter = {
     const deadlineBusinessFilter = sql`(${deadline.business} IS NULL OR ${deadline.business} = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`;
 
     // Active clients
-    const [activeClients] = await db
+    const activeClientsResult = await db
       .select({ count: count() })
       .from(client)
       .where(and(eq(client.status, "ACTIVE"), businessFilter));
 
     // Open matters
-    const [openMatters] = await db
+    const openMattersResult = await db
       .select({ count: count() })
       .from(matter)
       .where(
@@ -30,7 +30,7 @@ export const dashboardRouter = {
       );
 
     // Pending documents (documents without expiration or with future expiration)
-    const [totalDocuments] = await db
+    const totalDocumentsResult = await db
       .select({ count: count() })
       .from(document)
       .where(eq(document.status, "ACTIVE"));
@@ -38,7 +38,7 @@ export const dashboardRouter = {
     // Upcoming deadlines (next 7 days)
     const weekFromNow = new Date();
     weekFromNow.setDate(weekFromNow.getDate() + 7);
-    const [upcomingDeadlines] = await db
+    const upcomingDeadlinesResult = await db
       .select({ count: count() })
       .from(deadline)
       .where(
@@ -51,7 +51,7 @@ export const dashboardRouter = {
       );
 
     // Overdue deadlines
-    const [overdueDeadlines] = await db
+    const overdueDeadlinesResult = await db
       .select({ count: count() })
       .from(deadline)
       .where(
@@ -63,11 +63,11 @@ export const dashboardRouter = {
       );
 
     return {
-      activeClients: activeClients.count,
-      openMatters: openMatters.count,
-      totalDocuments: totalDocuments.count,
-      upcomingDeadlines: upcomingDeadlines.count,
-      overdueDeadlines: overdueDeadlines.count,
+      activeClients: activeClientsResult[0]?.count ?? 0,
+      openMatters: openMattersResult[0]?.count ?? 0,
+      totalDocuments: totalDocumentsResult[0]?.count ?? 0,
+      upcomingDeadlines: upcomingDeadlinesResult[0]?.count ?? 0,
+      overdueDeadlines: overdueDeadlinesResult[0]?.count ?? 0,
     };
   }),
 

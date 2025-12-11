@@ -151,10 +151,12 @@ export const deadlinesRouter = {
         conditions.length > 0 ? and(...conditions) : undefined;
 
       // Get total count
-      const [{ total }] = await db
+      const countResult = await db
         .select({ total: count() })
         .from(deadline)
         .where(whereClause);
+
+      const total = countResult[0]?.total ?? 0;
 
       // Get paginated results
       const offset = (input.page - 1) * input.limit;
@@ -272,7 +274,7 @@ export const deadlinesRouter = {
     .handler(async ({ input, context }) => {
       const dueDate = new Date(input.dueDate);
 
-      const [newDeadline] = await db
+      const deadlineResult = await db
         .insert(deadline)
         .values({
           ...input,
@@ -281,6 +283,13 @@ export const deadlinesRouter = {
           createdById: context.session.user.id,
         })
         .returning();
+
+      const newDeadline = deadlineResult[0];
+      if (!newDeadline) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to create deadline",
+        });
+      }
 
       // Create reminders
       await createReminders(newDeadline.id, dueDate);
@@ -440,7 +449,7 @@ export const deadlinesRouter = {
     weekFromNow.setDate(weekFromNow.getDate() + 7);
 
     // Count overdue
-    const [overdueResult] = await db
+    const overdueResults = await db
       .select({ count: count() })
       .from(deadline)
       .where(
@@ -452,7 +461,7 @@ export const deadlinesRouter = {
       );
 
     // Count due this week
-    const [weekResult] = await db
+    const weekResults = await db
       .select({ count: count() })
       .from(deadline)
       .where(
@@ -466,7 +475,7 @@ export const deadlinesRouter = {
 
     // Count completed this month
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const [completedResult] = await db
+    const completedResults = await db
       .select({ count: count() })
       .from(deadline)
       .where(
@@ -478,16 +487,16 @@ export const deadlinesRouter = {
       );
 
     // Total pending
-    const [pendingResult] = await db
+    const pendingResults = await db
       .select({ count: count() })
       .from(deadline)
       .where(and(eq(deadline.isCompleted, false), businessFilter));
 
     return {
-      overdue: overdueResult.count,
-      dueThisWeek: weekResult.count,
-      completedThisMonth: completedResult.count,
-      totalPending: pendingResult.count,
+      overdue: overdueResults[0]?.count ?? 0,
+      dueThisWeek: weekResults[0]?.count ?? 0,
+      completedThisMonth: completedResults[0]?.count ?? 0,
+      totalPending: pendingResults[0]?.count ?? 0,
     };
   }),
 };

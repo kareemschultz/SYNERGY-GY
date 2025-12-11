@@ -2,6 +2,8 @@
 
 This document defines the comprehensive design system for GK-Nexus, built with shadcn/ui components and Tailwind CSS.
 
+> **⚠️ NO MOCK DATA POLICY**: All UI components must be designed for real, user-created data only. Empty states are mandatory. Never use placeholder/demo data. See [NO MOCK DATA Policy](./README.md#critical-development-policy-no-mock-data).
+
 ---
 
 ## Design Philosophy

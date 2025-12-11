@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
   Building2,
+  CreditCard,
   Edit,
   FileText,
   Loader2,
@@ -12,6 +13,7 @@ import {
   MoreHorizontal,
   Phone,
   Plus,
+  Send,
   User,
   Users,
 } from "lucide-react";
@@ -79,6 +81,8 @@ const communicationDirections = [
 function ClientDetailPage() {
   const { clientId } = Route.useParams();
   const [activeTab, setActiveTab] = useState("overview");
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
 
   const {
     data: clientData,
@@ -87,6 +91,26 @@ function ClientDetailPage() {
   } = useQuery({
     queryKey: ["client", clientId],
     queryFn: () => client.clients.getById({ id: clientId }),
+  });
+
+  const sendPortalInvite = useMutation({
+    mutationFn: (email: string) =>
+      client.portal.invite.send({
+        clientId,
+        email,
+      }),
+    onSuccess: () => {
+      toast.success("Portal invite sent successfully", {
+        description: `Invitation email sent to ${inviteEmail}`,
+      });
+      setShowInviteDialog(false);
+      setInviteEmail("");
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to send portal invite", {
+        description: error.message,
+      });
+    },
   });
 
   if (isLoading) {
@@ -144,6 +168,15 @@ function ClientDetailPage() {
                     <Plus className="mr-2 h-4 w-4" />
                     New Matter
                   </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    setInviteEmail(clientData?.email || "");
+                    setShowInviteDialog(true);
+                  }}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Portal Invite
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -237,6 +270,10 @@ function ClientDetailPage() {
             <TabsTrigger value="communications">
               <MessageSquare className="mr-2 h-4 w-4" />
               Communications
+            </TabsTrigger>
+            <TabsTrigger value="invoices">
+              <CreditCard className="mr-2 h-4 w-4" />
+              Invoices
             </TabsTrigger>
           </TabsList>
 
@@ -372,8 +409,68 @@ function ClientDetailPage() {
               communications={clientData.communications}
             />
           </TabsContent>
+
+          {/* Invoices Tab */}
+          <TabsContent className="mt-6" value="invoices">
+            <InvoicesSection clientId={clientId} />
+          </TabsContent>
         </Tabs>
       </div>
+
+      {/* Portal Invite Dialog */}
+      <Dialog onOpenChange={setShowInviteDialog} open={showInviteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Portal Invite</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-muted-foreground text-sm">
+              Send an invitation to {clientData.displayName} to access the
+              client portal. They will be able to view their matters and
+              documents.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">Email Address</Label>
+              <Input
+                disabled={sendPortalInvite.isPending}
+                id="invite-email"
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="client@example.com"
+                type="email"
+                value={inviteEmail}
+              />
+              <p className="text-muted-foreground text-xs">
+                An invitation link will be sent to this email address.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                disabled={sendPortalInvite.isPending}
+                onClick={() => setShowInviteDialog(false)}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={!inviteEmail || sendPortalInvite.isPending}
+                onClick={() => sendPortalInvite.mutate(inviteEmail)}
+              >
+                {sendPortalInvite.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Send Invite
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -789,6 +886,125 @@ function CommunicationsSection({
                 )}
               </div>
             ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function InvoicesSection({ clientId }: { clientId: string }) {
+  const { data: invoices, isLoading } = useQuery({
+    queryKey: ["invoices", { clientId }],
+    queryFn: () =>
+      client.invoices.list({
+        page: 1,
+        limit: 100,
+        clientId,
+      }),
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const statusLabels: Record<string, { label: string; className: string }> = {
+    DRAFT: {
+      label: "Draft",
+      className: "bg-gray-500/10 text-gray-600 border-gray-200",
+    },
+    SENT: {
+      label: "Sent",
+      className: "bg-blue-500/10 text-blue-600 border-blue-200",
+    },
+    PAID: {
+      label: "Paid",
+      className: "bg-green-500/10 text-green-600 border-green-200",
+    },
+    OVERDUE: {
+      label: "Overdue",
+      className: "bg-red-500/10 text-red-600 border-red-200",
+    },
+    CANCELLED: {
+      label: "Cancelled",
+      className: "bg-gray-500/10 text-gray-600 border-gray-200",
+    },
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-base">Invoices</CardTitle>
+        <Button asChild size="sm">
+          <Link search={{ clientId }} to="/app/invoices/new">
+            <Plus className="mr-2 h-4 w-4" />
+            New Invoice
+          </Link>
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {!invoices || invoices.invoices.length === 0 ? (
+          <div className="py-8 text-center">
+            <CreditCard className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
+            <p className="mb-4 text-muted-foreground text-sm">
+              No invoices found for this client.
+            </p>
+            <Button asChild size="sm">
+              <Link search={{ clientId }} to="/app/invoices/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Create First Invoice
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {invoices.invoices.map((invoice) => {
+              const statusConfig = statusLabels[invoice.status];
+              return (
+                <Link
+                  className="block rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                  key={invoice.id}
+                  params={{ invoiceId: invoice.id }}
+                  to="/app/invoices/$invoiceId"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">
+                          {invoice.invoiceNumber}
+                        </span>
+                        <Badge
+                          className={statusConfig.className}
+                          variant="outline"
+                        >
+                          {statusConfig.label}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-muted-foreground text-sm">
+                        Due: {new Date(invoice.dueDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">
+                        GYD {Number.parseFloat(invoice.totalAmount).toFixed(2)}
+                      </p>
+                      {Number.parseFloat(invoice.amountDue) > 0 && (
+                        <p className="text-red-600 text-sm">
+                          Due: GYD{" "}
+                          {Number.parseFloat(invoice.amountDue).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </CardContent>

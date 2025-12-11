@@ -110,9 +110,9 @@ function NewClientPage() {
     },
   });
 
-  const clientType = form.useStore((state) => state.values.type);
   const isIndividual =
-    clientType === "INDIVIDUAL" || clientType === "FOREIGN_NATIONAL";
+    form.state.values.type === "INDIVIDUAL" ||
+    form.state.values.type === "FOREIGN_NATIONAL";
 
   return (
     <div className="flex flex-col">

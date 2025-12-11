@@ -114,7 +114,7 @@ function UploadDocumentPage() {
       ],
       "text/plain": [".txt"],
     },
-    maxSize: 10 * 1024 * 1024, // 10MB max
+    maxSize: 50 * 1024 * 1024, // 50MB max
   });
 
   const removeFile = (index: number) => {
@@ -123,24 +123,37 @@ function UploadDocumentPage() {
 
   const uploadMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      // For now, just create document records
-      // Actual file upload would go through a separate API endpoint
       const results = [];
+
       for (const file of files) {
-        const doc = await client.documents.create({
-          fileName: `${crypto.randomUUID()}_${file.name}`,
-          originalName: file.name,
-          mimeType: file.type,
-          fileSize: file.size,
-          storagePath: `/uploads/${new Date().getFullYear()}/${new Date().getMonth() + 1}/${crypto.randomUUID()}`,
+        // Step 1: Prepare upload - creates PENDING document record
+        const { documentId, uploadUrl } = await client.documents.prepareUpload({
           category: values.category,
           description: values.description || undefined,
           clientId: values.clientId || undefined,
           matterId: values.matterId || undefined,
           expirationDate: values.expirationDate || undefined,
         });
-        results.push(doc);
+
+        // Step 2: Upload file to server
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadResponse = await fetch(uploadUrl, {
+          method: "POST",
+          body: formData,
+          credentials: "include", // Include cookies for auth
+        });
+
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json();
+          throw new Error(error.error || "Failed to upload file");
+        }
+
+        const uploadResult = await uploadResponse.json();
+        results.push(uploadResult.document);
       }
+
       return results;
     },
     onSuccess: () => {
@@ -237,7 +250,7 @@ function UploadDocumentPage() {
                       Drag & drop files here, or click to select
                     </p>
                     <p className="text-muted-foreground text-sm">
-                      PDF, Word, Excel, Images (max 10MB each)
+                      PDF, Word, Excel, Images (max 50MB each)
                     </p>
                   </>
                 )}

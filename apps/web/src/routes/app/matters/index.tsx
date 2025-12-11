@@ -312,7 +312,7 @@ function MattersPage() {
         </div>
 
         {/* Pagination */}
-        {data && data.totalPages > 1 && (
+        {data && data.totalPages && data.totalPages > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
               Showing {(page - 1) * 20 + 1} to {Math.min(page * 20, data.total)}{" "}

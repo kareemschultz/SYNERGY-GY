@@ -8,18 +8,38 @@
 
 ## Overview
 
-**GK-Nexus** is a comprehensive business management platform designed specifically for **Gaskin Ceres Management Consultancy (GCMC)** and **K.A. Juman-Yassin & Associates (KAJ)** in Guyana. The platform streamlines client management, matter tracking, document handling, and deadline monitoring, providing a centralized solution for professional services firms.
+**GK-Nexus** is a comprehensive business management platform designed specifically for **Green Crescent Management Consultancy (GCMC)** and **Kareem Abdul-Jabar Tax & Accounting Services (KAJ)** in Guyana. The platform streamlines client management, matter tracking, document handling, and deadline monitoring, providing a centralized solution for professional services firms.
+
+**Developed by:** Kareem Schultz, Karetech Solutions
+
+> ⚠️ **NO MOCK DATA POLICY**: This project does not use mock data, seed scripts, or placeholder content. All data is created by users through the application interface. Empty states are designed for zero-data scenarios.
 
 Built as a modern, type-safe monorepo application, GK-Nexus combines the power of React, TanStack Router, Hono, and PostgreSQL to deliver a robust, scalable solution for managing complex business operations.
 
+## Development Status
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| **Phase 1** | ✅ Complete | Core platform - Clients, Matters, Documents, Deadlines, Dashboard |
+| **Phase 2** | 🚧 In Progress | Admin panel, Client portal, Settings, Service catalog |
+| **Phase 3** | 📅 Future | Email, WhatsApp, GRA integration, Reporting |
+
 ## Features
 
+### Phase 1 (Complete)
 - 👥 **Client Management** - Comprehensive client profiles with contact information, classification, and relationship tracking
 - 📋 **Matter Tracking** - Organize and monitor cases, projects, and client engagements with detailed status tracking
 - 📄 **Document Management** - Centralized document storage with categorization, version control, and secure access
 - 📅 **Deadline Calendar** - Never miss important dates with integrated deadline tracking and notifications
 - 📊 **Dashboard** - Real-time insights into active matters, upcoming deadlines, and recent activities
 - 🔐 **Role-based Access Control** - Secure authentication and authorization with Better-Auth integration
+
+### Phase 2 (In Progress)
+- 👤 **Admin Panel** - Staff management interface (✅ Complete)
+- 🌐 **Client Portal** - Self-service portal for clients (✅ Mostly Complete - email pending)
+- ⚙️ **Settings** - Application configuration (✅ Complete)
+- 💰 **Service Catalog** - Service offerings and pricing (📅 Pending)
+- 🧾 **Invoice Generation** - Create and manage invoices (📅 Pending)
 
 ## Tech Stack
 
@@ -104,13 +124,7 @@ createdb gk_nexus
 bun run db:push
 ```
 
-4. **(Optional) Seed the database with sample data**
-
-```bash
-bun run db:seed
-```
-
-5. **Open Drizzle Studio to view your database**
+4. **Open Drizzle Studio to view your database**
 
 ```bash
 bun run db:studio
@@ -239,7 +253,6 @@ Run from root or server workspace:
 - `bun run db:studio` - Open Drizzle Studio (database GUI)
 - `bun run db:generate` - Generate Drizzle migration files
 - `bun run db:migrate` - Run database migrations
-- `bun run db:seed` - Seed database with sample data
 
 ### Application-Specific
 

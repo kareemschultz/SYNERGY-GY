@@ -86,9 +86,9 @@ async function generateReferenceNumber(
     .limit(1);
 
   let nextNumber = 1;
-  if (latest.length > 0) {
+  if (latest.length > 0 && latest[0]) {
     const parts = latest[0].referenceNumber.split("-");
-    const lastNumber = Number.parseInt(parts[2], 10);
+    const lastNumber = Number.parseInt(parts[2] || "0", 10);
     nextNumber = lastNumber + 1;
   }
 
@@ -154,10 +154,12 @@ export const mattersRouter = {
         conditions.length > 0 ? and(...conditions) : undefined;
 
       // Get total count
-      const [{ total }] = await db
+      const countResult = await db
         .select({ total: count() })
         .from(matter)
         .where(whereClause);
+
+      const total = countResult[0]?.total ?? 0;
 
       // Get paginated results
       const offset = (input.page - 1) * input.limit;
@@ -258,7 +260,7 @@ export const mattersRouter = {
         where: eq(serviceType.id, input.serviceTypeId),
       });
 
-      const [newMatter] = await db
+      const matterResult = await db
         .insert(matter)
         .values({
           ...input,
@@ -268,6 +270,13 @@ export const mattersRouter = {
           createdById: context.session.user.id,
         })
         .returning();
+
+      const newMatter = matterResult[0];
+      if (!newMatter) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to create matter",
+        });
+      }
 
       // Create default checklist items if service type has them
       if (svcType?.defaultChecklistItems?.length) {

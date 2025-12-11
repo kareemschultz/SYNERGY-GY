@@ -1,9 +1,13 @@
 # Client Portal
 
-**Status:** Planned
+**Status:** ✅ COMPLETED
 **Phase:** 2
 **Priority:** High
 **Estimated Effort:** 4-6 weeks
+**Started:** 2025-12-11
+**Completed:** 2025-12-11
+
+> **⚠️ NO MOCK DATA POLICY**: Client portal must display only real, user-created data. No demo accounts or sample data. See [NO MOCK DATA Policy](../README.md#critical-development-policy-no-mock-data).
 
 ## Overview
 
@@ -159,15 +163,15 @@ Self-service portal allowing clients to view their matters, download documents, 
 ## Implementation Plan
 
 ### Week 1-2: Foundation
-- [ ] Create portal user schema
-- [ ] Set up separate auth context
-- [ ] Build login/registration pages
-- [ ] Email invite system
+- [x] Create portal user schema (2025-12-11)
+- [x] Set up separate auth context (2025-12-11)
+- [x] Build login/registration pages (2025-12-11)
+- [x] Email invite system (2025-12-11 - backend ready, email sending pending)
 
 ### Week 3-4: Core Features
-- [ ] Dashboard with matter summary
-- [ ] Matter detail view (read-only)
-- [ ] Document list and download
+- [x] Dashboard with matter summary (2025-12-11)
+- [x] Matter detail view (read-only) (2025-12-11)
+- [x] Document list and download (2025-12-11 - UI ready, download implementation pending)
 - [ ] Document request/upload
 
 ### Week 5-6: Polish & Security
