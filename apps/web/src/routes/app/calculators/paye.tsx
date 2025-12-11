@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Calculator, Save } from "lucide-react";
 import { useState } from "react";
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/calculators/paye")({
   component: PAYECalculator,
@@ -26,16 +27,27 @@ function PAYECalculator() {
     annualIncome: number;
     personalAllowance: number;
     taxableIncome: number;
-    taxOnFirstBracket: number;
-    taxOnSecondBracket: number;
     totalTax: number;
     monthlyTax: number;
     netIncome: number;
     effectiveRate: number;
   } | null>(null);
 
-  const calculateMutation = orpc.taxCalculators.calculate.paye.useMutation();
-  const saveMutation = orpc.taxCalculators.history.save.useMutation();
+  const calculateMutation = useMutation({
+    mutationFn: (data: {
+      monthlyIncome: number;
+      personalAllowance?: number;
+      otherDeductions?: number;
+    }) => client.taxCalculators.calculatePaye(data),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (data: {
+      calculationType: "PAYE" | "VAT" | "NIS";
+      inputData: Record<string, unknown>;
+      result: Record<string, unknown>;
+    }) => client.taxCalculators.saveCalculation(data),
+  });
 
   const handleCalculate = async () => {
     const income = Number.parseFloat(monthlyIncome);
@@ -227,21 +239,13 @@ function PAYECalculator() {
               </div>
 
               <div className="space-y-3 rounded-lg bg-muted p-4">
-                <h4 className="font-semibold text-sm">Tax Breakdown</h4>
+                <h4 className="font-semibold text-sm">Tax Calculation</h4>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
-                    28% on first $1.8M:
+                    PAYE Rate (25%):
                   </span>
                   <span className="font-medium">
-                    {formatCurrency(result.taxOnFirstBracket)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    40% above $1.8M:
-                  </span>
-                  <span className="font-medium">
-                    {formatCurrency(result.taxOnSecondBracket)}
+                    {formatCurrency(result.totalTax)}
                   </span>
                 </div>
                 <div className="border-border border-t pt-3">
@@ -317,8 +321,7 @@ function PAYECalculator() {
           <div>
             <h4 className="mb-2 font-semibold">3. Calculate Tax</h4>
             <p className="text-muted-foreground">
-              Tax is calculated in brackets: 28% on the first $1,800,000 of
-              taxable income, and 40% on any amount above that.
+              Tax is calculated at a flat rate of 25% on taxable income.
             </p>
           </div>
           <div>

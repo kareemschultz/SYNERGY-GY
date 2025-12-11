@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Calculator, Save } from "lucide-react";
 import { useState } from "react";
@@ -12,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/calculators/vat")({
   component: VATCalculator,
@@ -29,8 +30,18 @@ function VATCalculator() {
     vatRate: number;
   } | null>(null);
 
-  const calculateMutation = orpc.taxCalculators.calculate.vat.useMutation();
-  const saveMutation = orpc.taxCalculators.history.save.useMutation();
+  const calculateMutation = useMutation({
+    mutationFn: (data: { amount: number; includesVAT: boolean }) =>
+      client.taxCalculators.calculateVat(data),
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (data: {
+      calculationType: "PAYE" | "VAT" | "NIS";
+      inputData: Record<string, unknown>;
+      result: Record<string, unknown>;
+    }) => client.taxCalculators.saveCalculation(data),
+  });
 
   const handleCalculate = async () => {
     const amountValue = Number.parseFloat(amount);

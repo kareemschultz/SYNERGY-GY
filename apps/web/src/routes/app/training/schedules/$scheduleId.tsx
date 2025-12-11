@@ -5,9 +5,10 @@
  * enrolled participants and enrollment management.
  */
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { ArrowLeft, Calendar, MapPin, Plus, User } from "lucide-react";
+import { ArrowLeft, Calendar, Loader2, MapPin, Plus, User } from "lucide-react";
 import { useState } from "react";
 import { EnrollmentList } from "@/components/training/enrollment-list";
 import { Badge } from "@/components/ui/badge";
@@ -36,16 +37,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/training/schedules/$scheduleId")({
-  loader: async ({ params }) => {
-    const schedule = await orpc.training.schedules.get.query({
-      id: params.scheduleId,
-    });
-    const clients = await orpc.clients.list.query({});
-    return { schedule, clients };
-  },
   component: ScheduleDetailPage,
 });
 
@@ -67,46 +61,44 @@ const STATUS_VARIANTS: Record<
 };
 
 function ScheduleDetailPage() {
-  const { schedule, clients } = Route.useLoaderData();
+  const { scheduleId } = Route.useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const priceInDollars = (schedule.coursePrice / 100).toFixed(2);
-  const availableSpots = schedule.maxParticipants - schedule.enrollments.length;
-  const isFull = availableSpots <= 0;
+  const { data: schedule, isLoading: scheduleLoading } = useQuery({
+    queryKey: ["training-schedule", scheduleId],
+    queryFn: () => client.training.getSchedule({ id: scheduleId }),
+  });
 
-  const handleEnrollClient = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+  const { data: clientsData, isLoading: clientsLoading } = useQuery({
+    queryKey: ["clients-for-enrollment"],
+    queryFn: () => client.clients.list({}),
+  });
 
-    try {
-      await orpc.training.enrollments.create.mutate({
-        scheduleId: schedule.id,
-        clientId: selectedClientId,
-        status: "REGISTERED",
-        paymentStatus: "PENDING",
+  const enrollMutation = useMutation({
+    mutationFn: (data: {
+      scheduleId: string;
+      clientId: string;
+      status: "REGISTERED" | "CONFIRMED" | "ATTENDED" | "CANCELLED" | "NO_SHOW";
+      paymentStatus: "PENDING" | "PAID" | "PARTIAL" | "REFUNDED";
+    }) => client.training.createEnrollment(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["training-schedule", scheduleId],
       });
-
       toast({
         title: "Client enrolled",
         description:
           "The client has been successfully enrolled in this training session.",
       });
-
       setIsEnrollDialogOpen(false);
       setSelectedClientId("");
-
-      // Refresh the page
-      navigate({
-        to: "/app/training/schedules/$scheduleId",
-        params: { scheduleId: schedule.id },
-        replace: true,
-      });
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "Failed to enroll client",
         description:
@@ -115,40 +107,32 @@ function ScheduleDetailPage() {
             : "An error occurred while enrolling the client.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+  });
 
-  const handleUpdateEnrollmentStatus = async (
-    enrollmentId: string,
-    status: string
-  ) => {
-    try {
-      await orpc.training.enrollments.update.mutate({
-        id: enrollmentId,
-        data: {
-          status: status as
-            | "REGISTERED"
-            | "CONFIRMED"
-            | "ATTENDED"
-            | "CANCELLED"
-            | "NO_SHOW",
-        },
+  const updateEnrollmentMutation = useMutation({
+    mutationFn: (data: {
+      id: string;
+      data: {
+        status?:
+          | "REGISTERED"
+          | "CONFIRMED"
+          | "ATTENDED"
+          | "CANCELLED"
+          | "NO_SHOW";
+        paymentStatus?: "PENDING" | "PAID" | "PARTIAL" | "REFUNDED";
+      };
+    }) => client.training.updateEnrollment(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["training-schedule", scheduleId],
       });
-
       toast({
         title: "Status updated",
         description: "Enrollment status has been updated successfully.",
       });
-
-      // Refresh the page
-      navigate({
-        to: "/app/training/schedules/$scheduleId",
-        params: { scheduleId: schedule.id },
-        replace: true,
-      });
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "Failed to update status",
         description:
@@ -157,27 +141,22 @@ function ScheduleDetailPage() {
             : "An error occurred while updating the status.",
         variant: "destructive",
       });
-    }
-  };
+    },
+  });
 
-  const handleIssueCertificate = async (enrollmentId: string) => {
-    try {
-      await orpc.training.enrollments.issueCertificate.mutate({
-        id: enrollmentId,
+  const issueCertificateMutation = useMutation({
+    mutationFn: (data: { id: string }) =>
+      client.training.issueCertificate(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["training-schedule", scheduleId],
       });
-
       toast({
         title: "Certificate issued",
         description: "Training certificate has been issued successfully.",
       });
-
-      // Refresh the page
-      navigate({
-        to: "/app/training/schedules/$scheduleId",
-        params: { scheduleId: schedule.id },
-        replace: true,
-      });
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "Failed to issue certificate",
         description:
@@ -186,15 +165,69 @@ function ScheduleDetailPage() {
             : "An error occurred while issuing the certificate.",
         variant: "destructive",
       });
-    }
+    },
+  });
+
+  const handleEnrollClient = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClientId) return;
+
+    enrollMutation.mutate({
+      scheduleId,
+      clientId: selectedClientId,
+      status: "REGISTERED",
+      paymentStatus: "PENDING",
+    });
   };
+
+  const handleUpdateEnrollmentStatus = (
+    enrollmentId: string,
+    status: string
+  ) => {
+    updateEnrollmentMutation.mutate({
+      id: enrollmentId,
+      data: {
+        status: status as
+          | "REGISTERED"
+          | "CONFIRMED"
+          | "ATTENDED"
+          | "CANCELLED"
+          | "NO_SHOW",
+      },
+    });
+  };
+
+  const handleIssueCertificate = (enrollmentId: string) => {
+    issueCertificateMutation.mutate({ id: enrollmentId });
+  };
+
+  if (scheduleLoading || clientsLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!schedule) {
+    return (
+      <div className="container mx-auto py-6">
+        <p className="text-muted-foreground">Schedule not found</p>
+      </div>
+    );
+  }
+
+  const clients = clientsData?.clients ?? [];
+  const priceInDollars = (schedule.coursePrice / 100).toFixed(2);
+  const availableSpots = schedule.maxParticipants - schedule.enrollments.length;
+  const isFull = availableSpots <= 0;
 
   // Filter out already enrolled clients
   const enrolledClientIds = new Set(
-    schedule.enrollments.map((e) => e.clientId)
+    schedule.enrollments.map((e: { clientId: string }) => e.clientId)
   );
   const availableClients = clients.filter(
-    (client) => !enrolledClientIds.has(client.id)
+    (c: { id: string }) => !enrolledClientIds.has(c.id)
   );
 
   return (
@@ -345,7 +378,7 @@ function ScheduleDetailPage() {
                   {schedule.enrollments.length > 0
                     ? Math.round(
                         (schedule.enrollments.filter(
-                          (e) => e.status === "ATTENDED"
+                          (e: { status: string }) => e.status === "ATTENDED"
                         ).length /
                           schedule.enrollments.length) *
                           100
@@ -361,8 +394,10 @@ function ScheduleDetailPage() {
                 </p>
                 <p className="font-bold text-2xl">
                   {
-                    schedule.enrollments.filter((e) => e.certificateNumber)
-                      .length
+                    schedule.enrollments.filter(
+                      (e: { certificateNumber: string | null }) =>
+                        e.certificateNumber
+                    ).length
                   }
                 </p>
               </div>
@@ -420,11 +455,13 @@ function ScheduleDetailPage() {
                       All clients are already enrolled
                     </div>
                   ) : (
-                    availableClients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))
+                    availableClients.map(
+                      (c: { id: string; displayName: string }) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.displayName}
+                        </SelectItem>
+                      )
+                    )
                   )}
                 </SelectContent>
               </Select>
@@ -432,7 +469,7 @@ function ScheduleDetailPage() {
 
             <DialogFooter>
               <Button
-                disabled={isSubmitting}
+                disabled={enrollMutation.isPending}
                 onClick={() => setIsEnrollDialogOpen(false)}
                 type="button"
                 variant="outline"
@@ -440,10 +477,12 @@ function ScheduleDetailPage() {
                 Cancel
               </Button>
               <Button
-                disabled={isSubmitting || availableClients.length === 0}
+                disabled={
+                  enrollMutation.isPending || availableClients.length === 0
+                }
                 type="submit"
               >
-                {isSubmitting ? "Enrolling..." : "Enroll Client"}
+                {enrollMutation.isPending ? "Enrolling..." : "Enroll Client"}
               </Button>
             </DialogFooter>
           </form>

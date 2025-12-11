@@ -5,7 +5,12 @@
  * all scheduled sessions and management actions.
  */
 
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createFileRoute,
+  useNavigate,
+  useParams,
+} from "@tanstack/react-router";
 import { format } from "date-fns";
 import {
   ArrowLeft,
@@ -13,6 +18,7 @@ import {
   Clock,
   DollarSign,
   Edit,
+  Loader2,
   Plus,
   Users,
 } from "lucide-react";
@@ -38,15 +44,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/training/courses/$courseId")({
-  loader: async ({ params }) => {
-    const course = await orpc.training.courses.get.query({
-      id: params.courseId,
-    });
-    return { course };
-  },
   component: CourseDetailPage,
 });
 
@@ -59,8 +59,9 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 function CourseDetailPage() {
-  const { course } = Route.useLoaderData();
+  const { courseId } = useParams({ from: "/app/training/courses/$courseId" });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
@@ -72,36 +73,29 @@ function CourseDetailPage() {
     location: "",
     instructor: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const priceInDollars = (course.price / 100).toFixed(2);
+  const { data: course, isLoading } = useQuery({
+    queryKey: ["training-course", courseId],
+    queryFn: () => client.training.getCourse({ id: courseId }),
+  });
 
-  const handleCreateSchedule = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const startDateTime = new Date(
-        `${scheduleFormData.startDate}T${scheduleFormData.startTime}`
-      );
-      const endDateTime = new Date(
-        `${scheduleFormData.endDate}T${scheduleFormData.endTime}`
-      );
-
-      await orpc.training.schedules.create.mutate({
-        courseId: course.id,
-        startDate: startDateTime,
-        endDate: endDateTime,
-        location: scheduleFormData.location,
-        instructor: scheduleFormData.instructor,
-        status: "SCHEDULED",
+  const createScheduleMutation = useMutation({
+    mutationFn: (data: {
+      courseId: string;
+      startDate: Date;
+      endDate: Date;
+      location: string;
+      instructor: string;
+      status: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+    }) => client.training.createSchedule(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["training-course", courseId],
       });
-
       toast({
         title: "Schedule created",
         description: "The training session has been scheduled successfully.",
       });
-
       setIsScheduleDialogOpen(false);
       setScheduleFormData({
         startDate: "",
@@ -111,14 +105,8 @@ function CourseDetailPage() {
         location: "",
         instructor: "",
       });
-
-      // Refresh the page
-      navigate({
-        to: "/app/training/courses/$courseId",
-        params: { courseId: course.id },
-        replace: true,
-      });
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "Failed to create schedule",
         description:
@@ -127,14 +115,50 @@ function CourseDetailPage() {
             : "An error occurred while creating the schedule.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const handleCreateSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const startDateTime = new Date(
+      `${scheduleFormData.startDate}T${scheduleFormData.startTime}`
+    );
+    const endDateTime = new Date(
+      `${scheduleFormData.endDate}T${scheduleFormData.endTime}`
+    );
+
+    createScheduleMutation.mutate({
+      courseId,
+      startDate: startDateTime,
+      endDate: endDateTime,
+      location: scheduleFormData.location,
+      instructor: scheduleFormData.instructor,
+      status: "SCHEDULED",
+    });
   };
 
   const handleScheduleInputChange = (field: string, value: string) => {
     setScheduleFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="container mx-auto py-6">
+        <p className="text-muted-foreground">Course not found</p>
+      </div>
+    );
+  }
+
+  const priceInDollars = (course.price / 100).toFixed(2);
 
   return (
     <div className="container mx-auto space-y-6 py-6">
@@ -255,7 +279,8 @@ function CourseDetailPage() {
                 </p>
                 <p className="font-bold text-2xl">
                   {course.schedules.reduce(
-                    (sum, s) => sum + s.enrollmentCount,
+                    (sum: number, s: { enrollmentCount: number }) =>
+                      sum + s.enrollmentCount,
                     0
                   )}
                 </p>
@@ -268,7 +293,7 @@ function CourseDetailPage() {
                 <p className="font-bold text-2xl">
                   {
                     course.schedules.filter(
-                      (s) =>
+                      (s: { status: string }) =>
                         s.status === "SCHEDULED" || s.status === "IN_PROGRESS"
                     ).length
                   }
@@ -281,8 +306,9 @@ function CourseDetailPage() {
                 </p>
                 <p className="font-bold text-2xl">
                   {
-                    course.schedules.filter((s) => s.status === "COMPLETED")
-                      .length
+                    course.schedules.filter(
+                      (s: { status: string }) => s.status === "COMPLETED"
+                    ).length
                   }
                 </p>
               </div>
@@ -407,15 +433,17 @@ function CourseDetailPage() {
 
             <DialogFooter>
               <Button
-                disabled={isSubmitting}
+                disabled={createScheduleMutation.isPending}
                 onClick={() => setIsScheduleDialogOpen(false)}
                 type="button"
                 variant="outline"
               >
                 Cancel
               </Button>
-              <Button disabled={isSubmitting} type="submit">
-                {isSubmitting ? "Creating..." : "Create Schedule"}
+              <Button disabled={createScheduleMutation.isPending} type="submit">
+                {createScheduleMutation.isPending
+                  ? "Creating..."
+                  : "Create Schedule"}
               </Button>
             </DialogFooter>
           </form>

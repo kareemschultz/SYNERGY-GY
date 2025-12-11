@@ -189,13 +189,13 @@ async function generateRecurringInstances(
       type: parentDeadline.type as DeadlineType,
       clientId: parentDeadline.clientId,
       matterId: parentDeadline.matterId,
-      business: parentDeadline.business,
+      business: parentDeadline.business as "GCMC" | "KAJ" | null,
       dueDate: nextDate,
       recurrencePattern: "NONE" as const, // Instances don't recur themselves
       recurrenceEndDate: null,
       parentDeadlineId: parentId,
       assignedStaffId: parentDeadline.assignedStaffId,
-      priority: parentDeadline.priority,
+      priority: parentDeadline.priority as "LOW" | "NORMAL" | "HIGH" | "URGENT",
       createdById: parentDeadline.createdById,
       isCompleted: false,
     });

@@ -5,6 +5,7 @@
  * Requires admin permissions.
  */
 
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -27,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/training/new")({
   component: NewCoursePage,
@@ -46,37 +47,31 @@ function NewCoursePage() {
     price: "",
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const course = await orpc.training.courses.create.mutate({
-        title: formData.title,
-        description: formData.description || null,
-        category: formData.category as
-          | "HUMAN_RESOURCES"
-          | "CUSTOMER_RELATIONS"
-          | "BUSINESS_DEVELOPMENT"
-          | "COMPLIANCE"
-          | "OTHER",
-        duration: Number.parseInt(formData.duration, 10),
-        maxParticipants: Number.parseInt(formData.maxParticipants, 10),
-        price: Math.round(Number.parseFloat(formData.price) * 100), // Convert to cents
-      });
-
+  const createCourseMutation = useMutation({
+    mutationFn: (data: {
+      title: string;
+      description?: string;
+      category:
+        | "HUMAN_RESOURCES"
+        | "CUSTOMER_RELATIONS"
+        | "BUSINESS_DEVELOPMENT"
+        | "COMPLIANCE"
+        | "OTHER";
+      duration: number;
+      maxParticipants: number;
+      price: number;
+    }) => client.training.createCourse(data),
+    onSuccess: (course) => {
       toast({
         title: "Course created",
         description: `${course.title} has been added to the catalog.`,
       });
-
       navigate({
         to: "/app/training/courses/$courseId",
         params: { courseId: course.id },
       });
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "Failed to create course",
         description:
@@ -85,9 +80,24 @@ function NewCoursePage() {
             : "An error occurred while creating the course.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
-    }
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createCourseMutation.mutate({
+      title: formData.title,
+      description: formData.description || undefined,
+      category: formData.category as
+        | "HUMAN_RESOURCES"
+        | "CUSTOMER_RELATIONS"
+        | "BUSINESS_DEVELOPMENT"
+        | "COMPLIANCE"
+        | "OTHER",
+      duration: Number.parseInt(formData.duration, 10),
+      maxParticipants: Number.parseInt(formData.maxParticipants, 10),
+      price: Math.round(Number.parseFloat(formData.price) * 100), // Convert to cents
+    });
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -233,11 +243,13 @@ function NewCoursePage() {
             </div>
 
             <div className="flex gap-4">
-              <Button disabled={isSubmitting} type="submit">
-                {isSubmitting ? "Creating..." : "Create Course"}
+              <Button disabled={createCourseMutation.isPending} type="submit">
+                {createCourseMutation.isPending
+                  ? "Creating..."
+                  : "Create Course"}
               </Button>
               <Button
-                disabled={isSubmitting}
+                disabled={createCourseMutation.isPending}
                 onClick={() => navigate({ to: "/app/training" })}
                 type="button"
                 variant="outline"

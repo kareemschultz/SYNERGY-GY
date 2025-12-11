@@ -176,109 +176,96 @@ function calculateNIS(input: NISInput): NISResult {
   };
 }
 
-export const taxCalculatorsRouter = router({
-  calculate: router({
-    /**
-     * Calculate PAYE tax
-     */
-    paye: protectedProcedure
-      .input(
-        z.object({
-          monthlyIncome: z.number().min(0),
-          personalAllowance: z.number().min(0).optional(),
-          otherDeductions: z.number().min(0).optional(),
+// Tax Calculators Router (oRPC pattern - plain object with .handler())
+export const taxCalculatorsRouter = {
+  // Calculate PAYE tax
+  calculatePaye: protectedProcedure
+    .input(
+      z.object({
+        monthlyIncome: z.number().min(0),
+        personalAllowance: z.number().min(0).optional(),
+        otherDeductions: z.number().min(0).optional(),
+      })
+    )
+    .handler(({ input }) => calculatePAYE(input)),
+
+  // Calculate VAT
+  calculateVat: protectedProcedure
+    .input(
+      z.object({
+        amount: z.number().min(0),
+        includesVAT: z.boolean(),
+      })
+    )
+    .handler(({ input }) => calculateVAT(input)),
+
+  // Calculate NIS contributions
+  calculateNis: protectedProcedure
+    .input(
+      z.object({
+        monthlyIncome: z.number().min(0),
+        contributionType: z.enum(["employee", "employer", "both"]),
+      })
+    )
+    .handler(({ input }) => calculateNIS(input)),
+
+  // List saved calculations for the current user
+  listHistory: protectedProcedure
+    .input(
+      z.object({
+        calculationType: z.enum(["PAYE", "VAT", "NIS"]).optional(),
+        limit: z.number().min(1).max(100).optional().default(20),
+      })
+    )
+    .handler(async ({ input, context }) => {
+      const userId = context.session?.user?.id;
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
+
+      const conditions = [eq(taxCalculations.userId, userId)];
+      if (input.calculationType) {
+        conditions.push(
+          eq(taxCalculations.calculationType, input.calculationType)
+        );
+      }
+
+      const results = await db
+        .select()
+        .from(taxCalculations)
+        .where(and(...conditions))
+        .orderBy(desc(taxCalculations.createdAt))
+        .limit(input.limit);
+
+      return results;
+    }),
+
+  // Save a calculation result
+  saveCalculation: protectedProcedure
+    .input(
+      z.object({
+        calculationType: z.enum(["PAYE", "VAT", "NIS"]),
+        inputData: z.record(z.string(), z.unknown()),
+        result: z.record(z.string(), z.unknown()),
+      })
+    )
+    .handler(async ({ input, context }) => {
+      const userId = context.session?.user?.id;
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
+
+      const [calculation] = await db
+        .insert(taxCalculations)
+        .values({
+          id: nanoid(),
+          userId,
+          calculationType: input.calculationType,
+          inputData: input.inputData,
+          result: input.result,
         })
-      )
-      .query(({ input }) => calculatePAYE(input)),
+        .returning();
 
-    /**
-     * Calculate VAT
-     */
-    vat: protectedProcedure
-      .input(
-        z.object({
-          amount: z.number().min(0),
-          includesVAT: z.boolean(),
-        })
-      )
-      .query(({ input }) => calculateVAT(input)),
-
-    /**
-     * Calculate NIS contributions
-     */
-    nis: protectedProcedure
-      .input(
-        z.object({
-          monthlyIncome: z.number().min(0),
-          contributionType: z.enum(["employee", "employer", "both"]),
-        })
-      )
-      .query(({ input }) => calculateNIS(input)),
-  }),
-
-  history: router({
-    /**
-     * List saved calculations for the current user
-     */
-    list: protectedProcedure
-      .input(
-        z.object({
-          calculationType: z.enum(["PAYE", "VAT", "NIS"]).optional(),
-          limit: z.number().min(1).max(100).optional().default(20),
-        })
-      )
-      .query(async ({ input, context }) => {
-        const userId = context.session?.user?.id;
-        if (!userId) {
-          throw new Error("User not authenticated");
-        }
-
-        const conditions = [eq(taxCalculations.userId, userId)];
-        if (input.calculationType) {
-          conditions.push(
-            eq(taxCalculations.calculationType, input.calculationType)
-          );
-        }
-
-        const results = await db
-          .select()
-          .from(taxCalculations)
-          .where(and(...conditions))
-          .orderBy(desc(taxCalculations.createdAt))
-          .limit(input.limit);
-
-        return results;
-      }),
-
-    /**
-     * Save a calculation result
-     */
-    save: protectedProcedure
-      .input(
-        z.object({
-          calculationType: z.enum(["PAYE", "VAT", "NIS"]),
-          inputData: z.record(z.unknown()),
-          result: z.record(z.unknown()),
-        })
-      )
-      .mutation(async ({ input, context }) => {
-        const userId = context.session?.user?.id;
-        if (!userId) {
-          throw new Error("User not authenticated");
-        }
-
-        const [calculation] = await db
-          .insert(taxCalculations)
-          .values({
-            id: nanoid(),
-            userId,
-            calculationType: input.calculationType,
-            inputData: input.inputData,
-            result: input.result,
-          })
-          .returning();
-
-        return calculation;
-      }),
-  }),
-});
+      return calculation;
+    }),
+};

@@ -127,8 +127,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed 60+ backend TypeScript errors in API routers
   - Fixed 70+ frontend TypeScript errors across all routes
   - Proper type definitions for form components and hooks
-  - Created missing UI components (Alert, AlertDialog, Form)
+  - Created missing UI components (Alert, AlertDialog, Form, RadioGroup)
   - Added use-toast hook compatible with sonner
+- **API Pattern Fixes** - ✅ Complete - Corrected oRPC and TanStack Query usage
+  - Fixed frontend API calls: converted from `orpc.*.useMutation()` to `useMutation` from `@tanstack/react-query` with `client`
+  - Fixed Zod schemas: `z.record()` requires both key and value types
+  - Fixed Drizzle ORM: `or()` returns `SQL | undefined`, must check before array push
+  - Created `specs/api-patterns.md` documentation for future reference
+- **Build System** - ✅ Complete - All packages building successfully
+  - Pinned Zod to v3 in docs package for Astro/Starlight compatibility
+  - Monorepo uses Zod v4, docs package uses v3 (isolated dependency)
 
 ### Planned Features
 - Appointment scheduling and calendar sync

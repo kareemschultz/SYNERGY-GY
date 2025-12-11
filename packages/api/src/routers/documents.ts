@@ -13,6 +13,9 @@ interface TemplatePlaceholder {
   key: string;
   label: string;
   description?: string;
+  type?: "text" | "date" | "number" | "currency";
+  source?: "client" | "matter" | "staff" | "business" | "date" | "custom";
+  sourceField?: string;
 }
 
 // Input schemas
@@ -544,7 +547,7 @@ export const documentsRouter = {
           id: z.string(),
           clientId: z.string().optional(),
           matterId: z.string().optional(),
-          customData: z.record(z.string()).optional(),
+          customData: z.record(z.string(), z.string()).optional(),
         })
       )
       .handler(async ({ input, context }) => {
@@ -634,7 +637,7 @@ export const documentsRouter = {
           templateId: z.string(),
           clientId: z.string().optional(),
           matterId: z.string().optional(),
-          customData: z.record(z.string()).optional(),
+          customData: z.record(z.string(), z.string()).optional(),
           fileName: z.string().optional(),
         })
       )

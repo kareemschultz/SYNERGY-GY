@@ -5,8 +5,9 @@
  * Allows GCMC staff to browse the course catalog and manage offerings.
  */
 
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Plus, Search } from "lucide-react";
+import { Loader2, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { CourseCard } from "@/components/training/course-card";
@@ -19,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 const trainingSearchSchema = z.object({
   category: z
@@ -39,30 +40,42 @@ const trainingSearchSchema = z.object({
 
 export const Route = createFileRoute("/app/training/")({
   validateSearch: trainingSearchSchema,
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const filters = {
-      ...(deps.category && deps.category !== "ALL"
-        ? { category: deps.category }
-        : {}),
-      ...(deps.isActive !== "all"
-        ? { isActive: deps.isActive === "true" }
-        : {}),
-      ...(deps.search ? { search: deps.search } : {}),
-    };
-
-    const courses = await orpc.training.courses.list.query(filters);
-    return { courses };
-  },
   component: TrainingPage,
 });
 
 function TrainingPage() {
-  const { courses } = Route.useLoaderData();
-  const navigate = Route.useNavigate();
   const search = Route.useSearch();
+  const navigate = Route.useNavigate();
 
   const [searchInput, setSearchInput] = useState(search.search || "");
+
+  const { data: courses, isLoading } = useQuery({
+    queryKey: [
+      "training-courses",
+      {
+        category: search.category,
+        isActive: search.isActive,
+        search: search.search,
+      },
+    ],
+    queryFn: () =>
+      client.training.listCourses({
+        ...(search.category && search.category !== "ALL"
+          ? {
+              category: search.category as
+                | "HUMAN_RESOURCES"
+                | "CUSTOMER_RELATIONS"
+                | "BUSINESS_DEVELOPMENT"
+                | "COMPLIANCE"
+                | "OTHER",
+            }
+          : {}),
+        ...(search.isActive !== "all"
+          ? { isActive: search.isActive === "true" }
+          : {}),
+        ...(search.search ? { search: search.search } : {}),
+      }),
+  });
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,7 +167,11 @@ function TrainingPage() {
         </Select>
       </div>
 
-      {courses.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : !courses || courses.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center">
           <div className="mx-auto max-w-md">
             <h3 className="font-semibold text-lg">No courses found</h3>
@@ -179,9 +196,23 @@ function TrainingPage() {
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course) => (
-            <CourseCard course={course} key={course.id} />
-          ))}
+          {courses.map(
+            (course: {
+              id: string;
+              title: string;
+              description: string | null;
+              category: string;
+              duration: number;
+              maxParticipants: number;
+              price: number;
+              isActive: boolean;
+              createdAt: Date;
+              updatedAt: Date;
+              scheduleCount: number;
+            }) => (
+              <CourseCard course={course} key={course.id} />
+            )
+          )}
         </div>
       )}
     </div>
