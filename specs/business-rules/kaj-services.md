@@ -1,81 +1,432 @@
-# KAJ Tax & Accounting Services
+# KAJ Financial Services
 
-**Business:** KAJ Tax & Accounting Services
-**Focus:** Tax Preparation, Accounting, Financial Planning, Business Advisory
-**Client Base:** 200-500 clients (individuals, small businesses, corporations)
+**Business:** KAJ Financial Services
+**License:** GRA Licensed Accountant
+**Focus:** Tax Compliance, Accounting, NIS Services, Financial Statements, Audit Services
+**Client Base:** Individuals, small businesses, corporations, NGOs, co-operative societies
+
+---
+
+## Overview
+
+KAJ Financial Services provides comprehensive accounting, tax compliance, and audit services to individuals and organizations in Guyana. As a GRA Licensed Accountant, we specialize in navigating the complex requirements of the Guyana Revenue Authority (GRA) and National Insurance Scheme (NIS).
+
+### Core Service Areas
+
+Our practice focuses on six primary service categories that address the full spectrum of tax and compliance needs:
+
+1. **INCOME TAX RETURNS** - Complete tax return preparation for individuals, corporations, and self-employed persons
+2. **ALL COMPLIANCES** - Specialized compliance services for tenders, work permits, land transfers, firearm licenses, pensions, and assessments
+3. **PAYE RETURNS** - Monthly and annual employer payroll tax administration
+4. **INCOME/EXPENDITURE STATEMENTS** - Professional financial statements for bank loans, firearm applications, investments, and cash flow projections
+5. **AUDIT OF NGO & CO-OPERATIVE SOCIETIES** - Statutory audits and financial statement preparation for non-profit organizations and co-operative societies
+6. **NATIONAL INSURANCE SCHEME (NIS) SERVICES** - Complete NIS administration including registrations, monthly contributions, compliance, and pension applications
+
+---
 
 ## Service Categories
 
-### 1. Tax Preparation & Filing
+### 1. INCOME TAX RETURNS
 
-| Service | Description | Typical Duration |
-|---------|-------------|------------------|
-| Individual Income Tax | Personal tax return preparation | 3-5 days |
-| Corporate Tax Return | Business tax filing | 5-10 days |
-| VAT Return | Value Added Tax filing (monthly/quarterly) | 2-3 days |
-| PAYE Filing | Pay As You Earn monthly filing | 2-3 days |
-| Property Tax Return | Land and property tax assessment | 3-5 days |
-| Withholding Tax Return | WHT compliance filing | 2-3 days |
-| Capital Gains Tax | CGT calculation and filing | 3-5 days |
-| Tax Amendment | Correcting/amending prior returns | 5-7 days |
-| Tax Planning Consultation | Strategic tax planning | 2-3 hours |
-| Tax Compliance Review | Assess tax position and risks | 3-5 days |
+Complete income tax return preparation and filing services for individuals, corporations, and self-employed persons.
 
-### 2. Accounting Services
+| Service Type | Description | Required Documents | GRA Forms | Typical Duration | Price Range (GYD) |
+|-------------|-------------|-------------------|-----------|------------------|-------------------|
+| Individual Returns | Personal income tax returns for employed and self-employed individuals | Pay slips, NIS records, bank statements, investment income statements, deduction receipts | IT-01 (Income Tax Return), IT-03 (Self-Assessment) | 3-5 days | $15,000 - $60,000 |
+| Corporate Returns | Business income tax filing for companies and partnerships | Financial statements, trial balance, general ledger, asset register, payroll records, prior returns | CT-01 (Corporation Tax Return), schedules as required | 5-10 days | $50,000 - $300,000 |
+| Self-Employed Returns | Tax returns for sole proprietors and independent contractors | Revenue records, expense receipts, business bank statements, vehicle logs, inventory records | IT-01 with business schedules | 3-7 days | $25,000 - $80,000 |
 
-| Service | Description | Typical Duration |
-|---------|-------------|------------------|
-| Bookkeeping (Monthly) | Record all financial transactions | Monthly |
-| Financial Statements | Prepare balance sheet, P&L, cash flow | 5-10 days |
-| Payroll Processing | Calculate wages, taxes, NIS | Weekly/Monthly |
-| Bank Reconciliation | Match bank statements to records | 2-3 days |
-| Accounts Receivable | Manage customer invoicing/collections | Ongoing |
-| Accounts Payable | Manage vendor payments | Ongoing |
-| General Ledger Maintenance | Maintain chart of accounts | Ongoing |
-| Year-End Closing | Annual financial closing procedures | 10-15 days |
-| Management Reports | Custom financial reporting | 3-5 days |
-| Audit Support | Assist with external audits | As needed |
+**Key Deadlines:**
+- Individual Returns: April 30 (for prior calendar year)
+- Corporate Returns: 4 months after company year-end
+- Self-Assessment Payment: April 30 or upon filing
 
-### 3. Financial Planning & Advisory
+**Document Requirements:**
+- **Employed Individuals:** Employment income certificates, NIS contribution records, medical expenses, mortgage interest, education expenses
+- **Self-Employed:** Complete accounting records for business income/expenses, asset purchases, inventory counts
+- **Corporations:** Audited/unaudited financial statements, tax computations, loss carry-forward schedules
 
-| Service | Description | Typical Duration |
-|---------|-------------|------------------|
-| Investment Advisory | Investment strategy and planning | 2-3 sessions |
-| Retirement Planning | Pension and retirement strategies | 2-3 sessions |
-| Estate Planning | Wealth transfer planning | 3-5 sessions |
-| Business Valuation | Company value assessment | 1-2 weeks |
-| Cash Flow Planning | Personal/business cash flow analysis | 3-5 days |
-| Debt Management | Debt restructuring advice | 2-3 sessions |
-| Financial Health Check | Comprehensive financial review | 1 week |
-| Insurance Planning | Risk assessment and coverage | 2-3 sessions |
-| Education Funding | College/education savings plans | 1-2 sessions |
-| Wealth Management | Ongoing portfolio management | Monthly |
+### 2. ALL COMPLIANCES
 
-### 4. Business Registration & Compliance
+Comprehensive compliance services for various regulatory and statutory requirements.
 
-| Service | Description | Typical Duration |
-|---------|-------------|------------------|
-| TIN Registration | Tax Identification Number | 3-5 days |
-| NIS Registration | National Insurance Scheme | 3-5 days |
-| VAT Registration | Value Added Tax registration | 5-7 days |
-| Business Name Registration | Deeds Registry filing | 3-5 days |
-| Certificate of Compliance | GRA compliance certificate | 5-10 days |
-| Annual Returns Filing | Company annual filings | 3-5 days |
-| License Renewal Assistance | Trade/professional licenses | 2-3 days |
-| Tax Clearance Certificate | Obtain tax clearance | 5-10 days |
+| Compliance Type | Description | Required Documents | Relevant Forms/Certificates | Typical Duration | Price Range (GYD) |
+|----------------|-------------|-------------------|---------------------------|------------------|-------------------|
+| Tender Compliance | Tax compliance documentation for government and private sector tenders | Recent tax returns, certificate of compliance, NIS compliance, financial statements | Certificate of Compliance, Tax Clearance | 5-10 days | $25,000 - $50,000 |
+| Work Permit Compliance | Tax clearance for work permit applications and renewals | Recent tax returns, proof of tax payments, NIS compliance | Tax Clearance Certificate, GRA compliance letter | 5-7 days | $25,000 - $40,000 |
+| Land Transfer Compliance | Tax documentation for property transfers and transactions | Property documents, prior tax returns, capital gains calculations | Certificate of Compliance, Tax Clearance | 7-10 days | $30,000 - $60,000 |
+| Liability Compliance (Firearm, etc.) | Financial statements and tax compliance for firearm licenses and other liability permits | Income/expenditure statements, tax returns, bank statements, character references | Commissioner of Police financial forms, tax clearance | 5-7 days | $20,000 - $40,000 |
+| Pension Compliance | Pension-related tax and compliance documentation | Employment history, NIS records, pension fund statements, tax returns | NIS pension application forms, tax certificates | 3-5 days | $15,000 - $30,000 |
+| Certificate of Assessments | Obtain official tax assessment certificates from GRA | Recent tax returns, payment records, correspondence with GRA | GRA Certificate of Assessment | 5-10 days | $20,000 - $35,000 |
 
-### 5. Specialized Services
+**Workflow for Compliance Services:**
+1. Client consultation to understand specific compliance requirement
+2. Review existing tax and NIS status
+3. Gather required documentation
+4. Prepare income/expenditure statements if needed
+5. File any outstanding returns or payments
+6. Apply for required certificates/clearances from GRA/NIS
+7. Follow up with authorities
+8. Deliver compliance package to client
 
-| Service | Description | Typical Duration |
-|---------|-------------|------------------|
-| Tax Representation | Represent clients at GRA | As needed |
-| Objection/Appeal Filing | Challenge tax assessments | 1-2 weeks |
-| Forensic Accounting | Investigate financial irregularities | 2-4 weeks |
-| Due Diligence | Pre-acquisition financial review | 1-2 weeks |
-| Business Plan Financials | Financial projections for business plan | 1-2 weeks |
-| Grant/Loan Application Support | Financial documentation for funding | 1 week |
-| Non-Profit Accounting | Specialized NGO accounting | Ongoing |
-| Liquidation Services | Wind-up business financials | 2-4 weeks |
+**Important Notes:**
+- Most compliance services require being up-to-date with all tax and NIS obligations
+- Processing time includes GRA/relevant authority processing (typically 5-15 business days)
+- Expedited service available for urgent matters (additional fees apply)
+
+### 3. PAYE RETURNS
+
+Employer payroll tax (Pay As You Earn) preparation and filing services.
+
+| Service Type | Description | Required Documents | GRA Forms | Filing Deadline | Price Range (GYD) |
+|-------------|-------------|-------------------|-----------|----------------|-------------------|
+| Monthly PAYE Submissions | Calculate and file monthly employer tax withholding | Payroll register, employee earnings, tax withheld, payments made | PAYE-01 (Monthly Return), PAYE-03 (Payment Voucher) | 15th of following month | $10,000 - $25,000 |
+| Annual PAYE Reconciliation | Year-end reconciliation of all PAYE payments and returns | All monthly returns, annual payroll summary, employee tax certificates | PAYE-04 (Annual Reconciliation) | March 31 (for prior year) | $30,000 - $80,000 |
+| Employee Tax Certificates | Prepare individual employee tax certificates (W-2 equivalent) | Payroll records for each employee, NIS contributions, benefits provided | Employee Tax Certificate | Within 30 days of year-end | Included in reconciliation |
+
+**PAYE Service Workflow:**
+
+**Monthly PAYE Process:**
+1. Receive payroll data from client (hours, salaries, bonuses, commissions)
+2. Calculate gross wages for each employee
+3. Compute PAYE tax withholding based on current tax tables
+4. Calculate employer and employee NIS contributions
+5. Prepare PAYE monthly return (PAYE-01)
+6. Submit return to GRA via TRIPS system
+7. Prepare payment voucher (PAYE-03)
+8. Advise client of amount due and payment deadline
+9. Retain copies for annual reconciliation
+
+**Annual PAYE Reconciliation Process:**
+1. Gather all monthly PAYE returns for the tax year
+2. Compile annual payroll totals by employee
+3. Verify total taxes withheld and remitted
+4. Prepare employee tax certificates
+5. Complete annual reconciliation form (PAYE-04)
+6. Submit to GRA with supporting schedules
+7. Distribute employee tax certificates
+8. File copies in employee personnel files
+
+**Required Client Information:**
+- Employee personal details (name, TIN, NIS number, address)
+- Gross wages, salaries, bonuses, commissions
+- Benefits provided (housing, vehicle, meals)
+- Tax withholding per pay period
+- NIS contributions (employee and employer portions)
+- Payment dates and amounts remitted to GRA
+
+**Key Compliance Points:**
+- PAYE returns must be filed by 15th of following month
+- Penalties: $5,000 per day for late filing, plus interest on unpaid taxes
+- Keep records for 7 years
+- Employee tax certificates must be issued by January 31
+
+### 4. INCOME/EXPENDITURE STATEMENTS
+
+Professional financial statements for various applications including loans, permits, and compliance purposes.
+
+| Statement Type | Purpose | Required Documents | Typical Content | Duration | Price Range (GYD) |
+|---------------|---------|-------------------|----------------|----------|-------------------|
+| Bank Account Statements (for loans) | Loan applications, credit facilities, mortgages | 6-12 months bank statements, income sources, asset listings, liabilities | Income analysis, expenditure breakdown, cash flow projections, debt service capacity | 3-5 days | $30,000 - $60,000 |
+| Commissioner of Police Statements | Firearm license applications and renewals | Bank statements, employment/business income records, tax returns, assets/liabilities | Detailed income sources, monthly expenditures, net worth statement, character financial profile | 3-5 days | $25,000 - $45,000 |
+| Loan Application Statements | Personal loans, business financing, vehicle loans | Income documentation, existing debts, bank statements, asset valuations | Comprehensive income/expense analysis, debt-to-income ratio, collateral listings | 3-5 days | $30,000 - $60,000 |
+| Investment Documentation | Investment applications, portfolio assessments | Investment accounts, income sources, net worth statements, risk profile | Investment capacity analysis, income stability assessment, liquidity analysis | 5-7 days | $40,000 - $80,000 |
+| Cash Flow Projections | Business planning, expansion funding, investor presentations | Historical financials, sales forecasts, expense budgets, capital requirements | Monthly/quarterly cash flow forecasts (12-36 months), break-even analysis, funding gap analysis | 5-10 days | $50,000 - $150,000 |
+
+**Income/Expenditure Statement Workflow:**
+
+**For Individual Applications (Loans, Firearm Licenses, etc.):**
+1. Initial consultation to determine statement purpose and requirements
+2. Collect financial documentation:
+   - Bank statements (6-12 months, all accounts)
+   - Employment income (pay slips, employment contracts)
+   - Business income (if self-employed)
+   - Investment income (dividends, interest, rental)
+   - Other income sources
+3. Analyze monthly income:
+   - Regular employment income
+   - Business/self-employment income
+   - Investment and passive income
+   - Other recurring income
+4. Detail monthly expenditures:
+   - Housing (rent/mortgage, utilities, maintenance)
+   - Transportation (vehicle payments, fuel, insurance)
+   - Food and household
+   - Insurance premiums
+   - Loan payments and debt service
+   - Education expenses
+   - Medical expenses
+   - Personal and discretionary spending
+5. Calculate net disposable income
+6. Prepare comprehensive statement with supporting schedules
+7. Professional review and sign-off
+8. Deliver to client with certified copies
+
+**For Business Applications (Loans, Investments, etc.):**
+1. Review historical financial statements (2-3 years)
+2. Analyze revenue trends and patterns
+3. Detail operating expenses by category
+4. Project future income based on:
+   - Historical performance
+   - Market conditions
+   - Expansion plans
+   - Seasonal factors
+5. Project future expenses:
+   - Fixed costs (rent, salaries, insurance)
+   - Variable costs (materials, utilities)
+   - Growth-related expenses
+   - Debt service
+6. Prepare monthly cash flow projections (12-36 months)
+7. Include sensitivity analysis and scenarios
+8. Professional certification and presentation
+
+**Key Components of Professional Statements:**
+- Executive summary
+- Income analysis (all sources, with verification)
+- Expenditure breakdown (categorized and detailed)
+- Net worth statement (assets and liabilities)
+- Supporting documentation (bank statements, pay slips, etc.)
+- Professional accountant certification
+- Assumptions and methodology notes
+
+### 5. AUDIT OF NGO & CO-OPERATIVE SOCIETIES
+
+Specialized audit and accounting services for non-governmental organizations and co-operative societies.
+
+| Service Type | Description | Required Documents | Deliverables | Duration | Price Range (GYD) |
+|-------------|-------------|-------------------|-------------|----------|-------------------|
+| Annual NGO Audit | Statutory audit of NGO financial statements | Constitution/bylaws, board minutes, bank statements, accounting records, donor agreements, grant documentation | Audited financial statements, audit report, management letter, compliance certificates | 2-4 weeks | $150,000 - $400,000 |
+| Co-operative Society Audit | Annual audit required by Co-operative Societies Act | Society rules, membership register, share capital records, loan records, bank statements, minutes | Audited accounts, auditor's report to members, compliance with Co-operative Societies Act | 2-4 weeks | $120,000 - $350,000 |
+| Financial Statement Preparation | Prepare financial statements for NGO/Co-operative prior to audit | All accounting records, bank statements, receipts, asset registers | Balance sheet, income & expenditure statement, cash flow statement, notes to accounts | 1-2 weeks | $80,000 - $200,000 |
+| Compliance Reporting | Ensure compliance with regulatory requirements | Regulatory correspondence, previous filings, licensing documents | Compliance reports to regulators, annual returns, statutory filings | 1-2 weeks | $50,000 - $150,000 |
+
+**NGO Audit Workflow:**
+
+1. **Engagement and Planning (Week 1)**
+   - Review NGO constitution and bylaws
+   - Understand governance structure and board oversight
+   - Identify funding sources (grants, donations, fees)
+   - Assess internal controls
+   - Review prior year audit reports and management letters
+   - Develop audit plan and timeline
+
+2. **Fieldwork and Testing (Weeks 2-3)**
+   - Test revenue recognition (grants, donations)
+   - Verify expenditures against approved budgets
+   - Review grant compliance and restrictions
+   - Test bank reconciliations
+   - Verify assets and fixed asset register
+   - Review payroll and employment records
+   - Test accounts payable and receivable
+   - Examine related party transactions
+   - Review board minutes and approvals
+
+3. **Audit Completion (Week 3-4)**
+   - Complete analytical procedures
+   - Obtain management representations
+   - Draft financial statements
+   - Prepare audit report
+   - Issue management letter with recommendations
+   - Present findings to board/management
+   - Finalize and deliver audit package
+
+**Co-operative Society Audit Workflow:**
+
+1. **Planning and Risk Assessment**
+   - Review society rules and regulations
+   - Understand member structure and share capital
+   - Review loan portfolio and member loans
+   - Assess committee governance
+   - Review prior audit findings
+
+2. **Audit Procedures**
+   - Verify member shares and capital accounts
+   - Test loan disbursements and collections
+   - Review interest calculations (shares and loans)
+   - Verify bank reconciliations
+   - Test investment holdings
+   - Review insurance coverage
+   - Examine committee expense approvals
+   - Test revenue from member transactions
+
+3. **Reporting**
+   - Prepare financial statements in accordance with Co-operative Societies Act
+   - Draft auditor's report to members
+   - Prepare report to Registrar of Co-operatives
+   - Present findings at annual general meeting
+   - File required returns with regulatory authorities
+
+**Required Documentation:**
+
+**For NGOs:**
+- Certificate of incorporation/registration
+- Constitution and bylaws
+- Board of directors list
+- All bank statements (all accounts)
+- Grant agreements and donor contracts
+- Budget vs actual reports
+- Payroll records
+- Fixed asset register
+- Expense receipts and invoices
+- Donation receipts and records
+- Previous audit reports
+
+**For Co-operative Societies:**
+- Society registration certificate
+- Society rules and regulations
+- Membership register with share holdings
+- Member loan ledgers
+- Bank statements (all accounts)
+- Investment portfolios and certificates
+- Property and asset documents
+- Committee meeting minutes
+- Previous audit reports
+- Annual returns filed with Registrar
+
+**Compliance Requirements:**
+- NGOs: Compliance with NGO Act, donor requirements, tax exemption rules
+- Co-operatives: Compliance with Co-operative Societies Act, Registrar requirements, member protection regulations
+
+**Key Audit Standards:**
+- International Standards on Auditing (ISA) adapted for small entities
+- Specific regulatory requirements for NGOs and co-operatives
+- Donor compliance requirements (for grant-funded NGOs)
+
+### 6. NATIONAL INSURANCE SCHEME (NIS) SERVICES
+
+Comprehensive NIS registration, compliance, and administration services.
+
+| Service Type | Description | Required Documents | NIS Forms | Duration | Price Range (GYD) |
+|-------------|-------------|-------------------|-----------|----------|-------------------|
+| Employer Registration | Register business as NIS employer | Business registration, TIN certificate, business address, contact information | NIS Form E1 (Employer Registration) | 3-5 days | $10,000 - $15,000 |
+| Employee Registration | Register employees with NIS | Employee personal details, birth certificate/ID, TIN, employment start date | NIS Form E2 (Employee Registration) | 2-3 days | $3,000 - $5,000 per employee |
+| Monthly Schedules of Contributions | Prepare and submit monthly NIS contributions | Payroll records, gross wages, NIS-able earnings per employee | NIS Schedule of Contributions, payment voucher | 2-3 days | $8,000 - $20,000 |
+| NIS Compliance Services | Ensure ongoing NIS compliance, resolve issues | All NIS records, correspondence from NIS, employee records | Various forms as needed | Ongoing | $15,000 - $40,000 |
+| Pension Queries & Applications | Assist with pension applications, calculate entitlements, resolve pension issues | Employment history, NIS contribution records, identification, age verification | NIS Pension Application Forms (Old Age, Survivors, Invalidity) | 5-10 days | $20,000 - $50,000 |
+
+**NIS Services Workflow:**
+
+**Employer Registration Process:**
+1. Collect business documentation:
+   - Certificate of incorporation/business registration
+   - TIN certificate
+   - Business address and contact details
+   - Ownership/director information
+2. Complete NIS Form E1 (Employer Registration)
+3. Submit to NIS headquarters or regional office
+4. Follow up on application status
+5. Obtain NIS employer number
+6. Provide client with NIS number and compliance guidelines
+7. Set up monthly contribution schedule
+
+**Employee Registration Process:**
+1. Collect employee information:
+   - Full name (as on birth certificate)
+   - Date of birth
+   - Birth certificate or national ID
+   - TIN
+   - Address and contact information
+   - Employment start date
+   - Job title and gross salary
+2. Complete NIS Form E2 for each employee
+3. Submit batch registration to NIS
+4. Follow up on issuance of NIS numbers
+5. Update employer records with NIS numbers
+6. File employee NIS documentation
+
+**Monthly NIS Contributions Process:**
+1. Receive monthly payroll data from client
+2. Calculate NIS-able earnings for each employee:
+   - Include: Basic salary, overtime, bonuses, commissions
+   - Exclude: Benefits in kind, certain allowances (verify NIS rules)
+3. Calculate contributions:
+   - Employee contribution: 5.6% of NIS-able earnings (up to maximum)
+   - Employer contribution: 8.4% of NIS-able earnings (up to maximum)
+   - Current maximum insurable earnings: $280,000 per month
+4. Prepare Schedule of Contributions:
+   - List all employees with NIS numbers
+   - Show individual earnings and contributions
+   - Calculate totals
+5. Submit schedule to NIS by 14th of following month
+6. Prepare payment voucher
+7. Advise client of total amount due
+8. Retain copies for records and annual reconciliation
+
+**NIS Compliance Services:**
+- Review employer NIS status and history
+- Identify and resolve contribution arrears
+- Handle NIS audits and inspections
+- Respond to NIS queries and correspondence
+- Update employee registrations (changes, terminations)
+- Maintain NIS compliance calendar
+- Prepare for NIS inspections
+- Assist with benefit claims (sickness, maternity, injury)
+
+**Pension Queries & Applications:**
+
+**Types of NIS Pensions:**
+1. **Old Age Pension:** Age 60+ with minimum 750 contributions
+2. **Survivors Pension:** For dependents of deceased insured persons
+3. **Invalidity Pension:** For permanently disabled insured persons
+
+**Pension Application Workflow:**
+1. Initial consultation:
+   - Determine pension type and eligibility
+   - Review contribution history
+   - Calculate potential pension amount
+2. Gather required documents:
+   - Birth certificate (applicant and dependents for survivors pension)
+   - National ID or passport
+   - Marriage certificate (if applicable)
+   - Medical certificates (for invalidity pension)
+   - Employment history and payslips
+   - Bank account information
+3. Request NIS contribution statement:
+   - Apply to NIS for full contribution record
+   - Verify all employers listed
+   - Identify any gaps or missing contributions
+4. Complete pension application forms:
+   - Personal information
+   - Employment history
+   - Contribution details
+   - Banking information for direct deposit
+5. Submit application to NIS with supporting documents
+6. Follow up on application status
+7. Assist with queries from NIS
+8. Verify pension calculation upon approval
+9. Set up direct deposit
+10. Provide client with pension schedule and entitlements
+
+**NIS Contribution Rates and Limits (Current):**
+- Employee rate: 5.6% of NIS-able earnings
+- Employer rate: 8.4% of NIS-able earnings
+- Total: 14.0% of NIS-able earnings
+- Maximum insurable earnings: $280,000 per month
+- Maximum monthly contribution: $39,200 (employee: $15,680, employer: $23,520)
+
+**Key NIS Deadlines:**
+- Monthly contributions: Due 14th of following month
+- Late payment penalty: Interest and penalties as per NIS Act
+- Annual reconciliation: Within 30 days of year-end
+- Contribution cards: Maintain for 50 years
+
+**NIS Compliance Requirements:**
+- Register within 7 days of hiring employees
+- Deduct employee contributions from wages
+- Remit both employee and employer contributions monthly
+- Maintain accurate payroll records
+- Provide employees with contribution statements upon request
+- Report terminations and changes promptly
+- Allow NIS inspections and provide records
+
+**Common NIS Issues We Resolve:**
+- Missing or incorrect employee registrations
+- Contribution arrears and payment plans
+- Disputes over contribution calculations
+- Name changes and record corrections
+- Contribution refunds for overpayments
+- Benefit claim denials and appeals
+- Employer compliance violations
 
 ## Service Workflows
 
@@ -817,6 +1168,21 @@
 
 ---
 
-**Document Version:** 1.0
+---
+
+## Service Summary
+
+KAJ Financial Services offers six core service categories:
+
+1. **INCOME TAX RETURNS** - Individual, corporate, and self-employed tax return preparation and filing
+2. **ALL COMPLIANCES** - Tender, work permit, land transfer, firearm, pension, and assessment compliances
+3. **PAYE RETURNS** - Monthly employer tax submissions and annual reconciliations
+4. **INCOME/EXPENDITURE STATEMENTS** - Professional financial statements for loans, permits, and compliance
+5. **AUDIT OF NGO & CO-OPERATIVE SOCIETIES** - Statutory audits and financial statement preparation
+6. **NATIONAL INSURANCE SCHEME (NIS) SERVICES** - Registration, monthly contributions, compliance, and pension services
+
+All services are provided by GRA Licensed Accountants with full compliance to Guyana Revenue Authority and National Insurance Scheme requirements.
+
+**Document Version:** 2.0
 **Last Updated:** December 2025
 **Review Frequency:** Annually or upon significant regulatory changes
