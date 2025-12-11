@@ -8,11 +8,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-export default function SignInForm({
-  onSwitchToSignUp,
-}: {
-  onSwitchToSignUp: () => void;
-}) {
+export default function SignInForm() {
   const navigate = useNavigate({
     from: "/",
   });
@@ -125,15 +121,11 @@ export default function SignInForm({
         </form.Subscribe>
       </form>
 
-      <div className="mt-4 text-center">
-        <Button
-          className="text-indigo-600 hover:text-indigo-800"
-          onClick={onSwitchToSignUp}
-          variant="link"
-        >
-          Need an account? Sign Up
-        </Button>
-      </div>
+      <p className="mt-4 text-center text-muted-foreground text-sm">
+        Staff accounts are created by administrators.
+        <br />
+        Contact your manager if you need access.
+      </p>
     </div>
   );
 }

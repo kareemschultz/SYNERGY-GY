@@ -11,6 +11,7 @@ import { mattersRouter } from "./matters";
 import { portalRouter } from "./portal";
 import { serviceCatalogRouter } from "./service-catalog";
 import { settingsRouter } from "./settings";
+import { staffSetupRouter } from "./staff-setup";
 import { taxCalculatorsRouter } from "./tax-calculators";
 import { trainingRouter } from "./training";
 
@@ -31,6 +32,7 @@ export const appRouter = {
   settings: settingsRouter,
   portal: portalRouter,
   serviceCatalog: serviceCatalogRouter,
+  staffSetup: staffSetupRouter,
   taxCalculators: taxCalculatorsRouter,
   training: trainingRouter,
 };

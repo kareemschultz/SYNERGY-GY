@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as StaffSetupPasswordRouteImport } from './routes/staff/setup-password'
 import { Route as PortalRegisterRouteImport } from './routes/portal/register'
 import { Route as PortalLoginRouteImport } from './routes/portal/login'
 import { Route as PortalDocumentsRouteImport } from './routes/portal/documents'
@@ -81,6 +82,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const StaffSetupPasswordRoute = StaffSetupPasswordRouteImport.update({
+  id: '/staff/setup-password',
+  path: '/staff/setup-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PortalRegisterRoute = PortalRegisterRouteImport.update({
   id: '/portal/register',
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/login': typeof PortalLoginRoute
   '/portal/register': typeof PortalRegisterRoute
+  '/staff/setup-password': typeof StaffSetupPasswordRoute
   '/app/': typeof AppIndexRoute
   '/portal': typeof PortalIndexRoute
   '/app/calculators/nis': typeof AppCalculatorsNisRoute
@@ -319,6 +326,7 @@ export interface FileRoutesByTo {
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/login': typeof PortalLoginRoute
   '/portal/register': typeof PortalRegisterRoute
+  '/staff/setup-password': typeof StaffSetupPasswordRoute
   '/app': typeof AppIndexRoute
   '/portal': typeof PortalIndexRoute
   '/app/calculators/nis': typeof AppCalculatorsNisRoute
@@ -364,6 +372,7 @@ export interface FileRoutesById {
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/login': typeof PortalLoginRoute
   '/portal/register': typeof PortalRegisterRoute
+  '/staff/setup-password': typeof StaffSetupPasswordRoute
   '/app/': typeof AppIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/app/calculators/nis': typeof AppCalculatorsNisRoute
@@ -410,6 +419,7 @@ export interface FileRouteTypes {
     | '/portal/documents'
     | '/portal/login'
     | '/portal/register'
+    | '/staff/setup-password'
     | '/app/'
     | '/portal'
     | '/app/calculators/nis'
@@ -453,6 +463,7 @@ export interface FileRouteTypes {
     | '/portal/documents'
     | '/portal/login'
     | '/portal/register'
+    | '/staff/setup-password'
     | '/app'
     | '/portal'
     | '/app/calculators/nis'
@@ -497,6 +508,7 @@ export interface FileRouteTypes {
     | '/portal/documents'
     | '/portal/login'
     | '/portal/register'
+    | '/staff/setup-password'
     | '/app/'
     | '/portal/'
     | '/app/calculators/nis'
@@ -542,6 +554,7 @@ export interface RootRouteChildren {
   PortalDocumentsRoute: typeof PortalDocumentsRoute
   PortalLoginRoute: typeof PortalLoginRoute
   PortalRegisterRoute: typeof PortalRegisterRoute
+  StaffSetupPasswordRoute: typeof StaffSetupPasswordRoute
   PortalIndexRoute: typeof PortalIndexRoute
   PortalMattersMatterIdRoute: typeof PortalMattersMatterIdRoute
 }
@@ -589,6 +602,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/staff/setup-password': {
+      id: '/staff/setup-password'
+      path: '/staff/setup-password'
+      fullPath: '/staff/setup-password'
+      preLoaderRoute: typeof StaffSetupPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/portal/register': {
       id: '/portal/register'
@@ -927,6 +947,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalDocumentsRoute: PortalDocumentsRoute,
   PortalLoginRoute: PortalLoginRoute,
   PortalRegisterRoute: PortalRegisterRoute,
+  StaffSetupPasswordRoute: StaffSetupPasswordRoute,
   PortalIndexRoute: PortalIndexRoute,
   PortalMattersMatterIdRoute: PortalMattersMatterIdRoute,
 }

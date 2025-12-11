@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { createContext } from "@SYNERGY-GY/api/context";
 import { appRouter } from "@SYNERGY-GY/api/routers/index";
+import { runInitialSetup } from "@SYNERGY-GY/api/utils/initial-setup";
 import { auth } from "@SYNERGY-GY/auth";
 import { db, document as documentTable } from "@SYNERGY-GY/db";
 import { createReadStream, existsSync } from "node:fs";
@@ -17,6 +18,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { stream } from "hono/streaming";
+
+// Run initial setup to create first owner account (if needed)
+await runInitialSetup();
 
 // Storage configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./data/uploads";

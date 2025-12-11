@@ -1,4 +1,4 @@
-import { db, staff, user } from "@SYNERGY-GY/db";
+import { db, passwordSetupToken, staff, user } from "@SYNERGY-GY/db";
 import { randomUUID } from "node:crypto";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
@@ -30,7 +30,6 @@ const createStaffSchema = z.object({
     .min(1, "At least one business required"),
   phone: z.string().optional(),
   jobTitle: z.string().optional(),
-  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 const updateStaffSchema = z.object({
@@ -269,11 +268,20 @@ export const adminRouter = {
           })
           .returning();
 
-        // Generate password setup token (we'll use a simple approach for now)
-        // In production, this should integrate with Better Auth's password reset flow
+        // Generate password setup token and store in database
         const setupToken = generateSecureToken();
-        const appUrl = process.env.BETTER_AUTH_URL || "http://localhost:5173";
-        const setupUrl = `${appUrl}/staff/setup-password?token=${setupToken}&email=${encodeURIComponent(email)}`;
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24); // 24-hour expiry
+
+        await db.insert(passwordSetupToken).values({
+          id: randomUUID(),
+          userId: newUser.id,
+          token: setupToken,
+          expiresAt,
+        });
+
+        const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
+        const setupUrl = `${appUrl}/staff/setup-password?token=${setupToken}`;
 
         // Get the name of the admin who created this staff member
         const invitedByName = context.session.user.name || "GK-Nexus Admin";

@@ -1,5 +1,4 @@
-import { db } from "@SYNERGY-GY/db";
-import { user } from "@SYNERGY-GY/db/schema/auth";
+import { db, user } from "@SYNERGY-GY/db";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure } from "../index";
@@ -172,4 +171,41 @@ export const settingsRouter = {
     buildDate: "2025-01-01",
     environment: process.env.NODE_ENV || "production",
   })),
+
+  // Get current staff status - used to check if user has staff profile
+  getStaffStatus: protectedProcedure.handler(async ({ context }) => {
+    const userId = context.session?.user?.id;
+    if (!userId) {
+      return { hasStaffProfile: false, isActive: false, staff: null };
+    }
+
+    // Import staff table dynamically to use it
+    const { staff } = await import("@SYNERGY-GY/db");
+
+    const staffProfile = await db.query.staff.findFirst({
+      where: eq(staff.userId, userId),
+      columns: {
+        id: true,
+        role: true,
+        businesses: true,
+        isActive: true,
+        jobTitle: true,
+      },
+    });
+
+    if (!staffProfile) {
+      return { hasStaffProfile: false, isActive: false, staff: null };
+    }
+
+    return {
+      hasStaffProfile: true,
+      isActive: staffProfile.isActive,
+      staff: {
+        id: staffProfile.id,
+        role: staffProfile.role,
+        businesses: staffProfile.businesses,
+        jobTitle: staffProfile.jobTitle,
+      },
+    };
+  }),
 };

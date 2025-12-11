@@ -7,7 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Initial Owner Setup** - Environment-based first user creation system
+  - Auto-creates OWNER account on first server startup from env vars
+  - `INITIAL_OWNER_EMAIL`, `INITIAL_OWNER_PASSWORD`, `INITIAL_OWNER_NAME` configuration
+  - One-time setup, ignored after first owner exists
+  - Uses Better-Auth's native password hashing (`better-auth/crypto`) for compatibility
+  - Supports Docker deployment patterns
+- **Staff Password Setup Flow** - Complete invite-based onboarding
+  - `/staff/setup-password` route for new staff members
+  - Password setup tokens with 24-hour expiry
+  - Token validation and secure password creation
+  - `passwordSetupToken` table in database schema
+- **Database Schema Extensions**
+  - Added `staff` table with role-based access control
+  - Added `password_setup_token` table for secure onboarding
+  - Added `staff_role` enum type for role management
+- **Authentication Documentation** - Comprehensive `/specs/authentication.md`
+
 ### Changed
+- **Login Page**: Removed public signup, login-only for security
 - **File Structure**: Renamed route files to follow kebab-case convention (e.g., `$courseId.tsx` → `$course-id.tsx`).
 - **Route Parameters**: Updated route parameter access to match new kebab-case filenames (e.g., `params['course-id']`).
 - **Linting**: Resolved comprehensive linting issues including `noLeakedRender`, `noNestedTernary`, and file naming conventions.
@@ -18,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Calendar Component**: Resolved type mismatch for `CalendarRoot` with React Day Picker v8.
 - **Service Detail**: Added missing argument to `renderPricing` function.
 - **Route Tree**: Regenerated route tree to reflect renamed file structure.
+- **Orphan User Handling**: Users without staff profiles see "Access Pending" message instead of errors.
 
 ### Completed (December 2024)
 

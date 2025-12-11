@@ -91,3 +91,31 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+// Password setup tokens for staff onboarding
+export const passwordSetupToken = pgTable(
+  "password_setup_token",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at").notNull(),
+    usedAt: timestamp("used_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("password_setup_token_userId_idx").on(table.userId)]
+);
+
+export const passwordSetupTokenRelations = relations(
+  passwordSetupToken,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [passwordSetupToken.userId],
+      references: [user.id],
+    }),
+  })
+);
