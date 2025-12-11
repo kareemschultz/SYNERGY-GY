@@ -9,6 +9,7 @@ import {
   Clock,
   Loader2,
   Plus,
+  Repeat,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -364,7 +365,15 @@ function CalendarPage() {
                                     key={d.id}
                                     title={d.title}
                                   >
-                                    {d.title}
+                                    <div className="flex items-center gap-1">
+                                      {(d.recurrencePattern !== "NONE" ||
+                                        d.parentDeadlineId) && (
+                                        <Repeat className="h-3 w-3 shrink-0 text-muted-foreground" />
+                                      )}
+                                      <span className="truncate">
+                                        {d.title}
+                                      </span>
+                                    </div>
                                   </div>
                                 ))}
                                 {dayDeadlines && dayDeadlines.length > 3 && (
@@ -464,6 +473,8 @@ interface DeadlineItemProps {
     type: string;
     priority: string;
     isCompleted: boolean;
+    recurrencePattern?: string;
+    parentDeadlineId?: string | null;
     client?: { id: string; displayName: string } | null;
     matter?: { id: string; referenceNumber: string } | null;
   };
@@ -474,6 +485,8 @@ function DeadlineItem({ deadline, onComplete }: DeadlineItemProps) {
   const type = typeLabels[deadline.type] || typeLabels.OTHER;
   const dueDate = new Date(deadline.dueDate);
   const isOverdue = dueDate < new Date() && !deadline.isCompleted;
+  const isRecurring =
+    deadline.recurrencePattern !== "NONE" || deadline.parentDeadlineId;
 
   return (
     <div
@@ -483,7 +496,12 @@ function DeadlineItem({ deadline, onComplete }: DeadlineItemProps) {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-sm">{deadline.title}</p>
+          <div className="flex items-center gap-1">
+            {isRecurring && (
+              <Repeat className="h-3 w-3 shrink-0 text-muted-foreground" />
+            )}
+            <p className="truncate font-medium text-sm">{deadline.title}</p>
+          </div>
           <div className="mt-1 flex flex-wrap items-center gap-1">
             <Badge className={type.className} variant="outline">
               {type.label}

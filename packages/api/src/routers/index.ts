@@ -11,6 +11,8 @@ import { mattersRouter } from "./matters";
 import { portalRouter } from "./portal";
 import { serviceCatalogRouter } from "./service-catalog";
 import { settingsRouter } from "./settings";
+import { taxCalculatorsRouter } from "./tax-calculators";
+import { trainingRouter } from "./training";
 
 export const appRouter = {
   healthCheck: publicProcedure.handler(() => "OK"),
@@ -29,6 +31,8 @@ export const appRouter = {
   settings: settingsRouter,
   portal: portalRouter,
   serviceCatalog: serviceCatalogRouter,
+  taxCalculators: taxCalculatorsRouter,
+  training: trainingRouter,
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;

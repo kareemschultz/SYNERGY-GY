@@ -28,6 +28,17 @@ export const documentCategoryEnum = pgEnum("document_category", [
   "OTHER",
 ]);
 
+// Template category enum - specific categories for templates
+export const templateCategoryEnum = pgEnum("template_category", [
+  "LETTER", // Cover letters, confirmation letters
+  "AGREEMENT", // Service agreements, NDAs
+  "CERTIFICATE", // Completion certificates, training certificates
+  "FORM", // Intake forms, checklists
+  "REPORT", // Reports and summaries
+  "INVOICE", // Invoice templates
+  "OTHER",
+]);
+
 // Document status enum
 export const documentStatusEnum = pgEnum("document_status", [
   "PENDING", // Just created, upload in progress
@@ -98,13 +109,13 @@ export const document = pgTable(
 );
 
 // Document template placeholder definition
-interface TemplatePlaceholder {
-  key: string;
-  label: string;
+export type TemplatePlaceholder = {
+  key: string; // e.g., "client.displayName"
+  label: string; // e.g., "Client Name"
   type: "text" | "date" | "number" | "currency";
-  source?: "client" | "matter" | "custom";
-  sourceField?: string;
-}
+  source: "client" | "matter" | "staff" | "business" | "date" | "custom";
+  sourceField?: string; // Field name on the source object
+};
 
 // Document templates
 export const documentTemplate = pgTable(
@@ -115,12 +126,18 @@ export const documentTemplate = pgTable(
       .$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
     description: text("description"),
-    category: documentCategoryEnum("category").notNull(),
+    category: templateCategoryEnum("category").notNull(),
     business: businessEnum("business"), // null = both businesses
-    templatePath: text("template_path").notNull(), // Path to template file
-    placeholders: jsonb("placeholders").$type<TemplatePlaceholder[]>(),
+    content: text("content").notNull(), // Template content with placeholders like {{client.displayName}}
+    placeholders: jsonb("placeholders")
+      .$type<TemplatePlaceholder[]>()
+      .default([])
+      .notNull(), // Available placeholders for this template
     isActive: boolean("is_active").default(true).notNull(),
     sortOrder: integer("sort_order").default(0),
+    createdById: text("created_by_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

@@ -25,8 +25,8 @@ The following items were identified during Phase 1 testing and should be address
 | Item | Description | Module | Status |
 |------|-------------|--------|--------|
 | ~~**File Upload Handler**~~ | Complete server-side upload implementation | Documents | ✅ **COMPLETED** |
-| **Document Templates** | Template generation system | Documents | PENDING |
-| **Recurring Deadlines** | Auto-generate recurring instances | Calendar | PENDING |
+| ~~**Document Templates**~~ | Template generation system | Documents | ✅ **COMPLETED** |
+| ~~**Recurring Deadlines**~~ | Auto-generate recurring instances | Calendar | ✅ **COMPLETED** |
 | **Background Jobs** | Email reminders and scheduled tasks | Core | PENDING |
 | **Cloud Backup** | S3/R2 integration for file backup | Documents | PENDING |
 
@@ -39,8 +39,8 @@ The following items were identified during Phase 1 testing and should be address
 | 1 | [Client Portal](./01-client-portal.md) | Self-service client access | High | ✅ **COMPLETED** |
 | 2 | [Invoicing](./02-invoicing.md) | Billing and payments | High | ✅ **COMPLETED** |
 | 3 | [Service Catalog](./service-catalog.md) | Service definitions and pricing | High | ✅ **COMPLETED** |
-| 4 | [Tax Calculators](./03-tax-calculators.md) | Guyana tax calculation tools | Medium | Planned |
-| 5 | [Training Management](./04-training-management.md) | GCMC course management | Medium | Planned |
+| 4 | [Tax Calculators](./03-tax-calculators.md) | Guyana tax calculation tools | Medium | ✅ **COMPLETED** |
+| 5 | [Training Management](./04-training-management.md) | GCMC course management | Medium | ✅ **COMPLETED** |
 | 6 | [Appointments](./05-appointments.md) | Scheduling system | Low | Planned |
 
 ## Requirements

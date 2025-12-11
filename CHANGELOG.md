@@ -76,6 +76,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Currency formatting in GYD (Guyanese Dollar)
   - Invoice summary statistics endpoint
   - PDF generation placeholder (to be implemented with PDF library)
+- **Training Management System** - ✅ Complete - Comprehensive training course management for GCMC business
+  - Database schema: courses, courseSchedules, and enrollments tables
+  - Course catalog with categories (Human Resources, Customer Relations, Business Development, Compliance)
+  - Course metadata: title, description, duration, max participants, pricing, active status
+  - Schedule management with dates, location, instructor, and status tracking
+  - Enrollment tracking with status (Registered, Confirmed, Attended, Cancelled, No Show)
+  - Payment status tracking (Pending, Partial, Paid, Refunded)
+  - Certificate issuance with auto-generated certificate numbers (GCMC-CERT-2024-0001 format)
+  - Course list page with search, category filter, and active status filter
+  - Course detail page with schedules table and quick stats
+  - Schedule detail page with enrollment list and participant management
+  - New course creation form with validation
+  - Schedule creation dialog with date/time pickers
+  - Enrollment management with client selection
+  - Mark attendance and issue certificates functionality
+  - Capacity tracking with full/almost full indicators
+  - Attendance rate calculation and statistics
+  - API router with full CRUD operations and GCMC business filter
+  - CourseCard, ScheduleTable, and EnrollmentList reusable components
+  - Training navigation added to sidebar
+- **Tax Calculators** - ✅ Complete - Guyana-specific tax calculation tools (2025 rates)
+  - PAYE (Pay As You Earn) calculator with 25% tax rate and $130,000 monthly allowance
+  - VAT (Value Added Tax) calculator with 14% rate, supports inclusive/exclusive modes
+  - NIS (National Insurance Scheme) calculator with 5.6% employee and 8.4% employer rates
+  - Database schema for saving calculation history
+  - Calculation results display with detailed breakdowns
+  - History storage with user association
+  - Calculator navigation page with feature cards
+- **Document Templates** - ✅ Complete - Template generation system for business documents
+  - Database schema extended with content field and categories
+  - Template categories: Letter, Agreement, Certificate, Form, Report, Invoice
+  - Business-specific templates (GCMC, KAJ, or both)
+  - Placeholder system for dynamic content ({{client.name}}, {{date}}, etc.)
+  - Template list page with search and filters
+  - Template creation form with rich content editor
+  - Template preview and editing functionality
+  - API router for template CRUD operations
+- **Recurring Deadlines** - ✅ Complete - Automated deadline generation system
+  - Recurrence patterns: Daily, Weekly, Monthly, Quarterly, Annually
+  - Pre-configured Guyana tax deadline templates (PAYE, VAT, Income Tax, NIS)
+  - Instance generation with parent-child relationship
+  - End date support for time-limited recurrences
+  - Automatic reminder creation for generated instances
+  - Safety limits to prevent infinite loops
+  - API endpoints for generating future instances
 
 ### Code Quality
 - **TypeScript Strict Mode** - ✅ Complete - All TypeScript errors resolved
@@ -86,8 +131,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added use-toast hook compatible with sonner
 
 ### Planned Features
-- Tax calculation utilities (Guyana-specific)
-- Training course management system
 - Appointment scheduling and calendar sync
 - Cloud storage backup integration (S3/R2)
 - Advanced reporting and analytics dashboard

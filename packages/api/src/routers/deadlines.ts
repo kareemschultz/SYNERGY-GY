@@ -3,6 +3,17 @@ import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getAccessibleBusinesses, staffProcedure } from "../index";
+import { nanoid } from "../lib/nanoid";
+
+// Deadline type
+type DeadlineType =
+  | "FILING"
+  | "RENEWAL"
+  | "PAYMENT"
+  | "SUBMISSION"
+  | "MEETING"
+  | "FOLLOWUP"
+  | "OTHER";
 
 // Input schemas
 const deadlineTypeValues = [
@@ -89,6 +100,130 @@ async function createReminders(deadlineId: string, dueDate: Date) {
   if (reminders.length > 0) {
     await db.insert(deadlineReminder).values(reminders);
   }
+}
+
+// Helper to calculate next occurrence date based on pattern
+function calculateNextOccurrence(
+  currentDate: Date,
+  pattern: string
+): Date | null {
+  const nextDate = new Date(currentDate);
+
+  switch (pattern) {
+    case "DAILY":
+      nextDate.setDate(nextDate.getDate() + 1);
+      break;
+    case "WEEKLY":
+      nextDate.setDate(nextDate.getDate() + 7);
+      break;
+    case "MONTHLY":
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+    case "QUARTERLY":
+      nextDate.setMonth(nextDate.getMonth() + 3);
+      break;
+    case "ANNUALLY":
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      break;
+    case "NONE":
+      return null;
+    default:
+      return null;
+  }
+
+  return nextDate;
+}
+
+// Generate recurring deadline instances for the next N months
+async function generateRecurringInstances(
+  parentId: string,
+  parentDeadline: {
+    title: string;
+    description: string | null;
+    type: string;
+    clientId: string | null;
+    matterId: string | null;
+    business: string | null;
+    dueDate: Date;
+    recurrencePattern: string;
+    recurrenceEndDate: string | null;
+    assignedStaffId: string | null;
+    priority: string;
+    createdById: string | null;
+  },
+  monthsAhead = 12
+) {
+  if (parentDeadline.recurrencePattern === "NONE") {
+    return [];
+  }
+
+  const instances = [];
+  let currentDate = new Date(parentDeadline.dueDate);
+  const endDate = parentDeadline.recurrenceEndDate
+    ? new Date(parentDeadline.recurrenceEndDate)
+    : new Date(
+        currentDate.getFullYear() + 2,
+        currentDate.getMonth(),
+        currentDate.getDate()
+      );
+  const maxDate = new Date();
+  maxDate.setMonth(maxDate.getMonth() + monthsAhead);
+
+  // Limit generation to earlier of recurrenceEndDate or monthsAhead
+  const effectiveEndDate = endDate < maxDate ? endDate : maxDate;
+
+  // Generate instances
+  while (true) {
+    const nextDate = calculateNextOccurrence(
+      currentDate,
+      parentDeadline.recurrencePattern
+    );
+    if (!nextDate || nextDate > effectiveEndDate) {
+      break;
+    }
+
+    instances.push({
+      id: nanoid(),
+      title: parentDeadline.title,
+      description: parentDeadline.description,
+      type: parentDeadline.type as DeadlineType,
+      clientId: parentDeadline.clientId,
+      matterId: parentDeadline.matterId,
+      business: parentDeadline.business,
+      dueDate: nextDate,
+      recurrencePattern: "NONE" as const, // Instances don't recur themselves
+      recurrenceEndDate: null,
+      parentDeadlineId: parentId,
+      assignedStaffId: parentDeadline.assignedStaffId,
+      priority: parentDeadline.priority,
+      createdById: parentDeadline.createdById,
+      isCompleted: false,
+    });
+
+    currentDate = nextDate;
+
+    // Safety check to prevent infinite loops
+    if (instances.length > 200) {
+      break;
+    }
+  }
+
+  // Insert instances and create reminders
+  if (instances.length > 0) {
+    const insertedInstances = await db
+      .insert(deadline)
+      .values(instances)
+      .returning();
+
+    // Create reminders for each instance
+    for (const instance of insertedInstances) {
+      await createReminders(instance.id, instance.dueDate);
+    }
+
+    return insertedInstances;
+  }
+
+  return [];
 }
 
 // Deadlines router
@@ -291,8 +426,26 @@ export const deadlinesRouter = {
         });
       }
 
-      // Create reminders
+      // Create reminders for parent deadline
       await createReminders(newDeadline.id, dueDate);
+
+      // Generate recurring instances if pattern is set
+      if (input.recurrencePattern && input.recurrencePattern !== "NONE") {
+        await generateRecurringInstances(newDeadline.id, {
+          title: newDeadline.title,
+          description: newDeadline.description,
+          type: newDeadline.type,
+          clientId: newDeadline.clientId,
+          matterId: newDeadline.matterId,
+          business: newDeadline.business,
+          dueDate: newDeadline.dueDate,
+          recurrencePattern: newDeadline.recurrencePattern,
+          recurrenceEndDate: newDeadline.recurrenceEndDate,
+          assignedStaffId: newDeadline.assignedStaffId,
+          priority: newDeadline.priority,
+          createdById: newDeadline.createdById,
+        });
+      }
 
       return newDeadline;
     }),
@@ -345,6 +498,14 @@ export const deadlinesRouter = {
   complete: staffProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ input, context }) => {
+      const existing = await db.query.deadline.findFirst({
+        where: eq(deadline.id, input.id),
+      });
+
+      if (!existing) {
+        throw new ORPCError("NOT_FOUND", { message: "Deadline not found" });
+      }
+
       const [updated] = await db
         .update(deadline)
         .set({
@@ -355,8 +516,62 @@ export const deadlinesRouter = {
         .where(eq(deadline.id, input.id))
         .returning();
 
-      if (!updated) {
-        throw new ORPCError("NOT_FOUND", { message: "Deadline not found" });
+      // If this is a recurring instance, generate the next occurrence
+      if (existing.parentDeadlineId) {
+        const parent = await db.query.deadline.findFirst({
+          where: eq(deadline.id, existing.parentDeadlineId),
+        });
+
+        if (parent && parent.recurrencePattern !== "NONE") {
+          // Check if next instance already exists
+          const nextOccurrence = calculateNextOccurrence(
+            existing.dueDate,
+            parent.recurrencePattern
+          );
+
+          if (nextOccurrence) {
+            const endDate = parent.recurrenceEndDate
+              ? new Date(parent.recurrenceEndDate)
+              : null;
+
+            // Only generate if within recurrence end date
+            if (!endDate || nextOccurrence <= endDate) {
+              const existingNext = await db.query.deadline.findFirst({
+                where: and(
+                  eq(deadline.parentDeadlineId, parent.id),
+                  eq(deadline.dueDate, nextOccurrence)
+                ),
+              });
+
+              if (!existingNext) {
+                // Generate next instance
+                const [nextInstance] = await db
+                  .insert(deadline)
+                  .values({
+                    title: parent.title,
+                    description: parent.description,
+                    type: parent.type,
+                    clientId: parent.clientId,
+                    matterId: parent.matterId,
+                    business: parent.business,
+                    dueDate: nextOccurrence,
+                    recurrencePattern: "NONE",
+                    recurrenceEndDate: null,
+                    parentDeadlineId: parent.id,
+                    assignedStaffId: parent.assignedStaffId,
+                    priority: parent.priority,
+                    createdById: parent.createdById,
+                    isCompleted: false,
+                  })
+                  .returning();
+
+                if (nextInstance) {
+                  await createReminders(nextInstance.id, nextOccurrence);
+                }
+              }
+            }
+          }
+        }
       }
 
       return updated;
@@ -498,5 +713,241 @@ export const deadlinesRouter = {
       completedThisMonth: completedResults[0]?.count ?? 0,
       totalPending: pendingResults[0]?.count ?? 0,
     };
+  }),
+
+  // Get recurrence pattern info for a deadline
+  getRecurrencePattern: staffProcedure
+    .input(z.object({ id: z.string() }))
+    .handler(async ({ input }) => {
+      const result = await db.query.deadline.findFirst({
+        where: eq(deadline.id, input.id),
+        columns: {
+          id: true,
+          recurrencePattern: true,
+          recurrenceEndDate: true,
+          parentDeadlineId: true,
+        },
+      });
+
+      if (!result) {
+        throw new ORPCError("NOT_FOUND", { message: "Deadline not found" });
+      }
+
+      // If this is an instance, get parent info
+      if (result.parentDeadlineId) {
+        const parent = await db.query.deadline.findFirst({
+          where: eq(deadline.id, result.parentDeadlineId),
+          columns: {
+            id: true,
+            recurrencePattern: true,
+            recurrenceEndDate: true,
+          },
+        });
+
+        return {
+          isRecurring: true,
+          isInstance: true,
+          parentId: result.parentDeadlineId,
+          pattern: parent?.recurrencePattern ?? "NONE",
+          endDate: parent?.recurrenceEndDate ?? null,
+        };
+      }
+
+      return {
+        isRecurring: result.recurrencePattern !== "NONE",
+        isInstance: false,
+        parentId: null,
+        pattern: result.recurrencePattern,
+        endDate: result.recurrenceEndDate,
+      };
+    }),
+
+  // Update entire recurring series
+  updateRecurringSeries: staffProcedure
+    .input(
+      z.object({
+        parentId: z.string(),
+        title: z.string().optional(),
+        description: z.string().nullable().optional(),
+        type: z.enum(deadlineTypeValues).optional(),
+        assignedStaffId: z.string().nullable().optional(),
+        priority: z.enum(priorityValues).optional(),
+        recurrenceEndDate: z.string().nullable().optional(),
+      })
+    )
+    .handler(async ({ input }) => {
+      const { parentId, ...updates } = input;
+
+      // Update parent
+      const updateData: Record<string, unknown> = {};
+      if (updates.title !== undefined) updateData.title = updates.title;
+      if (updates.description !== undefined)
+        updateData.description = updates.description;
+      if (updates.type !== undefined) updateData.type = updates.type;
+      if (updates.assignedStaffId !== undefined)
+        updateData.assignedStaffId = updates.assignedStaffId;
+      if (updates.priority !== undefined)
+        updateData.priority = updates.priority;
+      if (updates.recurrenceEndDate !== undefined)
+        updateData.recurrenceEndDate = updates.recurrenceEndDate;
+
+      await db
+        .update(deadline)
+        .set(updateData)
+        .where(eq(deadline.id, parentId));
+
+      // Update all future (incomplete) instances
+      const futureInstanceUpdates: Record<string, unknown> = {};
+      if (updates.title !== undefined)
+        futureInstanceUpdates.title = updates.title;
+      if (updates.description !== undefined)
+        futureInstanceUpdates.description = updates.description;
+      if (updates.type !== undefined) futureInstanceUpdates.type = updates.type;
+      if (updates.assignedStaffId !== undefined)
+        futureInstanceUpdates.assignedStaffId = updates.assignedStaffId;
+      if (updates.priority !== undefined)
+        futureInstanceUpdates.priority = updates.priority;
+
+      if (Object.keys(futureInstanceUpdates).length > 0) {
+        await db
+          .update(deadline)
+          .set(futureInstanceUpdates)
+          .where(
+            and(
+              eq(deadline.parentDeadlineId, parentId),
+              eq(deadline.isCompleted, false)
+            )
+          );
+      }
+
+      return { success: true };
+    }),
+
+  // Generate more instances for a recurring deadline
+  generateMoreInstances: staffProcedure
+    .input(
+      z.object({ parentId: z.string(), monthsAhead: z.number().default(6) })
+    )
+    .handler(async ({ input }) => {
+      const parent = await db.query.deadline.findFirst({
+        where: eq(deadline.id, input.parentId),
+      });
+
+      if (!parent) {
+        throw new ORPCError("NOT_FOUND", { message: "Deadline not found" });
+      }
+
+      if (parent.recurrencePattern === "NONE") {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "This deadline does not have a recurrence pattern",
+        });
+      }
+
+      const generated = await generateRecurringInstances(
+        parent.id,
+        {
+          title: parent.title,
+          description: parent.description,
+          type: parent.type,
+          clientId: parent.clientId,
+          matterId: parent.matterId,
+          business: parent.business,
+          dueDate: parent.dueDate,
+          recurrencePattern: parent.recurrencePattern,
+          recurrenceEndDate: parent.recurrenceEndDate,
+          assignedStaffId: parent.assignedStaffId,
+          priority: parent.priority,
+          createdById: parent.createdById,
+        },
+        input.monthsAhead
+      );
+
+      return { generated: generated.length };
+    }),
+
+  // Get all instances of a recurring deadline
+  getRecurringInstances: staffProcedure
+    .input(z.object({ parentId: z.string() }))
+    .handler(async ({ input }) => {
+      const instances = await db.query.deadline.findMany({
+        where: eq(deadline.parentDeadlineId, input.parentId),
+        orderBy: [asc(deadline.dueDate)],
+        with: {
+          client: {
+            columns: { id: true, displayName: true },
+          },
+          matter: {
+            columns: { id: true, referenceNumber: true, title: true },
+          },
+        },
+      });
+
+      return instances;
+    }),
+
+  // Pre-built Guyana tax deadline templates
+  getGuyanaTemplates: staffProcedure.handler(() => {
+    const currentYear = new Date().getFullYear();
+
+    return [
+      {
+        id: "template-monthly-paye",
+        title: "Monthly PAYE Returns",
+        description:
+          "PAYE returns must be filed by the 14th of each month for the previous month",
+        type: "FILING" as const,
+        priority: "HIGH" as const,
+        recurrencePattern: "MONTHLY" as const,
+        suggestedDueDay: 14,
+        business: "KAJ" as const,
+      },
+      {
+        id: "template-quarterly-vat",
+        title: "Quarterly VAT Returns",
+        description: "VAT returns due quarterly to the GRA",
+        type: "FILING" as const,
+        priority: "HIGH" as const,
+        recurrencePattern: "QUARTERLY" as const,
+        business: "KAJ" as const,
+      },
+      {
+        id: "template-annual-income-tax",
+        title: "Annual Income Tax Returns",
+        description: "Annual income tax returns due by April 30",
+        type: "FILING" as const,
+        priority: "URGENT" as const,
+        recurrencePattern: "ANNUALLY" as const,
+        suggestedDueDate: `${currentYear}-04-30`,
+        business: "KAJ" as const,
+      },
+      {
+        id: "template-monthly-nis",
+        title: "Monthly NIS Contributions",
+        description: "National Insurance Scheme contributions due monthly",
+        type: "PAYMENT" as const,
+        priority: "HIGH" as const,
+        recurrencePattern: "MONTHLY" as const,
+        suggestedDueDay: 15,
+        business: "KAJ" as const,
+      },
+      {
+        id: "template-work-permit-renewal",
+        title: "Work Permit Renewal",
+        description: "Annual work permit renewal reminder",
+        type: "RENEWAL" as const,
+        priority: "URGENT" as const,
+        recurrencePattern: "ANNUALLY" as const,
+        business: "GCMC" as const,
+      },
+      {
+        id: "template-company-annual-return",
+        title: "Company Annual Return",
+        description: "Annual company return filing with Registrar of Companies",
+        type: "FILING" as const,
+        priority: "HIGH" as const,
+        recurrencePattern: "ANNUALLY" as const,
+        business: "GCMC" as const,
+      },
+    ];
   }),
 };

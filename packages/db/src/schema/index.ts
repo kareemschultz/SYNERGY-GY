@@ -20,3 +20,7 @@ export * from "./portal";
 export * from "./service-catalog";
 // Services and matter tracking
 export * from "./services";
+// Tax calculations
+export * from "./tax-calculations";
+// Training management
+export * from "./training";

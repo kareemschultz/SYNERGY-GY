@@ -1,10 +1,20 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, Save, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Info,
+  Loader2,
+  Repeat,
+  Save,
+  Search,
+  Sparkles,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -88,6 +98,13 @@ function NewDeadlinePage() {
     id: string;
     displayName: string;
   } | null>(null);
+  const [showTemplates, setShowTemplates] = useState(true);
+
+  // Get Guyana templates
+  const { data: templates } = useQuery({
+    queryKey: ["guyanaTemplates"],
+    queryFn: () => client.deadlines.getGuyanaTemplates(),
+  });
 
   // Search clients
   const { data: clientResults } = useQuery({
@@ -167,6 +184,43 @@ function NewDeadlinePage() {
     },
   });
 
+  // Load template into form
+  const loadTemplate = (template: {
+    title: string;
+    description: string;
+    type: DeadlineType;
+    priority: Priority;
+    recurrencePattern: Recurrence;
+    business: "GCMC" | "KAJ";
+    suggestedDueDate?: string;
+    suggestedDueDay?: number;
+  }) => {
+    form.setFieldValue("title", template.title);
+    form.setFieldValue("description", template.description);
+    form.setFieldValue("type", template.type);
+    form.setFieldValue("priority", template.priority);
+    form.setFieldValue("recurrencePattern", template.recurrencePattern);
+    form.setFieldValue("business", template.business);
+
+    if (template.suggestedDueDate) {
+      form.setFieldValue("dueDate", template.suggestedDueDate);
+    } else if (template.suggestedDueDay) {
+      const today = new Date();
+      const suggestedDate = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        template.suggestedDueDay
+      );
+      form.setFieldValue(
+        "dueDate",
+        suggestedDate.toISOString().split("T")[0] ?? ""
+      );
+    }
+
+    setShowTemplates(false);
+    toast.success(`Template "${template.title}" loaded`);
+  };
+
   return (
     <div className="flex flex-col">
       <PageHeader
@@ -208,6 +262,65 @@ function NewDeadlinePage() {
         }}
       >
         <div className="mx-auto max-w-4xl space-y-6">
+          {/* Guyana Tax Templates */}
+          {showTemplates && templates && templates.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-yellow-500" />
+                    <CardTitle>Quick Start: Guyana Tax Templates</CardTitle>
+                  </div>
+                  <Button
+                    onClick={() => setShowTemplates(false)}
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    Hide
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {templates.map((template) => (
+                    <button
+                      className="flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors hover:border-primary hover:bg-accent"
+                      key={template.id}
+                      onClick={() => loadTemplate(template)}
+                      type="button"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="font-medium">{template.title}</div>
+                        <Repeat className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="text-muted-foreground text-sm">
+                        {template.description}
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="rounded bg-primary/10 px-2 py-0.5 font-medium text-xs">
+                          {template.recurrencePattern}
+                        </span>
+                        <span className="rounded bg-secondary px-2 py-0.5 font-medium text-xs">
+                          {template.business}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <Alert className="mt-4">
+                  <Info className="h-4 w-4" />
+                  <AlertTitle>About Templates</AlertTitle>
+                  <AlertDescription>
+                    These templates are pre-configured with Guyana tax and
+                    regulatory deadlines. Click a template to load it, then
+                    customize as needed.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Basic Info */}
           <Card>
             <CardHeader>
@@ -325,7 +438,10 @@ function NewDeadlinePage() {
           {/* Due Date & Recurrence */}
           <Card>
             <CardHeader>
-              <CardTitle>Schedule</CardTitle>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                <CardTitle>Schedule & Recurrence</CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
@@ -364,7 +480,10 @@ function NewDeadlinePage() {
                 <form.Field name="recurrencePattern">
                   {(field) => (
                     <div className="space-y-2">
-                      <Label htmlFor={field.name}>Recurrence</Label>
+                      <div className="flex items-center gap-2">
+                        <Repeat className="h-4 w-4" />
+                        <Label htmlFor={field.name}>Recurrence Pattern</Label>
+                      </div>
                       <Select
                         onValueChange={(value) =>
                           field.handleChange(value as Recurrence)
@@ -389,7 +508,9 @@ function NewDeadlinePage() {
                 <form.Field name="recurrenceEndDate">
                   {(field) => (
                     <div className="space-y-2">
-                      <Label htmlFor={field.name}>Recurrence End Date</Label>
+                      <Label htmlFor={field.name}>
+                        Recurrence End Date (optional)
+                      </Label>
                       <Input
                         disabled={
                           form.state.values.recurrencePattern === "NONE"
@@ -404,6 +525,19 @@ function NewDeadlinePage() {
                   )}
                 </form.Field>
               </div>
+
+              {form.state.values.recurrencePattern !== "NONE" && (
+                <Alert>
+                  <Repeat className="h-4 w-4" />
+                  <AlertTitle>Recurring Deadline</AlertTitle>
+                  <AlertDescription>
+                    Future instances will be generated automatically. When you
+                    complete an instance, the next occurrence will be created.
+                    {!form.state.values.recurrenceEndDate &&
+                      " Without an end date, instances will be generated up to 2 years ahead."}
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
 

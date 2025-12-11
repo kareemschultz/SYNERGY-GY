@@ -1,8 +1,19 @@
-import { db, document, documentTemplate } from "@SYNERGY-GY/db";
+import { client, db, document, documentTemplate, matter } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { getAccessibleBusinesses, staffProcedure } from "../index";
+import {
+  adminProcedure,
+  getAccessibleBusinesses,
+  staffProcedure,
+} from "../index";
+
+// Template placeholder type
+interface TemplatePlaceholder {
+  key: string;
+  label: string;
+  description?: string;
+}
 
 // Input schemas
 const documentCategoryValues = [
@@ -56,6 +67,55 @@ const updateDocumentSchema = z.object({
   matterId: z.string().nullable().optional(),
   expirationDate: z.string().nullable().optional(),
 });
+
+const templateCategoryValues = [
+  "LETTER",
+  "AGREEMENT",
+  "CERTIFICATE",
+  "FORM",
+  "REPORT",
+  "INVOICE",
+  "OTHER",
+] as const;
+
+// Helper function to get placeholder value from data object
+function getPlaceholderValue(
+  data: Record<string, unknown>,
+  placeholder: TemplatePlaceholder
+): string {
+  const parts = placeholder.key.split(".");
+  let value: unknown = data;
+
+  for (const part of parts) {
+    if (value && typeof value === "object" && part in value) {
+      value = (value as Record<string, unknown>)[part];
+    } else {
+      return `[${placeholder.label}]`;
+    }
+  }
+
+  if (value === null || value === undefined) {
+    return `[${placeholder.label}]`;
+  }
+
+  // Format based on type
+  if (placeholder.type === "date" && value instanceof Date) {
+    return value.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
+
+  if (placeholder.type === "currency" && typeof value === "number") {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "GYD",
+    }).format(value);
+  }
+
+  return String(value);
+}
 
 // Documents router
 export const documentsRouter = {
@@ -305,13 +365,18 @@ export const documentsRouter = {
     list: staffProcedure
       .input(
         z.object({
-          category: z.enum(documentCategoryValues).optional(),
+          category: z.enum(templateCategoryValues).optional(),
           business: z.enum(["GCMC", "KAJ"]).optional(),
+          includeInactive: z.boolean().default(false),
         })
       )
       .handler(async ({ input, context }) => {
         const accessibleBusinesses = getAccessibleBusinesses(context.staff);
-        const conditions = [eq(documentTemplate.isActive, true)];
+        const conditions = [];
+
+        if (!input.includeInactive) {
+          conditions.push(eq(documentTemplate.isActive, true));
+        }
 
         if (input.category) {
           conditions.push(eq(documentTemplate.category, input.category));
@@ -364,6 +429,294 @@ export const documentsRouter = {
         }
 
         return template;
+      }),
+
+    create: adminProcedure
+      .input(
+        z.object({
+          name: z.string().min(1).max(255),
+          description: z.string().optional(),
+          category: z.enum(templateCategoryValues),
+          business: z.enum(["GCMC", "KAJ"]).nullable().optional(),
+          content: z.string().min(1),
+          placeholders: z.array(
+            z.object({
+              key: z.string(),
+              label: z.string(),
+              type: z.enum(["text", "date", "number", "currency"]),
+              source: z.enum([
+                "client",
+                "matter",
+                "staff",
+                "business",
+                "date",
+                "custom",
+              ]),
+              sourceField: z.string().optional(),
+            })
+          ),
+          sortOrder: z.number().default(0),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const [newTemplate] = await db
+          .insert(documentTemplate)
+          .values({
+            ...input,
+            createdById: context.session.user.id,
+          })
+          .returning();
+
+        return newTemplate;
+      }),
+
+    update: adminProcedure
+      .input(
+        z.object({
+          id: z.string(),
+          name: z.string().min(1).max(255).optional(),
+          description: z.string().optional(),
+          category: z.enum(templateCategoryValues).optional(),
+          business: z.enum(["GCMC", "KAJ"]).nullable().optional(),
+          content: z.string().min(1).optional(),
+          placeholders: z
+            .array(
+              z.object({
+                key: z.string(),
+                label: z.string(),
+                type: z.enum(["text", "date", "number", "currency"]),
+                source: z.enum([
+                  "client",
+                  "matter",
+                  "staff",
+                  "business",
+                  "date",
+                  "custom",
+                ]),
+                sourceField: z.string().optional(),
+              })
+            )
+            .optional(),
+          sortOrder: z.number().optional(),
+          isActive: z.boolean().optional(),
+        })
+      )
+      .handler(async ({ input }) => {
+        const { id, ...updates } = input;
+
+        const existing = await db.query.documentTemplate.findFirst({
+          where: eq(documentTemplate.id, id),
+        });
+
+        if (!existing) {
+          throw new ORPCError("NOT_FOUND", { message: "Template not found" });
+        }
+
+        const [updated] = await db
+          .update(documentTemplate)
+          .set(updates)
+          .where(eq(documentTemplate.id, id))
+          .returning();
+
+        return updated;
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.string() }))
+      .handler(async ({ input }) => {
+        // Soft delete by setting isActive to false
+        const [updated] = await db
+          .update(documentTemplate)
+          .set({ isActive: false })
+          .where(eq(documentTemplate.id, input.id))
+          .returning();
+
+        if (!updated) {
+          throw new ORPCError("NOT_FOUND", { message: "Template not found" });
+        }
+
+        return updated;
+      }),
+
+    preview: staffProcedure
+      .input(
+        z.object({
+          id: z.string(),
+          clientId: z.string().optional(),
+          matterId: z.string().optional(),
+          customData: z.record(z.string()).optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const template = await db.query.documentTemplate.findFirst({
+          where: eq(documentTemplate.id, input.id),
+        });
+
+        if (!template) {
+          throw new ORPCError("NOT_FOUND", { message: "Template not found" });
+        }
+
+        // Gather data for placeholders
+        const data: Record<string, unknown> = {};
+
+        // Load client data if provided
+        if (input.clientId) {
+          const clientData = await db.query.client.findFirst({
+            where: eq(client.id, input.clientId),
+          });
+          if (clientData) {
+            data.client = clientData;
+          }
+        }
+
+        // Load matter data if provided
+        if (input.matterId) {
+          const matterData = await db.query.matter.findFirst({
+            where: eq(matter.id, input.matterId),
+          });
+          if (matterData) {
+            data.matter = matterData;
+          }
+        }
+
+        // Load staff data
+        data.staff = context.staff;
+
+        // Add business data
+        data.business = {
+          GCMC: {
+            name: "Green Crescent Management Consultancy",
+            address: "Georgetown, Guyana",
+            phone: "+592-XXX-XXXX",
+            email: "info@gcmc.gy",
+          },
+          KAJ: {
+            name: "Kareem Abdul-Jabar Tax & Accounting Services",
+            address: "Georgetown, Guyana",
+            phone: "+592-XXX-XXXX",
+            email: "info@kaj.gy",
+          },
+        };
+
+        // Add date helpers
+        data.date = {
+          today: new Date().toISOString().split("T")[0],
+          todayFormatted: new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+        };
+
+        // Add custom data
+        if (input.customData) {
+          data.custom = input.customData;
+        }
+
+        // Replace placeholders in content
+        let renderedContent = template.content;
+        for (const placeholder of template.placeholders) {
+          const value = getPlaceholderValue(data, placeholder);
+          const regex = new RegExp(`{{${placeholder.key}}}`, "g");
+          renderedContent = renderedContent.replace(regex, value);
+        }
+
+        return {
+          template,
+          renderedContent,
+          data,
+        };
+      }),
+
+    generate: staffProcedure
+      .input(
+        z.object({
+          templateId: z.string(),
+          clientId: z.string().optional(),
+          matterId: z.string().optional(),
+          customData: z.record(z.string()).optional(),
+          fileName: z.string().optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const template = await db.query.documentTemplate.findFirst({
+          where: eq(documentTemplate.id, input.templateId),
+        });
+
+        if (!template) {
+          throw new ORPCError("NOT_FOUND", { message: "Template not found" });
+        }
+
+        // Gather data for placeholders (same as preview)
+        const data: Record<string, unknown> = {};
+
+        if (input.clientId) {
+          const clientData = await db.query.client.findFirst({
+            where: eq(client.id, input.clientId),
+          });
+          if (clientData) {
+            data.client = clientData;
+          }
+        }
+
+        if (input.matterId) {
+          const matterData = await db.query.matter.findFirst({
+            where: eq(matter.id, input.matterId),
+          });
+          if (matterData) {
+            data.matter = matterData;
+          }
+        }
+
+        data.staff = context.staff;
+
+        data.business = {
+          GCMC: {
+            name: "Green Crescent Management Consultancy",
+            address: "Georgetown, Guyana",
+            phone: "+592-XXX-XXXX",
+            email: "info@gcmc.gy",
+          },
+          KAJ: {
+            name: "Kareem Abdul-Jabar Tax & Accounting Services",
+            address: "Georgetown, Guyana",
+            phone: "+592-XXX-XXXX",
+            email: "info@kaj.gy",
+          },
+        };
+
+        data.date = {
+          today: new Date().toISOString().split("T")[0],
+          todayFormatted: new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+        };
+
+        if (input.customData) {
+          data.custom = input.customData;
+        }
+
+        // Replace placeholders
+        let renderedContent = template.content;
+        for (const placeholder of template.placeholders) {
+          const value = getPlaceholderValue(data, placeholder);
+          const regex = new RegExp(`{{${placeholder.key}}}`, "g");
+          renderedContent = renderedContent.replace(regex, value);
+        }
+
+        // Generate filename
+        const fileName =
+          input.fileName ||
+          `${template.name}_${new Date().toISOString().split("T")[0]}.txt`;
+
+        return {
+          templateId: template.id,
+          templateName: template.name,
+          content: renderedContent,
+          fileName,
+        };
       }),
   },
 

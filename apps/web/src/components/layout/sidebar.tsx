@@ -1,11 +1,16 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
+  BookOpen,
   Building2,
+  Calculator,
   Calendar,
   FileText,
   FolderOpen,
   Home,
+  Package,
+  Receipt,
   Settings,
+  Shield,
   Users,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,9 +56,34 @@ const mainNavItems: NavItem[] = [
     href: "/app/calendar",
     icon: Calendar,
   },
+  {
+    title: "Services",
+    href: "/app/services",
+    icon: Package,
+  },
+  {
+    title: "Invoices",
+    href: "/app/invoices",
+    icon: Receipt,
+  },
+  {
+    title: "Training",
+    href: "/app/training",
+    icon: BookOpen,
+  },
+  {
+    title: "Calculators",
+    href: "/app/calculators",
+    icon: Calculator,
+  },
 ];
 
 const settingsNavItems: NavItem[] = [
+  {
+    title: "Admin",
+    href: "/app/admin",
+    icon: Shield,
+  },
   {
     title: "Settings",
     href: "/app/settings",
