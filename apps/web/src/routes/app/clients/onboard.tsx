@@ -17,6 +17,7 @@ import {
   StepBasicInfo,
   StepClientType,
   StepContact,
+  StepDocuments,
   StepIdentification,
   StepReview,
   StepServices,
@@ -26,6 +27,22 @@ import { client, queryClient } from "@/utils/orpc";
 export const Route = createFileRoute("/app/clients/onboard")({
   component: ClientOnboardingWizard,
 });
+
+async function uploadFile(documentId: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`/api/upload/${documentId}`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to upload file");
+  }
+
+  return response.json();
+}
 
 function ClientOnboardingWizard() {
   const navigate = useNavigate();
@@ -43,7 +60,8 @@ function ClientOnboardingWizard() {
         throw new Error("Client type is required");
       }
 
-      return client.clients.create({
+      // 1. Create client
+      const newClient = await client.clients.create({
         type: data.clientType,
         displayName: displayName || data.businessName || "Unknown Client",
         firstName: isIndividual ? data.firstName : undefined,
@@ -66,6 +84,55 @@ function ClientOnboardingWizard() {
         notes: data.notes || undefined,
         status: "ACTIVE",
       });
+
+      // 2. Save service selections
+      if (data.gcmcServices.length > 0 || data.kajServices.length > 0) {
+        await client.clientServices.saveSelections({
+          clientId: newClient.id,
+          gcmcServices: data.gcmcServices,
+          kajServices: data.kajServices,
+        });
+      }
+
+      // 3. Upload documents and link to services
+      if (data.documents?.uploads && data.documents.uploads.length > 0) {
+        for (const upload of data.documents.uploads) {
+          // a. Prepare upload
+          const doc = await client.documents.prepareUpload({
+            category: upload.category,
+            description: upload.description,
+            clientId: newClient.id,
+          });
+
+          // b. Upload file
+          await uploadFile(doc.documentId, upload.file);
+
+          // c. Link to service if specified
+          if (upload.linkedService && upload.linkedRequirement) {
+            // Find selection ID - we need to fetch selections first
+            // But since we just saved them, we can try to find them or just skip this optimization for now
+            // Or better, fetch the selections for the client to get their IDs
+            const selections = await client.clientServices.getByClient({
+              clientId: newClient.id,
+            });
+            const selection = selections.find(
+              (s) =>
+                s.serviceCode === upload.linkedService ||
+                s.serviceName === upload.linkedService
+            );
+
+            if (selection) {
+              await client.clientServices.linkDocument({
+                selectionId: selection.id,
+                documentId: doc.documentId,
+                requirementName: upload.linkedRequirement,
+              });
+            }
+          }
+        }
+      }
+
+      return newClient;
     },
     onSuccess: (newClient) => {
       queryClient.invalidateQueries({ queryKey: ["clients"] });
@@ -79,6 +146,7 @@ function ClientOnboardingWizard() {
       }, 1500);
     },
     onError: (error) => {
+      console.error(error);
       toast.error(error.message || "Failed to create client");
     },
   });
@@ -183,6 +251,14 @@ function ClientOnboardingWizard() {
           />
         );
       case 5:
+        return (
+          <StepDocuments
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      case 6:
         return (
           <StepReview
             data={wizard.data}

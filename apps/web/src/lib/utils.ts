@@ -28,3 +28,22 @@ export function formatCurrency(amount: number, currency = "GYD"): string {
   // For other currencies, show currency code
   return `${currency} ${formattedAmount}`;
 }
+
+export async function uploadFile(
+  documentId: string,
+  file: File
+): Promise<{ success: boolean; document: any }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`/api/upload/${documentId}`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to upload file");
+  }
+
+  return response.json();
+}

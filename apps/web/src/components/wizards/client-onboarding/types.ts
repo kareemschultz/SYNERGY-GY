@@ -1,3 +1,5 @@
+import type { DocumentCategory } from "@/utils/api";
+
 export const CLIENT_TYPES = [
   {
     value: "INDIVIDUAL",
@@ -99,7 +101,7 @@ export const KAJ_SERVICES = [
   {
     value: "PAYE",
     label: "PAYE Services",
-    description: "Monthly/Annual PAYE Returns",
+    description: "PAYE Returns",
   },
   {
     value: "FINANCIAL_STATEMENT",
@@ -167,6 +169,18 @@ export type ClientOnboardingData = {
 
   // Step 6: Notes
   notes: string;
+
+  // Step 7: Documents (optional)
+  documents?: {
+    files: File[];
+    uploads: Array<{
+      file: File;
+      category: DocumentCategory;
+      description: string;
+      linkedService?: string; // service code
+      linkedRequirement?: string; // requirement name
+    }>;
+  };
 };
 
 export const initialOnboardingData: ClientOnboardingData = {
@@ -194,6 +208,10 @@ export const initialOnboardingData: ClientOnboardingData = {
   gcmcServices: [],
   kajServices: [],
   notes: "",
+  documents: {
+    files: [],
+    uploads: [],
+  },
 };
 
 export function getDisplayName(data: ClientOnboardingData): string {
@@ -302,6 +320,12 @@ export const onboardingSteps: OnboardingStep[] = [
     },
   },
   {
+    id: "documents",
+    title: "Documents",
+    description: "Upload required documents",
+    isOptional: true,
+  },
+  {
     id: "review",
     title: "Review",
     description: "Review and create client",
@@ -343,4 +367,67 @@ export function getRequiredDocuments(data: ClientOnboardingData): string[] {
   }
 
   return [...new Set(documents)];
+}
+
+export function getRequiredDocumentsByServices(
+  data: ClientOnboardingData
+): Record<string, string[]> {
+  const requirements: Record<string, string[]> = {};
+
+  // Helper to add requirements
+  const addReqs = (service: string, reqs: string[]) => {
+    if (!requirements[service]) requirements[service] = [];
+    requirements[service].push(...reqs);
+  };
+
+  // KAJ Services
+  if (data.kajServices.includes("TAX_RETURN")) {
+    addReqs("Tax Returns", [
+      "TIN Certificate",
+      "Previous Year Return (if available)",
+      "Income Statement",
+    ]);
+  }
+  if (data.kajServices.includes("COMPLIANCE")) {
+    addReqs("Compliance Certificates", [
+      "TIN Certificate",
+      "NIS Compliance",
+      "VAT Compliance (if applicable)",
+    ]);
+  }
+  if (data.kajServices.includes("PAYE")) {
+    addReqs("PAYE Services", ["Employer TIN", "Employee Schedule"]);
+  }
+  if (data.kajServices.includes("NIS_SERVICES")) {
+    addReqs("NIS Services", ["Employer NIS Number", "Employee NIS Numbers"]);
+  }
+
+  // GCMC Services
+  if (data.gcmcServices.includes("IMMIGRATION")) {
+    addReqs("Immigration", [
+      "Valid Passport",
+      "Passport Photos",
+      "Police Clearance",
+      "Medical Certificate",
+    ]);
+  }
+  if (data.gcmcServices.includes("BUSINESS_REGISTRATION")) {
+    addReqs("Business Registration", [
+      "Proposed Business Names",
+      "ID of Owners",
+      "Proof of Address",
+    ]);
+  }
+
+  // General Client Type Requirements
+  if (isBusinessType(data.clientType)) {
+    addReqs("General Business", ["Business Registration/Incorporation"]);
+  } else {
+    addReqs("General Individual", [
+      "National ID or Passport",
+      "Proof of Address",
+    ]);
+  }
+
+  return requirements;
 }

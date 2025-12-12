@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertCircle, ArrowLeft, FileText } from "lucide-react";
+import { AlertCircle, ArrowLeft, Download, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,16 +30,27 @@ type Matter = {
   notes?: string;
 };
 
+type Document = {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  fileSize: number;
+  category: string;
+  description: string | null;
+  createdAt: Date;
+};
+
 function PortalMatterDetail() {
   const navigate = useNavigate();
   const { "matter-id": matterId } = Route.useParams();
 
   const [matter, setMatter] = useState<Matter | null>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadMatter() {
+    async function loadData() {
       const sessionToken = localStorage.getItem("portal-session");
 
       if (!sessionToken) {
@@ -47,8 +59,13 @@ function PortalMatterDetail() {
       }
 
       try {
-        const matterData = await api.portal.matters.get({ matterId });
+        const [matterData, documentsData] = await Promise.all([
+          api.portal.matters.get({ matterId }),
+          api.portal.documents.list({ matterId, page: 1, limit: 50 }),
+        ]);
+
         setMatter(matterData);
+        setDocuments(documentsData.documents);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load matter details"
@@ -58,8 +75,17 @@ function PortalMatterDetail() {
       }
     }
 
-    loadMatter();
+    loadData();
   }, [matterId, navigate]);
+
+  const handleDownload = async (documentId: string) => {
+    try {
+      await api.portal.documents.download.mutate({ documentId });
+      toast.success("Download started");
+    } catch (e: any) {
+      toast.error("Download failed: " + e.message);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toUpperCase()) {
@@ -197,13 +223,42 @@ function PortalMatterDetail() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="py-8 text-center text-muted-foreground">
-              <FileText className="mx-auto mb-4 h-12 w-12 opacity-50" />
-              <p>No documents found for this matter</p>
-              <p className="mt-2 text-sm">
-                Documents will appear here once they are uploaded
-              </p>
-            </div>
+            {documents.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <FileText className="mx-auto mb-4 h-12 w-12 opacity-50" />
+                <p>No documents found for this matter</p>
+                <p className="mt-2 text-sm">
+                  Documents will appear here once they are uploaded
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {documents.map((doc) => (
+                  <div
+                    className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
+                    key={doc.id}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-8 w-8 text-blue-500/50" />
+                      <div>
+                        <p className="font-medium">{doc.originalName}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {doc.category} • {(doc.fileSize / 1024).toFixed(1)} KB
+                          • {new Date(doc.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => handleDownload(doc.id)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>

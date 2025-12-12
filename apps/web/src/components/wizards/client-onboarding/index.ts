@@ -1,6 +1,7 @@
 export { StepBasicInfo } from "./step-basic-info";
 export { StepClientType } from "./step-client-type";
 export { StepContact } from "./step-contact";
+export { StepDocuments } from "./step-documents";
 export { StepIdentification } from "./step-identification";
 export { StepReview } from "./step-review";
 export { StepServices } from "./step-services";

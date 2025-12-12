@@ -19,7 +19,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ClientDocumentsTab } from "@/components/clients/client-documents-tab";
 import { PageHeader } from "@/components/layout/page-header";
+import { PortalPreviewPanel } from "@/components/portal/portal-preview-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +49,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { client, queryClient } from "@/utils/orpc";
+import { useImpersonation } from "@/hooks/use-impersonation";
 
 export const Route = createFileRoute("/app/clients/$client-id")({
   component: ClientDetailPage,
@@ -83,6 +85,11 @@ function ClientDetailPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [showImpersonateDialog, setShowImpersonateDialog] = useState(false);
+  const [impersonationReason, setImpersonationReason] = useState("");
+  const [showPortalPreview, setShowPortalPreview] = useState(false);
+
+  const { startImpersonation } = useImpersonation();
 
   const {
     data: clientData,
@@ -122,6 +129,21 @@ function ClientDetailPage() {
       });
     },
   });
+
+  const handleImpersonate = () => {
+    if (!impersonationReason || impersonationReason.length < 10) {
+      toast.error("Please provide a valid reason (min 10 characters)");
+      return;
+    }
+
+    startImpersonation(
+      clientId,
+      impersonationReason,
+      clientData?.displayName
+    ).catch((err) =>
+      toast.error("Failed to start impersonation: " + err.message)
+    );
+  };
 
   if (isLoading) {
     return (
@@ -187,6 +209,28 @@ function ClientDetailPage() {
                 >
                   <Send className="mr-2 h-4 w-4" />
                   Send Portal Invite
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Portal Actions</DropdownMenuLabel>
+
+                <DropdownMenuItem
+                  onSelect={() => setShowImpersonateDialog(true)}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  View as Client (Full)
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onSelect={() => setShowPortalPreview(true)}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Preview Portal (Panel)
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link to={`/app/clients/${clientId}/portal-activity`}>
+                    <Activity className="mr-2 h-4 w-4" />
+                    Portal Activity
+                  </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -280,6 +324,10 @@ function ClientDetailPage() {
             <TabsTrigger value="communications">
               <MessageSquare className="mr-2 h-4 w-4" />
               Communications
+            </TabsTrigger>
+            <TabsTrigger value="documents">
+              <FileText className="mr-2 h-4 w-4" />
+              Documents
             </TabsTrigger>
             {canViewFinancials && (
               <TabsTrigger value="invoices">
@@ -422,6 +470,11 @@ function ClientDetailPage() {
             />
           </TabsContent>
 
+          {/* Documents Tab */}
+          <TabsContent className="mt-6" value="documents">
+            <ClientDocumentsTab clientId={clientId} />
+          </TabsContent>
+
           {/* Invoices Tab - Only visible if staff has financial access */}
           {canViewFinancials && (
             <TabsContent className="mt-6" value="invoices">
@@ -485,6 +538,52 @@ function ClientDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Impersonation Reason Dialog */}
+      <Dialog
+        onOpenChange={setShowImpersonateDialog}
+        open={showImpersonateDialog}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>View as Client</DialogTitle>
+            <DialogDescription>
+              You are about to access the client portal as{" "}
+              <strong>{clientData?.displayName}</strong>. This action will be
+              logged for security purposes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason for Access *</Label>
+              <Textarea
+                id="reason"
+                onChange={(e) => setImpersonationReason(e.target.value)}
+                placeholder="e.g., Troubleshooting invoice display issue..."
+                value={impersonationReason}
+              />
+              <p className="text-muted-foreground text-xs">
+                Minimum 10 characters required.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => setShowImpersonateDialog(false)}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleImpersonate}>Start Impersonation</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <PortalPreviewPanel
+        clientId={clientId}
+        onOpenChange={setShowPortalPreview}
+        open={showPortalPreview}
+      />
     </div>
   );
 }

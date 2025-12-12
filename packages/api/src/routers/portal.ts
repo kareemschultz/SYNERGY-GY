@@ -7,10 +7,12 @@ import {
   invoice,
   invoicePayment,
   matter,
+  portalActivityLog,
   portalInvite,
   portalPasswordReset,
   portalSession,
   portalUser,
+  staffImpersonationSession,
 } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
 import {
@@ -22,11 +24,12 @@ import {
   gt,
   gte,
   isNull,
+  lte,
   or,
   sql,
 } from "drizzle-orm";
 import { z } from "zod";
-import { publicProcedure, staffProcedure } from "../index";
+import { adminProcedure, publicProcedure, staffProcedure } from "../index";
 import { logActivity } from "../utils/activity-logger";
 import { sendPasswordReset, sendPortalInvite } from "../utils/email";
 import {
@@ -1387,6 +1390,274 @@ export const portalRouter = {
         });
 
         return { success: true };
+      }),
+  },
+
+  impersonation: {
+    start: staffProcedure
+      .input(
+        z.object({
+          clientId: z.string().uuid(),
+          reason: z.string().min(10, "Reason must be at least 10 characters"),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        // Verify client has active portal account
+        const [portalAccount] = await db
+          .select()
+          .from(portalUser)
+          .where(
+            and(
+              eq(portalUser.clientId, input.clientId),
+              eq(portalUser.isActive, true),
+              eq(portalUser.status, "ACTIVE")
+            )
+          )
+          .limit(1);
+
+        if (!portalAccount) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Client does not have an active portal account",
+          });
+        }
+
+        // Generate secure token with 30-minute expiry
+        const token = crypto.randomUUID();
+        const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+        const [session] = await db
+          .insert(staffImpersonationSession)
+          .values({
+            token,
+            staffUserId: context.session.user.id,
+            portalUserId: portalAccount.id,
+            clientId: input.clientId,
+            reason: input.reason,
+            expiresAt,
+            ipAddress:
+              context.req?.headers?.get("x-forwarded-for") || "unknown",
+            userAgent: context.req?.headers?.get("user-agent") || "unknown",
+          })
+          .returning();
+
+        // Log the impersonation start
+        await db.insert(portalActivityLog).values({
+          portalUserId: portalAccount.id,
+          clientId: input.clientId,
+          action: "LOGIN",
+          isImpersonated: true,
+          impersonatedByUserId: context.session.user.id,
+          metadata: { reason: input.reason },
+          ipAddress: context.req?.headers?.get("x-forwarded-for") || "unknown",
+          userAgent: context.req?.headers?.get("user-agent") || "unknown",
+        });
+
+        return {
+          token,
+          expiresAt,
+          portalUserId: portalAccount.id,
+          clientId: input.clientId,
+        };
+      }),
+
+    end: staffProcedure
+      .input(
+        z.object({
+          token: z.string(),
+        })
+      )
+      .handler(async ({ input }) => {
+        const [session] = await db
+          .select()
+          .from(staffImpersonationSession)
+          .where(
+            and(
+              eq(staffImpersonationSession.token, input.token),
+              eq(staffImpersonationSession.isActive, true)
+            )
+          )
+          .limit(1);
+
+        if (!session) {
+          throw new ORPCError("UNAUTHORIZED", {
+            message: "Invalid or expired impersonation session",
+          });
+        }
+
+        await db
+          .update(staffImpersonationSession)
+          .set({
+            endedAt: new Date(),
+            isActive: false,
+          })
+          .where(eq(staffImpersonationSession.id, session.id));
+
+        // Log the impersonation end
+        await db.insert(portalActivityLog).values({
+          portalUserId: session.portalUserId,
+          clientId: session.clientId,
+          action: "LOGOUT",
+          isImpersonated: true,
+          impersonatedByUserId: session.staffUserId,
+          metadata: { reason: "Impersonation ended" },
+        });
+
+        return { success: true };
+      }),
+
+    listActive: adminProcedure.handler(async () => {
+      const activeSessions = await db.query.staffImpersonationSession.findMany({
+        where: eq(staffImpersonationSession.isActive, true),
+        with: {
+          staffUser: true,
+          portalUser: {
+            with: {
+              client: true,
+            },
+          },
+        },
+        orderBy: [desc(staffImpersonationSession.startedAt)],
+      });
+
+      return activeSessions;
+    }),
+  },
+
+  analytics: {
+    getPortalActivity: staffProcedure
+      .input(
+        z.object({
+          clientId: z.string().uuid(),
+          startDate: z.date().optional(),
+          endDate: z.date().optional(),
+          action: z
+            .enum([
+              "LOGIN",
+              "LOGOUT",
+              "VIEW_DASHBOARD",
+              "VIEW_MATTER",
+              "VIEW_DOCUMENT",
+              "DOWNLOAD_DOCUMENT",
+              "UPLOAD_DOCUMENT",
+              "VIEW_INVOICE",
+              "REQUEST_APPOINTMENT",
+              "CANCEL_APPOINTMENT",
+              "UPDATE_PROFILE",
+              "CHANGE_PASSWORD",
+              "VIEW_RESOURCES",
+            ])
+            .optional(),
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+        })
+      )
+      .handler(async ({ input }) => {
+        const conditions = [eq(portalActivityLog.clientId, input.clientId)];
+
+        if (input.action) {
+          conditions.push(eq(portalActivityLog.action, input.action));
+        }
+
+        if (input.startDate) {
+          conditions.push(gte(portalActivityLog.createdAt, input.startDate));
+        }
+
+        if (input.endDate) {
+          conditions.push(lte(portalActivityLog.createdAt, input.endDate));
+        }
+
+        const activities = await db.query.portalActivityLog.findMany({
+          where: and(...conditions),
+          with: {
+            portalUser: true,
+            impersonatedBy: true,
+          },
+          orderBy: [desc(portalActivityLog.createdAt)],
+          limit: input.limit,
+          offset: input.offset,
+        });
+
+        const countResult = await db
+          .select({ count: count() })
+          .from(portalActivityLog)
+          .where(and(...conditions));
+
+        return {
+          activities,
+          totalCount: countResult[0]?.count ?? 0,
+          limit: input.limit,
+          offset: input.offset,
+        };
+      }),
+
+    getActivityStats: staffProcedure
+      .input(
+        z.object({
+          clientId: z.string().uuid(),
+        })
+      )
+      .handler(async ({ input }) => {
+        const activities = await db.query.portalActivityLog.findMany({
+          where: eq(portalActivityLog.clientId, input.clientId),
+          orderBy: [desc(portalActivityLog.createdAt)],
+        });
+
+        const logins = activities.filter((a) => a.action === "LOGIN");
+        const downloads = activities.filter(
+          (a) => a.action === "DOWNLOAD_DOCUMENT"
+        );
+
+        // Calculate average session duration (login to logout)
+        let totalSessionDuration = 0;
+        let sessionCount = 0;
+
+        for (let i = 0; i < activities.length - 1; i++) {
+          if (activities[i].action === "LOGIN") {
+            const nextLogout = activities
+              .slice(i + 1)
+              .find((a) => a.action === "LOGOUT");
+            if (nextLogout) {
+              const duration =
+                new Date(nextLogout.createdAt).getTime() -
+                new Date(activities[i].createdAt).getTime();
+              totalSessionDuration += duration;
+              sessionCount++;
+            }
+          }
+        }
+
+        const avgSessionDuration =
+          sessionCount > 0
+            ? totalSessionDuration / sessionCount / 1000 / 60
+            : 0;
+
+        return {
+          totalLogins: logins.length,
+          totalDownloads: downloads.length,
+          avgSessionDuration: Math.round(avgSessionDuration),
+          lastLoginAt: logins[0]?.createdAt || null,
+          totalActivities: activities.length,
+        };
+      }),
+
+    getImpersonationHistory: staffProcedure
+      .input(
+        z.object({
+          clientId: z.string().uuid(),
+        })
+      )
+      .handler(async ({ input }) => {
+        const impersonations =
+          await db.query.staffImpersonationSession.findMany({
+            where: eq(staffImpersonationSession.clientId, input.clientId),
+            with: {
+              staffUser: true,
+              portalUser: true,
+            },
+            orderBy: [desc(staffImpersonationSession.startedAt)],
+          });
+
+        return impersonations;
       }),
   },
 };

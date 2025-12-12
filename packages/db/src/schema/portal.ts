@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -25,6 +26,27 @@ export const portalInviteStatusEnum = pgEnum("portal_invite_status", [
   "EXPIRED",
   "REVOKED",
 ]);
+
+export const portalActivityActionEnum = pgEnum("portal_activity_action", [
+  "LOGIN",
+  "LOGOUT",
+  "VIEW_DASHBOARD",
+  "VIEW_MATTER",
+  "VIEW_DOCUMENT",
+  "DOWNLOAD_DOCUMENT",
+  "UPLOAD_DOCUMENT",
+  "VIEW_INVOICE",
+  "REQUEST_APPOINTMENT",
+  "CANCEL_APPOINTMENT",
+  "UPDATE_PROFILE",
+  "CHANGE_PASSWORD",
+  "VIEW_RESOURCES",
+]);
+
+export const portalActivityEntityTypeEnum = pgEnum(
+  "portal_activity_entity_type",
+  ["MATTER", "DOCUMENT", "APPOINTMENT", "INVOICE", "RESOURCE"]
+);
 
 // Portal user table - separate auth context from staff users
 export const portalUser = pgTable(
@@ -184,6 +206,98 @@ export const portalPasswordReset = pgTable(
   ]
 );
 
+export const portalActivityLog = pgTable(
+  "portal_activity_log",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    portalUserId: text("portal_user_id")
+      .notNull()
+      .references(() => portalUser.id, { onDelete: "cascade" }),
+
+    clientId: text("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+
+    action: portalActivityActionEnum("action").notNull(),
+    entityType: portalActivityEntityTypeEnum("entity_type"),
+    entityId: text("entity_id"),
+    metadata: jsonb("metadata"),
+
+    isImpersonated: boolean("is_impersonated").default(false).notNull(),
+    impersonatedByUserId: text("impersonated_by_user_id").references(
+      () => user.id,
+      { onDelete: "set null" }
+    ),
+
+    sessionId: text("session_id").references(() => portalSession.id, {
+      onDelete: "set null",
+    }),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("portal_activity_log_portal_user_id_idx").on(table.portalUserId),
+    index("portal_activity_log_client_id_idx").on(table.clientId),
+    index("portal_activity_log_action_idx").on(table.action),
+    index("portal_activity_log_is_impersonated_idx").on(table.isImpersonated),
+    index("portal_activity_log_impersonated_by_user_id_idx").on(
+      table.impersonatedByUserId
+    ),
+    index("portal_activity_log_created_at_idx").on(table.createdAt),
+  ]
+);
+
+export const staffImpersonationSession = pgTable(
+  "staff_impersonation_session",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    token: text("token").unique().notNull(),
+
+    staffUserId: text("staff_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+
+    portalUserId: text("portal_user_id")
+      .notNull()
+      .references(() => portalUser.id, { onDelete: "cascade" }),
+
+    clientId: text("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+
+    reason: text("reason").notNull(),
+
+    startedAt: timestamp("started_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    endedAt: timestamp("ended_at"),
+
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+
+    isActive: boolean("is_active").default(true).notNull(),
+  },
+  (table) => [
+    index("staff_impersonation_session_token_idx").on(table.token),
+    index("staff_impersonation_session_staff_user_id_idx").on(
+      table.staffUserId
+    ),
+    index("staff_impersonation_session_portal_user_id_idx").on(
+      table.portalUserId
+    ),
+    index("staff_impersonation_session_client_id_idx").on(table.clientId),
+    index("staff_impersonation_session_is_active_idx").on(table.isActive),
+    index("staff_impersonation_session_expires_at_idx").on(table.expiresAt),
+  ]
+);
+
 // Relations
 export const portalUserRelations = relations(portalUser, ({ one, many }) => ({
   client: one(client, {
@@ -196,6 +310,8 @@ export const portalUserRelations = relations(portalUser, ({ one, many }) => ({
   }),
   sessions: many(portalSession),
   passwordResets: many(portalPasswordReset),
+  activityLogs: many(portalActivityLog),
+  impersonationSessions: many(staffImpersonationSession),
 }));
 
 export const portalInviteRelations = relations(portalInvite, ({ one }) => ({
@@ -232,6 +348,46 @@ export const portalPasswordResetRelations = relations(
     portalUser: one(portalUser, {
       fields: [portalPasswordReset.portalUserId],
       references: [portalUser.id],
+    }),
+  })
+);
+
+export const portalActivityLogRelations = relations(
+  portalActivityLog,
+  ({ one }) => ({
+    portalUser: one(portalUser, {
+      fields: [portalActivityLog.portalUserId],
+      references: [portalUser.id],
+    }),
+    client: one(client, {
+      fields: [portalActivityLog.clientId],
+      references: [client.id],
+    }),
+    impersonatedBy: one(user, {
+      fields: [portalActivityLog.impersonatedByUserId],
+      references: [user.id],
+    }),
+    session: one(portalSession, {
+      fields: [portalActivityLog.sessionId],
+      references: [portalSession.id],
+    }),
+  })
+);
+
+export const staffImpersonationSessionRelations = relations(
+  staffImpersonationSession,
+  ({ one }) => ({
+    staffUser: one(user, {
+      fields: [staffImpersonationSession.staffUserId],
+      references: [user.id],
+    }),
+    portalUser: one(portalUser, {
+      fields: [staffImpersonationSession.portalUserId],
+      references: [portalUser.id],
+    }),
+    client: one(client, {
+      fields: [staffImpersonationSession.clientId],
+      references: [client.id],
     }),
   })
 );

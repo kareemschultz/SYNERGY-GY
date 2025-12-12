@@ -1,20 +1,29 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   date,
   index,
+  jsonb,
   pgEnum,
   pgTable,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
-import { clientTypeEnum, staff } from "./core";
+import { businessEnum, clientTypeEnum, staff } from "./core";
 
 // Client status enum
 export const clientStatusEnum = pgEnum("client_status", [
   "ACTIVE",
   "INACTIVE",
   "ARCHIVED",
+]);
+
+// Service selection status
+export const serviceSelectionStatusEnum = pgEnum("service_selection_status", [
+  "INTERESTED",
+  "ACTIVE",
+  "COMPLETED",
+  "INACTIVE",
 ]);
 
 // Communication type enum
@@ -191,6 +200,64 @@ export const clientCommunication = pgTable(
   ]
 );
 
+export const clientServiceSelection = pgTable(
+  "client_service_selection",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    clientId: text("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+
+    business: businessEnum("business").notNull(),
+    serviceCode: text("service_code").notNull(),
+    serviceName: text("service_name").notNull(),
+
+    requiredDocuments: jsonb("required_documents")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+
+    uploadedDocuments: jsonb("uploaded_documents")
+      .$type<
+        Array<{
+          documentId: string;
+          fileName: string;
+          uploadedAt: string;
+          requirementName: string;
+        }>
+      >()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+
+    status: serviceSelectionStatusEnum("status")
+      .notNull()
+      .default("INTERESTED"),
+
+    selectedAt: timestamp("selected_at").defaultNow().notNull(),
+    activatedAt: timestamp("activated_at"),
+    completedAt: timestamp("completed_at"),
+    inactivatedAt: timestamp("inactivated_at"),
+
+    notes: text("notes"),
+    estimatedCompletionDate: date("estimated_completion_date"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("client_service_selection_client_id_idx").on(table.clientId),
+    index("client_service_selection_status_idx").on(table.status),
+    index("client_service_selection_business_idx").on(table.business),
+    index("client_service_selection_service_code_idx").on(table.serviceCode),
+  ]
+);
+
 // Relations
 export const clientRelations = relations(client, ({ one, many }) => ({
   primaryStaff: one(staff, {
@@ -205,6 +272,7 @@ export const clientRelations = relations(client, ({ one, many }) => ({
   links: many(clientLink, { relationName: "clientLinks" }),
   linkedFrom: many(clientLink, { relationName: "linkedClientLinks" }),
   communications: many(clientCommunication),
+  serviceSelections: many(clientServiceSelection),
 }));
 
 export const clientContactRelations = relations(clientContact, ({ one }) => ({
@@ -237,6 +305,16 @@ export const clientCommunicationRelations = relations(
     staff: one(staff, {
       fields: [clientCommunication.staffId],
       references: [staff.id],
+    }),
+  })
+);
+
+export const clientServiceSelectionRelations = relations(
+  clientServiceSelection,
+  ({ one }) => ({
+    client: one(client, {
+      fields: [clientServiceSelection.clientId],
+      references: [client.id],
     }),
   })
 );

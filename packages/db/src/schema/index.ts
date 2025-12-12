@@ -17,6 +17,8 @@ export * from "./deadlines";
 export * from "./documents";
 // Invoicing and billing
 export * from "./invoices";
+// Knowledge base
+export * from "./knowledge-base";
 // Client portal
 export * from "./portal";
 // Reporting and analytics
