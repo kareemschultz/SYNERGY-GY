@@ -369,6 +369,95 @@ export function getRequiredDocuments(data: ClientOnboardingData): string[] {
   return [...new Set(documents)];
 }
 
+/**
+ * Document category mapping for auto-categorization
+ */
+export function inferDocumentCategory(documentName: string): DocumentCategory {
+  const lower = documentName.toLowerCase();
+
+  // Identification documents
+  if (
+    lower.includes("passport") ||
+    lower.includes("national id") ||
+    lower.includes("birth certificate") ||
+    lower.includes("id card")
+  ) {
+    return "IDENTIFICATION";
+  }
+
+  // Tax-related documents
+  if (
+    lower.includes("tin") ||
+    lower.includes("tax return") ||
+    lower.includes("tax clearance") ||
+    lower.includes("paye") ||
+    lower.includes("vat")
+  ) {
+    return "TAX_FILING";
+  }
+
+  // NIS documents
+  if (lower.includes("nis") || lower.includes("national insurance")) {
+    return "NIS";
+  }
+
+  // Financial documents
+  if (
+    lower.includes("bank statement") ||
+    lower.includes("financial statement") ||
+    lower.includes("income") ||
+    lower.includes("expense") ||
+    lower.includes("balance sheet")
+  ) {
+    return "FINANCIAL";
+  }
+
+  // Immigration documents
+  if (
+    lower.includes("police clearance") ||
+    lower.includes("medical certificate") ||
+    lower.includes("visa") ||
+    lower.includes("work permit")
+  ) {
+    return "IMMIGRATION";
+  }
+
+  // Certificates
+  if (
+    lower.includes("certificate") ||
+    lower.includes("diploma") ||
+    lower.includes("license")
+  ) {
+    return "CERTIFICATE";
+  }
+
+  // Agreements/Contracts
+  if (
+    lower.includes("agreement") ||
+    lower.includes("contract") ||
+    lower.includes("will") ||
+    lower.includes("affidavit")
+  ) {
+    return "AGREEMENT";
+  }
+
+  // Correspondence
+  if (
+    lower.includes("letter") ||
+    lower.includes("correspondence") ||
+    lower.includes("email")
+  ) {
+    return "CORRESPONDENCE";
+  }
+
+  // Default to OTHER
+  return "OTHER";
+}
+
+/**
+ * Get required documents organized by service
+ * Based on document-requirements.md specification
+ */
 export function getRequiredDocumentsByServices(
   data: ClientOnboardingData
 ): Record<string, string[]> {
@@ -380,53 +469,265 @@ export function getRequiredDocumentsByServices(
     requirements[service].push(...reqs);
   };
 
+  // ==================
   // KAJ Services
+  // ==================
+
   if (data.kajServices.includes("TAX_RETURN")) {
-    addReqs("Tax Returns", [
-      "TIN Certificate",
-      "Previous Year Return (if available)",
-      "Income Statement",
-    ]);
+    if (isIndividualType(data.clientType)) {
+      addReqs("Individual Tax Returns", [
+        "TIN Certificate",
+        "National ID",
+        "Employment Income Statements (payslips)",
+        "Bank Statements (tax year)",
+        "Investment Income Proof",
+        "Expense Receipts (medical, education)",
+        "Previous Year's Assessment",
+      ]);
+    } else {
+      addReqs("Corporate Tax Returns", [
+        "Company TIN",
+        "Audited Financial Statements",
+        "Trial Balance",
+        "Bank Statements (fiscal year)",
+        "Revenue Documentation (invoices)",
+        "Expense Documentation",
+        "Asset Register",
+        "Depreciation Schedule",
+        "Directors' Remuneration Details",
+      ]);
+    }
   }
+
   if (data.kajServices.includes("COMPLIANCE")) {
-    addReqs("Compliance Certificates", [
+    addReqs("Tax Compliance Certificate", [
       "TIN Certificate",
-      "NIS Compliance",
-      "VAT Compliance (if applicable)",
+      "Filed Tax Returns (last 3 years)",
+      "Payment Receipts",
+      "National ID/Incorporation Certificate",
+    ]);
+    addReqs("Tender Compliance Certificate", [
+      "Tax Clearance Certificate",
+      "NIS Compliance Certificate",
+      "Company Registration",
+      "Audited Financial Statements (last 2 years)",
+      "Business License",
     ]);
   }
+
   if (data.kajServices.includes("PAYE")) {
-    addReqs("PAYE Services", ["Employer TIN", "Employee Schedule"]);
+    addReqs("PAYE Services", [
+      "Employer TIN",
+      "Employer NIS Number",
+      "Employee Earnings Schedule",
+      "Previous Month's Schedule",
+      "Time Sheets",
+    ]);
   }
+
   if (data.kajServices.includes("NIS_SERVICES")) {
-    addReqs("NIS Services", ["Employer NIS Number", "Employee NIS Numbers"]);
+    addReqs("NIS Registration (Employer)", [
+      "Company Registration",
+      "TIN Certificate",
+      "Business Address Proof",
+      "Bank Account Details",
+      "Employee List",
+    ]);
+    addReqs("NIS Monthly Contributions", [
+      "Employee Earnings Schedule",
+      "Previous Month's Schedule",
+      "Payment Receipt",
+    ]);
   }
 
+  if (data.kajServices.includes("FINANCIAL_STATEMENT")) {
+    addReqs("Financial Statements", [
+      "Bank Statements (6 months)",
+      "Sales Invoices",
+      "Purchase Invoices",
+      "Payroll Records",
+      "Opening Balances",
+    ]);
+  }
+
+  if (data.kajServices.includes("BOOKKEEPING")) {
+    addReqs("Monthly Bookkeeping", [
+      "Bank Statements",
+      "Sales Invoices",
+      "Purchase Invoices/Receipts",
+      "Credit Card Statements",
+      "Petty Cash Records",
+    ]);
+  }
+
+  if (data.kajServices.includes("AUDIT")) {
+    addReqs("Audit Services", [
+      "Financial Statements",
+      "Trial Balance",
+      "Bank Reconciliations",
+      "Asset Register",
+      "Minutes of Meetings",
+      "Loan Documentation",
+    ]);
+  }
+
+  // ==================
   // GCMC Services
-  if (data.gcmcServices.includes("IMMIGRATION")) {
-    addReqs("Immigration", [
-      "Valid Passport",
-      "Passport Photos",
-      "Police Clearance",
-      "Medical Certificate",
-    ]);
-  }
-  if (data.gcmcServices.includes("BUSINESS_REGISTRATION")) {
-    addReqs("Business Registration", [
-      "Proposed Business Names",
-      "ID of Owners",
-      "Proof of Address",
+  // ==================
+
+  if (data.gcmcServices.includes("TRAINING")) {
+    addReqs("Training Services", [
+      "Participant List",
+      "Company Details (for corporate training)",
+      "Training Needs Assessment",
     ]);
   }
 
-  // General Client Type Requirements
-  if (isBusinessType(data.clientType)) {
-    addReqs("General Business", ["Business Registration/Incorporation"]);
-  } else {
-    addReqs("General Individual", [
-      "National ID or Passport",
-      "Proof of Address",
+  if (data.gcmcServices.includes("CONSULTING")) {
+    addReqs("Consulting Services", [
+      "Business Registration (if existing)",
+      "Business Plan (draft)",
+      "Financial Projections",
     ]);
+  }
+
+  if (data.gcmcServices.includes("PARALEGAL")) {
+    addReqs("Paralegal - Affidavits", [
+      "National ID/Passport",
+      "Supporting Documents (related to affidavit)",
+      "Witness Identification",
+    ]);
+    addReqs("Paralegal - Agreements", [
+      "Party Identification Documents",
+      "Property Details (for property agreements)",
+      "Draft Terms",
+    ]);
+    addReqs("Paralegal - Wills", [
+      "Testator National ID",
+      "Asset Inventory",
+      "Property Deeds",
+      "Beneficiary Details",
+      "Witness Information (2 persons)",
+    ]);
+  }
+
+  if (data.gcmcServices.includes("IMMIGRATION")) {
+    addReqs("Work Permit Application", [
+      "Valid Passport (all pages, 6+ months validity)",
+      "Passport Photos (4 copies)",
+      "Police Clearance Certificate (apostilled)",
+      "Medical Certificate",
+      "Employment Contract",
+      "Employer's Company Registration",
+      "Employer's TIN/NIS Compliance",
+      "Educational Certificates",
+      "Professional Qualifications",
+      "CV/Resume",
+    ]);
+    addReqs("Citizenship Application", [
+      "Birth Certificate",
+      "Marriage/Divorce Certificate (if applicable)",
+      "Police Clearance (all countries, 10 years)",
+      "Proof of Residence (5+ years)",
+      "Employment History (5+ years)",
+      "Tax Compliance Certificate",
+      "Passport",
+      "Photos (6 copies)",
+      "Character References (3)",
+    ]);
+    addReqs("Business Visa Application", [
+      "Passport (6+ months validity)",
+      "Passport Photos (2 copies)",
+      "Business Invitation Letter",
+      "Company Registration (applicant)",
+      "Company Registration (host in Guyana)",
+      "Financial Statements",
+      "Bank Statements (6 months)",
+      "Travel Itinerary",
+      "Return Ticket",
+    ]);
+  }
+
+  if (data.gcmcServices.includes("BUSINESS_REGISTRATION")) {
+    addReqs("Company Incorporation", [
+      "Proposed Names (3 options)",
+      "Name Search Results",
+      "Directors' National IDs",
+      "Directors' Address Proof",
+      "Registered Office Address Proof",
+      "Share Structure Details",
+      "Shareholders' IDs",
+      "Business Objectives",
+    ]);
+    addReqs("Business Name Registration", [
+      "Proposed Names (3 options)",
+      "Name Search Results",
+      "Proprietor's National ID",
+      "Business Address Proof",
+      "Business Type Description",
+    ]);
+    addReqs("Partnership Registration", [
+      "Partnership Agreement",
+      "Partners' National IDs",
+      "Business Address Proof",
+      "Name Search Results",
+      "Capital Contributions Details",
+    ]);
+  }
+
+  if (data.gcmcServices.includes("BUSINESS_PROPOSAL")) {
+    addReqs("Business Proposals", [
+      "Business Concept/Idea Description",
+      "Financial Projections",
+      "Market Research Data",
+      "Applicant Identification",
+      "Property Details (for land proposals)",
+    ]);
+  }
+
+  // ==================
+  // General Client Type Requirements
+  // ==================
+
+  if (isBusinessType(data.clientType)) {
+    if (!requirements["General Business Documents"]) {
+      addReqs("General Business Documents", [
+        "Business Registration/Incorporation",
+        "TIN Certificate",
+        "NIS Employer Number",
+      ]);
+    }
+    if (data.clientType === "CORPORATION") {
+      requirements["General Business Documents"]?.push(
+        "Certificate of Incorporation",
+        "Articles of Association"
+      );
+    }
+    if (data.clientType === "NGO") {
+      requirements["General Business Documents"]?.push(
+        "NGO Registration Certificate",
+        "Constitution/By-Laws"
+      );
+    }
+    if (data.clientType === "COOP" || data.clientType === "CREDIT_UNION") {
+      requirements["General Business Documents"]?.push(
+        "Co-operative Registration Certificate",
+        "By-Laws"
+      );
+    }
+  } else {
+    if (!requirements["General Individual Documents"]) {
+      addReqs("General Individual Documents", [
+        "National ID or Passport",
+        "Proof of Address (utility bill, bank statement - within 3 months)",
+      ]);
+    }
+    if (data.clientType === "FOREIGN_NATIONAL") {
+      requirements["General Individual Documents"]?.push(
+        "Valid Passport",
+        "Current Visa/Immigration Status"
+      );
+    }
   }
 
   return requirements;

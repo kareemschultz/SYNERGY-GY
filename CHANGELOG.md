@@ -7,7 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Service Catalog API Bug** - Fixed serviceCatalog.code → serviceCatalog.id references (December 12, 2024)
+  - Fixed 5 locations in `client-services.ts` where non-existent `.code` field was used
+  - Enables wizard service selections to be saved correctly
+  - Bug was preventing `saveSelections` mutation from working
+
+- **Document Category Mapping** - Documents now auto-categorized instead of defaulting to "OTHER" (December 12, 2024)
+  - Created `inferDocumentCategory()` function with intelligent pattern matching
+  - Supports 8 categories: IDENTIFICATION, TAX_FILING, NIS, FINANCIAL, IMMIGRATION, CERTIFICATE, AGREEMENT, CORRESPONDENCE
+  - Updated client onboarding wizard to use auto-categorization
+
+- **Matter Wizard Service Types** - Fixed "No service types available" issue (December 12, 2024)
+  - Created missing `service_type` database table (was defined in schema but not pushed)
+  - Added `seed-service-types.ts` script to populate service types
+  - **47 service types** seeded: 23 GCMC + 24 KAJ
+  - Services properly organized by category:
+    - GCMC: TRAINING, REGISTRATION, PARALEGAL, IMMIGRATION, CONSULTING, OTHER
+    - KAJ: TAX, ACCOUNTING, AUDIT, NIS
+  - Added `db:seed-service-types` npm script
+  - Fixed import path issues (`@/utils/classnames` → `@/lib/utils`)
+  - Added missing `Progress` UI component via shadcn
+
 ### Added
+- **Matter Wizard Document Upload Step** - Added document collection to matter creation (December 12, 2024)
+  - New `step-documents.tsx` component for matter wizard
+  - Service-specific document requirements based on selected service type
+  - Progress tracking with visual upload status
+  - Optional step - can be skipped and documents uploaded later
+  - Matter wizard now has 6 steps: Client → Service → Details → Schedule → Documents → Review
+
+- **Template Generation UI** - Generate documents from templates with client data (December 12, 2024)
+  - New `TemplateGeneratorDialog` component for selecting and generating documents
+  - Preview templates with actual client/matter data filled in
+  - Category filtering and search functionality
+  - Integrated into Client Documents tab with "Generate" button
+  - Uses existing backend `templates.preview` and `templates.generate` APIs
+
+- **Dynamic Document Requirements** - Comprehensive service-based document requirements (December 12, 2024)
+  - Expanded `getRequiredDocumentsByServices()` from ~20 to 100+ requirements
+  - Full coverage for all GCMC/KAJ services:
+    - Tax services: Individual, Corporate, Self-employed returns
+    - Compliance: Tender, Work Permit, Land Transfer, Firearm, Pension
+    - PAYE: Monthly and Annual submissions
+    - NIS: Registration, Contributions, Benefits
+    - Financial: Statements, Cash Flow, Investment
+    - Audit: NGO, Cooperative, Credit Union
+    - Immigration: Work Permit, Citizenship, Business Visa
+    - Business Registration: Incorporation, NPO, Cooperative
+    - Paralegal: Affidavits, Agreements, Wills
+    - Training and Consulting services
+  - Dynamic requirements based on client type (Individual vs Business vs NGO)
+
 - **Service Catalog Data Population** - Complete GCMC and KAJ service catalog (December 12, 2024)
   - Created `ingestServiceCatalog.ts` script with all business services
   - Added `db:ingest-catalog` npm script for running the ingestion

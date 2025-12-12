@@ -4,9 +4,11 @@ import {
   CheckCircle,
   Download,
   FileText,
+  Sparkles,
   Upload,
 } from "lucide-react";
 import { useState } from "react";
+import { TemplateGeneratorDialog } from "@/components/documents/template-generator-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,12 +50,23 @@ export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
                 Required documents for selected services
               </CardDescription>
             </div>
-            <Button asChild size="sm">
-              <Link to={`/app/clients/${clientId}/documents/collect`}>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload / Collect
-              </Link>
-            </Button>
+            <div className="flex gap-2">
+              <TemplateGeneratorDialog
+                clientId={clientId}
+                trigger={
+                  <Button size="sm" variant="outline">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate
+                  </Button>
+                }
+              />
+              <Button asChild size="sm">
+                <Link to={`/app/clients/${clientId}/documents/collect`}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload / Collect
+                </Link>
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

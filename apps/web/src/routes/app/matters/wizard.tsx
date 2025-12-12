@@ -15,6 +15,7 @@ import {
   matterWizardSteps,
   StepClient,
   StepDetails,
+  StepDocuments,
   StepReview,
   StepSchedule,
   StepServiceType,
@@ -148,6 +149,14 @@ function MatterWizard() {
           />
         );
       case 4:
+        return (
+          <StepDocuments
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      case 5:
         return (
           <StepReview
             data={wizard.data}

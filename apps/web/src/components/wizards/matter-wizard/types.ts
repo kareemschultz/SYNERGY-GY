@@ -1,4 +1,13 @@
+import type { DocumentCategory } from "@/utils/api";
 import type { WizardStepConfig } from "../hooks/use-wizard";
+
+export type MatterDocumentUpload = {
+  file: File;
+  category: DocumentCategory;
+  description: string;
+  linkedService: string;
+  linkedRequirement: string;
+};
 
 export type MatterWizardData = {
   // Step 1: Client
@@ -20,6 +29,12 @@ export type MatterWizardData = {
   startDate: string;
   dueDate: string;
   estimatedFee: string;
+
+  // Step 5: Documents (optional)
+  documents?: {
+    files: File[];
+    uploads: MatterDocumentUpload[];
+  };
 };
 
 export const initialMatterData: MatterWizardData = {
@@ -81,6 +96,13 @@ export const matterWizardSteps: WizardStepConfig<MatterWizardData>[] = [
     id: "schedule",
     title: "Schedule & Fees",
     description: "Set dates and estimated fees",
+    isOptional: true,
+    validate: () => ({}),
+  },
+  {
+    id: "documents",
+    title: "Documents",
+    description: "Upload required documents",
     isOptional: true,
     validate: () => ({}),
   },

@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/utils/classnames";
+import { cn } from "@/lib/utils";
 import { WizardStep } from "../wizard-step";
 import {
   type ClientOnboardingData,
   getRequiredDocumentsByServices,
+  inferDocumentCategory,
 } from "./types";
 
 type StepDocumentsProps = {
@@ -31,13 +32,13 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
 
   const handleUpload = (
     file: File,
-    category: string,
+    _category: string,
     description: string,
     service?: string
   ) => {
     const newUpload = {
       file,
-      category: "OTHER" as const, // Default to OTHER, mapping logic would be here
+      category: inferDocumentCategory(description),
       description,
       linkedService: service,
       linkedRequirement: description,

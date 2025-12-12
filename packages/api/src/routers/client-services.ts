@@ -37,7 +37,7 @@ export const clientServicesRouter = router({
       const allServiceCodes = [...gcmcServices, ...kajServices];
 
       const serviceDefinitions = await db.query.serviceCatalog.findMany({
-        where: inArray(serviceCatalog.code, allServiceCodes),
+        where: inArray(serviceCatalog.id, allServiceCodes),
       });
 
       if (serviceDefinitions.length !== allServiceCodes.length) {
@@ -48,15 +48,13 @@ export const clientServicesRouter = router({
       const serviceSelections = [];
 
       for (const serviceCode of gcmcServices) {
-        const serviceDef = serviceDefinitions.find(
-          (s) => s.code === serviceCode
-        );
+        const serviceDef = serviceDefinitions.find((s) => s.id === serviceCode);
         if (!serviceDef) continue;
 
         serviceSelections.push({
           clientId,
           business: "GCMC" as const,
-          serviceCode: serviceDef.code,
+          serviceCode: serviceDef.id,
           serviceName: serviceDef.name,
           requiredDocuments: serviceDef.documentRequirements || [],
           uploadedDocuments: [],
@@ -65,15 +63,13 @@ export const clientServicesRouter = router({
       }
 
       for (const serviceCode of kajServices) {
-        const serviceDef = serviceDefinitions.find(
-          (s) => s.code === serviceCode
-        );
+        const serviceDef = serviceDefinitions.find((s) => s.id === serviceCode);
         if (!serviceDef) continue;
 
         serviceSelections.push({
           clientId,
           business: "KAJ" as const,
-          serviceCode: serviceDef.code,
+          serviceCode: serviceDef.id,
           serviceName: serviceDef.name,
           requiredDocuments: serviceDef.documentRequirements || [],
           uploadedDocuments: [],
