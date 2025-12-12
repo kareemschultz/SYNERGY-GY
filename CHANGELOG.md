@@ -8,6 +8,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Service Catalog Admin UI** - Full CRUD for categories and services (December 12, 2024)
+  - `CategoryFormDialog` component for creating service categories
+  - `ServiceFormDialog` component for creating services with pricing, duration, and descriptions
+  - Enabled "Add Category" and "Add Service" buttons in admin panel
+  - Services now display in public catalog once created
+  - Updated admin info card with setup instructions
+  - Resolves the "No services available" issue - admins can now populate the catalog through the UI
+- **Document Management & Knowledge Base System** - Sprint 1: Database schema implementation (December 12, 2024)
+  - **Client Service Tracking**: New `clientServiceSelection` table (16 columns, 4 indexes)
+    - Persists service selections from onboarding wizard
+    - Tracks document requirements per service (from service catalog)
+    - Monitors service lifecycle: INTERESTED → ACTIVE → COMPLETED → INACTIVE
+    - Links uploaded documents to service requirements
+    - Calculates document fulfillment percentage
+  - **Knowledge Base Repository**: New schema file `knowledge-base.ts` with 2 tables
+    - `knowledgeBaseItem` table (26 columns, 6 indexes) for forms, templates, guides
+    - Support for 4 item types: AGENCY_FORM, LETTER_TEMPLATE, GUIDE, CHECKLIST
+    - 7 categories: GRA, NIS, IMMIGRATION, DCRA, GENERAL, TRAINING, INTERNAL
+    - Auto-fill capabilities linking to document templates
+    - Business-scoped items (GCMC, KAJ, or both)
+    - Staff-only vs client-accessible content control
+    - Featured items and version tracking
+    - `knowledgeBaseDownload` table (6 columns, 3 indexes) for download analytics
+    - Tracks downloads by staff and clients with timestamps
+  - **Portal Activity & Impersonation**: Enhanced `portal.ts` schema with 2 new tables
+    - `portalActivityLog` table (13 columns, 6 indexes) tracks all client portal actions
+    - 13 action types: LOGIN, LOGOUT, VIEW_DOCUMENT, DOWNLOAD_DOCUMENT, etc.
+    - Records impersonation sessions (staff viewing as client)
+    - Session tracking with IP address and user agent
+    - `staffImpersonationSession` table (12 columns, 6 indexes) for secure staff impersonation
+    - 30-minute session expiry for security
+    - Required reason field for audit trail
+    - Active session monitoring
+    - Secure token generation for impersonation links
+  - **Database Migration**: Generated migration file with all 5 new tables and 3 enums
+    - Migration file: `0000_dapper_titania.sql`
+    - Full referential integrity with cascade deletes
+    - Proper indexing on frequently queried columns
+- **Client Services API Router** - Complete service selection tracking (December 12, 2024)
+  - `saveSelections` - Persist services from onboarding wizard
+  - `getByClient` - Retrieve client's services with fulfillment calculations
+  - `updateStatus` - Manage service lifecycle transitions
+  - `linkDocument` - Connect uploaded documents to service requirements
+  - `getFulfillmentProgress` - Calculate document collection progress
+  - `getPopularServices` - Analytics on most requested services (admin)
+  - `getCompletionMetrics` - Average completion times by service (admin)
+  - `delete` - Remove service selections
+- **Knowledge Base API Router** - Forms, templates, and guides management (December 12, 2024)
+  - `list` - Browse KB items with filters (staff & clients)
+  - `getById` - Retrieve single KB item
+  - `download` - Download with tracking
+  - `autoFill` - Auto-fill PDF forms with client/matter data
+  - `create` - Admin create KB items
+  - `update` - Admin update with version control
+  - `delete` - Soft delete (archive)
+  - `getDownloadStats` - Download analytics per item
+  - `getPopularItems` - Most downloaded items analytics
+- **Portal Impersonation & Analytics** - Staff portal management endpoints (December 12, 2024)
+  - `impersonation.start` - Create 30-minute impersonation session with audit reason
+  - `impersonation.end` - Terminate impersonation session
+  - `impersonation.listActive` - View all active staff impersonations (admin)
+  - `analytics.getPortalActivity` - Full activity log with filters and pagination
+  - `analytics.getActivityStats` - Login/download/session statistics
+  - `analytics.getImpersonationHistory` - Complete impersonation audit trail
+  - Role-based access control (staff-only, admin-only endpoints)
+
+### Added
 - **Matter Wizard** - Step-by-step guided matter creation workflow (December 12, 2024)
   - 5-step wizard: Client → Service Type → Matter Details → Schedule & Fees → Review
   - Reuses existing wizard infrastructure from client onboarding

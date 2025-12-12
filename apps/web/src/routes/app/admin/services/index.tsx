@@ -10,6 +10,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import { CategoryFormDialog } from "@/components/admin/category-form-dialog";
+import { ServiceFormDialog } from "@/components/admin/service-form-dialog";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,8 @@ function AdminServicesPage() {
   const [selectedBusiness, setSelectedBusiness] = useState<"GCMC" | "KAJ">(
     "GCMC"
   );
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
 
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
@@ -132,7 +136,7 @@ function AdminServicesPage() {
                       Manage services for {selectedBusiness}
                     </CardDescription>
                   </div>
-                  <Button disabled>
+                  <Button onClick={() => setServiceDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Service
                   </Button>
@@ -233,7 +237,7 @@ function AdminServicesPage() {
                       Manage categories for {selectedBusiness}
                     </CardDescription>
                   </div>
-                  <Button disabled>
+                  <Button onClick={() => setCategoryDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Category
                   </Button>
@@ -319,26 +323,44 @@ function AdminServicesPage() {
         {/* Info Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Admin Note</CardTitle>
+            <CardTitle>Getting Started</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm">
-              The service catalog can be populated from the service
-              specifications at{" "}
+              To set up your service catalog:
+            </p>
+            <ol className="mt-2 ml-4 list-decimal space-y-1 text-muted-foreground text-sm">
+              <li>
+                First, create service categories to organize your offerings
+              </li>
+              <li>Then add services within each category</li>
+              <li>
+                Services can be marked as featured to highlight them in the
+                catalog
+              </li>
+            </ol>
+            <p className="mt-2 text-muted-foreground text-sm">
+              Refer to the service specifications at{" "}
               <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                /specs/business-rules/gcmc-services.md
+                /specs/business-rules/
               </code>{" "}
-              and{" "}
-              <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                /specs/business-rules/kaj-services.md
-              </code>
-              . This data should be seeded via database migrations or a data
-              import tool. The full CRUD functionality for managing services via
-              the UI will be implemented in a future phase.
+              for detailed service definitions for GCMC and KAJ.
             </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialogs */}
+      <CategoryFormDialog
+        business={selectedBusiness}
+        onOpenChange={setCategoryDialogOpen}
+        open={categoryDialogOpen}
+      />
+      <ServiceFormDialog
+        business={selectedBusiness}
+        onOpenChange={setServiceDialogOpen}
+        open={serviceDialogOpen}
+      />
     </div>
   );
 }
