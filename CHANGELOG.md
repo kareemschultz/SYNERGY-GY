@@ -40,7 +40,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Staff availability scheduling with weekly patterns and date overrides
   - API router with full CRUD, confirm, cancel, reschedule, and availability endpoints
   - Sub-routers: `types.*`, `availability.*` for admin management
-- **Enhanced Client Portal** - Profile, financials, and appointment management
+- **Enhanced Client Portal UI** - Complete frontend for profile, financials, and appointment management
+  - `/portal/profile` - Personal information view with TIN, national ID, passport details, contact info
+  - `/portal/financials` - Invoice list, payment history, outstanding balance summary
+  - `/portal/appointments` - Upcoming/past appointments with filtering tabs, status badges, location icons
+  - Dashboard navigation cards for quick access to portal features
   - Profile endpoint with TIN, certificates, and services tracking
   - Financials sub-router: `summary`, `invoices`, `getInvoice`, `paymentHistory`
   - Outstanding balance and overdue amounts calculation
@@ -51,9 +55,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Financial summary with aging (0-30, 31-60, 61-90, 90+ days overdue)
   - Recent communications and upcoming appointments
   - Role-based financial data visibility
-- **Payment Tracking Enhancements** - Discounts and aging reports
+- **Payment Tracking Enhancements UI** - Complete discount and aging report frontend
+  - Invoice discount modal component with live preview calculation
+  - Supports NONE, PERCENTAGE, FIXED_AMOUNT discount types
+  - Discount reason tracking for audit trail
+  - Aging report component with visual breakdown (current, 30, 60, 90+ days)
+  - Collapsible aging report toggle on invoices list page
+  - Distribution bar chart visualization with color-coded buckets
+  - Summary stats: total outstanding, current (not due), overdue amounts
   - Invoice discount fields: `discountType`, `discountValue`, `discountAmount`, `discountReason`
-  - Discount types: NONE, PERCENTAGE, FIXED_AMOUNT
   - `getClientBalance` endpoint for total outstanding by client
   - `getAgingReport` endpoint with bucket breakdown (current, 30, 60, 90+ days)
   - `applyDiscount` endpoint for invoice discount application

@@ -17,8 +17,11 @@ import { Route as PortalIndexRouteImport } from './routes/portal/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as StaffSetupPasswordRouteImport } from './routes/staff/setup-password'
 import { Route as PortalRegisterRouteImport } from './routes/portal/register'
+import { Route as PortalProfileRouteImport } from './routes/portal/profile'
 import { Route as PortalLoginRouteImport } from './routes/portal/login'
+import { Route as PortalFinancialsRouteImport } from './routes/portal/financials'
 import { Route as PortalDocumentsRouteImport } from './routes/portal/documents'
+import { Route as PortalAppointmentsRouteImport } from './routes/portal/appointments'
 import { Route as AppTrainingIndexRouteImport } from './routes/app/training/index'
 import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
 import { Route as AppServicesIndexRouteImport } from './routes/app/services/index'
@@ -28,6 +31,7 @@ import { Route as AppDocumentsIndexRouteImport } from './routes/app/documents/in
 import { Route as AppClientsIndexRouteImport } from './routes/app/clients/index'
 import { Route as AppCalendarIndexRouteImport } from './routes/app/calendar/index'
 import { Route as AppCalculatorsIndexRouteImport } from './routes/app/calculators/index'
+import { Route as AppAppointmentsIndexRouteImport } from './routes/app/appointments/index'
 import { Route as AppAdminIndexRouteImport } from './routes/app/admin/index'
 import { Route as PortalMattersMatterIdRouteImport } from './routes/portal/matters/$matter-id'
 import { Route as AppTrainingNewRouteImport } from './routes/app/training/new'
@@ -39,11 +43,13 @@ import { Route as AppInvoicesInvoiceIdRouteImport } from './routes/app/invoices/
 import { Route as AppDocumentsUploadRouteImport } from './routes/app/documents/upload'
 import { Route as AppClientsOnboardRouteImport } from './routes/app/clients/onboard'
 import { Route as AppClientsNewRouteImport } from './routes/app/clients/new'
+import { Route as AppClientsClientIdRouteImport } from './routes/app/clients/$clientId'
 import { Route as AppClientsClientIdRouteImport } from './routes/app/clients/$client-id'
 import { Route as AppCalendarNewRouteImport } from './routes/app/calendar/new'
 import { Route as AppCalculatorsVatRouteImport } from './routes/app/calculators/vat'
 import { Route as AppCalculatorsPayeRouteImport } from './routes/app/calculators/paye'
 import { Route as AppCalculatorsNisRouteImport } from './routes/app/calculators/nis'
+import { Route as AppAppointmentsNewRouteImport } from './routes/app/appointments/new'
 import { Route as AppDocumentsTemplatesIndexRouteImport } from './routes/app/documents/templates/index'
 import { Route as AppAdminStaffIndexRouteImport } from './routes/app/admin/staff/index'
 import { Route as AppAdminServicesIndexRouteImport } from './routes/app/admin/services/index'
@@ -94,14 +100,29 @@ const PortalRegisterRoute = PortalRegisterRouteImport.update({
   path: '/portal/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalProfileRoute = PortalProfileRouteImport.update({
+  id: '/portal/profile',
+  path: '/portal/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortalLoginRoute = PortalLoginRouteImport.update({
   id: '/portal/login',
   path: '/portal/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalFinancialsRoute = PortalFinancialsRouteImport.update({
+  id: '/portal/financials',
+  path: '/portal/financials',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortalDocumentsRoute = PortalDocumentsRouteImport.update({
   id: '/portal/documents',
   path: '/portal/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalAppointmentsRoute = PortalAppointmentsRouteImport.update({
+  id: '/portal/appointments',
+  path: '/portal/appointments',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppTrainingIndexRoute = AppTrainingIndexRouteImport.update({
@@ -147,6 +168,11 @@ const AppCalendarIndexRoute = AppCalendarIndexRouteImport.update({
 const AppCalculatorsIndexRoute = AppCalculatorsIndexRouteImport.update({
   id: '/calculators/',
   path: '/calculators/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAppointmentsIndexRoute = AppAppointmentsIndexRouteImport.update({
+  id: '/appointments/',
+  path: '/appointments/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
@@ -205,6 +231,11 @@ const AppClientsNewRoute = AppClientsNewRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppClientsClientIdRoute = AppClientsClientIdRouteImport.update({
+  id: '/clients/$clientId',
+  path: '/clients/$clientId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientsClientIdRoute = AppClientsClientIdRouteImport.update({
   id: '/clients/$client-id',
   path: '/clients/$client-id',
   getParentRoute: () => AppRoute,
@@ -227,6 +258,11 @@ const AppCalculatorsPayeRoute = AppCalculatorsPayeRouteImport.update({
 const AppCalculatorsNisRoute = AppCalculatorsNisRouteImport.update({
   id: '/calculators/nis',
   path: '/calculators/nis',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAppointmentsNewRoute = AppAppointmentsNewRouteImport.update({
+  id: '/appointments/new',
+  path: '/appointments/new',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDocumentsTemplatesIndexRoute =
@@ -285,17 +321,22 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/financials': typeof PortalFinancialsRoute
   '/portal/login': typeof PortalLoginRoute
+  '/portal/profile': typeof PortalProfileRoute
   '/portal/register': typeof PortalRegisterRoute
   '/staff/setup-password': typeof StaffSetupPasswordRoute
   '/app/': typeof AppIndexRoute
   '/portal': typeof PortalIndexRoute
+  '/app/appointments/new': typeof AppAppointmentsNewRoute
   '/app/calculators/nis': typeof AppCalculatorsNisRoute
   '/app/calculators/paye': typeof AppCalculatorsPayeRoute
   '/app/calculators/vat': typeof AppCalculatorsVatRoute
   '/app/calendar/new': typeof AppCalendarNewRoute
   '/app/clients/$client-id': typeof AppClientsClientIdRoute
+  '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
   '/app/clients/onboard': typeof AppClientsOnboardRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
@@ -307,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/app/training/new': typeof AppTrainingNewRoute
   '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
   '/app/admin': typeof AppAdminIndexRoute
+  '/app/appointments': typeof AppAppointmentsIndexRoute
   '/app/calculators': typeof AppCalculatorsIndexRoute
   '/app/calendar': typeof AppCalendarIndexRoute
   '/app/clients': typeof AppClientsIndexRoute
@@ -330,17 +372,22 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/financials': typeof PortalFinancialsRoute
   '/portal/login': typeof PortalLoginRoute
+  '/portal/profile': typeof PortalProfileRoute
   '/portal/register': typeof PortalRegisterRoute
   '/staff/setup-password': typeof StaffSetupPasswordRoute
   '/app': typeof AppIndexRoute
   '/portal': typeof PortalIndexRoute
+  '/app/appointments/new': typeof AppAppointmentsNewRoute
   '/app/calculators/nis': typeof AppCalculatorsNisRoute
   '/app/calculators/paye': typeof AppCalculatorsPayeRoute
   '/app/calculators/vat': typeof AppCalculatorsVatRoute
   '/app/calendar/new': typeof AppCalendarNewRoute
   '/app/clients/$client-id': typeof AppClientsClientIdRoute
+  '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
   '/app/clients/onboard': typeof AppClientsOnboardRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
@@ -352,6 +399,7 @@ export interface FileRoutesByTo {
   '/app/training/new': typeof AppTrainingNewRoute
   '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
   '/app/admin': typeof AppAdminIndexRoute
+  '/app/appointments': typeof AppAppointmentsIndexRoute
   '/app/calculators': typeof AppCalculatorsIndexRoute
   '/app/calendar': typeof AppCalendarIndexRoute
   '/app/clients': typeof AppClientsIndexRoute
@@ -377,17 +425,22 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/financials': typeof PortalFinancialsRoute
   '/portal/login': typeof PortalLoginRoute
+  '/portal/profile': typeof PortalProfileRoute
   '/portal/register': typeof PortalRegisterRoute
   '/staff/setup-password': typeof StaffSetupPasswordRoute
   '/app/': typeof AppIndexRoute
   '/portal/': typeof PortalIndexRoute
+  '/app/appointments/new': typeof AppAppointmentsNewRoute
   '/app/calculators/nis': typeof AppCalculatorsNisRoute
   '/app/calculators/paye': typeof AppCalculatorsPayeRoute
   '/app/calculators/vat': typeof AppCalculatorsVatRoute
   '/app/calendar/new': typeof AppCalendarNewRoute
   '/app/clients/$client-id': typeof AppClientsClientIdRoute
+  '/app/clients/$clientId': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
   '/app/clients/onboard': typeof AppClientsOnboardRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
@@ -399,6 +452,7 @@ export interface FileRoutesById {
   '/app/training/new': typeof AppTrainingNewRoute
   '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
   '/app/admin/': typeof AppAdminIndexRoute
+  '/app/appointments/': typeof AppAppointmentsIndexRoute
   '/app/calculators/': typeof AppCalculatorsIndexRoute
   '/app/calendar/': typeof AppCalendarIndexRoute
   '/app/clients/': typeof AppClientsIndexRoute
@@ -425,17 +479,22 @@ export interface FileRouteTypes {
     | '/app'
     | '/dashboard'
     | '/login'
+    | '/portal/appointments'
     | '/portal/documents'
+    | '/portal/financials'
     | '/portal/login'
+    | '/portal/profile'
     | '/portal/register'
     | '/staff/setup-password'
     | '/app/'
     | '/portal'
+    | '/app/appointments/new'
     | '/app/calculators/nis'
     | '/app/calculators/paye'
     | '/app/calculators/vat'
     | '/app/calendar/new'
     | '/app/clients/$client-id'
+    | '/app/clients/$clientId'
     | '/app/clients/new'
     | '/app/clients/onboard'
     | '/app/documents/upload'
@@ -447,6 +506,7 @@ export interface FileRouteTypes {
     | '/app/training/new'
     | '/portal/matters/$matter-id'
     | '/app/admin'
+    | '/app/appointments'
     | '/app/calculators'
     | '/app/calendar'
     | '/app/clients'
@@ -470,17 +530,22 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/portal/appointments'
     | '/portal/documents'
+    | '/portal/financials'
     | '/portal/login'
+    | '/portal/profile'
     | '/portal/register'
     | '/staff/setup-password'
     | '/app'
     | '/portal'
+    | '/app/appointments/new'
     | '/app/calculators/nis'
     | '/app/calculators/paye'
     | '/app/calculators/vat'
     | '/app/calendar/new'
     | '/app/clients/$client-id'
+    | '/app/clients/$clientId'
     | '/app/clients/new'
     | '/app/clients/onboard'
     | '/app/documents/upload'
@@ -492,6 +557,7 @@ export interface FileRouteTypes {
     | '/app/training/new'
     | '/portal/matters/$matter-id'
     | '/app/admin'
+    | '/app/appointments'
     | '/app/calculators'
     | '/app/calendar'
     | '/app/clients'
@@ -516,17 +582,22 @@ export interface FileRouteTypes {
     | '/app'
     | '/dashboard'
     | '/login'
+    | '/portal/appointments'
     | '/portal/documents'
+    | '/portal/financials'
     | '/portal/login'
+    | '/portal/profile'
     | '/portal/register'
     | '/staff/setup-password'
     | '/app/'
     | '/portal/'
+    | '/app/appointments/new'
     | '/app/calculators/nis'
     | '/app/calculators/paye'
     | '/app/calculators/vat'
     | '/app/calendar/new'
     | '/app/clients/$client-id'
+    | '/app/clients/$clientId'
     | '/app/clients/new'
     | '/app/clients/onboard'
     | '/app/documents/upload'
@@ -538,6 +609,7 @@ export interface FileRouteTypes {
     | '/app/training/new'
     | '/portal/matters/$matter-id'
     | '/app/admin/'
+    | '/app/appointments/'
     | '/app/calculators/'
     | '/app/calendar/'
     | '/app/clients/'
@@ -563,8 +635,11 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  PortalAppointmentsRoute: typeof PortalAppointmentsRoute
   PortalDocumentsRoute: typeof PortalDocumentsRoute
+  PortalFinancialsRoute: typeof PortalFinancialsRoute
   PortalLoginRoute: typeof PortalLoginRoute
+  PortalProfileRoute: typeof PortalProfileRoute
   PortalRegisterRoute: typeof PortalRegisterRoute
   StaffSetupPasswordRoute: typeof StaffSetupPasswordRoute
   PortalIndexRoute: typeof PortalIndexRoute
@@ -629,6 +704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/profile': {
+      id: '/portal/profile'
+      path: '/portal/profile'
+      fullPath: '/portal/profile'
+      preLoaderRoute: typeof PortalProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/login': {
       id: '/portal/login'
       path: '/portal/login'
@@ -636,11 +718,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/financials': {
+      id: '/portal/financials'
+      path: '/portal/financials'
+      fullPath: '/portal/financials'
+      preLoaderRoute: typeof PortalFinancialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/documents': {
       id: '/portal/documents'
       path: '/portal/documents'
       fullPath: '/portal/documents'
       preLoaderRoute: typeof PortalDocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal/appointments': {
+      id: '/portal/appointments'
+      path: '/portal/appointments'
+      fullPath: '/portal/appointments'
+      preLoaderRoute: typeof PortalAppointmentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/training/': {
@@ -704,6 +800,13 @@ declare module '@tanstack/react-router' {
       path: '/calculators'
       fullPath: '/app/calculators'
       preLoaderRoute: typeof AppCalculatorsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/appointments/': {
+      id: '/app/appointments/'
+      path: '/appointments'
+      fullPath: '/app/appointments'
+      preLoaderRoute: typeof AppAppointmentsIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/admin/': {
@@ -783,6 +886,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientsNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/clients/$clientId': {
+      id: '/app/clients/$clientId'
+      path: '/clients/$clientId'
+      fullPath: '/app/clients/$clientId'
+      preLoaderRoute: typeof AppClientsClientIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/clients/$client-id': {
       id: '/app/clients/$client-id'
       path: '/clients/$client-id'
@@ -816,6 +926,13 @@ declare module '@tanstack/react-router' {
       path: '/calculators/nis'
       fullPath: '/app/calculators/nis'
       preLoaderRoute: typeof AppCalculatorsNisRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/appointments/new': {
+      id: '/app/appointments/new'
+      path: '/appointments/new'
+      fullPath: '/app/appointments/new'
+      preLoaderRoute: typeof AppAppointmentsNewRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/documents/templates/': {
@@ -886,10 +1003,12 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
+  AppAppointmentsNewRoute: typeof AppAppointmentsNewRoute
   AppCalculatorsNisRoute: typeof AppCalculatorsNisRoute
   AppCalculatorsPayeRoute: typeof AppCalculatorsPayeRoute
   AppCalculatorsVatRoute: typeof AppCalculatorsVatRoute
   AppCalendarNewRoute: typeof AppCalendarNewRoute
+  AppClientsClientIdRoute: typeof AppClientsClientIdRoute
   AppClientsClientIdRoute: typeof AppClientsClientIdRoute
   AppClientsNewRoute: typeof AppClientsNewRoute
   AppClientsOnboardRoute: typeof AppClientsOnboardRoute
@@ -901,6 +1020,7 @@ interface AppRouteChildren {
   AppServicesServiceIdRoute: typeof AppServicesServiceIdRoute
   AppTrainingNewRoute: typeof AppTrainingNewRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
+  AppAppointmentsIndexRoute: typeof AppAppointmentsIndexRoute
   AppCalculatorsIndexRoute: typeof AppCalculatorsIndexRoute
   AppCalendarIndexRoute: typeof AppCalendarIndexRoute
   AppClientsIndexRoute: typeof AppClientsIndexRoute
@@ -923,10 +1043,12 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
+  AppAppointmentsNewRoute: AppAppointmentsNewRoute,
   AppCalculatorsNisRoute: AppCalculatorsNisRoute,
   AppCalculatorsPayeRoute: AppCalculatorsPayeRoute,
   AppCalculatorsVatRoute: AppCalculatorsVatRoute,
   AppCalendarNewRoute: AppCalendarNewRoute,
+  AppClientsClientIdRoute: AppClientsClientIdRoute,
   AppClientsClientIdRoute: AppClientsClientIdRoute,
   AppClientsNewRoute: AppClientsNewRoute,
   AppClientsOnboardRoute: AppClientsOnboardRoute,
@@ -938,6 +1060,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppServicesServiceIdRoute: AppServicesServiceIdRoute,
   AppTrainingNewRoute: AppTrainingNewRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
+  AppAppointmentsIndexRoute: AppAppointmentsIndexRoute,
   AppCalculatorsIndexRoute: AppCalculatorsIndexRoute,
   AppCalendarIndexRoute: AppCalendarIndexRoute,
   AppClientsIndexRoute: AppClientsIndexRoute,
@@ -965,8 +1088,11 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  PortalAppointmentsRoute: PortalAppointmentsRoute,
   PortalDocumentsRoute: PortalDocumentsRoute,
+  PortalFinancialsRoute: PortalFinancialsRoute,
   PortalLoginRoute: PortalLoginRoute,
+  PortalProfileRoute: PortalProfileRoute,
   PortalRegisterRoute: PortalRegisterRoute,
   StaffSetupPasswordRoute: StaffSetupPasswordRoute,
   PortalIndexRoute: PortalIndexRoute,

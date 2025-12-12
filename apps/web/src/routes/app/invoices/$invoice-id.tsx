@@ -6,10 +6,12 @@ import {
   CreditCard,
   FileText,
   Loader2,
+  Percent,
   Send,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { DiscountModal } from "@/components/invoices/discount-modal";
 import { PaymentModal } from "@/components/invoices/payment-modal";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -105,6 +107,7 @@ function formatDateTime(date: Date): string {
 function InvoiceDetailPage() {
   const { "invoice-id": invoiceId } = Route.useParams();
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [discountModalOpen, setDiscountModalOpen] = useState(false);
   const [status, setStatus] = useState<string>("");
 
   const {
@@ -352,11 +355,30 @@ function InvoiceDetailPage() {
 
                   {/* Totals */}
                   <div className="flex justify-end">
-                    <div className="w-64 space-y-2">
+                    <div className="w-72 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Subtotal:</span>
                         <span>GYD {formatCurrency(invoice.subtotal)}</span>
                       </div>
+                      {invoice.discountType !== "NONE" &&
+                        Number.parseFloat(invoice.discountAmount || "0") >
+                          0 && (
+                          <div className="flex justify-between text-orange-600 text-sm">
+                            <span className="flex items-center gap-1">
+                              Discount
+                              {invoice.discountType === "PERCENTAGE" && (
+                                <span className="text-muted-foreground">
+                                  ({invoice.discountValue}%)
+                                </span>
+                              )}
+                              :
+                            </span>
+                            <span>
+                              -GYD{" "}
+                              {formatCurrency(invoice.discountAmount || "0")}
+                            </span>
+                          </div>
+                        )}
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Tax:</span>
                         <span>GYD {formatCurrency(invoice.taxAmount)}</span>
@@ -492,14 +514,26 @@ function InvoiceDetailPage() {
                     Download PDF
                   </Button>
                   {invoice.status === "DRAFT" && (
-                    <Button
-                      className="w-full justify-start"
-                      onClick={() => handleStatusChange("SENT")}
-                      variant="outline"
-                    >
-                      <Send className="mr-2 h-4 w-4" />
-                      Mark as Sent
-                    </Button>
+                    <>
+                      <Button
+                        className="w-full justify-start"
+                        onClick={() => setDiscountModalOpen(true)}
+                        variant="outline"
+                      >
+                        <Percent className="mr-2 h-4 w-4" />
+                        {invoice.discountType !== "NONE"
+                          ? "Edit Discount"
+                          : "Apply Discount"}
+                      </Button>
+                      <Button
+                        className="w-full justify-start"
+                        onClick={() => handleStatusChange("SENT")}
+                        variant="outline"
+                      >
+                        <Send className="mr-2 h-4 w-4" />
+                        Mark as Sent
+                      </Button>
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -551,6 +585,23 @@ function InvoiceDetailPage() {
         onOpenChange={setPaymentModalOpen}
         open={paymentModalOpen}
       />
+
+      {/* Discount Modal */}
+      {invoice.status === "DRAFT" && (
+        <DiscountModal
+          currentDiscountReason={invoice.discountReason || null}
+          currentDiscountType={
+            (invoice.discountType as "NONE" | "PERCENTAGE" | "FIXED_AMOUNT") ||
+            "NONE"
+          }
+          currentDiscountValue={invoice.discountValue || "0"}
+          invoiceId={invoice.id}
+          invoiceNumber={invoice.invoiceNumber}
+          onOpenChange={setDiscountModalOpen}
+          open={discountModalOpen}
+          subtotal={invoice.subtotal}
+        />
+      )}
     </div>
   );
 }

@@ -166,8 +166,24 @@ function PortalDashboard() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* Quick Stats */}
-        <div className="mb-8 grid gap-4 md:grid-cols-2">
+        {/* Quick Navigation */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link to="/portal/profile">
+            <Card className="cursor-pointer transition-shadow hover:shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="font-medium text-sm">
+                  My Profile
+                </CardTitle>
+                <User className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-xs">
+                  View your account details
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="font-medium text-sm">
@@ -183,23 +199,37 @@ function PortalDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="font-medium text-sm">Documents</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="font-bold text-2xl">-</div>
-              <p className="text-muted-foreground text-xs">
-                <Link
-                  className="text-primary hover:underline"
-                  to="/portal/documents"
-                >
-                  View all documents
-                </Link>
-              </p>
-            </CardContent>
-          </Card>
+          <Link to="/portal/financials">
+            <Card className="cursor-pointer transition-shadow hover:shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="font-medium text-sm">
+                  Financials
+                </CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-xs">
+                  View invoices and payments
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/portal/appointments">
+            <Card className="cursor-pointer transition-shadow hover:shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="font-medium text-sm">
+                  Appointments
+                </CardTitle>
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-xs">
+                  View scheduled meetings
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Matters List */}

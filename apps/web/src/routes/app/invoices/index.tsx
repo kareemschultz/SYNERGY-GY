@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Calendar,
+  ChevronDown,
+  ChevronUp,
   FileText,
   Loader2,
   MoreHorizontal,
@@ -9,6 +11,7 @@ import {
   Search,
 } from "lucide-react";
 import { useState } from "react";
+import { AgingReport } from "@/components/invoices/aging-report";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,6 +83,10 @@ function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [businessFilter, setBusinessFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
+  const [showAgingReport, setShowAgingReport] = useState(false);
+  const [agingBusinessFilter, setAgingBusinessFilter] = useState<
+    "GCMC" | "KAJ" | undefined
+  >(undefined);
 
   const { data, isLoading, error } = useQuery({
     queryKey: [
@@ -178,6 +185,37 @@ function InvoicesPage() {
               <SelectItem value="CANCELLED">Cancelled</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Aging Report Toggle */}
+        <div className="mb-6">
+          <Button
+            className="w-full justify-between"
+            onClick={() => setShowAgingReport(!showAgingReport)}
+            variant="outline"
+          >
+            <span className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Accounts Receivable Aging Report
+            </span>
+            {showAgingReport ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+          {showAgingReport ? (
+            <div className="mt-4">
+              <AgingReport
+                business={agingBusinessFilter}
+                onBusinessChange={(value) =>
+                  setAgingBusinessFilter(
+                    value === "all" ? undefined : (value as "GCMC" | "KAJ")
+                  )
+                }
+              />
+            </div>
+          ) : null}
         </div>
 
         {/* Error state */}
