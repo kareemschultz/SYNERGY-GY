@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Global Error Boundary** - React error boundary component for graceful error handling (December 12, 2024)
+  - Catches and displays React rendering errors application-wide
+  - User-friendly error message with "Try Again" and "Reload Page" options
+  - Development mode shows detailed error messages
+  - Consistent UI with card-based error display
 - **Client Onboarding Wizard** - Complete step-by-step wizard for adding new clients (December 2024)
   - Multi-step wizard system with `useWizard` hook for state management
   - 6 wizard steps: Client Type, Basic Info, Contact, Identification, Services, Review
@@ -103,6 +108,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **TypeScript**: Fixed critical type errors in training router, service details, and calendar components.
 
 ### Fixed
+- **Duplicate Header on Mobile** - Fixed duplicate navigation headers showing on /app/* and /portal/* routes (December 12, 2024)
+  - Root layout header now conditionally hidden on routes with their own layouts
+  - Mobile view shows clean single header with hamburger menu
+  - Desktop sidebar navigation unaffected
 - **PostgreSQL Enum/Text Comparison** - Fixed 500 Internal Server errors across all API routers
   - Cast enum columns to text before array comparison in raw SQL queries
   - Affected routers: dashboard, invoices, deadlines, matters, documents
