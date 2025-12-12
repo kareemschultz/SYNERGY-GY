@@ -21,8 +21,8 @@ Built as a modern, type-safe monorepo application, GK-Nexus combines the power o
 | Phase | Status | Description |
 |-------|--------|-------------|
 | **Phase 1** | ✅ Complete | Core platform - Clients, Matters, Documents, Deadlines, Dashboard |
-| **Phase 2** | 🚧 In Progress | Admin panel, Client portal, Settings, Service catalog |
-| **Phase 3** | 📅 Future | Email, WhatsApp, GRA integration, Reporting |
+| **Phase 2** | ✅ Complete | Admin panel, Client portal, Settings, Service catalog, Invoicing, Training |
+| **Phase 3** | 🚧 In Progress | Email ✅, Reporting ✅, WhatsApp (pending), GRA integration (pending) |
 
 ## Features
 
@@ -34,12 +34,21 @@ Built as a modern, type-safe monorepo application, GK-Nexus combines the power o
 - 📊 **Dashboard** - Real-time insights into active matters, upcoming deadlines, and recent activities
 - 🔐 **Role-based Access Control** - Secure authentication and authorization with Better-Auth integration
 
-### Phase 2 (In Progress)
+### Phase 2 (Complete)
 - 👤 **Admin Panel** - Staff management interface (✅ Complete)
-- 🌐 **Client Portal** - Self-service portal for clients (✅ Mostly Complete - email pending)
+- 🌐 **Client Portal** - Self-service portal for clients (✅ Complete)
 - ⚙️ **Settings** - Application configuration (✅ Complete)
-- 💰 **Service Catalog** - Service offerings and pricing (📅 Pending)
-- 🧾 **Invoice Generation** - Create and manage invoices (📅 Pending)
+- 💰 **Service Catalog** - Service offerings and pricing (✅ Complete)
+- 🧾 **Invoice Generation** - Create and manage invoices with PDF export (✅ Complete)
+- 📚 **Training Management** - Course schedules and enrollment tracking (✅ Complete)
+- 📅 **Appointment Scheduling** - Booking and availability management (✅ Complete)
+- 🧮 **Tax Calculators** - PAYE, VAT, NIS calculations (✅ Complete)
+
+### Phase 3 (In Progress)
+- 📧 **Email Integration** - Resend transactional emails (✅ Complete)
+- 📊 **Reporting** - Business reports with PDF/Excel export (✅ Complete)
+- 💬 **WhatsApp Integration** - Client messaging (📅 Pending)
+- 🏛️ **GRA Integration** - Tax authority workflows (📅 Pending)
 
 ## Tech Stack
 
@@ -212,8 +221,7 @@ SYNERGY-GY/
 │   ├── db/               # Drizzle ORM & database schema
 │   │   ├── src/
 │   │   │   ├── schema/      # Database tables
-│   │   │   ├── index.ts     # DB exports
-│   │   │   └── seed.ts      # Sample data
+│   │   │   └── index.ts     # DB exports
 │   │   ├── drizzle.config.ts
 │   │   └── package.json
 │   │
@@ -233,7 +241,7 @@ SYNERGY-GY/
 - 📋 **[Technical Specifications](/specs/)** - Detailed architecture and implementation specs
 - 🐛 **[GitHub Issues](https://github.com/yourusername/SYNERGY-GY/issues)** - Bug reports and feature requests
 - 📝 **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
-- 🚀 **[GITHUB.md](GITHUB.md)** - GitHub workflow and contribution guidelines
+- 🚀 **[GitHub Workflow](/specs/workflows/GITHUB.md)** - GitHub workflow and contribution guidelines
 
 ## Available Scripts
 
@@ -244,6 +252,9 @@ SYNERGY-GY/
 - `bun run check-types` - Type check across all packages
 - `bun run check` - Run Biome linting and formatting checks
 - `npx ultracite fix` - Auto-fix linting and formatting issues
+- `bun run test` - Run unit tests
+- `bun run test:watch` - Run tests in watch mode
+- `bun run test:coverage` - Run tests with coverage report
 
 ### Database Commands
 

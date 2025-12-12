@@ -8,6 +8,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Unit Testing Infrastructure** - Vitest setup for component and utility testing (December 12, 2024)
+  - Vitest configuration with React Testing Library integration
+  - JSDOM environment for browser API mocking
+  - Test utilities with QueryClient provider wrapper
+  - Global mocks for matchMedia, ResizeObserver, IntersectionObserver
+  - Test scripts: `bun run test`, `bun run test:watch`, `bun run test:coverage`
+  - Sample ErrorBoundary component tests demonstrating patterns
+- **E2E Testing Infrastructure** - Playwright setup for end-to-end testing (December 12, 2024)
+  - Playwright configuration with base URL and screenshot settings
+  - Initial audit spec file with login, dashboard, and client wizard tests
+  - Test screenshots directory structure
+
+### Changed
+- **Documentation Updates** - Fixed spec and README inconsistencies (December 12, 2024)
+  - Updated README.md Phase 2 status from "In Progress" to "Complete"
+  - Updated README.md Phase 3 status to show partial completion (Email + Reporting done)
+  - Added missing Phase 2 features to README (Training, Appointments, Tax Calculators)
+  - Added Phase 3 features section to README
+  - Fixed project structure - removed deleted seed.ts reference
+  - Updated documentation links for moved GITHUB.md file
+  - Added test commands to Available Scripts section
+- **Project Structure Cleanup** - Comprehensive codebase reorganization (December 12, 2024)
+  - Moved 12 implementation docs from root to `/specs/implementations/`
+  - Moved GEMINI audit docs to `/specs/audits/`
+  - Moved GITHUB workflow docs to `/specs/workflows/`
+  - Root directory now contains only essential files (README, CLAUDE, CHANGELOG, CONTRIBUTING)
+- **Lint Configuration** - Updated biome.json with relaxed rules for existing patterns
+  - Set `noLeakedRender`, `noBarrelFile`, `useTopLevelRegex` to warnings
+  - Set `noExcessiveCognitiveComplexity`, `noNestedTernary` to warnings
+  - Added `.playwright-mcp` to ignore list
+  - Fixed noLeakedRender in appointment-card.tsx using Boolean() wrappers
+
+### Removed
+- **Policy Violation Cleanup** - Removed files violating NO MOCK DATA policy (December 12, 2024)
+  - Deleted `packages/db/src/seed.ts` (721 lines of mock service catalog data)
+  - Deleted `packages/db/src/schema/gra.ts` (premature Phase 3 schema)
+  - Deleted `packages/db/src/schema/whatsapp.ts` (premature Phase 3 schema)
+  - Deleted `AGENTS.md.bak` backup file
+  - Deleted log files (`*.log`, `server.log`, `web.log`)
+- **Updated .gitignore** - Added patterns for cleanup
+  - Playwright artifacts: `.playwright-mcp/`, `playwright-report/`, `test-results/`
+  - Log files: `*.log`
+  - Backup files: `*.bak`, `*.backup`, `*.old`
+
+### Fixed
+- **Appointment Card Lint** - Fixed potential leaked render values using explicit Boolean() conversions
+
+---
+
+## [2.0.0] - 2024-12-12
+
+Phase 2 Complete - Enhanced Features Release
+
+### Added
 - **Reporting System** - Comprehensive business reporting and analytics (December 12, 2024)
   - Database schema: `reportDefinition`, `reportExecution`, `scheduledReport` tables
   - Report types: STANDARD and CUSTOM with category classification
@@ -314,7 +368,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API rate limiting and monitoring
 - Docker deployment configuration
 
-## [0.1.0] - 2025-12-11
+## [1.0.0] - 2024-12-11
+
+Phase 1 Complete - Core Platform Release
 
 ### Added
 
