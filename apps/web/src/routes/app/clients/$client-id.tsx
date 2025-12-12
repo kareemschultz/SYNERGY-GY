@@ -93,6 +93,15 @@ function ClientDetailPage() {
     queryFn: () => client.clients.getById({ id: clientId }),
   });
 
+  // Get staff status to check financial access permissions
+  const { data: staffStatus } = useQuery({
+    queryKey: ["staffStatus"],
+    queryFn: () => client.settings.getStaffStatus(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const canViewFinancials = staffStatus?.staff?.canViewFinancials ?? false;
+
   const sendPortalInvite = useMutation({
     mutationFn: (email: string) =>
       client.portal.invite.send({
@@ -272,10 +281,12 @@ function ClientDetailPage() {
               <MessageSquare className="mr-2 h-4 w-4" />
               Communications
             </TabsTrigger>
-            <TabsTrigger value="invoices">
-              <CreditCard className="mr-2 h-4 w-4" />
-              Invoices
-            </TabsTrigger>
+            {canViewFinancials && (
+              <TabsTrigger value="invoices">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Invoices
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Overview Tab */}
@@ -411,10 +422,12 @@ function ClientDetailPage() {
             />
           </TabsContent>
 
-          {/* Invoices Tab */}
-          <TabsContent className="mt-6" value="invoices">
-            <InvoicesSection clientId={clientId} />
-          </TabsContent>
+          {/* Invoices Tab - Only visible if staff has financial access */}
+          {canViewFinancials && (
+            <TabsContent className="mt-6" value="invoices">
+              <InvoicesSection clientId={clientId} />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 

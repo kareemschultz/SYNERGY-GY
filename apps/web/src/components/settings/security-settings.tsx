@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authClient } from "@/lib/auth-client";
 import { client } from "@/utils/orpc";
 
 export function SecuritySettings() {
@@ -45,8 +46,20 @@ export function SecuritySettings() {
   });
 
   const changePasswordMutation = useMutation({
-    mutationFn: (data: { currentPassword: string; newPassword: string }) =>
-      client.settings.changePassword(data),
+    mutationFn: async (data: {
+      currentPassword: string;
+      newPassword: string;
+    }) => {
+      // Use better-auth's built-in password change functionality
+      const result = await authClient.changePassword({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      });
+      if (result.error) {
+        throw new Error(result.error.message || "Failed to change password");
+      }
+      return result;
+    },
     onSuccess: () => {
       toast.success("Password changed successfully");
       setCurrentPassword("");

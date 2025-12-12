@@ -7,19 +7,11 @@ const updateProfileSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
 });
 
-const updateNotificationPreferencesSchema = z.object({
-  emailNotifications: z.boolean(),
-  deadlineReminders: z.boolean(),
-  activityUpdates: z.boolean(),
-});
+// Note: Password change is handled directly by better-auth on the frontend
+// via authClient.changePassword() - no custom API endpoint needed
 
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(100),
-});
+// Note: Notification preferences are stored in localStorage on the frontend
+// for simplicity. Will be migrated to database when email integration is added.
 
 export const settingsRouter = {
   // Get user profile
@@ -67,51 +59,8 @@ export const settingsRouter = {
       return { success: true, message: "Profile updated successfully" };
     }),
 
-  // Get notification preferences (stored in localStorage for now)
-  // biome-ignore lint/suspicious/useAwait: Auto-fix
-  getNotificationPreferences: protectedProcedure.handler(async () => {
-    // Return default preferences - in production, store in DB
-    return {
-      emailNotifications: true,
-      deadlineReminders: true,
-      activityUpdates: false,
-    };
-  }),
-
-  // Update notification preferences
-  updateNotificationPreferences: protectedProcedure
-    .input(updateNotificationPreferencesSchema)
-    // biome-ignore lint/suspicious/useAwait: Auto-fix
-    .handler(async ({ input }) => {
-      // In production, store these in the database
-      // For now, we'll just validate and return success
-      return {
-        success: true,
-        message: "Notification preferences updated",
-        preferences: input,
-      };
-    }),
-
-  // Change password
-  changePassword: protectedProcedure
-    .input(changePasswordSchema)
-    // biome-ignore lint/suspicious/useAwait: Auto-fix
-    .handler(async ({ context, input: _input }) => {
-      const userId = context.session?.user?.id;
-      if (!userId) {
-        throw new Error("User not authenticated");
-      }
-
-      // Note: Password change logic should integrate with better-auth
-      // This is a placeholder - actual implementation depends on auth setup
-      // Better-auth handles password hashing and validation
-      // TODO: Use _input.currentPassword and _input.newPassword when implementing
-
-      return {
-        success: true,
-        message: "Password changed successfully",
-      };
-    }),
+  // Note: Notification preferences are now stored in localStorage on the frontend
+  // Note: Password change is handled by better-auth directly on the frontend
 
   // Get active sessions
   getActiveSessions: protectedProcedure.handler(async ({ context }) => {
@@ -190,12 +139,19 @@ export const settingsRouter = {
         businesses: true,
         isActive: true,
         jobTitle: true,
+        canViewFinancials: true,
       },
     });
 
     if (!staffProfile) {
       return { hasStaffProfile: false, isActive: false, staff: null };
     }
+
+    // Determine financial access based on explicit flag or role
+    const managerRoles = ["OWNER", "GCMC_MANAGER", "KAJ_MANAGER"];
+    const hasFinancialAccess =
+      staffProfile.canViewFinancials ??
+      managerRoles.includes(staffProfile.role);
 
     return {
       hasStaffProfile: true,
@@ -205,6 +161,7 @@ export const settingsRouter = {
         role: staffProfile.role,
         businesses: staffProfile.businesses,
         jobTitle: staffProfile.jobTitle,
+        canViewFinancials: hasFinancialAccess,
       },
     };
   }),

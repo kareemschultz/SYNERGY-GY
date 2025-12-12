@@ -4,7 +4,7 @@ import {
   ArrowLeft,
   Calendar,
   CreditCard,
-  FileText,
+  Download,
   Loader2,
   Percent,
   Send,
@@ -140,6 +140,31 @@ function InvoiceDetailPage() {
       if (invoice) {
         setStatus(invoice.status);
       }
+    },
+  });
+
+  const downloadPdfMutation = useMutation({
+    mutationFn: () => client.invoices.generatePdf({ id: invoiceId }),
+    onSuccess: (data) => {
+      // Convert base64 to blob and download
+      const binaryString = atob(data.pdf);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("PDF downloaded successfully");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to generate PDF");
     },
   });
 
@@ -507,11 +532,18 @@ function InvoiceDetailPage() {
                   )}
                   <Button
                     className="w-full justify-start"
-                    disabled
+                    disabled={downloadPdfMutation.isPending}
+                    onClick={() => downloadPdfMutation.mutate()}
                     variant="outline"
                   >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Download PDF
+                    {downloadPdfMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-2 h-4 w-4" />
+                    )}
+                    {downloadPdfMutation.isPending
+                      ? "Generating..."
+                      : "Download PDF"}
                   </Button>
                   {invoice.status === "DRAFT" && (
                     <>

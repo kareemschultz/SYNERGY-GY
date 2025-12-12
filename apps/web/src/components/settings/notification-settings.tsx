@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Loader2, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -12,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { client } from "@/utils/orpc";
 
 type NotificationPreferences = {
   emailNotifications: boolean;
@@ -20,41 +18,48 @@ type NotificationPreferences = {
   activityUpdates: boolean;
 };
 
-export function NotificationSettings() {
-  const queryClient = useQueryClient();
-  const [preferences, setPreferences] = useState<NotificationPreferences>({
-    emailNotifications: true,
-    deadlineReminders: true,
-    activityUpdates: false,
-  });
-  const [hasChanges, setHasChanges] = useState(false);
+const STORAGE_KEY = "gk-nexus-notification-preferences";
+const DEFAULT_PREFERENCES: NotificationPreferences = {
+  emailNotifications: true,
+  deadlineReminders: true,
+  activityUpdates: false,
+};
 
-  const { data: savedPreferences, isLoading } = useQuery({
-    queryKey: ["notificationPreferences"],
-    queryFn: () => client.settings.getNotificationPreferences(),
-  });
-
-  const updatePreferencesMutation = useMutation({
-    mutationFn: (data: NotificationPreferences) =>
-      client.settings.updateNotificationPreferences(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notificationPreferences"] });
-      toast.success("Notification preferences updated");
-      setHasChanges(false);
-    },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update preferences"
-      );
-    },
-  });
-
-  // Initialize preferences when data loads
-  useEffect(() => {
-    if (savedPreferences) {
-      setPreferences(savedPreferences);
+// Helper to get preferences from localStorage
+function getStoredPreferences(): NotificationPreferences {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return { ...DEFAULT_PREFERENCES, ...JSON.parse(stored) };
     }
-  }, [savedPreferences]);
+  } catch {
+    // Ignore parse errors
+  }
+  return DEFAULT_PREFERENCES;
+}
+
+// Helper to save preferences to localStorage
+function savePreferences(prefs: NotificationPreferences): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export function NotificationSettings() {
+  const [preferences, setPreferences] =
+    useState<NotificationPreferences>(DEFAULT_PREFERENCES);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load preferences from localStorage on mount
+  useEffect(() => {
+    const stored = getStoredPreferences();
+    setPreferences(stored);
+    setIsLoading(false);
+  }, []);
 
   const handleToggle = (key: keyof NotificationPreferences, value: boolean) => {
     setPreferences((prev) => ({ ...prev, [key]: value }));
@@ -62,14 +67,20 @@ export function NotificationSettings() {
   };
 
   const handleSave = () => {
-    updatePreferencesMutation.mutate(preferences);
+    setIsSaving(true);
+    // Simulate a brief save delay for UX
+    setTimeout(() => {
+      savePreferences(preferences);
+      setHasChanges(false);
+      setIsSaving(false);
+      toast.success("Notification preferences saved");
+    }, 300);
   };
 
   const handleReset = () => {
-    if (savedPreferences) {
-      setPreferences(savedPreferences);
-      setHasChanges(false);
-    }
+    const stored = getStoredPreferences();
+    setPreferences(stored);
+    setHasChanges(false);
   };
 
   if (isLoading) {
@@ -198,18 +209,14 @@ export function NotificationSettings() {
           {/* Action Buttons */}
           {!!hasChanges && (
             <div className="flex gap-2 pt-4">
-              <Button
-                disabled={updatePreferencesMutation.isPending}
-                onClick={handleSave}
-                type="button"
-              >
-                {!!updatePreferencesMutation.isPending && (
+              <Button disabled={isSaving} onClick={handleSave} type="button">
+                {!!isSaving && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 Save Changes
               </Button>
               <Button
-                disabled={updatePreferencesMutation.isPending}
+                disabled={isSaving}
                 onClick={handleReset}
                 type="button"
                 variant="outline"
@@ -230,17 +237,23 @@ export function NotificationSettings() {
         <CardContent>
           <div className="space-y-3 text-sm">
             <p className="text-muted-foreground">
-              Email notifications are sent to:{" "}
-              <span className="font-medium text-foreground">
-                {savedPreferences ? "your registered email" : "loading..."}
-              </span>
+              Email notifications will be sent to your registered email address
+              when email integration is enabled.
             </p>
             <p className="text-muted-foreground">
-              Deadline reminders are sent 24 hours before the due date.
+              Deadline reminders will be sent 24 hours before the due date.
             </p>
             <p className="text-muted-foreground">
-              Activity updates are sent in real-time when changes occur.
+              Activity updates will be sent when changes occur to matters or
+              documents you're associated with.
             </p>
+            <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950">
+              <p className="text-blue-800 text-xs dark:text-blue-200">
+                Note: These preferences are stored locally in your browser.
+                Email delivery will be available once email integration is
+                configured.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -1,10 +1,10 @@
 # Financial Access Control
 
-**Status:** ✅ API COMPLETE (UI Pending)
+**Status:** ✅ COMPLETE
 **Phase:** 2
 **Priority:** High
 **Created:** December 2024
-**Updated:** December 11, 2024
+**Updated:** December 12, 2024
 
 ## Implementation Status
 
@@ -15,8 +15,8 @@
 | API Middleware | ✅ Complete | `financialProcedure` protecting sensitive endpoints |
 | Client Router | ✅ Complete | `getDashboard` respects financial access |
 | Invoice Router | ✅ Complete | Aging/balance endpoints protected |
-| Admin UI | ⏳ Pending | Staff edit form checkbox |
-| Client UI | ⏳ Pending | Conditional financials tab |
+| Admin UI | ✅ Complete | Staff edit & create forms with checkbox |
+| Client UI | ✅ Complete | Invoices tab conditionally hidden based on canViewFinancials |
 
 ## Overview
 

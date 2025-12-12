@@ -1,11 +1,12 @@
 # Invoicing & Payments
 
-**Status:** ✅ COMPLETE (API + UI Enhancements)
+**Status:** ✅ COMPLETE (API + UI + PDF Generation)
 **Phase:** 2
 **Priority:** High
 **Implementation Date:** December 11, 2024
 **December Enhancements Completed:** December 11, 2024
 **UI Completed:** December 11, 2024
+**PDF Generation Completed:** December 12, 2024
 
 ## Implementation Status (December 2024)
 
@@ -20,6 +21,7 @@
 | Aging Report Component | ✅ Complete | Visual breakdown with buckets (current, 30, 60, 90+ days) |
 | Invoices List Enhancement | ✅ Complete | Collapsible aging report toggle on list page |
 | Invoice Detail Enhancement | ✅ Complete | Discount display and "Apply Discount" button for drafts |
+| **PDF Generation** | ✅ Complete | pdf-lib integration with professional template (Dec 12) |
 
 ## Overview
 

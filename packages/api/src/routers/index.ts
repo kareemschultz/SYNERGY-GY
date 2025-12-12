@@ -10,6 +10,7 @@ import { documentsRouter } from "./documents";
 import { invoicesRouter } from "./invoices";
 import { mattersRouter } from "./matters";
 import { portalRouter } from "./portal";
+import { reportsRouter } from "./reports";
 import { serviceCatalogRouter } from "./service-catalog";
 import { settingsRouter } from "./settings";
 import { staffSetupRouter } from "./staff-setup";
@@ -31,6 +32,7 @@ export const appRouter = {
   dashboard: dashboardRouter,
   activity: activityRouter,
   admin: adminRouter,
+  reports: reportsRouter,
   settings: settingsRouter,
   portal: portalRouter,
   serviceCatalog: serviceCatalogRouter,

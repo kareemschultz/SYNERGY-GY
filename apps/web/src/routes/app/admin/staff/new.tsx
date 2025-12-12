@@ -50,6 +50,7 @@ const createStaffSchema = z
       .min(1, "Select at least one business"),
     phone: z.string().optional(),
     jobTitle: z.string().optional(),
+    canViewFinancials: z.boolean().optional(),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
   })
@@ -114,6 +115,7 @@ function NewStaffPage() {
       businesses: [],
       phone: "",
       jobTitle: "",
+      canViewFinancials: false,
       password: "",
       confirmPassword: "",
     },
@@ -430,6 +432,36 @@ function NewStaffPage() {
                           />
                         </div>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Financial Access Permission */}
+                  <FormField
+                    control={form.control}
+                    name="canViewFinancials"
+                    render={({
+                      field,
+                    }: {
+                      field: ControllerRenderProps<
+                        CreateStaffFormValues,
+                        "canViewFinancials"
+                      >;
+                    }) => (
+                      <FormItem className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Can View Financial Data</FormLabel>
+                          <FormDescription>
+                            Allow this staff member to view invoices, payments,
+                            and financial reports.
+                          </FormDescription>
+                        </div>
                       </FormItem>
                     )}
                   />

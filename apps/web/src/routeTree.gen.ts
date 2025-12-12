@@ -25,6 +25,7 @@ import { Route as PortalAppointmentsRouteImport } from './routes/portal/appointm
 import { Route as AppTrainingIndexRouteImport } from './routes/app/training/index'
 import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
 import { Route as AppServicesIndexRouteImport } from './routes/app/services/index'
+import { Route as AppReportsIndexRouteImport } from './routes/app/reports/index'
 import { Route as AppMattersIndexRouteImport } from './routes/app/matters/index'
 import { Route as AppInvoicesIndexRouteImport } from './routes/app/invoices/index'
 import { Route as AppDocumentsIndexRouteImport } from './routes/app/documents/index'
@@ -137,6 +138,11 @@ const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
 const AppServicesIndexRoute = AppServicesIndexRouteImport.update({
   id: '/services/',
   path: '/services/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsIndexRoute = AppReportsIndexRouteImport.update({
+  id: '/reports/',
+  path: '/reports/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMattersIndexRoute = AppMattersIndexRouteImport.update({
@@ -348,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/app/documents': typeof AppDocumentsIndexRoute
   '/app/invoices': typeof AppInvoicesIndexRoute
   '/app/matters': typeof AppMattersIndexRoute
+  '/app/reports': typeof AppReportsIndexRoute
   '/app/services': typeof AppServicesIndexRoute
   '/app/settings': typeof AppSettingsIndexRoute
   '/app/training': typeof AppTrainingIndexRoute
@@ -398,6 +405,7 @@ export interface FileRoutesByTo {
   '/app/documents': typeof AppDocumentsIndexRoute
   '/app/invoices': typeof AppInvoicesIndexRoute
   '/app/matters': typeof AppMattersIndexRoute
+  '/app/reports': typeof AppReportsIndexRoute
   '/app/services': typeof AppServicesIndexRoute
   '/app/settings': typeof AppSettingsIndexRoute
   '/app/training': typeof AppTrainingIndexRoute
@@ -450,6 +458,7 @@ export interface FileRoutesById {
   '/app/documents/': typeof AppDocumentsIndexRoute
   '/app/invoices/': typeof AppInvoicesIndexRoute
   '/app/matters/': typeof AppMattersIndexRoute
+  '/app/reports/': typeof AppReportsIndexRoute
   '/app/services/': typeof AppServicesIndexRoute
   '/app/settings/': typeof AppSettingsIndexRoute
   '/app/training/': typeof AppTrainingIndexRoute
@@ -503,6 +512,7 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/invoices'
     | '/app/matters'
+    | '/app/reports'
     | '/app/services'
     | '/app/settings'
     | '/app/training'
@@ -553,6 +563,7 @@ export interface FileRouteTypes {
     | '/app/documents'
     | '/app/invoices'
     | '/app/matters'
+    | '/app/reports'
     | '/app/services'
     | '/app/settings'
     | '/app/training'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/app/documents/'
     | '/app/invoices/'
     | '/app/matters/'
+    | '/app/reports/'
     | '/app/services/'
     | '/app/settings/'
     | '/app/training/'
@@ -746,6 +758,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/app/services'
       preLoaderRoute: typeof AppServicesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/reports/': {
+      id: '/app/reports/'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppReportsIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/matters/': {
@@ -1007,6 +1026,7 @@ interface AppRouteChildren {
   AppDocumentsIndexRoute: typeof AppDocumentsIndexRoute
   AppInvoicesIndexRoute: typeof AppInvoicesIndexRoute
   AppMattersIndexRoute: typeof AppMattersIndexRoute
+  AppReportsIndexRoute: typeof AppReportsIndexRoute
   AppServicesIndexRoute: typeof AppServicesIndexRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
   AppTrainingIndexRoute: typeof AppTrainingIndexRoute
@@ -1046,6 +1066,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDocumentsIndexRoute: AppDocumentsIndexRoute,
   AppInvoicesIndexRoute: AppInvoicesIndexRoute,
   AppMattersIndexRoute: AppMattersIndexRoute,
+  AppReportsIndexRoute: AppReportsIndexRoute,
   AppServicesIndexRoute: AppServicesIndexRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
   AppTrainingIndexRoute: AppTrainingIndexRoute,

@@ -30,6 +30,7 @@ const createStaffSchema = z.object({
     .min(1, "At least one business required"),
   phone: z.string().optional(),
   jobTitle: z.string().optional(),
+  canViewFinancials: z.boolean().optional(),
 });
 
 const updateStaffSchema = z.object({
@@ -40,6 +41,7 @@ const updateStaffSchema = z.object({
   businesses: z.array(z.enum(businessValues)).min(1).optional(),
   phone: z.string().optional(),
   jobTitle: z.string().optional(),
+  canViewFinancials: z.boolean().optional(),
 });
 
 const listStaffSchema = z.object({
@@ -217,7 +219,15 @@ export const adminRouter = {
     create: adminProcedure
       .input(createStaffSchema)
       .handler(async ({ input, context }) => {
-        const { name, email, role, businesses, phone, jobTitle } = input;
+        const {
+          name,
+          email,
+          role,
+          businesses,
+          phone,
+          jobTitle,
+          canViewFinancials,
+        } = input;
 
         // Check if email already exists
         const existingUser = await db.query.user.findFirst({
@@ -265,6 +275,7 @@ export const adminRouter = {
             phone: phone || null,
             jobTitle: jobTitle || null,
             isActive: true,
+            canViewFinancials: canViewFinancials ?? undefined,
           })
           .returning();
 
@@ -306,7 +317,16 @@ export const adminRouter = {
       .input(updateStaffSchema)
       // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
       .handler(async ({ input }) => {
-        const { id, name, email, role, businesses, phone, jobTitle } = input;
+        const {
+          id,
+          name,
+          email,
+          role,
+          businesses,
+          phone,
+          jobTitle,
+          canViewFinancials,
+        } = input;
 
         // Check staff exists
         const existing = await db.query.staff.findFirst({
@@ -361,6 +381,9 @@ export const adminRouter = {
         }
         if (jobTitle !== undefined) {
           staffUpdates.jobTitle = jobTitle || null;
+        }
+        if (canViewFinancials !== undefined) {
+          staffUpdates.canViewFinancials = canViewFinancials;
         }
 
         if (Object.keys(staffUpdates).length > 0) {

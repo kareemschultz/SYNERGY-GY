@@ -8,6 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Reporting System** - Comprehensive business reporting and analytics (December 12, 2024)
+  - Database schema: `reportDefinition`, `reportExecution`, `scheduledReport` tables
+  - Report types: STANDARD and CUSTOM with category classification
+  - Report categories: CLIENT, MATTER, FINANCIAL, DEADLINE, DOCUMENT, STAFF
+  - Export formats: PDF, EXCEL, CSV (xlsx library installed)
+  - 9 standard reports implemented:
+    - CLIENT_SUMMARY - Client overview with matter counts and document counts
+    - CLIENT_LIST - Detailed client listing with contact info and services
+    - MATTER_STATUS - Matter breakdown by status (Open, In Progress, Completed)
+    - REVENUE_SUMMARY - Invoice revenue by status with totals
+    - ACCOUNTS_RECEIVABLE - Unpaid invoices with aging
+    - INVOICE_REPORT - Detailed invoice listing with payment tracking
+    - DEADLINE_SUMMARY - Upcoming deadlines by priority level
+    - STAFF_PRODUCTIVITY - Staff activity and workload metrics
+    - DOCUMENT_EXPIRY - Documents approaching expiration
+  - API endpoints: `list`, `execute`, `history`, `categories`
+  - Reports UI page at `/app/reports` with:
+    - Report catalog with category filtering and search
+    - Report cards with icons, descriptions, and badges
+    - Execution dialog with business/date filter parameters
+    - Results view with data table and summary statistics tabs
+  - Report execution tracking with row counts and timestamps
+  - Business-level filtering (GCMC, KAJ, or both)
+  - Date range filtering for time-bound reports
+- **Invoice PDF Generation** - Generate and download professional PDF invoices (December 12, 2024)
+  - pdf-lib integration for server-side PDF generation
+  - Professional invoice template with GCMC/KAJ branding
+  - Line items table with quantities, prices, and amounts
+  - Subtotal, discount, tax, and total calculations
+  - Client information with TIN, email, and address
+  - Status badge and payment tracking in PDF
+  - Base64 encoded PDF transport via API
+  - Download button in invoice detail page (`/app/invoices/$invoice-id`)
+- **Financial Access Control Admin UI** - Staff forms with canViewFinancials checkbox (December 12, 2024)
+  - Staff edit form (`/app/admin/staff/$staff-id`) - Checkbox to toggle financial data access
+  - Staff create form (`/app/admin/staff/new`) - Checkbox to set initial financial access
+  - View mode shows "Can View" or "No Access" badge for financial permissions
+  - API schema updated to accept canViewFinancials in create/update operations
 - **Global Error Boundary** - React error boundary component for graceful error handling (December 12, 2024)
   - Catches and displays React rendering errors application-wide
   - User-friendly error message with "Try Again" and "Reload Page" options

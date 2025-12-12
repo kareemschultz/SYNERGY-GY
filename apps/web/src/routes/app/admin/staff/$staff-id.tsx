@@ -54,6 +54,7 @@ const updateStaffSchema = z.object({
     .min(1, "Select at least one business"),
   phone: z.string().optional(),
   jobTitle: z.string().optional(),
+  canViewFinancials: z.boolean().optional(),
 });
 
 type UpdateStaffFormValues = z.infer<typeof updateStaffSchema>;
@@ -127,6 +128,7 @@ function StaffDetailPage() {
       businesses: [],
       phone: "",
       jobTitle: "",
+      canViewFinancials: false,
     },
   });
 
@@ -154,6 +156,7 @@ function StaffDetailPage() {
         businesses: staff.businesses as ("GCMC" | "KAJ")[],
         phone: staff.phone || "",
         jobTitle: staff.jobTitle || "",
+        canViewFinancials: staff.canViewFinancials ?? false,
       });
     }
   }, [staff, form]);
@@ -566,6 +569,37 @@ function StaffDetailPage() {
                           </FormItem>
                         )}
                       />
+
+                      {/* Financial Access Permission */}
+                      <FormField
+                        control={form.control}
+                        name="canViewFinancials"
+                        render={({
+                          field,
+                        }: {
+                          field: ControllerRenderProps<
+                            UpdateStaffFormValues,
+                            "canViewFinancials"
+                          >;
+                        }) => (
+                          <FormItem className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Can View Financial Data</FormLabel>
+                              <FormDescription>
+                                Allow this staff member to view invoices,
+                                payments, and financial reports. Managers and
+                                owners have access by default.
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
                     </div>
 
                     {/* Actions */}
@@ -639,6 +673,28 @@ function StaffDetailPage() {
                     <div className="mt-1 flex gap-2">
                       <BusinessBadges businesses={staff.businesses} />
                     </div>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-sm">
+                      Financial Data Access
+                    </p>
+                    <div className="mt-1">
+                      <Badge
+                        className={
+                          staff.canViewFinancials
+                            ? "border-green-200 bg-green-500/10 text-green-600"
+                            : "border-gray-200 bg-gray-500/10 text-gray-600"
+                        }
+                        variant="outline"
+                      >
+                        {staff.canViewFinancials ? "Can View" : "No Access"}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-muted-foreground text-xs">
+                      {staff.canViewFinancials
+                        ? "This user can view invoices, payments, and financial reports"
+                        : "This user cannot access financial data"}
+                    </p>
                   </div>
                 </CardContent>
               </Card>

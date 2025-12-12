@@ -640,11 +640,14 @@ export const invoicesRouter = {
     }),
 
   /**
-   * Generate PDF (placeholder for now - will be implemented with PDF library)
+   * Generate PDF for an invoice
    */
   generatePdf: staffProcedure
     .input(z.object({ id: z.string() }))
     .handler(async ({ input, context }) => {
+      // Import dynamically to avoid issues
+      const { generateInvoicePdf } = await import("../utils/invoice-pdf");
+
       const inv = await db.query.invoice.findFirst({
         where: eq(invoice.id, input.id),
         with: {
@@ -668,11 +671,43 @@ export const invoicesRouter = {
         });
       }
 
-      // TODO: Implement PDF generation with library like PDFKit or Puppeteer
-      // For now, return placeholder URL
+      // Generate PDF
+      const pdfBytes = await generateInvoicePdf({
+        invoiceNumber: inv.invoiceNumber,
+        business: inv.business as "GCMC" | "KAJ",
+        invoiceDate: inv.invoiceDate,
+        dueDate: inv.dueDate,
+        clientName: inv.client.displayName,
+        clientEmail: inv.client.email,
+        clientAddress: inv.client.address || null,
+        clientTin: inv.client.tin || null,
+        lineItems: inv.lineItems.map((item) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          amount: item.amount,
+        })),
+        subtotal: inv.subtotal,
+        taxAmount: inv.taxAmount,
+        discountType: inv.discountType,
+        discountValue: inv.discountValue,
+        discountAmount: inv.discountAmount,
+        discountReason: inv.discountReason,
+        totalAmount: inv.totalAmount,
+        amountPaid: inv.amountPaid,
+        amountDue: inv.amountDue,
+        notes: inv.notes,
+        terms: inv.terms,
+        status: inv.status,
+      });
+
+      // Convert to base64 for transport
+      const base64Pdf = Buffer.from(pdfBytes).toString("base64");
+
       return {
-        url: `/api/invoices/${inv.id}/pdf`,
-        message: "PDF generation not yet implemented",
+        pdf: base64Pdf,
+        filename: `${inv.invoiceNumber}.pdf`,
+        contentType: "application/pdf",
       };
     }),
 

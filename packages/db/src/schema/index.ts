@@ -19,6 +19,8 @@ export * from "./documents";
 export * from "./invoices";
 // Client portal
 export * from "./portal";
+// Reporting and analytics
+export * from "./reports";
 // Service catalog and pricing
 export * from "./service-catalog";
 // Services and matter tracking

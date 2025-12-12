@@ -95,13 +95,17 @@ function ClientsPage() {
       <PageHeader
         actions={
           <div className="flex gap-2">
-            <Button asChild variant="outline">
+            <Button
+              asChild
+              data-testid="clients-quick-add-btn"
+              variant="outline"
+            >
               <Link to="/app/clients/new">
                 <Plus className="mr-2 h-4 w-4" />
                 Quick Add
               </Link>
             </Button>
-            <Button asChild>
+            <Button asChild data-testid="clients-wizard-btn">
               <Link to="/app/clients/onboard">
                 <Wand2 className="mr-2 h-4 w-4" />
                 Client Wizard
