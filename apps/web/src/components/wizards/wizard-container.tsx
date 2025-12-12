@@ -32,6 +32,10 @@ type WizardContainerProps = {
   layout?: "default" | "sidebar" | "compact";
   className?: string;
   submitLabel?: string;
+  /** Validation errors to show in navigation */
+  errors?: Record<string, string>;
+  /** Field labels for friendly error display */
+  fieldLabels?: Record<string, string>;
 };
 
 export function WizardContainer({
@@ -58,6 +62,8 @@ export function WizardContainer({
   layout = "default",
   className,
   submitLabel,
+  errors = {},
+  fieldLabels = {},
 }: WizardContainerProps) {
   const showSteps = progressVariant === "steps" || progressVariant === "both";
   const showBar = progressVariant === "bar" || progressVariant === "both";
@@ -108,6 +114,8 @@ export function WizardContainer({
             canGoPrev={canGoPrev}
             canSkip={canSkip}
             className="mt-6 border-t-0 px-0"
+            errors={errors}
+            fieldLabels={fieldLabels}
             isFirstStep={isFirstStep}
             isLastStep={isLastStep}
             isSubmitting={isSubmitting}
@@ -142,6 +150,8 @@ export function WizardContainer({
               canGoPrev={canGoPrev}
               canSkip={canSkip}
               className="mt-6 border-t px-0 pt-6"
+              errors={errors}
+              fieldLabels={fieldLabels}
               isFirstStep={isFirstStep}
               isLastStep={isLastStep}
               isSubmitting={isSubmitting}
@@ -201,6 +211,8 @@ export function WizardContainer({
           canGoPrev={canGoPrev}
           canSkip={canSkip}
           className="shrink-0 border-t"
+          errors={errors}
+          fieldLabels={fieldLabels}
           isFirstStep={isFirstStep}
           isLastStep={isLastStep}
           isSubmitting={isSubmitting}

@@ -221,6 +221,16 @@ function ClientOnboardingWizard() {
             canSkip={wizard.canSkip}
             className="flex-1 overflow-hidden"
             currentStep={wizard.currentStep}
+            errors={wizard.errors}
+            fieldLabels={{
+              clientType: "Client Type",
+              firstName: "First Name",
+              lastName: "Last Name",
+              businessName: "Business Name",
+              email: "Email Address",
+              phone: "Phone Number",
+              passportCountry: "Passport Country",
+            }}
             isFirstStep={wizard.isFirstStep}
             isLastStep={wizard.isLastStep}
             isSubmitting={wizard.isSubmitting || createMutation.isPending}

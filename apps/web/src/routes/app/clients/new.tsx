@@ -101,15 +101,49 @@ function NewClientPage() {
       businesses: [] as ("GCMC" | "KAJ")[],
       notes: "",
     } satisfies FormValues,
-    // biome-ignore lint/suspicious/useAwait: Auto-fix
     onSubmit: async ({ value }) => {
+      // Validate required fields
+      const errors: string[] = [];
+
+      if (!value.displayName.trim()) {
+        errors.push("Display Name is required");
+      }
       if (value.businesses.length === 0) {
-        toast.error("Please select at least one business");
+        errors.push("Please select at least one business (GCMC or KAJ)");
+      }
+
+      if (errors.length > 0) {
+        toast.error(
+          <div className="space-y-1">
+            <p className="font-medium">Please fix the following:</p>
+            <ul className="list-disc pl-4 text-sm">
+              {errors.map((err) => (
+                <li key={err}>{err}</li>
+              ))}
+            </ul>
+          </div>
+        );
         return;
       }
+
       createMutation.mutate(value);
     },
   });
+
+  // Helper to check if form has validation issues
+  const getValidationErrors = (): string[] => {
+    const errors: string[] = [];
+    if (!form.state.values.displayName.trim()) {
+      errors.push("Display Name is required");
+    }
+    if (form.state.values.businesses.length === 0) {
+      errors.push("Select at least one business");
+    }
+    return errors;
+  };
+
+  const validationErrors = getValidationErrors();
+  const hasErrors = validationErrors.length > 0;
 
   const isIndividual =
     form.state.values.type === "INDIVIDUAL" ||
@@ -119,16 +153,24 @@ function NewClientPage() {
     <div className="flex min-h-full flex-col">
       <PageHeader
         actions={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button asChild variant="outline">
               <Link to="/app/clients">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Cancel
               </Link>
             </Button>
+            {hasErrors && (
+              <span className="hidden items-center gap-1 text-amber-600 text-sm sm:flex">
+                <AlertCircle className="h-4 w-4" />
+                {validationErrors.length} field
+                {validationErrors.length > 1 ? "s" : ""} need attention
+              </span>
+            )}
             <Button
               disabled={createMutation.isPending}
               onClick={() => form.handleSubmit()}
+              title={hasErrors ? validationErrors.join(", ") : undefined}
             >
               {createMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -189,18 +231,38 @@ function NewClientPage() {
                 </form.Field>
 
                 <form.Field name="displayName">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>Display Name *</Label>
-                      <Input
-                        id={field.name}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="How this client should be displayed"
-                        value={field.state.value}
-                      />
-                    </div>
-                  )}
+                  {(field) => {
+                    const showError =
+                      field.state.meta.isTouched && !field.state.value.trim();
+                    return (
+                      <div className="space-y-2">
+                        <Label htmlFor={field.name}>Display Name *</Label>
+                        <Input
+                          aria-describedby={
+                            showError ? `${field.name}-error` : undefined
+                          }
+                          aria-invalid={showError}
+                          className={
+                            showError ? "border-destructive" : undefined
+                          }
+                          id={field.name}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder="How this client should be displayed"
+                          value={field.state.value}
+                        />
+                        {showError && (
+                          <p
+                            className="text-destructive text-sm"
+                            id={`${field.name}-error`}
+                            role="alert"
+                          >
+                            Display Name is required
+                          </p>
+                        )}
+                      </div>
+                    );
+                  }}
                 </form.Field>
               </div>
 
@@ -467,9 +529,23 @@ function NewClientPage() {
           </Card>
 
           {/* Business Assignment */}
-          <Card>
+          <Card
+            className={
+              form.state.values.businesses.length === 0
+                ? "border-amber-200 dark:border-amber-800"
+                : undefined
+            }
+          >
             <CardHeader>
-              <CardTitle>Business Assignment *</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Business Assignment *
+                {form.state.values.businesses.length === 0 && (
+                  <span className="flex items-center gap-1 font-normal text-amber-600 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    Required
+                  </span>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <form.Field name="businesses">
