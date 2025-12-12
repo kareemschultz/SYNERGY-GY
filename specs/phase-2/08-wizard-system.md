@@ -16,6 +16,7 @@
 | Route Integration | ✅ Complete | `/app/clients/onboard` route with full page |
 | API Integration | ✅ Complete | Connected to clients.create mutation |
 | UI/UX Polish | ✅ Complete | SVG accessibility, responsive design |
+| Clients Page Integration | ✅ Complete | "Client Wizard" button in header, empty state |
 | Matter Creation Wizard | ⏳ Pending | Phase B |
 | Compliance Filing Wizards | ⏳ Pending | Phase D |
 | Immigration Case Wizards | ⏳ Pending | Phase F |
@@ -23,6 +24,8 @@
 
 ### Client Onboarding Wizard - Completed Features
 
+- **UI Integration** - "Client Wizard" button added to clients page header alongside "Quick Add"
+- **Empty State Link** - Empty clients table shows wizard link for first-time users
 - **Multi-step wizard** with 6 steps: Client Type → Basic Info → Contact → Identification → Services → Review
 - **Client type selection** with 8 types: Individual, Small Business, Corporation, NGO, Co-op, Credit Union, Foreign National, Investor
 - **Adaptive forms** that change based on client type (individual vs business fields)

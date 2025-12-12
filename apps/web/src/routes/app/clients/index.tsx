@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, MoreHorizontal, Plus, Search } from "lucide-react";
+import { Loader2, MoreHorizontal, Plus, Search, Wand2 } from "lucide-react";
 import { useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -94,12 +94,20 @@ function ClientsPage() {
     <div className="flex flex-col">
       <PageHeader
         actions={
-          <Button asChild>
-            <Link to="/app/clients/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Client
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app/clients/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Quick Add
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/app/clients/onboard">
+                <Wand2 className="mr-2 h-4 w-4" />
+                Client Wizard
+              </Link>
+            </Button>
+          </div>
         }
         breadcrumbs={[
           { label: "Dashboard", href: "/app" },
@@ -215,8 +223,6 @@ function ClientsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-                // biome-ignore lint/nursery/noLeakedRender: Auto-fix
-                // biome-ignore lint/style/noNestedTernary: Auto-fix
               ) : data?.clients && data.clients.length > 0 ? (
                 data.clients.map((c) => (
                   <TableRow key={c.id}>
@@ -283,8 +289,8 @@ function ClientsPage() {
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <p>No clients found</p>
                       <Button asChild size="sm" variant="outline">
-                        <Link to="/app/clients/new">
-                          <Plus className="mr-2 h-4 w-4" />
+                        <Link to="/app/clients/onboard">
+                          <Wand2 className="mr-2 h-4 w-4" />
                           Add your first client
                         </Link>
                       </Button>

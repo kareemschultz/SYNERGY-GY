@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Accessible SVG icons and keyboard navigation
   - Mobile-responsive with progress bar and step indicators
   - Route: `/app/clients/onboard`
+  - UI Integration: "Client Wizard" button in clients page header (December 12, 2024)
+  - Empty state links to wizard for first-time users
 - **Claude Code Skills Integration** - 9 project-specific skills for enhanced AI assistance (December 2024)
   - `drizzle-schema` - Database schema patterns for Drizzle ORM PostgreSQL
   - `orpc-router` - API router patterns with oRPC procedures and Zod validation

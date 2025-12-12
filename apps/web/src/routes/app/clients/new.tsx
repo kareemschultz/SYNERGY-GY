@@ -116,7 +116,7 @@ function NewClientPage() {
     form.state.values.type === "FOREIGN_NATIONAL";
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-full flex-col">
       <PageHeader
         actions={
           <div className="flex gap-2">
@@ -547,6 +547,28 @@ function NewClientPage() {
               </form.Field>
             </CardContent>
           </Card>
+
+          {/* Bottom Actions - Duplicated for easy access */}
+          <div className="flex justify-end gap-2 pb-6">
+            <Button asChild variant="outline">
+              <Link to="/app/clients">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Cancel
+              </Link>
+            </Button>
+            <Button
+              disabled={createMutation.isPending}
+              onClick={() => form.handleSubmit()}
+              type="submit"
+            >
+              {createMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Client
+            </Button>
+          </div>
         </div>
       </form>
     </div>
