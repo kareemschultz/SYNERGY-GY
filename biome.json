@@ -19,8 +19,26 @@
       "!**/.alchemy",
       "!**/.svelte-kit",
       "!**/wrangler.jsonc",
-      "!**/.source"
+      "!**/.source",
+      "!.playwright-mcp"
     ]
   },
-  "extends": ["ultracite/core", "ultracite/react"]
+  "extends": ["ultracite/core", "ultracite/react"],
+  "linter": {
+    "rules": {
+      "nursery": {
+        "noLeakedRender": "warn"
+      },
+      "performance": {
+        "noBarrelFile": "warn",
+        "useTopLevelRegex": "warn"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "warn"
+      },
+      "style": {
+        "noNestedTernary": "warn"
+      }
+    }
+  }
 }

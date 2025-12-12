@@ -19,14 +19,14 @@ const BUSINESS_INFO = {
 };
 
 // Invoice data type
-interface InvoiceLineItem {
+type InvoiceLineItem = {
   description: string;
   quantity: string;
   unitPrice: string;
   amount: string;
-}
+};
 
-interface InvoiceData {
+type InvoiceData = {
   invoiceNumber: string;
   business: "GCMC" | "KAJ";
   invoiceDate: string;
@@ -48,7 +48,7 @@ interface InvoiceData {
   notes: string | null;
   terms: string | null;
   status: string;
-}
+};
 
 // Format currency as GYD
 function formatCurrency(amount: string): string {
@@ -224,7 +224,7 @@ export async function generateInvoicePdf(
   y -= 20;
 
   // Line items table header
-  const tableTop = y;
+  const _tableTop = y;
 
   // Draw header background
   page.drawRectangle({
