@@ -51,6 +51,9 @@ export const staff = pgTable(
     phone: text("phone"),
     jobTitle: text("job_title"),
     isActive: boolean("is_active").default(true).notNull(),
+    // Financial access permission - controls ability to view invoices, payments, etc.
+    // Default is based on role: OWNER/MANAGER = true, others = false
+    canViewFinancials: boolean("can_view_financials"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

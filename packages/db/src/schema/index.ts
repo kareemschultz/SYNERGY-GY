@@ -3,6 +3,8 @@
 // Activity logging / audit trail
 // biome-ignore lint/performance/noBarrelFile: Auto-fix
 export * from "./activity";
+// Appointment scheduling
+export * from "./appointments";
 export * from "./auth";
 
 // Client management

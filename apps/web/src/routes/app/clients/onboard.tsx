@@ -1,0 +1,252 @@
+import { useMutation } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowLeft, UserPlus } from "lucide-react";
+import { toast } from "sonner";
+import { PageHeader } from "@/components/layout/page-header";
+import { Button } from "@/components/ui/button";
+import {
+  useWizard,
+  WizardContainer,
+  WizardSuccess,
+} from "@/components/wizards";
+import {
+  type ClientOnboardingData,
+  getDisplayName,
+  initialOnboardingData,
+  onboardingSteps,
+  StepBasicInfo,
+  StepClientType,
+  StepContact,
+  StepIdentification,
+  StepReview,
+  StepServices,
+} from "@/components/wizards/client-onboarding";
+import { client, queryClient } from "@/utils/orpc";
+
+export const Route = createFileRoute("/app/clients/onboard")({
+  component: ClientOnboardingWizard,
+});
+
+function ClientOnboardingWizard() {
+  const navigate = useNavigate();
+
+  const createMutation = useMutation({
+    mutationFn: async (data: ClientOnboardingData) => {
+      // Map wizard data to API format
+      const displayName = getDisplayName(data);
+      const isIndividual =
+        data.clientType === "INDIVIDUAL" ||
+        data.clientType === "FOREIGN_NATIONAL";
+
+      // Ensure clientType is not empty (validation should catch this, but TypeScript needs the check)
+      if (!data.clientType) {
+        throw new Error("Client type is required");
+      }
+
+      return client.clients.create({
+        type: data.clientType,
+        displayName: displayName || data.businessName || "Unknown Client",
+        firstName: isIndividual ? data.firstName : undefined,
+        lastName: isIndividual ? data.lastName : undefined,
+        dateOfBirth: data.dateOfBirth || undefined,
+        nationality: data.nationality || undefined,
+        businessName: isIndividual ? undefined : data.businessName,
+        registrationNumber: isIndividual ? undefined : data.registrationNumber,
+        incorporationDate: data.incorporationDate || undefined,
+        email: data.email || undefined,
+        phone: data.phone || undefined,
+        alternatePhone: data.alternatePhone || undefined,
+        address: data.address || undefined,
+        city: data.city || undefined,
+        country: data.country || undefined,
+        tinNumber: data.tinNumber || undefined,
+        nationalId: data.nationalId || undefined,
+        passportNumber: data.passportNumber || undefined,
+        businesses: data.businesses,
+        notes: data.notes || undefined,
+        status: "ACTIVE",
+      });
+    },
+    onSuccess: (newClient) => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success("Client created successfully!");
+      // Navigate after a short delay to show success state
+      setTimeout(() => {
+        navigate({
+          to: "/app/clients/$client-id",
+          params: { "client-id": newClient.id },
+        });
+      }, 1500);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to create client");
+    },
+  });
+
+  const wizard = useWizard({
+    steps: onboardingSteps,
+    initialData: initialOnboardingData,
+    storageKey: "client-onboarding",
+    onComplete: async (data) => {
+      await createMutation.mutateAsync(data);
+    },
+  });
+
+  // Render success state
+  if (wizard.isComplete) {
+    return (
+      <div className="flex flex-col">
+        <PageHeader
+          breadcrumbs={[
+            { label: "Dashboard", href: "/app" },
+            { label: "Clients", href: "/app/clients" },
+            { label: "New Client" },
+          ]}
+          title="Client Created"
+        />
+        <div className="p-6">
+          <div className="mx-auto max-w-2xl">
+            <WizardSuccess
+              description="The client has been added to your database. You can now create matters, upload documents, and manage their services."
+              title="Client Created Successfully!"
+            >
+              <div className="flex justify-center gap-3">
+                <Button asChild variant="outline">
+                  <Link to="/app/clients">View All Clients</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/app/clients/onboard">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Add Another Client
+                  </Link>
+                </Button>
+              </div>
+            </WizardSuccess>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Map steps for progress display
+  const progressSteps = onboardingSteps.map((step, index) => ({
+    id: step.id,
+    title: step.title,
+    description: step.description,
+    isOptional: step.isOptional,
+    isComplete: wizard.visitedSteps.has(index) && index < wizard.currentStep,
+  }));
+
+  // Render current step content
+  const renderStepContent = () => {
+    switch (wizard.currentStep) {
+      case 0:
+        return (
+          <StepClientType
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      case 1:
+        return (
+          <StepBasicInfo
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      case 2:
+        return (
+          <StepContact
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      case 3:
+        return (
+          <StepIdentification
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      case 4:
+        return (
+          <StepServices
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      case 5:
+        return (
+          <StepReview
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex flex-col">
+      <PageHeader
+        actions={
+          <Button asChild variant="outline">
+            <Link to="/app/clients">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Cancel
+            </Link>
+          </Button>
+        }
+        breadcrumbs={[
+          { label: "Dashboard", href: "/app" },
+          { label: "Clients", href: "/app/clients" },
+          { label: "New Client (Wizard)" },
+        ]}
+        description="Step-by-step guided client onboarding"
+        title="New Client"
+      />
+
+      <div className="p-6">
+        <div className="mx-auto max-w-4xl">
+          <WizardContainer
+            canGoNext={wizard.canGoNext}
+            canGoPrev={wizard.canGoPrev}
+            canSkip={wizard.canSkip}
+            currentStep={wizard.currentStep}
+            isFirstStep={wizard.isFirstStep}
+            isLastStep={wizard.isLastStep}
+            isSubmitting={wizard.isSubmitting || createMutation.isPending}
+            onNext={wizard.goNext}
+            onPrev={wizard.goPrev}
+            onSkip={wizard.skipStep}
+            onStepClick={wizard.goToStep}
+            onSubmit={wizard.submit}
+            progress={wizard.progress}
+            progressVariant="both"
+            steps={progressSteps}
+            submitLabel="Create Client"
+            totalSteps={wizard.totalSteps}
+            visitedSteps={wizard.visitedSteps}
+          >
+            {renderStepContent()}
+          </WizardContainer>
+
+          {/* Show submission error */}
+          {wizard.errors.submit && (
+            <div className="mt-4 rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive">
+              <p className="font-medium">Error creating client</p>
+              <p className="text-sm">{wizard.errors.submit}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

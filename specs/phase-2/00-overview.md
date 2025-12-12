@@ -1,6 +1,6 @@
 # Phase 2: Advanced Features
 
-**Status:** IN PROGRESS
+**Status:** API COMPLETE (Frontend UI Pending)
 **Prerequisites:** Phase 1 Complete
 **Last Updated:** December 11, 2024
 
@@ -36,12 +36,36 @@ The following items were identified during Phase 1 testing and should be address
 
 | # | Module | Description | Priority | Status |
 |---|--------|-------------|----------|--------|
-| 1 | [Client Portal](./01-client-portal.md) | Self-service client access | High | ✅ **COMPLETED** |
-| 2 | [Invoicing](./02-invoicing.md) | Billing and payments | High | ✅ **COMPLETED** |
+| 1 | [Client Portal](./01-client-portal.md) | Self-service client access | High | ✅ **API COMPLETE** (UI pending) |
+| 2 | [Invoicing](./02-invoicing.md) | Billing and payments | High | ✅ **API COMPLETE** (UI pending) |
 | 3 | [Service Catalog](./service-catalog.md) | Service definitions and pricing | High | ✅ **COMPLETED** |
 | 4 | [Tax Calculators](./03-tax-calculators.md) | Guyana tax calculation tools | Medium | ✅ **COMPLETED** |
 | 5 | [Training Management](./04-training-management.md) | GCMC course management | Medium | ✅ **COMPLETED** |
-| 6 | [Appointments](./05-appointments.md) | Scheduling system | Low | Planned |
+| 6 | [Appointments](./05-appointments.md) | Scheduling system | **High** | ✅ **API COMPLETE** (UI pending) |
+| 7 | [Financial Access Control](./06-financial-access-control.md) | Role-based financial permissions | High | ✅ **API COMPLETE** |
+| 8 | [Wizard System](./08-wizard-system.md) | Smart onboarding & filing wizards | High | ✅ **CLIENT ONBOARDING COMPLETE** |
+
+## December 2024 Enhancements
+
+### Backend/API Implementation - ✅ COMPLETED (Dec 11, 2024)
+1. **Appointment System** - Full booking with client self-service and staff approval
+   - Database schema: appointmentType, staffAvailability, appointment, appointmentReminder
+   - API router: Full CRUD, confirm, cancel, reschedule, types.*, availability.*
+2. **Enhanced Client Portal** - Profile view, financials, invoices, appointment booking
+   - Portal API: profile, financials.summary, financials.invoices, appointments.list, appointments.request
+3. **Enhanced Customer Profile** - Rich dashboard with financial overview for staff
+   - Client API: getDashboard endpoint with matters, documents, financials, appointments
+4. **Payment Enhancements** - Discounts, aging reports, client balance summaries
+   - Invoice API: applyDiscount, getClientBalance, getAgingReport
+   - Database: discountType, discountValue, discountAmount, discountReason fields
+5. **Financial Access Control** - Hide financial data from certain staff roles
+   - Staff table: canViewFinancials column
+   - API middleware: financialProcedure, canViewFinancials() helper
+
+### Frontend Implementation - PENDING
+- Appointments staff pages (list, detail, create)
+- Enhanced client detail page (dashboard, financials, appointments tabs)
+- Portal enhancements (profile, financials, appointments)
 
 ## Requirements
 

@@ -38,6 +38,8 @@ export const entityTypeEnum = pgEnum("entity_type", [
   "COMMUNICATION",
   "NOTE",
   "SESSION",
+  "APPOINTMENT",
+  "INVOICE",
 ]);
 
 // Activity log for audit trail

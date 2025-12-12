@@ -8,6 +8,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Client Onboarding Wizard** - Complete step-by-step wizard for adding new clients (December 2024)
+  - Multi-step wizard system with `useWizard` hook for state management
+  - 6 wizard steps: Client Type, Basic Info, Contact, Identification, Services, Review
+  - Client type selection: Individual, Small Business, Corporation, NGO, Co-op, Credit Union, Foreign National, Investor
+  - Business assignment (GCMC, KAJ, or both) with service selection
+  - Form validation with step-by-step error handling
+  - LocalStorage draft persistence for incomplete forms
+  - Review step with summary and required documents checklist
+  - Direct integration with clients.create API
+  - Reusable wizard components in kebab-case: wizard-container, wizard-progress, wizard-navigation, wizard-step
+  - Accessible SVG icons and keyboard navigation
+  - Mobile-responsive with progress bar and step indicators
+  - Route: `/app/clients/onboard`
+- **Claude Code Skills Integration** - 9 project-specific skills for enhanced AI assistance (December 2024)
+  - `drizzle-schema` - Database schema patterns for Drizzle ORM PostgreSQL
+  - `orpc-router` - API router patterns with oRPC procedures and Zod validation
+  - `react-component` - Frontend component patterns with TanStack Query and Shadcn/UI
+  - `tanstack-route` - TanStack Router file-based routing patterns
+  - `change-tracking` - Git workflow, CHANGELOG format, and documentation requirements
+  - `code-quality` - Ultracite/Biome code standards and TypeScript rules
+  - `testing-e2e` - Playwright E2E testing patterns and page objects
+  - `business-context` - GCMC/KAJ domain knowledge and Guyana-specific requirements
+  - `ui-ux-design` - Comprehensive UI/UX design system with accessibility, animations, and helpers
+  - Skills stored in `.claude/skills/` directory, shared via git
+- **Appointment Management System** - Complete scheduling infrastructure (December 2024)
+  - Database schema: `appointmentType`, `staffAvailability`, `appointment`, `appointmentReminder` tables
+  - Status workflow: REQUESTED → CONFIRMED → COMPLETED (or CANCELLED/NO_SHOW)
+  - Location types: IN_PERSON, PHONE, VIDEO
+  - Appointment types with customizable duration, color, and approval requirements
+  - Staff availability scheduling with weekly patterns and date overrides
+  - API router with full CRUD, confirm, cancel, reschedule, and availability endpoints
+  - Sub-routers: `types.*`, `availability.*` for admin management
+- **Enhanced Client Portal** - Profile, financials, and appointment management
+  - Profile endpoint with TIN, certificates, and services tracking
+  - Financials sub-router: `summary`, `invoices`, `getInvoice`, `paymentHistory`
+  - Outstanding balance and overdue amounts calculation
+  - Appointments sub-router: `list`, `getUpcoming`, `getAvailableTypes`, `request`, `cancel`
+  - Client self-service appointment requests through portal
+- **Enhanced Client Dashboard** - Rich staff-facing client overview
+  - `getDashboard` endpoint with matters, documents, financials, appointments
+  - Financial summary with aging (0-30, 31-60, 61-90, 90+ days overdue)
+  - Recent communications and upcoming appointments
+  - Role-based financial data visibility
+- **Payment Tracking Enhancements** - Discounts and aging reports
+  - Invoice discount fields: `discountType`, `discountValue`, `discountAmount`, `discountReason`
+  - Discount types: NONE, PERCENTAGE, FIXED_AMOUNT
+  - `getClientBalance` endpoint for total outstanding by client
+  - `getAgingReport` endpoint with bucket breakdown (current, 30, 60, 90+ days)
+  - `applyDiscount` endpoint for invoice discount application
+- **Role-Based Financial Access Control** - Permission system for financial data
+  - `canViewFinancials` column on staff table
+  - `canViewFinancials()` helper function with role-based defaults
+  - `financialProcedure` middleware for financial endpoint protection
+  - OWNER and MANAGERs default to financial access, others require explicit permission
+- **Activity Logger Extensions** - Added APPOINTMENT and INVOICE entity types
+  - Extended `entityTypeEnum` in database schema
+  - Updated activity logger utility with new entity mappings
+
 - **Initial Owner Setup** - Environment-based first user creation system
   - Auto-creates OWNER account on first server startup from env vars
   - `INITIAL_OWNER_EMAIL`, `INITIAL_OWNER_PASSWORD`, `INITIAL_OWNER_NAME` configuration

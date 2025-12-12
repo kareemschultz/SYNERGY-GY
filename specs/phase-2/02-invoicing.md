@@ -1,13 +1,45 @@
 # Invoicing & Payments
 
-**Status:** ✅ IMPLEMENTED
+**Status:** ✅ API COMPLETE (Enhancements)
 **Phase:** 2
 **Priority:** High
 **Implementation Date:** December 11, 2024
+**December Enhancements Completed:** December 11, 2024
+
+## Implementation Status (December 2024)
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Discount Schema | ✅ Complete | discountType, discountValue, discountAmount, discountReason |
+| Apply Discount API | ✅ Complete | `invoices.applyDiscount` endpoint |
+| Client Balance API | ✅ Complete | `invoices.getClientBalance` endpoint |
+| Aging Report API | ✅ Complete | `invoices.getAgingReport` with buckets |
+| Portal Invoices | ✅ Complete | `portal.financials.invoices`, `getInvoice` |
+| Discount UI | ⏳ Pending | UI for applying discounts |
+| Aging Report UI | ⏳ Pending | Visual aging breakdown |
 
 ## Overview
 
 Generate invoices from matters, track payments, and manage accounts receivable. Support for Guyana Dollar (GYD) with proper formatting.
+
+## December 2024 Enhancements - ✅ API COMPLETE
+
+### New Features Implemented
+1. **Simple Discount System** - Add discount (amount or percentage) to invoices ✅
+2. **Client Balance Summary** - Total outstanding per client ✅
+3. **Aging Reports** - 0-30, 31-60, 61-90, 90+ days overdue breakdown ✅
+4. **Payment History at Client Level** - All payments across invoices for a client ✅
+5. **Portal Invoice Viewing** - Clients can view their invoices in portal ✅
+
+### Discount Fields (Added to Invoice Table)
+| Column | Type | Description |
+|--------|------|-------------|
+| discountType | enum | NONE, PERCENTAGE, FIXED_AMOUNT |
+| discountValue | decimal | The percentage or fixed amount |
+| discountAmount | decimal | Calculated discount in GYD |
+| discountReason | text | Optional note for discount |
+
+**Total calculation:** `totalAmount = subtotal + taxAmount - discountAmount`
 
 ## Requirements
 

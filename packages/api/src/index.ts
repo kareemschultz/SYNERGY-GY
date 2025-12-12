@@ -164,5 +164,61 @@ export function getAccessibleBusinesses(
   return [];
 }
 
+// Roles that can view financial data by default
+const FINANCIAL_ROLES: StaffRole[] = ["OWNER", "GCMC_MANAGER", "KAJ_MANAGER"];
+
+/**
+ * Check if staff member can view financial data
+ * Financial access is determined by:
+ * 1. Explicit canViewFinancials permission on staff record (if set)
+ * 2. Default based on role: OWNER and MANAGERs can view, others cannot
+ */
+export function canViewFinancials(staff: Staff | null): boolean {
+  if (!staff?.isActive) {
+    return false;
+  }
+
+  // If explicit permission is set, use it
+  if (staff.canViewFinancials !== null) {
+    return staff.canViewFinancials;
+  }
+
+  // Otherwise, default based on role
+  const role = staff.role as StaffRole;
+  return FINANCIAL_ROLES.includes(role);
+}
+
+// Middleware: Require financial access
+// biome-ignore lint/suspicious/useAwait: Auto-fix
+const requireFinancialAccess = o.middleware(async ({ context, next }) => {
+  if (!context.session?.user) {
+    throw new ORPCError("UNAUTHORIZED");
+  }
+  if (!context.staff) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "Staff profile required",
+    });
+  }
+  if (!context.staff.isActive) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "Staff account is deactivated",
+    });
+  }
+  if (!canViewFinancials(context.staff)) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "You don't have permission to view financial data",
+    });
+  }
+  return next({
+    context: {
+      session: context.session,
+      staff: context.staff,
+    },
+  });
+});
+
+// Financial procedure - requires staff with financial access
+export const financialProcedure = publicProcedure.use(requireFinancialAccess);
+
 // Re-export context types
 export type { Context, Staff } from "./context";

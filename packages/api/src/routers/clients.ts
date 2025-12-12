@@ -1,15 +1,20 @@
 import {
+  appointment,
   client,
   clientCommunication,
   clientContact,
   clientLink,
   db,
+  document,
+  invoice,
+  matter,
 } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
-import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   canAccessBusiness,
+  canViewFinancials,
   getAccessibleBusinesses,
   staffProcedure,
 } from "../index";
@@ -526,4 +531,263 @@ export const clientsRouter = {
         return newComm;
       }),
   },
+
+  /**
+   * Get comprehensive client dashboard data
+   * Rich overview with matters, documents, financials, and appointments
+   */
+  getDashboard: staffProcedure
+    .input(z.object({ clientId: z.string() }))
+    .handler(async ({ input, context }) => {
+      // Get client basic info
+      const clientInfo = await db.query.client.findFirst({
+        where: eq(client.id, input.clientId),
+        with: {
+          primaryStaff: {
+            with: {
+              user: {
+                columns: { id: true, name: true, email: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (!clientInfo) {
+        throw new ORPCError("NOT_FOUND", { message: "Client not found" });
+      }
+
+      // Check access
+      const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+      const hasAccess = clientInfo.businesses.some((b) =>
+        accessibleBusinesses.includes(b as "GCMC" | "KAJ")
+      );
+
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
+
+      // Get matter summary
+      const matterSummary = await db
+        .select({
+          total: count(),
+          active: sql<number>`COUNT(CASE WHEN ${matter.status} IN ('NEW', 'IN_PROGRESS', 'PENDING_INFO', 'UNDER_REVIEW') THEN 1 END)`,
+          completed: sql<number>`COUNT(CASE WHEN ${matter.status} = 'COMPLETED' THEN 1 END)`,
+        })
+        .from(matter)
+        .where(eq(matter.clientId, input.clientId));
+
+      // Get recent matters (last 5)
+      const recentMatters = await db.query.matter.findMany({
+        where: eq(matter.clientId, input.clientId),
+        orderBy: [desc(matter.updatedAt)],
+        limit: 5,
+        columns: {
+          id: true,
+          referenceNumber: true,
+          title: true,
+          status: true,
+          business: true,
+          updatedAt: true,
+        },
+      });
+
+      // Get document count
+      const documentCount = await db
+        .select({ count: count() })
+        .from(document)
+        .where(eq(document.clientId, input.clientId));
+
+      // Get recent documents (last 5)
+      const recentDocuments = await db.query.document.findMany({
+        where: eq(document.clientId, input.clientId),
+        orderBy: [desc(document.createdAt)],
+        limit: 5,
+        columns: {
+          id: true,
+          originalName: true,
+          category: true,
+          createdAt: true,
+        },
+      });
+
+      // Get upcoming appointments
+      const upcomingAppointments = await db.query.appointment.findMany({
+        where: and(
+          eq(appointment.clientId, input.clientId),
+          gte(appointment.scheduledAt, new Date()),
+          or(
+            eq(appointment.status, "REQUESTED"),
+            eq(appointment.status, "CONFIRMED")
+          )
+        ),
+        orderBy: [asc(appointment.scheduledAt)],
+        limit: 5,
+        with: {
+          appointmentType: {
+            columns: { id: true, name: true, color: true },
+          },
+          assignedStaff: {
+            with: {
+              user: {
+                columns: { id: true, name: true },
+              },
+            },
+          },
+        },
+      });
+
+      // Get recent communications (last 5)
+      const recentCommunications = await db.query.clientCommunication.findMany({
+        where: eq(clientCommunication.clientId, input.clientId),
+        orderBy: [desc(clientCommunication.communicatedAt)],
+        limit: 5,
+        with: {
+          staff: {
+            with: {
+              user: {
+                columns: { id: true, name: true },
+              },
+            },
+          },
+        },
+      });
+
+      // Financial summary - only include if staff has financial access
+      let financialSummary: {
+        totalInvoiced: string;
+        totalPaid: string;
+        totalOutstanding: string;
+        totalOverdue: string;
+        invoiceCount: number;
+        overdueCount: number;
+        recentInvoices: Array<{
+          id: string;
+          invoiceNumber: string;
+          invoiceDate: string;
+          dueDate: string;
+          status: string;
+          totalAmount: string;
+          amountDue: string;
+        }>;
+      } | null = null;
+      if (canViewFinancials(context.staff)) {
+        const invoiceSummary = await db
+          .select({
+            totalInvoiced: sql<string>`COALESCE(SUM(CAST(${invoice.totalAmount} AS DECIMAL)), 0)`,
+            totalPaid: sql<string>`COALESCE(SUM(CAST(${invoice.amountPaid} AS DECIMAL)), 0)`,
+            totalOutstanding: sql<string>`COALESCE(SUM(CAST(${invoice.amountDue} AS DECIMAL)), 0)`,
+            invoiceCount: count(),
+          })
+          .from(invoice)
+          .where(
+            and(
+              eq(invoice.clientId, input.clientId),
+              or(
+                eq(invoice.status, "SENT"),
+                eq(invoice.status, "OVERDUE"),
+                eq(invoice.status, "PAID")
+              )
+            )
+          );
+
+        const overdueSummary = await db
+          .select({
+            totalOverdue: sql<string>`COALESCE(SUM(CAST(${invoice.amountDue} AS DECIMAL)), 0)`,
+            overdueCount: count(),
+          })
+          .from(invoice)
+          .where(
+            and(
+              eq(invoice.clientId, input.clientId),
+              eq(invoice.status, "OVERDUE")
+            )
+          );
+
+        // Get recent invoices
+        const recentInvoices = await db.query.invoice.findMany({
+          where: and(
+            eq(invoice.clientId, input.clientId),
+            or(
+              eq(invoice.status, "SENT"),
+              eq(invoice.status, "OVERDUE"),
+              eq(invoice.status, "PAID")
+            )
+          ),
+          orderBy: [desc(invoice.invoiceDate)],
+          limit: 5,
+          columns: {
+            id: true,
+            invoiceNumber: true,
+            invoiceDate: true,
+            dueDate: true,
+            status: true,
+            totalAmount: true,
+            amountDue: true,
+          },
+        });
+
+        financialSummary = {
+          totalInvoiced: invoiceSummary[0]?.totalInvoiced || "0",
+          totalPaid: invoiceSummary[0]?.totalPaid || "0",
+          totalOutstanding: invoiceSummary[0]?.totalOutstanding || "0",
+          totalOverdue: overdueSummary[0]?.totalOverdue || "0",
+          invoiceCount: invoiceSummary[0]?.invoiceCount || 0,
+          overdueCount: overdueSummary[0]?.overdueCount || 0,
+          recentInvoices,
+        };
+      }
+
+      return {
+        client: {
+          id: clientInfo.id,
+          displayName: clientInfo.displayName,
+          type: clientInfo.type,
+          email: clientInfo.email,
+          phone: clientInfo.phone,
+          businesses: clientInfo.businesses,
+          status: clientInfo.status,
+          tinNumber: clientInfo.tinNumber,
+          primaryStaff: clientInfo.primaryStaff,
+          createdAt: clientInfo.createdAt,
+        },
+        matters: {
+          total: matterSummary[0]?.total ?? 0,
+          active: matterSummary[0]?.active ?? 0,
+          completed: matterSummary[0]?.completed ?? 0,
+          recent: recentMatters,
+        },
+        documents: {
+          total: documentCount[0]?.count ?? 0,
+          recent: recentDocuments,
+        },
+        appointments: {
+          upcoming: upcomingAppointments.map((apt) => ({
+            id: apt.id,
+            title: apt.title,
+            scheduledAt: apt.scheduledAt,
+            endAt: apt.endAt,
+            status: apt.status,
+            locationType: apt.locationType,
+            appointmentType: apt.appointmentType,
+            assignedStaff: apt.assignedStaff,
+          })),
+        },
+        communications: {
+          recent: recentCommunications.map((comm) => ({
+            id: comm.id,
+            type: comm.type,
+            direction: comm.direction,
+            subject: comm.subject,
+            summary: comm.summary,
+            communicatedAt: comm.communicatedAt,
+            staff: comm.staff,
+          })),
+        },
+        financials: financialSummary,
+        canViewFinancials: canViewFinancials(context.staff),
+      };
+    }),
 };

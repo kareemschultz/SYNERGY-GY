@@ -24,7 +24,9 @@ type EntityType =
   | "TEMPLATE"
   | "COMMUNICATION"
   | "NOTE"
-  | "SESSION";
+  | "SESSION"
+  | "APPOINTMENT"
+  | "INVOICE";
 
 type LogActivityParams = {
   userId?: string | null;
@@ -95,6 +97,8 @@ export function createActivityDescription(
     COMMUNICATION: "communication",
     NOTE: "note",
     SESSION: "session",
+    APPOINTMENT: "appointment",
+    INVOICE: "invoice",
   };
 
   const base = `${actionMap[action]} ${entityMap[entityType]}`;

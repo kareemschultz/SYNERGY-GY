@@ -2,6 +2,7 @@ import type { RouterClient } from "@orpc/server";
 import { protectedProcedure, publicProcedure } from "../index";
 import { activityRouter } from "./activity";
 import { adminRouter } from "./admin";
+import { appointmentsRouter } from "./appointments";
 import { clientsRouter } from "./clients";
 import { dashboardRouter } from "./dashboard";
 import { deadlinesRouter } from "./deadlines";
@@ -21,6 +22,7 @@ export const appRouter = {
     message: "This is private",
     user: context.session?.user,
   })),
+  appointments: appointmentsRouter,
   clients: clientsRouter,
   matters: mattersRouter,
   documents: documentsRouter,

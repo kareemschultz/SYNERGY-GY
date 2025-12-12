@@ -31,6 +31,15 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
 ]);
 
 /**
+ * Discount type enum for invoices
+ */
+export const discountTypeEnum = pgEnum("discount_type", [
+  "NONE",
+  "PERCENTAGE",
+  "FIXED_AMOUNT",
+]);
+
+/**
  * Payment method enum
  */
 export const paymentMethodEnum = pgEnum("payment_method", [
@@ -84,6 +93,16 @@ export const invoice = pgTable(
       .default("0")
       .notNull(),
     amountDue: decimal("amount_due", { precision: 10, scale: 2 }).notNull(),
+
+    // Discount (December 2024 enhancement)
+    discountType: discountTypeEnum("discount_type").default("NONE").notNull(),
+    discountValue: decimal("discount_value", { precision: 10, scale: 2 })
+      .default("0")
+      .notNull(), // Percentage or fixed amount
+    discountAmount: decimal("discount_amount", { precision: 10, scale: 2 })
+      .default("0")
+      .notNull(), // Calculated discount in GYD
+    discountReason: text("discount_reason"), // Optional note for discount
 
     // Additional information
     notes: text("notes"), // Internal notes

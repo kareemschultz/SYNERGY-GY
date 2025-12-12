@@ -1,7 +1,11 @@
 import {
+  appointment,
+  appointmentType,
   client,
   db,
   document,
+  invoice,
+  invoicePayment,
   matter,
   portalInvite,
   portalPasswordReset,
@@ -9,7 +13,18 @@ import {
   portalUser,
 } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
-import { and, count, desc, eq, gt, isNull } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  gte,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure, staffProcedure } from "../index";
 import { logActivity } from "../utils/activity-logger";
@@ -800,4 +815,578 @@ export const portalRouter = {
       client: clientInfo,
     };
   }),
+
+  // Enhanced profile - personal info view with TIN, certificates, etc.
+  profile: portalProcedure.handler(async ({ context }) => {
+    const [clientInfo] = await db
+      .select({
+        id: client.id,
+        displayName: client.displayName,
+        type: client.type,
+        firstName: client.firstName,
+        lastName: client.lastName,
+        dateOfBirth: client.dateOfBirth,
+        nationality: client.nationality,
+        businessName: client.businessName,
+        registrationNumber: client.registrationNumber,
+        incorporationDate: client.incorporationDate,
+        email: client.email,
+        phone: client.phone,
+        alternatePhone: client.alternatePhone,
+        address: client.address,
+        city: client.city,
+        country: client.country,
+        tinNumber: client.tinNumber,
+        nationalId: client.nationalId,
+        passportNumber: client.passportNumber,
+        createdAt: client.createdAt,
+      })
+      .from(client)
+      .where(eq(client.id, context.portalUser.clientId))
+      .limit(1);
+
+    if (!clientInfo) {
+      throw new ORPCError("NOT_FOUND", { message: "Client not found" });
+    }
+
+    // Get matter summary
+    const matterSummary = await db
+      .select({
+        total: count(),
+        active: sql<number>`COUNT(CASE WHEN ${matter.status} IN ('NEW', 'IN_PROGRESS', 'PENDING_INFO', 'UNDER_REVIEW') THEN 1 END)`,
+        completed: sql<number>`COUNT(CASE WHEN ${matter.status} = 'COMPLETED' THEN 1 END)`,
+      })
+      .from(matter)
+      .where(eq(matter.clientId, context.portalUser.clientId));
+
+    // Get document count
+    const documentCount = await db
+      .select({ count: count() })
+      .from(document)
+      .where(eq(document.clientId, context.portalUser.clientId));
+
+    return {
+      ...clientInfo,
+      summary: {
+        totalMatters: matterSummary[0]?.total ?? 0,
+        activeMatters: matterSummary[0]?.active ?? 0,
+        completedMatters: matterSummary[0]?.completed ?? 0,
+        totalDocuments: documentCount[0]?.count ?? 0,
+      },
+    };
+  }),
+
+  // Financial summary for client
+  financials: {
+    summary: portalProcedure.handler(async ({ context }) => {
+      // Get invoice totals
+      const invoiceSummary = await db
+        .select({
+          totalInvoiced: sql<string>`COALESCE(SUM(CAST(${invoice.totalAmount} AS DECIMAL)), 0)`,
+          totalPaid: sql<string>`COALESCE(SUM(CAST(${invoice.amountPaid} AS DECIMAL)), 0)`,
+          totalOutstanding: sql<string>`COALESCE(SUM(CAST(${invoice.amountDue} AS DECIMAL)), 0)`,
+        })
+        .from(invoice)
+        .where(
+          and(
+            eq(invoice.clientId, context.portalUser.clientId),
+            or(
+              eq(invoice.status, "SENT"),
+              eq(invoice.status, "OVERDUE"),
+              eq(invoice.status, "PAID")
+            )
+          )
+        );
+
+      // Get overdue amount
+      const overdueSummary = await db
+        .select({
+          totalOverdue: sql<string>`COALESCE(SUM(CAST(${invoice.amountDue} AS DECIMAL)), 0)`,
+          overdueCount: count(),
+        })
+        .from(invoice)
+        .where(
+          and(
+            eq(invoice.clientId, context.portalUser.clientId),
+            eq(invoice.status, "OVERDUE")
+          )
+        );
+
+      return {
+        totalInvoiced: invoiceSummary[0]?.totalInvoiced || "0",
+        totalPaid: invoiceSummary[0]?.totalPaid || "0",
+        totalOutstanding: invoiceSummary[0]?.totalOutstanding || "0",
+        totalOverdue: overdueSummary[0]?.totalOverdue || "0",
+        overdueCount: overdueSummary[0]?.overdueCount || 0,
+      };
+    }),
+
+    invoices: portalProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(50).default(20),
+          status: z.enum(["SENT", "PAID", "OVERDUE"]).optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const offset = (input.page - 1) * input.limit;
+
+        const conditions = [
+          eq(invoice.clientId, context.portalUser.clientId),
+          or(
+            eq(invoice.status, "SENT"),
+            eq(invoice.status, "PAID"),
+            eq(invoice.status, "OVERDUE")
+          ),
+        ];
+
+        if (input.status) {
+          conditions.push(eq(invoice.status, input.status));
+        }
+
+        const whereClause = and(...conditions);
+
+        const invoices = await db
+          .select({
+            id: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            business: invoice.business,
+            invoiceDate: invoice.invoiceDate,
+            dueDate: invoice.dueDate,
+            status: invoice.status,
+            totalAmount: invoice.totalAmount,
+            amountPaid: invoice.amountPaid,
+            amountDue: invoice.amountDue,
+            paidDate: invoice.paidDate,
+          })
+          .from(invoice)
+          .where(whereClause)
+          .orderBy(desc(invoice.invoiceDate))
+          .limit(input.limit)
+          .offset(offset);
+
+        const countResult = await db
+          .select({ count: count() })
+          .from(invoice)
+          .where(whereClause);
+
+        return {
+          invoices,
+          pagination: {
+            page: input.page,
+            limit: input.limit,
+            total: countResult[0]?.count ?? 0,
+            totalPages: Math.ceil((countResult[0]?.count ?? 0) / input.limit),
+          },
+        };
+      }),
+
+    getInvoice: portalProcedure
+      .input(z.object({ invoiceId: z.string().uuid() }))
+      .handler(async ({ input, context }) => {
+        const [inv] = await db
+          .select()
+          .from(invoice)
+          .where(
+            and(
+              eq(invoice.id, input.invoiceId),
+              eq(invoice.clientId, context.portalUser.clientId)
+            )
+          )
+          .limit(1);
+
+        if (!inv) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Invoice not found",
+          });
+        }
+
+        // Only show sent/paid/overdue invoices to portal
+        if (!["SENT", "PAID", "OVERDUE"].includes(inv.status)) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Invoice not found",
+          });
+        }
+
+        // Get line items
+        const lineItems = await db.query.invoiceLineItem.findMany({
+          where: eq(invoice.id, input.invoiceId),
+        });
+
+        // Get payments
+        const payments = await db
+          .select({
+            id: invoicePayment.id,
+            amount: invoicePayment.amount,
+            paymentDate: invoicePayment.paymentDate,
+            paymentMethod: invoicePayment.paymentMethod,
+          })
+          .from(invoicePayment)
+          .where(eq(invoicePayment.invoiceId, input.invoiceId))
+          .orderBy(desc(invoicePayment.paymentDate));
+
+        return {
+          ...inv,
+          lineItems,
+          payments,
+        };
+      }),
+
+    paymentHistory: portalProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(50).default(20),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const offset = (input.page - 1) * input.limit;
+
+        // Get client's invoices first
+        const clientInvoices = await db
+          .select({ id: invoice.id })
+          .from(invoice)
+          .where(eq(invoice.clientId, context.portalUser.clientId));
+
+        const invoiceIds = clientInvoices.map((i) => i.id);
+
+        if (invoiceIds.length === 0) {
+          return {
+            payments: [],
+            pagination: {
+              page: input.page,
+              limit: input.limit,
+              total: 0,
+              totalPages: 0,
+            },
+          };
+        }
+
+        const payments = await db
+          .select({
+            id: invoicePayment.id,
+            invoiceId: invoicePayment.invoiceId,
+            amount: invoicePayment.amount,
+            paymentDate: invoicePayment.paymentDate,
+            paymentMethod: invoicePayment.paymentMethod,
+            invoiceNumber: invoice.invoiceNumber,
+          })
+          .from(invoicePayment)
+          .innerJoin(invoice, eq(invoice.id, invoicePayment.invoiceId))
+          .where(
+            sql`${invoicePayment.invoiceId} = ANY(ARRAY[${sql.join(invoiceIds, sql`, `)}]::text[])`
+          )
+          .orderBy(desc(invoicePayment.paymentDate))
+          .limit(input.limit)
+          .offset(offset);
+
+        const countResult = await db
+          .select({ count: count() })
+          .from(invoicePayment)
+          .where(
+            sql`${invoicePayment.invoiceId} = ANY(ARRAY[${sql.join(invoiceIds, sql`, `)}]::text[])`
+          );
+
+        return {
+          payments,
+          pagination: {
+            page: input.page,
+            limit: input.limit,
+            total: countResult[0]?.count ?? 0,
+            totalPages: Math.ceil((countResult[0]?.count ?? 0) / input.limit),
+          },
+        };
+      }),
+  },
+
+  // Appointments for portal users
+  appointments: {
+    list: portalProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(50).default(20),
+          status: z
+            .enum(["REQUESTED", "CONFIRMED", "COMPLETED", "CANCELLED"])
+            .optional(),
+          upcoming: z.boolean().default(false),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const offset = (input.page - 1) * input.limit;
+
+        const conditions = [
+          eq(appointment.clientId, context.portalUser.clientId),
+        ];
+
+        if (input.status) {
+          conditions.push(eq(appointment.status, input.status));
+        }
+
+        if (input.upcoming) {
+          conditions.push(gte(appointment.scheduledAt, new Date()));
+          const statusCondition = or(
+            eq(appointment.status, "REQUESTED"),
+            eq(appointment.status, "CONFIRMED")
+          );
+          if (statusCondition) {
+            conditions.push(statusCondition);
+          }
+        }
+
+        const whereClause = and(...conditions);
+
+        const appointments = await db.query.appointment.findMany({
+          where: whereClause,
+          orderBy: input.upcoming
+            ? [asc(appointment.scheduledAt)]
+            : [desc(appointment.scheduledAt)],
+          limit: input.limit,
+          offset,
+          with: {
+            appointmentType: {
+              columns: { id: true, name: true, color: true },
+            },
+          },
+        });
+
+        const countResult = await db
+          .select({ count: count() })
+          .from(appointment)
+          .where(whereClause);
+
+        return {
+          appointments: appointments.map((apt) => ({
+            id: apt.id,
+            title: apt.title,
+            description: apt.description,
+            scheduledAt: apt.scheduledAt,
+            endAt: apt.endAt,
+            durationMinutes: apt.durationMinutes,
+            locationType: apt.locationType,
+            location: apt.location,
+            status: apt.status,
+            clientNotes: apt.clientNotes,
+            appointmentType: apt.appointmentType,
+          })),
+          pagination: {
+            page: input.page,
+            limit: input.limit,
+            total: countResult[0]?.count ?? 0,
+            totalPages: Math.ceil((countResult[0]?.count ?? 0) / input.limit),
+          },
+        };
+      }),
+
+    getUpcoming: portalProcedure.handler(async ({ context }) => {
+      const appointments = await db.query.appointment.findMany({
+        where: and(
+          eq(appointment.clientId, context.portalUser.clientId),
+          gte(appointment.scheduledAt, new Date()),
+          or(
+            eq(appointment.status, "REQUESTED"),
+            eq(appointment.status, "CONFIRMED")
+          )
+        ),
+        orderBy: [asc(appointment.scheduledAt)],
+        limit: 5,
+        with: {
+          appointmentType: {
+            columns: { id: true, name: true, color: true },
+          },
+        },
+      });
+
+      return appointments.map((apt) => ({
+        id: apt.id,
+        title: apt.title,
+        scheduledAt: apt.scheduledAt,
+        endAt: apt.endAt,
+        status: apt.status,
+        locationType: apt.locationType,
+        location: apt.location,
+        appointmentType: apt.appointmentType,
+      }));
+    }),
+
+    getAvailableTypes: portalProcedure.handler(async ({ context }) => {
+      // Get client's businesses
+      const [clientInfo] = await db
+        .select({ businesses: client.businesses })
+        .from(client)
+        .where(eq(client.id, context.portalUser.clientId))
+        .limit(1);
+
+      if (!clientInfo) {
+        return [];
+      }
+
+      // Get active appointment types for client's businesses
+      const types = await db.query.appointmentType.findMany({
+        where: and(
+          eq(appointmentType.isActive, true),
+          or(
+            sql`${appointmentType.business} IS NULL`,
+            sql`${appointmentType.business}::text = ANY(ARRAY[${sql.join(clientInfo.businesses, sql`, `)}]::text[])`
+          )
+        ),
+        orderBy: [asc(appointmentType.sortOrder), asc(appointmentType.name)],
+      });
+
+      return types.map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        defaultDurationMinutes: t.defaultDurationMinutes,
+        color: t.color,
+        requiresApproval: t.requiresApproval,
+      }));
+    }),
+
+    request: portalProcedure
+      .input(
+        z.object({
+          appointmentTypeId: z.string().min(1),
+          preferredDate: z.string(), // ISO datetime
+          preferredDuration: z.number().min(15).optional(),
+          description: z.string().optional(),
+          locationType: z
+            .enum(["IN_PERSON", "PHONE", "VIDEO"])
+            .default("IN_PERSON"),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        // Get client info
+        const [clientInfo] = await db
+          .select()
+          .from(client)
+          .where(eq(client.id, context.portalUser.clientId))
+          .limit(1);
+
+        if (!clientInfo) {
+          throw new ORPCError("NOT_FOUND", { message: "Client not found" });
+        }
+
+        // Get appointment type
+        const [aptType] = await db
+          .select()
+          .from(appointmentType)
+          .where(
+            and(
+              eq(appointmentType.id, input.appointmentTypeId),
+              eq(appointmentType.isActive, true)
+            )
+          )
+          .limit(1);
+
+        if (!aptType) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Appointment type not found",
+          });
+        }
+
+        // Determine business (use appointment type's business or client's first business)
+        const business =
+          aptType.business || (clientInfo.businesses[0] as "GCMC" | "KAJ");
+        const duration =
+          input.preferredDuration || aptType.defaultDurationMinutes;
+        const scheduledAt = new Date(input.preferredDate);
+        const endAt = new Date(scheduledAt.getTime() + duration * 60 * 1000);
+
+        // Create appointment request
+        const [newAppointment] = await db
+          .insert(appointment)
+          .values({
+            appointmentTypeId: input.appointmentTypeId,
+            clientId: context.portalUser.clientId,
+            business,
+            title: `${aptType.name} - ${clientInfo.displayName}`,
+            description: input.description || null,
+            scheduledAt,
+            endAt,
+            durationMinutes: duration,
+            locationType: input.locationType,
+            status: "REQUESTED",
+            requestedByPortalUserId: context.portalUser.id,
+          })
+          .returning();
+
+        if (!newAppointment) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to create appointment",
+          });
+        }
+
+        // Log activity
+        await logActivity({
+          userId: context.portalUser.id,
+          action: "CREATE",
+          entityType: "APPOINTMENT",
+          entityId: newAppointment.id,
+          description: `Requested appointment: ${aptType.name}`,
+        });
+
+        return {
+          success: true,
+          appointmentId: newAppointment.id,
+          message: aptType.requiresApproval
+            ? "Your appointment request has been submitted and is pending approval."
+            : "Your appointment has been scheduled.",
+        };
+      }),
+
+    cancel: portalProcedure
+      .input(
+        z.object({
+          appointmentId: z.string(),
+          reason: z.string().optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const [apt] = await db
+          .select()
+          .from(appointment)
+          .where(
+            and(
+              eq(appointment.id, input.appointmentId),
+              eq(appointment.clientId, context.portalUser.clientId)
+            )
+          )
+          .limit(1);
+
+        if (!apt) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Appointment not found",
+          });
+        }
+
+        // Only allow cancellation of requested or confirmed appointments
+        if (!["REQUESTED", "CONFIRMED"].includes(apt.status)) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "This appointment cannot be cancelled",
+          });
+        }
+
+        await db
+          .update(appointment)
+          .set({
+            status: "CANCELLED",
+            cancelledAt: new Date(),
+            cancellationReason: input.reason || "Cancelled by client",
+          })
+          .where(eq(appointment.id, input.appointmentId));
+
+        // Log activity
+        await logActivity({
+          userId: context.portalUser.id,
+          action: "UPDATE",
+          entityType: "APPOINTMENT",
+          entityId: input.appointmentId,
+          description: "Cancelled appointment",
+        });
+
+        return { success: true };
+      }),
+  },
 };

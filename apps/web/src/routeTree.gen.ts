@@ -37,6 +37,7 @@ import { Route as AppMattersMatterIdRouteImport } from './routes/app/matters/$ma
 import { Route as AppInvoicesNewRouteImport } from './routes/app/invoices/new'
 import { Route as AppInvoicesInvoiceIdRouteImport } from './routes/app/invoices/$invoice-id'
 import { Route as AppDocumentsUploadRouteImport } from './routes/app/documents/upload'
+import { Route as AppClientsOnboardRouteImport } from './routes/app/clients/onboard'
 import { Route as AppClientsNewRouteImport } from './routes/app/clients/new'
 import { Route as AppClientsClientIdRouteImport } from './routes/app/clients/$client-id'
 import { Route as AppCalendarNewRouteImport } from './routes/app/calendar/new'
@@ -193,6 +194,11 @@ const AppDocumentsUploadRoute = AppDocumentsUploadRouteImport.update({
   path: '/documents/upload',
   getParentRoute: () => AppRoute,
 } as any)
+const AppClientsOnboardRoute = AppClientsOnboardRouteImport.update({
+  id: '/clients/onboard',
+  path: '/clients/onboard',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppClientsNewRoute = AppClientsNewRouteImport.update({
   id: '/clients/new',
   path: '/clients/new',
@@ -291,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/app/calendar/new': typeof AppCalendarNewRoute
   '/app/clients/$client-id': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
+  '/app/clients/onboard': typeof AppClientsOnboardRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
   '/app/invoices/$invoice-id': typeof AppInvoicesInvoiceIdRoute
   '/app/invoices/new': typeof AppInvoicesNewRoute
@@ -335,6 +342,7 @@ export interface FileRoutesByTo {
   '/app/calendar/new': typeof AppCalendarNewRoute
   '/app/clients/$client-id': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
+  '/app/clients/onboard': typeof AppClientsOnboardRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
   '/app/invoices/$invoice-id': typeof AppInvoicesInvoiceIdRoute
   '/app/invoices/new': typeof AppInvoicesNewRoute
@@ -381,6 +389,7 @@ export interface FileRoutesById {
   '/app/calendar/new': typeof AppCalendarNewRoute
   '/app/clients/$client-id': typeof AppClientsClientIdRoute
   '/app/clients/new': typeof AppClientsNewRoute
+  '/app/clients/onboard': typeof AppClientsOnboardRoute
   '/app/documents/upload': typeof AppDocumentsUploadRoute
   '/app/invoices/$invoice-id': typeof AppInvoicesInvoiceIdRoute
   '/app/invoices/new': typeof AppInvoicesNewRoute
@@ -428,6 +437,7 @@ export interface FileRouteTypes {
     | '/app/calendar/new'
     | '/app/clients/$client-id'
     | '/app/clients/new'
+    | '/app/clients/onboard'
     | '/app/documents/upload'
     | '/app/invoices/$invoice-id'
     | '/app/invoices/new'
@@ -472,6 +482,7 @@ export interface FileRouteTypes {
     | '/app/calendar/new'
     | '/app/clients/$client-id'
     | '/app/clients/new'
+    | '/app/clients/onboard'
     | '/app/documents/upload'
     | '/app/invoices/$invoice-id'
     | '/app/invoices/new'
@@ -517,6 +528,7 @@ export interface FileRouteTypes {
     | '/app/calendar/new'
     | '/app/clients/$client-id'
     | '/app/clients/new'
+    | '/app/clients/onboard'
     | '/app/documents/upload'
     | '/app/invoices/$invoice-id'
     | '/app/invoices/new'
@@ -757,6 +769,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDocumentsUploadRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/clients/onboard': {
+      id: '/app/clients/onboard'
+      path: '/clients/onboard'
+      fullPath: '/app/clients/onboard'
+      preLoaderRoute: typeof AppClientsOnboardRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/clients/new': {
       id: '/app/clients/new'
       path: '/clients/new'
@@ -873,6 +892,7 @@ interface AppRouteChildren {
   AppCalendarNewRoute: typeof AppCalendarNewRoute
   AppClientsClientIdRoute: typeof AppClientsClientIdRoute
   AppClientsNewRoute: typeof AppClientsNewRoute
+  AppClientsOnboardRoute: typeof AppClientsOnboardRoute
   AppDocumentsUploadRoute: typeof AppDocumentsUploadRoute
   AppInvoicesInvoiceIdRoute: typeof AppInvoicesInvoiceIdRoute
   AppInvoicesNewRoute: typeof AppInvoicesNewRoute
@@ -909,6 +929,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCalendarNewRoute: AppCalendarNewRoute,
   AppClientsClientIdRoute: AppClientsClientIdRoute,
   AppClientsNewRoute: AppClientsNewRoute,
+  AppClientsOnboardRoute: AppClientsOnboardRoute,
   AppDocumentsUploadRoute: AppDocumentsUploadRoute,
   AppInvoicesInvoiceIdRoute: AppInvoicesInvoiceIdRoute,
   AppInvoicesNewRoute: AppInvoicesNewRoute,

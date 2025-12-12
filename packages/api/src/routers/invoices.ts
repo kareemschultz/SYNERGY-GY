@@ -72,6 +72,8 @@ const lineItemSchema = z.object({
   sortOrder: z.number().default(0),
 });
 
+const discountTypeValues = ["NONE", "PERCENTAGE", "FIXED_AMOUNT"] as const;
+
 const createInvoiceSchema = z.object({
   business: z.enum(businessValues),
   clientId: z.string().min(1, "Client is required"),
@@ -85,6 +87,10 @@ const createInvoiceSchema = z.object({
   terms: z.string().optional(),
   referenceNumber: z.string().optional(),
   taxAmount: z.string().default("0"),
+  // Discount fields
+  discountType: z.enum(discountTypeValues).default("NONE"),
+  discountValue: z.string().default("0"),
+  discountReason: z.string().optional(),
 });
 
 const updateInvoiceSchema = z.object({
@@ -136,24 +142,60 @@ async function generateInvoiceNumber(
 }
 
 /**
- * Calculate invoice totals from line items
+ * Calculate discount amount based on type and value
+ */
+function calculateDiscountAmount(
+  subtotal: string,
+  discountType: "NONE" | "PERCENTAGE" | "FIXED_AMOUNT",
+  discountValue: string
+): string {
+  if (discountType === "NONE" || Number.parseFloat(discountValue) === 0) {
+    return "0";
+  }
+
+  const subtotalNum = Number.parseFloat(subtotal);
+  const valueNum = Number.parseFloat(discountValue);
+
+  if (discountType === "PERCENTAGE") {
+    // Cap percentage at 100%
+    const percentage = Math.min(valueNum, 100);
+    return ((subtotalNum * percentage) / 100).toFixed(2);
+  }
+
+  // Fixed amount - cap at subtotal
+  return Math.min(valueNum, subtotalNum).toFixed(2);
+}
+
+/**
+ * Calculate invoice totals from line items with discount support
  */
 function calculateInvoiceTotals(
   lineItems: Array<{ amount: string }>,
-  taxAmount: string
+  taxAmount: string,
+  discountType: "NONE" | "PERCENTAGE" | "FIXED_AMOUNT" = "NONE",
+  discountValue = "0"
 ): {
   subtotal: string;
+  discountAmount: string;
   totalAmount: string;
 } {
   const subtotal = lineItems
     .reduce((sum, item) => sum + Number.parseFloat(item.amount), 0)
     .toFixed(2);
 
+  const discountAmount = calculateDiscountAmount(
+    subtotal,
+    discountType,
+    discountValue
+  );
+
   const totalAmount = (
-    Number.parseFloat(subtotal) + Number.parseFloat(taxAmount)
+    Number.parseFloat(subtotal) -
+    Number.parseFloat(discountAmount) +
+    Number.parseFloat(taxAmount)
   ).toFixed(2);
 
-  return { subtotal, totalAmount };
+  return { subtotal, discountAmount, totalAmount };
 }
 
 /**
@@ -380,10 +422,12 @@ export const invoicesRouter = {
       // Generate invoice number
       const invoiceNumber = await generateInvoiceNumber(input.business);
 
-      // Calculate totals
-      const { subtotal, totalAmount } = calculateInvoiceTotals(
+      // Calculate totals with discount
+      const { subtotal, discountAmount, totalAmount } = calculateInvoiceTotals(
         input.lineItems,
-        input.taxAmount
+        input.taxAmount,
+        input.discountType,
+        input.discountValue
       );
 
       // Create invoice
@@ -400,6 +444,10 @@ export const invoicesRouter = {
           taxAmount: input.taxAmount,
           totalAmount,
           amountDue: totalAmount,
+          discountType: input.discountType,
+          discountValue: input.discountValue,
+          discountAmount,
+          discountReason: input.discountReason || null,
           notes: input.notes || null,
           terms: input.terms || null,
           referenceNumber: input.referenceNumber || null,
@@ -710,4 +758,251 @@ export const invoicesRouter = {
       byStatus,
     };
   }),
+
+  /**
+   * Get client balance summary (total outstanding)
+   */
+  getClientBalance: staffProcedure
+    .input(z.object({ clientId: z.string() }))
+    .handler(async ({ input, context }) => {
+      const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+      const result = await db
+        .select({
+          totalInvoiced: sql<string>`COALESCE(SUM(CAST(${invoice.totalAmount} AS DECIMAL)), 0)`,
+          totalPaid: sql<string>`COALESCE(SUM(CAST(${invoice.amountPaid} AS DECIMAL)), 0)`,
+          totalOutstanding: sql<string>`COALESCE(SUM(CAST(${invoice.amountDue} AS DECIMAL)), 0)`,
+          invoiceCount: count(),
+        })
+        .from(invoice)
+        .where(
+          and(
+            eq(invoice.clientId, input.clientId),
+            sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+            or(
+              eq(invoice.status, "SENT"),
+              eq(invoice.status, "OVERDUE"),
+              eq(invoice.status, "PAID")
+            )
+          )
+        );
+
+      // Get overdue specifically
+      const overdueResult = await db
+        .select({
+          totalOverdue: sql<string>`COALESCE(SUM(CAST(${invoice.amountDue} AS DECIMAL)), 0)`,
+          overdueCount: count(),
+        })
+        .from(invoice)
+        .where(
+          and(
+            eq(invoice.clientId, input.clientId),
+            sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+            eq(invoice.status, "OVERDUE")
+          )
+        );
+
+      return {
+        clientId: input.clientId,
+        totalInvoiced: result[0]?.totalInvoiced || "0",
+        totalPaid: result[0]?.totalPaid || "0",
+        totalOutstanding: result[0]?.totalOutstanding || "0",
+        totalOverdue: overdueResult[0]?.totalOverdue || "0",
+        invoiceCount: result[0]?.invoiceCount || 0,
+        overdueCount: overdueResult[0]?.overdueCount || 0,
+      };
+    }),
+
+  /**
+   * Get aging report - breakdown by 0-30, 31-60, 61-90, 90+ days
+   */
+  getAgingReport: staffProcedure
+    .input(
+      z.object({
+        business: z.enum(businessValues).optional(),
+        clientId: z.string().optional(),
+      })
+    )
+    .handler(async ({ input, context }) => {
+      const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+      if (accessibleBusinesses.length === 0) {
+        return {
+          current: { amount: "0", count: 0 },
+          days30: { amount: "0", count: 0 },
+          days60: { amount: "0", count: 0 },
+          days90: { amount: "0", count: 0 },
+          days90Plus: { amount: "0", count: 0 },
+          total: { amount: "0", count: 0 },
+        };
+      }
+
+      const conditions = [
+        sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+        or(eq(invoice.status, "SENT"), eq(invoice.status, "OVERDUE")),
+        sql`CAST(${invoice.amountDue} AS DECIMAL) > 0`,
+      ];
+
+      if (input.business) {
+        conditions.push(eq(invoice.business, input.business));
+      }
+
+      if (input.clientId) {
+        conditions.push(eq(invoice.clientId, input.clientId));
+      }
+
+      const whereClause = and(...conditions);
+
+      // Get all outstanding invoices with their age
+      const agingData = await db
+        .select({
+          amountDue: invoice.amountDue,
+          dueDate: invoice.dueDate,
+        })
+        .from(invoice)
+        .where(whereClause);
+
+      const today = new Date();
+      const buckets = {
+        current: { amount: 0, count: 0 }, // Not yet due
+        days30: { amount: 0, count: 0 }, // 1-30 days overdue
+        days60: { amount: 0, count: 0 }, // 31-60 days overdue
+        days90: { amount: 0, count: 0 }, // 61-90 days overdue
+        days90Plus: { amount: 0, count: 0 }, // 90+ days overdue
+      };
+
+      for (const inv of agingData) {
+        const dueDate = new Date(inv.dueDate);
+        const daysOverdue = Math.floor(
+          (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        const amount = Number.parseFloat(inv.amountDue);
+
+        if (daysOverdue <= 0) {
+          buckets.current.amount += amount;
+          buckets.current.count += 1;
+        } else if (daysOverdue <= 30) {
+          buckets.days30.amount += amount;
+          buckets.days30.count += 1;
+        } else if (daysOverdue <= 60) {
+          buckets.days60.amount += amount;
+          buckets.days60.count += 1;
+        } else if (daysOverdue <= 90) {
+          buckets.days90.amount += amount;
+          buckets.days90.count += 1;
+        } else {
+          buckets.days90Plus.amount += amount;
+          buckets.days90Plus.count += 1;
+        }
+      }
+
+      const total = {
+        amount: (
+          buckets.current.amount +
+          buckets.days30.amount +
+          buckets.days60.amount +
+          buckets.days90.amount +
+          buckets.days90Plus.amount
+        ).toFixed(2),
+        count:
+          buckets.current.count +
+          buckets.days30.count +
+          buckets.days60.count +
+          buckets.days90.count +
+          buckets.days90Plus.count,
+      };
+
+      return {
+        current: {
+          amount: buckets.current.amount.toFixed(2),
+          count: buckets.current.count,
+        },
+        days30: {
+          amount: buckets.days30.amount.toFixed(2),
+          count: buckets.days30.count,
+        },
+        days60: {
+          amount: buckets.days60.amount.toFixed(2),
+          count: buckets.days60.count,
+        },
+        days90: {
+          amount: buckets.days90.amount.toFixed(2),
+          count: buckets.days90.count,
+        },
+        days90Plus: {
+          amount: buckets.days90Plus.amount.toFixed(2),
+          count: buckets.days90Plus.count,
+        },
+        total,
+      };
+    }),
+
+  /**
+   * Apply discount to an existing invoice (DRAFT only)
+   */
+  applyDiscount: staffProcedure
+    .input(
+      z.object({
+        invoiceId: z.string(),
+        discountType: z.enum(discountTypeValues),
+        discountValue: z.string(),
+        discountReason: z.string().optional(),
+      })
+    )
+    .handler(async ({ input, context }) => {
+      // Fetch existing invoice
+      const existing = await db.query.invoice.findFirst({
+        where: eq(invoice.id, input.invoiceId),
+      });
+
+      if (!existing) {
+        throw new ORPCError("NOT_FOUND", { message: "Invoice not found" });
+      }
+
+      // Check access
+      if (!canAccessBusiness(context.staff, existing.business)) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this invoice",
+        });
+      }
+
+      // Only allow discount changes on DRAFT invoices
+      if (existing.status !== "DRAFT") {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Can only apply discounts to draft invoices",
+        });
+      }
+
+      // Calculate new discount and totals
+      const discountAmount = calculateDiscountAmount(
+        existing.subtotal,
+        input.discountType,
+        input.discountValue
+      );
+
+      const totalAmount = (
+        Number.parseFloat(existing.subtotal) -
+        Number.parseFloat(discountAmount) +
+        Number.parseFloat(existing.taxAmount)
+      ).toFixed(2);
+
+      const amountDue = (
+        Number.parseFloat(totalAmount) - Number.parseFloat(existing.amountPaid)
+      ).toFixed(2);
+
+      const [updated] = await db
+        .update(invoice)
+        .set({
+          discountType: input.discountType,
+          discountValue: input.discountValue,
+          discountAmount,
+          discountReason: input.discountReason || null,
+          totalAmount,
+          amountDue,
+        })
+        .where(eq(invoice.id, input.invoiceId))
+        .returning();
+
+      return updated;
+    }),
 };

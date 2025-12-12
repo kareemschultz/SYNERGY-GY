@@ -1,13 +1,38 @@
 # Appointments
 
-**Status:** Planned
+**Status:** ✅ API COMPLETE (UI Pending)
 **Phase:** 2
-**Priority:** Low
-**Estimated Effort:** 2-3 weeks
+**Priority:** High
+**Estimated Effort:** 3-4 weeks
+**Updated:** December 11, 2024
+
+## Implementation Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Database Schema | ✅ Complete | appointmentType, staffAvailability, appointment, appointmentReminder |
+| API Router | ✅ Complete | Full CRUD, confirm, cancel, reschedule, types.*, availability.* |
+| Staff UI | ⏳ Pending | List, detail, calendar views |
+| Portal UI | ⏳ Pending | Client booking interface |
+| Email Notifications | ⏳ Pending | Confirmation, reminders, cancellation |
 
 ## Overview
 
-Online appointment scheduling system for client consultations, meetings, and service appointments.
+Online appointment scheduling system for client consultations, document pickups, phone calls, and video meetings. Supports **client self-booking through portal with staff approval workflow**.
+
+## Key Features (December 2024 Update)
+
+### Appointment Types
+- **Client Consultations** - In-person meetings for tax/service discussions
+- **Document Pickups** - Clients coming to collect/drop off paperwork
+- **Phone Calls** - Remote phone consultations
+- **Video Calls** - Video conference meetings (Zoom/Google Meet links)
+
+### Booking Workflow
+1. **Staff booking**: Staff can book appointments directly for clients
+2. **Client self-booking**: Clients can request appointments through portal
+3. **Approval required**: Client-initiated appointments require staff confirmation
+4. **Status flow**: REQUESTED → CONFIRMED → COMPLETED (or CANCELLED/NO_SHOW)
 
 ## Requirements
 
@@ -24,7 +49,10 @@ Online appointment scheduling system for client consultations, meetings, and ser
 | APT-FR-07 | Cancellation | Must |
 | APT-FR-08 | Service type selection | Should |
 | APT-FR-09 | Online/in-person option | Should |
-| APT-FR-10 | Client self-booking (portal) | Could |
+| APT-FR-10 | Client self-booking (portal) | **Must** |
+| APT-FR-11 | Staff approval for client bookings | **Must** |
+| APT-FR-12 | Pre/post appointment notes | Should |
+| APT-FR-13 | Email notifications (confirm, remind, cancel) | Must |
 
 ### Non-Functional Requirements
 
@@ -100,7 +128,7 @@ Online appointment scheduling system for client consultations, meetings, and ser
 | endTime | time | End time |
 | location | enum | IN_PERSON, ONLINE, PHONE |
 | meetingLink | varchar(500) | Online meeting URL |
-| status | enum | SCHEDULED, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW |
+| status | enum | **REQUESTED**, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW, RESCHEDULED |
 | notes | text | Appointment notes |
 | clientNotes | text | Client-provided notes |
 | cancellationReason | text | If cancelled |
