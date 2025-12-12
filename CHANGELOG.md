@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Matter Wizard** - Step-by-step guided matter creation workflow (December 12, 2024)
+  - 5-step wizard: Client → Service Type → Matter Details → Schedule & Fees → Review
+  - Reuses existing wizard infrastructure from client onboarding
+  - New route at `/app/matters/wizard`
+  - New wizard components in `apps/web/src/components/wizards/matter-wizard/`
+- **ClientSelector Component** - Reusable client selection dropdown with business grouping (December 12, 2024)
+  - Groups clients by business affiliation (GCMC Only, KAJ Only, Both Businesses)
+  - Searchable dropdown with scrollable list
+  - Shows client type icons (Individual, Business, etc.)
+  - Created at `apps/web/src/components/clients/client-selector.tsx`
+- **Matters Page Wizard Integration** - Added Quick Add and Matter Wizard buttons (December 12, 2024)
+  - Matches client page pattern with both options
+  - Empty state links to wizard for first-time users
+
+### Fixed
+- **Service Type Dropdown Empty State** - Shows helpful message when no service types exist (December 12, 2024)
+  - Displays "No service types available for [business]" with link to create them
+  - Applies to both Quick Add form and Matter Wizard
+- **Mobile Header Layout** - Fixed buttons being cut off on form pages (December 12, 2024)
+  - PageHeader now uses responsive flex layout
+  - Buttons stack vertically on mobile, inline on larger screens
+- **Matter Quick Add Form** - Replaced broken client search with ClientSelector (December 12, 2024)
+  - Fixed missing Popover/Command imports causing runtime errors
+  - Form now works correctly with searchable client dropdown
+
 - **Unit Testing Infrastructure** - Vitest setup for component and utility testing (December 12, 2024)
   - Vitest configuration with React Testing Library integration
   - JSDOM environment for browser API mocking

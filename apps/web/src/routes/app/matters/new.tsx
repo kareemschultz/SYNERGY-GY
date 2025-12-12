@@ -1,27 +1,15 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, Save, Search } from "lucide-react";
+import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ClientSelector } from "@/components/clients/client-selector";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -60,22 +48,9 @@ type FormValues = {
 
 function NewMatterPage() {
   const navigate = useNavigate();
-  const [clientSearch, setClientSearch] = useState("");
-  const [clientPopoverOpen, setClientPopoverOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<{
-    id: string;
-    displayName: string;
-  } | null>(null);
   const [selectedBusiness, setSelectedBusiness] = useState<
     "GCMC" | "KAJ" | null
   >(null);
-
-  // Search clients
-  const { data: clientResults } = useQuery({
-    queryKey: ["clientSearch", clientSearch],
-    queryFn: () => client.clients.search({ query: clientSearch, limit: 10 }),
-    enabled: clientSearch.length >= 2,
-  });
 
   // Get service types for selected business
   const { data: serviceTypes } = useQuery({
@@ -204,65 +179,20 @@ function NewMatterPage() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Client Search */}
-                <div className="space-y-2">
-                  <Label>Client *</Label>
-                  <Popover
-                    onOpenChange={setClientPopoverOpen}
-                    open={clientPopoverOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        className="w-full justify-start"
-                        role="combobox"
-                        variant="outline"
-                      >
-                        <Search className="mr-2 h-4 w-4" />
-                        {selectedClient
-                          ? selectedClient.displayName
-                          : "Search for a client..."}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0">
-                      <Command>
-                        <CommandInput
-                          onValueChange={setClientSearch}
-                          placeholder="Search clients..."
-                          value={clientSearch}
-                        />
-                        <CommandList>
-                          <CommandEmpty>
-                            {clientSearch.length < 2
-                              ? "Type at least 2 characters..."
-                              : "No clients found."}
-                          </CommandEmpty>
-                          <CommandGroup>
-                            {clientResults?.map((c) => (
-                              <CommandItem
-                                key={c.id}
-                                onSelect={() => {
-                                  setSelectedClient({
-                                    id: c.id,
-                                    displayName: c.displayName,
-                                  });
-                                  form.setFieldValue("clientId", c.id);
-                                  setClientPopoverOpen(false);
-                                }}
-                                value={c.displayName}
-                              >
-                                <div className="flex flex-col">
-                                  <span>{c.displayName}</span>
-                                  <span className="text-muted-foreground text-xs">
-                                    {c.type} · {c.businesses.join(", ")}
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                <form.Field name="clientId">
+                  {(field) => (
+                    <div className="space-y-2">
+                      <Label>Client *</Label>
+                      <ClientSelector
+                        onChange={(clientId) => {
+                          field.handleChange(clientId);
+                        }}
+                        placeholder="Search for a client..."
+                        value={field.state.value || null}
+                      />
+                    </div>
+                  )}
+                </form.Field>
 
                 {/* Business Selection */}
                 <form.Field name="business">
@@ -296,46 +226,59 @@ function NewMatterPage() {
               </div>
 
               {/* Service Type Selection */}
-              {!!selectedBusiness && (
+              {selectedBusiness !== null && (
                 <form.Field name="serviceTypeId">
                   {(field) => (
                     <div className="space-y-2">
                       <Label htmlFor={field.name}>Service Type *</Label>
-                      <Select
-                        onValueChange={(value) => {
-                          field.handleChange(value);
-                          // Auto-fill title based on service type
-                          const selectedService = serviceTypes?.find(
-                            (st) => st.id === value
-                          );
-                          // biome-ignore lint/nursery/noLeakedRender: Auto-fix
-                          if (selectedService && !form.state.values.title) {
-                            form.setFieldValue("title", selectedService.name);
-                          }
-                        }}
-                        value={field.state.value}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select service type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {!!groupedServiceTypes &&
-                            Object.entries(groupedServiceTypes).map(
-                              ([category, types]) => (
-                                <div key={category}>
-                                  <div className="px-2 py-1.5 font-semibold text-muted-foreground text-xs">
-                                    {category}
+                      {serviceTypes && serviceTypes.length === 0 ? (
+                        <div className="rounded-md border border-dashed p-4 text-center">
+                          <p className="text-muted-foreground text-sm">
+                            No service types available for {selectedBusiness}.
+                          </p>
+                          <Link
+                            className="mt-2 inline-block text-primary text-sm hover:underline"
+                            to="/app/services"
+                          >
+                            Create service types →
+                          </Link>
+                        </div>
+                      ) : (
+                        <Select
+                          onValueChange={(value) => {
+                            field.handleChange(value);
+                            // Auto-fill title based on service type
+                            const selectedService = serviceTypes?.find(
+                              (st) => st.id === value
+                            );
+                            if (selectedService && !form.state.values.title) {
+                              form.setFieldValue("title", selectedService.name);
+                            }
+                          }}
+                          value={field.state.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select service type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {groupedServiceTypes &&
+                              Object.entries(groupedServiceTypes).map(
+                                ([category, types]) => (
+                                  <div key={category}>
+                                    <div className="px-2 py-1.5 font-semibold text-muted-foreground text-xs">
+                                      {category}
+                                    </div>
+                                    {types?.map((st) => (
+                                      <SelectItem key={st.id} value={st.id}>
+                                        {st.name}
+                                      </SelectItem>
+                                    ))}
                                   </div>
-                                  {types?.map((st) => (
-                                    <SelectItem key={st.id} value={st.id}>
-                                      {st.name}
-                                    </SelectItem>
-                                  ))}
-                                </div>
-                              )
-                            )}
-                        </SelectContent>
-                      </Select>
+                                )
+                              )}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                   )}
                 </form.Field>

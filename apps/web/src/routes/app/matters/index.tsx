@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, MoreHorizontal, Plus, Search } from "lucide-react";
+import { Loader2, MoreHorizontal, Plus, Search, Wand2 } from "lucide-react";
 import { useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -116,12 +116,20 @@ function MattersPage() {
     <div className="flex flex-col">
       <PageHeader
         actions={
-          <Button asChild>
-            <Link to="/app/matters/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Matter
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app/matters/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Quick Add
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/app/matters/wizard">
+                <Wand2 className="mr-2 h-4 w-4" />
+                Matter Wizard
+              </Link>
+            </Button>
+          </div>
         }
         breadcrumbs={[
           { label: "Dashboard", href: "/app" },
@@ -299,9 +307,9 @@ function MattersPage() {
                   <TableCell className="h-32 text-center" colSpan={8}>
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <p>No matters found</p>
-                      <Button asChild size="sm" variant="outline">
-                        <Link to="/app/matters/new">
-                          <Plus className="mr-2 h-4 w-4" />
+                      <Button asChild size="sm">
+                        <Link to="/app/matters/wizard">
+                          <Wand2 className="mr-2 h-4 w-4" />
                           Create your first matter
                         </Link>
                       </Button>

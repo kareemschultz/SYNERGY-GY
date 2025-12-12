@@ -59,15 +59,17 @@ export function PageHeader({
         ) : null}
 
         {/* Title and Actions */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
             <h1 className="font-semibold text-2xl tracking-tight">{title}</h1>
             {description ? (
               <p className="text-muted-foreground text-sm">{description}</p>
             ) : null}
           </div>
           {actions ? (
-            <div className="flex items-center gap-2">{actions}</div>
+            <div className="flex flex-shrink-0 items-center gap-2">
+              {actions}
+            </div>
           ) : null}
         </div>
       </div>
