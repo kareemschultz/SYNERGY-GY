@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Service Catalog Data Population** - Complete GCMC and KAJ service catalog (December 12, 2024)
+  - Created `ingestServiceCatalog.ts` script with all business services
+  - Added `db:ingest-catalog` npm script for running the ingestion
+  - **12 categories** (6 GCMC, 6 KAJ) with proper descriptions and icons
+  - **49 services** with complete details:
+    - GCMC (23 services): Training, Small Business, Paralegal, Immigration, Proposals, Networking
+    - KAJ (26 services): Income Tax, Tax Compliance, PAYE, Financial Statements, Audit, NIS
+  - Each service includes: pricing type, base/max prices (GYD), duration, document requirements
+  - Government agency associations for compliance services
+  - 4 featured services highlighted in catalog
+
 - **Service Catalog Admin UI** - Full CRUD for categories and services (December 12, 2024)
   - `CategoryFormDialog` component for creating service categories
   - `ServiceFormDialog` component for creating services with pricing, duration, and descriptions
