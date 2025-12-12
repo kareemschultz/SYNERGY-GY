@@ -1,6 +1,6 @@
 # Appointments
 
-**Status:** ✅ API COMPLETE (UI Pending)
+**Status:** ✅ COMPLETE (API + UI)
 **Phase:** 2
 **Priority:** High
 **Estimated Effort:** 3-4 weeks
@@ -12,8 +12,10 @@
 |-----------|--------|-------|
 | Database Schema | ✅ Complete | appointmentType, staffAvailability, appointment, appointmentReminder |
 | API Router | ✅ Complete | Full CRUD, confirm, cancel, reschedule, types.*, availability.* |
-| Staff UI | ⏳ Pending | List, detail, calendar views |
-| Portal UI | ⏳ Pending | Client booking interface |
+| Staff List UI | ✅ Complete | `/app/appointments` - Filter by status/business, action buttons |
+| Staff Create UI | ✅ Complete | `/app/appointments/new` - Client search, matter linking, appointment type |
+| AppointmentCard | ✅ Complete | Card component with status badge, location icons, action dropdown |
+| Portal UI | ✅ Complete | `/portal/appointments` - Upcoming/past tabs, status badges |
 | Email Notifications | ⏳ Pending | Confirmation, reminders, cancellation |
 
 ## Overview

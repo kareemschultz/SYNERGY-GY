@@ -1,10 +1,11 @@
 # Invoicing & Payments
 
-**Status:** ✅ API COMPLETE (Enhancements)
+**Status:** ✅ COMPLETE (API + UI Enhancements)
 **Phase:** 2
 **Priority:** High
 **Implementation Date:** December 11, 2024
 **December Enhancements Completed:** December 11, 2024
+**UI Completed:** December 11, 2024
 
 ## Implementation Status (December 2024)
 
@@ -15,8 +16,10 @@
 | Client Balance API | ✅ Complete | `invoices.getClientBalance` endpoint |
 | Aging Report API | ✅ Complete | `invoices.getAgingReport` with buckets |
 | Portal Invoices | ✅ Complete | `portal.financials.invoices`, `getInvoice` |
-| Discount UI | ⏳ Pending | UI for applying discounts |
-| Aging Report UI | ⏳ Pending | Visual aging breakdown |
+| Discount Modal | ✅ Complete | Live preview calculation (percentage/fixed), reason tracking |
+| Aging Report Component | ✅ Complete | Visual breakdown with buckets (current, 30, 60, 90+ days) |
+| Invoices List Enhancement | ✅ Complete | Collapsible aging report toggle on list page |
+| Invoice Detail Enhancement | ✅ Complete | Discount display and "Apply Discount" button for drafts |
 
 ## Overview
 

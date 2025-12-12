@@ -1,6 +1,6 @@
 # Phase 2: Advanced Features
 
-**Status:** API COMPLETE (Frontend UI Pending)
+**Status:** API COMPLETE, Frontend UI IN PROGRESS
 **Prerequisites:** Phase 1 Complete
 **Last Updated:** December 11, 2024
 
@@ -36,13 +36,13 @@ The following items were identified during Phase 1 testing and should be address
 
 | # | Module | Description | Priority | Status |
 |---|--------|-------------|----------|--------|
-| 1 | [Client Portal](./01-client-portal.md) | Self-service client access | High | ✅ **API COMPLETE** (UI pending) |
-| 2 | [Invoicing](./02-invoicing.md) | Billing and payments | High | ✅ **API COMPLETE** (UI pending) |
+| 1 | [Client Portal](./01-client-portal.md) | Self-service client access | High | ✅ **COMPLETE** (API + UI) |
+| 2 | [Invoicing](./02-invoicing.md) | Billing and payments | High | ✅ **COMPLETE** (API + UI) |
 | 3 | [Service Catalog](./service-catalog.md) | Service definitions and pricing | High | ✅ **COMPLETED** |
 | 4 | [Tax Calculators](./03-tax-calculators.md) | Guyana tax calculation tools | Medium | ✅ **COMPLETED** |
 | 5 | [Training Management](./04-training-management.md) | GCMC course management | Medium | ✅ **COMPLETED** |
-| 6 | [Appointments](./05-appointments.md) | Scheduling system | **High** | ✅ **API COMPLETE** (UI pending) |
-| 7 | [Financial Access Control](./06-financial-access-control.md) | Role-based financial permissions | High | ✅ **API COMPLETE** |
+| 6 | [Appointments](./05-appointments.md) | Scheduling system | **High** | ✅ **COMPLETE** (API + UI) |
+| 7 | [Financial Access Control](./06-financial-access-control.md) | Role-based financial permissions | High | ✅ **API COMPLETE** (UI pending) |
 | 8 | [Wizard System](./08-wizard-system.md) | Smart onboarding & filing wizards | High | ✅ **CLIENT ONBOARDING COMPLETE** |
 
 ## December 2024 Enhancements
@@ -62,10 +62,28 @@ The following items were identified during Phase 1 testing and should be address
    - Staff table: canViewFinancials column
    - API middleware: financialProcedure, canViewFinancials() helper
 
-### Frontend Implementation - PENDING
-- Appointments staff pages (list, detail, create)
-- Enhanced client detail page (dashboard, financials, appointments tabs)
-- Portal enhancements (profile, financials, appointments)
+### Frontend Implementation - ✅ COMPLETED (Dec 11, 2024)
+1. **Shared UI Components**
+   - EmptyState, ErrorState, PageHeader, LoadingSkeleton components
+   - Reusable across all pages for consistent UX
+2. **Appointments Staff Pages**
+   - `/app/appointments` - List view with filters, status actions (confirm, complete, cancel, no-show)
+   - `/app/appointments/new` - Create appointment form with client search, matter linking
+   - AppointmentCard and AppointmentStatusBadge components
+3. **Invoice Enhancements**
+   - Discount modal with live calculation preview (percentage/fixed amount)
+   - Aging report component with visual breakdown (current, 30, 60, 90+ days)
+   - Collapsible aging report on invoices list page
+   - Discount display on invoice detail page
+4. **Portal Enhancements**
+   - `/portal/profile` - Personal info display (TIN, national ID, passport, contact)
+   - `/portal/financials` - Invoice list, payment history, balance summary
+   - `/portal/appointments` - Appointment list with upcoming/past filtering tabs
+   - Dashboard navigation cards for quick access to portal features
+
+### Remaining Frontend Tasks - PENDING
+- Financial access control UI (hide financial data based on staff permissions)
+- Enhanced client detail page tabs (dashboard, financials, appointments)
 
 ## Requirements
 
