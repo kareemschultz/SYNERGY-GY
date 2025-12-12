@@ -37,6 +37,7 @@ import { Route as AppAdminIndexRouteImport } from './routes/app/admin/index'
 import { Route as PortalMattersMatterIdRouteImport } from './routes/portal/matters/$matter-id'
 import { Route as AppTrainingNewRouteImport } from './routes/app/training/new'
 import { Route as AppServicesServiceIdRouteImport } from './routes/app/services/$service-id'
+import { Route as AppReportsCustomRouteImport } from './routes/app/reports/custom'
 import { Route as AppMattersNewRouteImport } from './routes/app/matters/new'
 import { Route as AppMattersMatterIdRouteImport } from './routes/app/matters/$matter-id'
 import { Route as AppInvoicesNewRouteImport } from './routes/app/invoices/new'
@@ -200,6 +201,11 @@ const AppServicesServiceIdRoute = AppServicesServiceIdRouteImport.update({
   path: '/services/$service-id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsCustomRoute = AppReportsCustomRouteImport.update({
+  id: '/reports/custom',
+  path: '/reports/custom',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMattersNewRoute = AppMattersNewRouteImport.update({
   id: '/matters/new',
   path: '/matters/new',
@@ -343,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/app/invoices/new': typeof AppInvoicesNewRoute
   '/app/matters/$matter-id': typeof AppMattersMatterIdRoute
   '/app/matters/new': typeof AppMattersNewRoute
+  '/app/reports/custom': typeof AppReportsCustomRoute
   '/app/services/$service-id': typeof AppServicesServiceIdRoute
   '/app/training/new': typeof AppTrainingNewRoute
   '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
@@ -394,6 +401,7 @@ export interface FileRoutesByTo {
   '/app/invoices/new': typeof AppInvoicesNewRoute
   '/app/matters/$matter-id': typeof AppMattersMatterIdRoute
   '/app/matters/new': typeof AppMattersNewRoute
+  '/app/reports/custom': typeof AppReportsCustomRoute
   '/app/services/$service-id': typeof AppServicesServiceIdRoute
   '/app/training/new': typeof AppTrainingNewRoute
   '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
@@ -447,6 +455,7 @@ export interface FileRoutesById {
   '/app/invoices/new': typeof AppInvoicesNewRoute
   '/app/matters/$matter-id': typeof AppMattersMatterIdRoute
   '/app/matters/new': typeof AppMattersNewRoute
+  '/app/reports/custom': typeof AppReportsCustomRoute
   '/app/services/$service-id': typeof AppServicesServiceIdRoute
   '/app/training/new': typeof AppTrainingNewRoute
   '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
@@ -501,6 +510,7 @@ export interface FileRouteTypes {
     | '/app/invoices/new'
     | '/app/matters/$matter-id'
     | '/app/matters/new'
+    | '/app/reports/custom'
     | '/app/services/$service-id'
     | '/app/training/new'
     | '/portal/matters/$matter-id'
@@ -552,6 +562,7 @@ export interface FileRouteTypes {
     | '/app/invoices/new'
     | '/app/matters/$matter-id'
     | '/app/matters/new'
+    | '/app/reports/custom'
     | '/app/services/$service-id'
     | '/app/training/new'
     | '/portal/matters/$matter-id'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/app/invoices/new'
     | '/app/matters/$matter-id'
     | '/app/matters/new'
+    | '/app/reports/custom'
     | '/app/services/$service-id'
     | '/app/training/new'
     | '/portal/matters/$matter-id'
@@ -844,6 +856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServicesServiceIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/reports/custom': {
+      id: '/app/reports/custom'
+      path: '/reports/custom'
+      fullPath: '/app/reports/custom'
+      preLoaderRoute: typeof AppReportsCustomRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/matters/new': {
       id: '/app/matters/new'
       path: '/matters/new'
@@ -1016,6 +1035,7 @@ interface AppRouteChildren {
   AppInvoicesNewRoute: typeof AppInvoicesNewRoute
   AppMattersMatterIdRoute: typeof AppMattersMatterIdRoute
   AppMattersNewRoute: typeof AppMattersNewRoute
+  AppReportsCustomRoute: typeof AppReportsCustomRoute
   AppServicesServiceIdRoute: typeof AppServicesServiceIdRoute
   AppTrainingNewRoute: typeof AppTrainingNewRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
@@ -1056,6 +1076,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInvoicesNewRoute: AppInvoicesNewRoute,
   AppMattersMatterIdRoute: AppMattersMatterIdRoute,
   AppMattersNewRoute: AppMattersNewRoute,
+  AppReportsCustomRoute: AppReportsCustomRoute,
   AppServicesServiceIdRoute: AppServicesServiceIdRoute,
   AppTrainingNewRoute: AppTrainingNewRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,

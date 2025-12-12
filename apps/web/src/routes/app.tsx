@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import UserMenu from "@/components/user-menu";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { authClient } from "@/lib/auth-client";
@@ -149,11 +148,9 @@ function AppLayout() {
         </header>
 
         {/* Page Content */}
-        <ScrollArea className="flex-1">
-          <main className="min-h-full">
-            <Outlet />
-          </main>
-        </ScrollArea>
+        <main className="flex-1 overflow-auto">
+          <Outlet />
+        </main>
       </div>
     </div>
   );

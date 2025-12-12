@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Initial audit spec file with login, dashboard, and client wizard tests
   - Test screenshots directory structure
 
+### Fixed
+- **Wizard Navigation Visibility** - Fixed Continue/Submit button being cut off in client onboarding wizard (December 12, 2024)
+  - Removed ScrollArea wrapper from app layout that was interfering with height propagation
+  - Updated wizard container to use flex layout with scrollable content area and fixed navigation
+  - Navigation buttons now stay visible at bottom of wizard card on both desktop and mobile
+  - Affected files: `apps/web/src/routes/app.tsx`, `apps/web/src/components/wizards/wizard-container.tsx`, `apps/web/src/routes/app/clients/onboard.tsx`
+
 ### Changed
 - **Documentation Updates** - Fixed spec and README inconsistencies (December 12, 2024)
   - Updated README.md Phase 2 status from "In Progress" to "Complete"

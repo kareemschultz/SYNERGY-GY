@@ -194,7 +194,7 @@ function ClientOnboardingWizard() {
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex h-full flex-col">
       <PageHeader
         actions={
           <Button asChild variant="outline">
@@ -213,12 +213,13 @@ function ClientOnboardingWizard() {
         title="New Client"
       />
 
-      <div className="p-6">
-        <div className="mx-auto max-w-4xl">
+      <div className="flex-1 overflow-hidden p-6">
+        <div className="mx-auto flex h-full max-w-4xl flex-col">
           <WizardContainer
             canGoNext={wizard.canGoNext}
             canGoPrev={wizard.canGoPrev}
             canSkip={wizard.canSkip}
+            className="flex-1 overflow-hidden"
             currentStep={wizard.currentStep}
             isFirstStep={wizard.isFirstStep}
             isLastStep={wizard.isLastStep}

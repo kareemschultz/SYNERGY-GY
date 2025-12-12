@@ -189,26 +189,28 @@ export function WizardContainer({
         />
       ) : null}
 
-      {/* Main content card */}
-      <Card className="flex-1">
-        <CardContent className="p-6">{children}</CardContent>
-      </Card>
+      {/* Main content card with scrollable content */}
+      <Card className="flex flex-1 flex-col overflow-hidden">
+        <CardContent className="flex-1 overflow-y-auto p-6">
+          {children}
+        </CardContent>
 
-      {/* Navigation */}
-      <WizardNavigation
-        canGoNext={canGoNext}
-        canGoPrev={canGoPrev}
-        canSkip={canSkip}
-        className="rounded-lg border"
-        isFirstStep={isFirstStep}
-        isLastStep={isLastStep}
-        isSubmitting={isSubmitting}
-        onNext={onNext}
-        onPrev={onPrev}
-        onSkip={onSkip}
-        onSubmit={onSubmit}
-        submitLabel={submitLabel}
-      />
+        {/* Navigation always visible at bottom of card */}
+        <WizardNavigation
+          canGoNext={canGoNext}
+          canGoPrev={canGoPrev}
+          canSkip={canSkip}
+          className="shrink-0 border-t"
+          isFirstStep={isFirstStep}
+          isLastStep={isLastStep}
+          isSubmitting={isSubmitting}
+          onNext={onNext}
+          onPrev={onPrev}
+          onSkip={onSkip}
+          onSubmit={onSubmit}
+          submitLabel={submitLabel}
+        />
+      </Card>
     </div>
   );
 }
