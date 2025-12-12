@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated wizard container to use flex layout with scrollable content area and fixed navigation
   - Navigation buttons now stay visible at bottom of wizard card on both desktop and mobile
   - Affected files: `apps/web/src/routes/app.tsx`, `apps/web/src/components/wizards/wizard-container.tsx`, `apps/web/src/routes/app/clients/onboard.tsx`
+- **Calendar New Deadline Form** - Fixed Radix UI Select component crash on business field (December 12, 2024)
+  - Select.Item cannot have empty string as value, changed from `value=""` to `value="BOTH"`
+  - Updated onChange handler to convert "BOTH" back to empty string for form data
+  - Page now loads correctly without console errors
 
 ### Changed
 - **Documentation Updates** - Fixed spec and README inconsistencies (December 12, 2024)

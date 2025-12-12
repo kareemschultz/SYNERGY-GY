@@ -417,15 +417,17 @@ function NewDeadlinePage() {
                       <Label htmlFor={field.name}>Business</Label>
                       <Select
                         onValueChange={(value) =>
-                          field.handleChange(value as "GCMC" | "KAJ" | "")
+                          field.handleChange(
+                            value === "BOTH" ? "" : (value as "GCMC" | "KAJ")
+                          )
                         }
-                        value={field.state.value}
+                        value={field.state.value || "BOTH"}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select business" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Both</SelectItem>
+                          <SelectItem value="BOTH">Both</SelectItem>
                           <SelectItem value="GCMC">GCMC</SelectItem>
                           <SelectItem value="KAJ">KAJ</SelectItem>
                         </SelectContent>
