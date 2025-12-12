@@ -4,7 +4,7 @@
 **Phase:** 2
 **Priority:** High
 **Created:** December 2024
-**Last Updated:** December 11, 2024
+**Last Updated:** December 12, 2024
 
 ## Implementation Status
 
@@ -31,12 +31,19 @@
 - **Adaptive forms** that change based on client type (individual vs business fields)
 - **Business assignment** with GCMC/KAJ selection and service categories
 - **Form validation** with step-by-step error handling and inline messages
+- **Real-time field validation** - Fields validate on blur (when user leaves field)
+  - Email format validation shows error immediately
+  - Required fields validate without clicking Continue
+  - Errors clear automatically when fixed
+  - `validateField()`, `touchField()`, `isFieldTouched()` methods in useWizard hook
+- **Disabled button feedback** - Tooltip explains why Continue is disabled
+- **Validation banner** - Shows amber warning with field errors above navigation
 - **LocalStorage persistence** for draft saving (key: "client-onboarding")
 - **Review step** with full summary, required documents checklist, and notes
 - **Direct API integration** with clients.create mutation
 - **Success state** with navigation to view client or add another
 - **Mobile responsive** with progress bar and step indicators
-- **Accessible** SVG icons and keyboard navigation
+- **Accessible** SVG icons, keyboard navigation, aria-describedby for errors, role="alert" for messages
 
 ## Summary
 
@@ -459,16 +466,39 @@ interface WizardState<T> {
   totalSteps: number;
   data: T;
   errors: Record<string, string>;
+  visitedSteps: Set<number>;
+  touchedFields: Set<string>;
   isComplete: boolean;
+  isSubmitting: boolean;
   canGoNext: boolean;
   canGoPrev: boolean;
+  canSkip: boolean;
+  progress: number;
+  isFirstStep: boolean;
+  isLastStep: boolean;
 }
 
-function useWizard<T>(config: WizardConfig<T>) {
+interface WizardActions<T> {
+  goToStep: (step: number) => void;
+  goNext: () => void;
+  goPrev: () => void;
+  skipStep: () => void;
+  updateData: (updates: Partial<T>) => void;
+  setErrors: (errors: Record<string, string>) => void;
+  clearErrors: () => void;
+  validateCurrentStep: () => boolean;
+  validateField: (fieldName: string) => void;  // Real-time field validation
+  touchField: (fieldName: string) => void;      // Mark field as touched
+  isFieldTouched: (fieldName: string) => boolean;
+  submit: () => Promise<void>;
+  reset: () => void;
+}
+
+function useWizard<T>(config: WizardConfig<T>): WizardState<T> & WizardActions<T> {
   // Manages step navigation
-  // Validates each step
+  // Validates each step and individual fields on blur
   // Persists draft to localStorage
-  // Tracks completion
+  // Tracks completion and touched fields
 }
 ```
 

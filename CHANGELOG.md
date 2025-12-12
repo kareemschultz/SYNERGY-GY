@@ -32,6 +32,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Page now loads correctly without console errors
 
 ### Added
+- **Real-Time Field Validation on Blur** - Immediate validation feedback for wizard forms (December 12, 2024)
+  - Added `validateField`, `touchField`, and `isFieldTouched` methods to useWizard hook
+  - Fields now validate immediately when user leaves them (onBlur event)
+  - Email format validation shows error instantly without clicking Continue
+  - Users see "Please enter a valid email address" when entering invalid email format
+  - Applied to step-basic-info (First Name, Last Name, Business Name) and step-contact (Email, Phone)
+  - Errors clear automatically when user fixes the field value
+  - Accessible error display with aria-describedby linking inputs to error messages
 - **Form Validation Feedback System** - Comprehensive error handling and user feedback (December 12, 2024)
   - Created ValidationSummary component for displaying validation errors
   - Added tooltip explanations to disabled wizard navigation buttons
