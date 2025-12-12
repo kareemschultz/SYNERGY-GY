@@ -153,6 +153,7 @@ function ClientOnboardingWizard() {
           <StepBasicInfo
             data={wizard.data}
             errors={wizard.errors}
+            onFieldBlur={wizard.validateField}
             onUpdate={wizard.updateData}
           />
         );
@@ -161,6 +162,7 @@ function ClientOnboardingWizard() {
           <StepContact
             data={wizard.data}
             errors={wizard.errors}
+            onFieldBlur={wizard.validateField}
             onUpdate={wizard.updateData}
           />
         );

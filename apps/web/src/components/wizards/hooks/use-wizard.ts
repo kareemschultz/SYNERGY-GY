@@ -23,6 +23,7 @@ export type WizardState<T> = {
   data: T;
   errors: Record<string, string>;
   visitedSteps: Set<number>;
+  touchedFields: Set<string>;
   isComplete: boolean;
   isSubmitting: boolean;
 };
@@ -36,6 +37,9 @@ export type WizardActions<T> = {
   setErrors: (errors: Record<string, string>) => void;
   clearErrors: () => void;
   validateCurrentStep: () => boolean;
+  validateField: (fieldName: string) => void;
+  touchField: (fieldName: string) => void;
+  isFieldTouched: (fieldName: string) => boolean;
   submit: () => Promise<void>;
   reset: () => void;
 };
@@ -111,6 +115,7 @@ export function useWizard<T extends Record<string, unknown>>(
   const [data, setData] = useState<T>(savedData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([0]));
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [isComplete, setIsComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -214,6 +219,45 @@ export function useWizard<T extends Record<string, unknown>>(
     setErrors({});
   }, []);
 
+  // Mark a field as touched (user has interacted and left the field)
+  const touchField = useCallback((fieldName: string) => {
+    setTouchedFields((prev) => new Set([...prev, fieldName]));
+  }, []);
+
+  // Check if a field has been touched
+  const isFieldTouched = useCallback(
+    (fieldName: string) => touchedFields.has(fieldName),
+    [touchedFields]
+  );
+
+  // Validate a specific field and update errors
+  const validateField = useCallback(
+    (fieldName: string) => {
+      const stepConfig = steps[currentStep];
+      if (!stepConfig.validate) {
+        return;
+      }
+
+      // Run full validation to get all errors
+      const validationErrors = stepConfig.validate(data);
+
+      // Update only the specific field's error
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        if (validationErrors && validationErrors[fieldName]) {
+          newErrors[fieldName] = validationErrors[fieldName];
+        } else {
+          delete newErrors[fieldName];
+        }
+        return newErrors;
+      });
+
+      // Mark field as touched
+      touchField(fieldName);
+    },
+    [currentStep, data, steps, touchField]
+  );
+
   const submit = useCallback(async () => {
     if (!validateCurrentStep()) {
       return;
@@ -242,6 +286,7 @@ export function useWizard<T extends Record<string, unknown>>(
     setData(initialData);
     setErrors({});
     setVisitedSteps(new Set([0]));
+    setTouchedFields(new Set());
     setIsComplete(false);
     setIsSubmitting(false);
     if (storageKey) {
@@ -256,6 +301,7 @@ export function useWizard<T extends Record<string, unknown>>(
     data,
     errors,
     visitedSteps,
+    touchedFields,
     isComplete,
     isSubmitting,
 
@@ -277,6 +323,9 @@ export function useWizard<T extends Record<string, unknown>>(
     setErrors,
     clearErrors,
     validateCurrentStep,
+    validateField,
+    touchField,
+    isFieldTouched,
     submit,
     reset,
   };

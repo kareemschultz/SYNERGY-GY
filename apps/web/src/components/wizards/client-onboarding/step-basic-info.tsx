@@ -18,6 +18,7 @@ type StepBasicInfoProps = {
   data: ClientOnboardingData;
   errors: Record<string, string>;
   onUpdate: (updates: Partial<ClientOnboardingData>) => void;
+  onFieldBlur?: (fieldName: string) => void;
 };
 
 const NATIONALITIES = [
@@ -48,7 +49,12 @@ const COUNTRIES = [
   "Other",
 ];
 
-export function StepBasicInfo({ data, errors, onUpdate }: StepBasicInfoProps) {
+export function StepBasicInfo({
+  data,
+  errors,
+  onUpdate,
+  onFieldBlur,
+}: StepBasicInfoProps) {
   const isIndividual = isIndividualType(data.clientType);
   const isBusiness = isBusinessType(data.clientType);
   const isForeignNational = data.clientType === "FOREIGN_NATIONAL";
@@ -69,14 +75,24 @@ export function StepBasicInfo({ data, errors, onUpdate }: StepBasicInfoProps) {
               First Name <span className="text-destructive">*</span>
             </Label>
             <Input
+              aria-describedby={
+                errors.firstName ? "firstName-error" : undefined
+              }
               aria-invalid={!!errors.firstName}
               id="firstName"
+              onBlur={() => onFieldBlur?.("firstName")}
               onChange={(e) => onUpdate({ firstName: e.target.value })}
               placeholder="Enter first name"
               value={data.firstName}
             />
             {errors.firstName ? (
-              <p className="text-destructive text-sm">{errors.firstName}</p>
+              <p
+                className="text-destructive text-sm"
+                id="firstName-error"
+                role="alert"
+              >
+                {errors.firstName}
+              </p>
             ) : null}
           </div>
 
@@ -85,14 +101,22 @@ export function StepBasicInfo({ data, errors, onUpdate }: StepBasicInfoProps) {
               Last Name <span className="text-destructive">*</span>
             </Label>
             <Input
+              aria-describedby={errors.lastName ? "lastName-error" : undefined}
               aria-invalid={!!errors.lastName}
               id="lastName"
+              onBlur={() => onFieldBlur?.("lastName")}
               onChange={(e) => onUpdate({ lastName: e.target.value })}
               placeholder="Enter last name"
               value={data.lastName}
             />
             {errors.lastName ? (
-              <p className="text-destructive text-sm">{errors.lastName}</p>
+              <p
+                className="text-destructive text-sm"
+                id="lastName-error"
+                role="alert"
+              >
+                {errors.lastName}
+              </p>
             ) : null}
           </div>
 
@@ -134,14 +158,24 @@ export function StepBasicInfo({ data, errors, onUpdate }: StepBasicInfoProps) {
               Business Name <span className="text-destructive">*</span>
             </Label>
             <Input
+              aria-describedby={
+                errors.businessName ? "businessName-error" : undefined
+              }
               aria-invalid={!!errors.businessName}
               id="businessName"
+              onBlur={() => onFieldBlur?.("businessName")}
               onChange={(e) => onUpdate({ businessName: e.target.value })}
               placeholder="Enter business name"
               value={data.businessName}
             />
             {errors.businessName ? (
-              <p className="text-destructive text-sm">{errors.businessName}</p>
+              <p
+                className="text-destructive text-sm"
+                id="businessName-error"
+                role="alert"
+              >
+                {errors.businessName}
+              </p>
             ) : null}
           </div>
 
