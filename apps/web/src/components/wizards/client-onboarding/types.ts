@@ -128,6 +128,48 @@ export const KAJ_SERVICES = [
 export type GCMCService = (typeof GCMC_SERVICES)[number]["value"];
 export type KAJService = (typeof KAJ_SERVICES)[number]["value"];
 
+// Service catalog item from API
+export type PricingTier = {
+  name: string;
+  description?: string;
+  price?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  conditions?: string;
+};
+
+export type ServiceCatalogItem = {
+  id: string;
+  displayName: string;
+  shortDescription?: string;
+  basePrice?: string | null;
+  maxPrice?: string | null;
+  pricingType: "FIXED" | "RANGE" | "TIERED" | "CUSTOM";
+  pricingTiers?: PricingTier[];
+  estimatedDays?: number | null;
+  typicalDuration?: string | null;
+  documentRequirements: string[];
+  documentCount: number;
+  isFeatured?: boolean;
+  // Full details for modal
+  description?: string | null;
+  targetAudience?: string | null;
+  topicsCovered?: string[] | null;
+  deliverables?: string[] | null;
+  workflow?: string | null;
+  pricingNotes?: string | null;
+  discountsAvailable?: string | null;
+  governmentFees?: string | null;
+  governmentAgencies?: string[] | null;
+};
+
+export type ServicesByCategory = Record<string, ServiceCatalogItem[]>;
+
+export type ServicesForWizard = {
+  GCMC: ServicesByCategory;
+  KAJ: ServicesByCategory;
+};
+
 export type ClientOnboardingData = {
   // Step 1: Client Type
   clientType: ClientType | "";
@@ -233,8 +275,7 @@ export type ClientOnboardingData = {
 
   // Step 8: Business Assignment & Services
   businesses: Business[];
-  gcmcServices: GCMCService[];
-  kajServices: KAJService[];
+  selectedServiceIds: string[]; // Array of service catalog UUIDs
 
   // Step 9: Notes
   notes: string;
@@ -281,8 +322,7 @@ export const initialOnboardingData: ClientOnboardingData = {
   nisNumber: "",
   beneficialOwners: [],
   businesses: [],
-  gcmcServices: [],
-  kajServices: [],
+  selectedServiceIds: [],
   notes: "",
   documents: {
     files: [],
@@ -484,10 +524,17 @@ export const onboardingSteps: OnboardingStep[] = [
     title: "Services",
     description: "Select businesses and services",
     validate: (data: ClientOnboardingData) => {
+      const errors: Record<string, string> = {};
+
       if (data.businesses.length === 0) {
-        return { businesses: "Please select at least one business" };
+        errors.businesses = "Please select at least one business";
       }
-      return null;
+
+      if (!data.selectedServiceIds || data.selectedServiceIds.length === 0) {
+        errors.services = "Please select at least one service";
+      }
+
+      return Object.keys(errors).length > 0 ? errors : null;
     },
   },
   {

@@ -1,10 +1,15 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  Activity,
   ArrowLeft,
+  Briefcase,
   Building2,
+  Calendar,
   CreditCard,
+  DollarSign,
   Edit,
+  Eye,
   FileText,
   Loader2,
   Mail,
@@ -14,12 +19,20 @@ import {
   Phone,
   Plus,
   Send,
+  Shield,
   User,
   Users,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ClientDocumentsTab } from "@/components/clients/client-documents-tab";
+import { ComplianceIndicator } from "@/components/clients/compliance-indicator";
+import {
+  AppointmentMiniCard,
+  CommunicationMiniCard,
+  MatterMiniCard,
+} from "@/components/clients/mini-cards";
+import { QuickStatCard } from "@/components/clients/quick-stat-card";
 import { PageHeader } from "@/components/layout/page-header";
 import { PortalPreviewPanel } from "@/components/portal/portal-preview-panel";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +41,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -36,6 +51,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -47,9 +64,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useImpersonation } from "@/hooks/use-impersonation";
+import { client, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/clients/$client-id")({
   component: ClientDetailPage,
@@ -108,6 +127,13 @@ function ClientDetailPage() {
   });
 
   const canViewFinancials = staffStatus?.staff?.canViewFinancials ?? false;
+
+  // Get dashboard data for overview stats
+  const { data: dashboardData, isLoading: isDashboardLoading } = useQuery({
+    queryKey: ["clientDashboard", clientId],
+    queryFn: () => client.clients.getDashboard({ clientId }),
+    enabled: !!clientId,
+  });
 
   const sendPortalInvite = useMutation({
     mutationFn: (email: string) =>
@@ -339,99 +365,13 @@ function ClientDetailPage() {
 
           {/* Overview Tab */}
           <TabsContent className="mt-6" value="overview">
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* Basic Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Basic Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {isIndividual ? (
-                    <>
-                      <InfoRow
-                        label="First Name"
-                        value={clientData.firstName}
-                      />
-                      <InfoRow label="Last Name" value={clientData.lastName} />
-                      <InfoRow
-                        label="Date of Birth"
-                        value={clientData.dateOfBirth}
-                      />
-                      <InfoRow
-                        label="Nationality"
-                        value={clientData.nationality}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <InfoRow
-                        label="Business Name"
-                        value={clientData.businessName}
-                      />
-                      <InfoRow
-                        label="Registration #"
-                        value={clientData.registrationNumber}
-                      />
-                      <InfoRow
-                        label="Incorporation Date"
-                        value={clientData.incorporationDate}
-                      />
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Contact Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    Contact Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <InfoRow label="Email" value={clientData.email} />
-                  <InfoRow label="Phone" value={clientData.phone} />
-                  <InfoRow
-                    label="Alternate Phone"
-                    value={clientData.alternatePhone}
-                  />
-                  <InfoRow label="Address" value={clientData.address} />
-                  <InfoRow label="City" value={clientData.city} />
-                  <InfoRow label="Country" value={clientData.country} />
-                </CardContent>
-              </Card>
-
-              {/* Identification */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Identification</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <InfoRow label="TIN Number" value={clientData.tinNumber} />
-                  <InfoRow label="National ID" value={clientData.nationalId} />
-                  <InfoRow
-                    label="Passport #"
-                    value={clientData.passportNumber}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Notes */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {clientData.notes ? (
-                    <p className="whitespace-pre-wrap text-sm">
-                      {clientData.notes}
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground text-sm">No notes</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            <OverviewTab
+              canViewFinancials={canViewFinancials}
+              clientData={clientData as ClientData}
+              dashboardData={dashboardData}
+              isIndividual={isIndividual}
+              isLoading={isDashboardLoading}
+            />
           </TabsContent>
 
           {/* Contacts Tab */}
@@ -1122,5 +1062,445 @@ function InvoicesSection({ clientId }: { clientId: string }) {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// Overview Tab Component
+type ClientData = {
+  firstName?: string | null;
+  lastName?: string | null;
+  dateOfBirth?: string | null;
+  nationality?: string | null;
+  businessName?: string | null;
+  registrationNumber?: string | null;
+  incorporationDate?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  alternatePhone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  country?: string | null;
+  tinNumber?: string | null;
+  nationalId?: string | null;
+  passportNumber?: string | null;
+  notes?: string | null;
+  graCompliant?: boolean;
+  nisCompliant?: boolean;
+  amlRiskRating?: "LOW" | "MEDIUM" | "HIGH";
+  lastComplianceCheckDate?: string | null;
+};
+
+type OverviewTabProps = {
+  clientData: ClientData;
+  dashboardData?: {
+    matters: {
+      total: number;
+      active: number;
+      completed: number;
+      recent: Array<{
+        id: string;
+        referenceNumber: string;
+        title: string;
+        status: string;
+        business: string;
+        updatedAt: Date;
+      }>;
+    };
+    documents: {
+      total: number;
+      recent: Array<{
+        id: string;
+        originalName: string;
+        category: string | null;
+        createdAt: Date;
+      }>;
+    };
+    appointments: {
+      upcoming: Array<{
+        id: string;
+        title: string;
+        scheduledAt: Date;
+        endAt: Date | null;
+        status: string;
+        locationType: string;
+        appointmentType?: { name: string; color: string | null } | null;
+        assignedStaff?: { user?: { name: string | null } | null } | null;
+      }>;
+    };
+    communications: {
+      recent: Array<{
+        id: string;
+        type: string;
+        direction: string;
+        subject?: string | null;
+        summary: string;
+        communicatedAt: Date;
+        staff?: { user?: { name: string | null } | null } | null;
+      }>;
+    };
+    financials?: {
+      totalInvoiced: string;
+      totalPaid: string;
+      totalOutstanding: string;
+      totalOverdue: string;
+      invoiceCount: number;
+      overdueCount: number;
+    } | null;
+    canViewFinancials: boolean;
+  };
+  isIndividual: boolean;
+  canViewFinancials: boolean;
+  isLoading: boolean;
+};
+
+function OverviewTab({
+  clientData,
+  dashboardData,
+  isIndividual,
+  canViewFinancials,
+  isLoading,
+}: OverviewTabProps) {
+  const formatCurrency = (amount: string) => {
+    const num = Number.parseFloat(amount) || 0;
+    return `GYD ${num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Row 1: Quick Stats Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {isLoading ? (
+          <>
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-24 rounded-lg" />
+          </>
+        ) : (
+          <>
+            <QuickStatCard
+              icon={Briefcase}
+              label="Active Matters"
+              subtext={`${dashboardData?.matters.total || 0} total`}
+              value={dashboardData?.matters.active || 0}
+              variant={
+                (dashboardData?.matters.active || 0) > 0 ? "default" : "muted"
+              }
+            />
+            <QuickStatCard
+              icon={FileText}
+              label="Documents"
+              value={dashboardData?.documents.total || 0}
+              variant={
+                (dashboardData?.documents.total || 0) > 0 ? "default" : "muted"
+              }
+            />
+            <QuickStatCard
+              icon={Calendar}
+              label="Upcoming Appointments"
+              value={dashboardData?.appointments.upcoming.length || 0}
+              variant={
+                (dashboardData?.appointments.upcoming.length || 0) > 0
+                  ? "default"
+                  : "muted"
+              }
+            />
+            {canViewFinancials && dashboardData?.financials ? (
+              <QuickStatCard
+                icon={DollarSign}
+                label="Outstanding Balance"
+                subtext={
+                  dashboardData.financials.overdueCount > 0
+                    ? `${dashboardData.financials.overdueCount} overdue`
+                    : undefined
+                }
+                value={formatCurrency(
+                  dashboardData.financials.totalOutstanding
+                )}
+                variant={
+                  dashboardData.financials.overdueCount > 0
+                    ? "danger"
+                    : "default"
+                }
+              />
+            ) : (
+              <QuickStatCard
+                icon={DollarSign}
+                label="Outstanding Balance"
+                value="-"
+                variant="muted"
+              />
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Row 2: Compliance & Financial Summary */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Compliance Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Compliance Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ComplianceIndicator
+              amlRiskRating={clientData.amlRiskRating || "LOW"}
+              graCompliant={clientData.graCompliant ?? false}
+              lastCheckDate={clientData.lastComplianceCheckDate}
+              nisCompliant={clientData.nisCompliant ?? false}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Financial Summary Card */}
+        {canViewFinancials && dashboardData?.financials ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Financial Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <InfoRow
+                label="Total Invoiced"
+                value={formatCurrency(dashboardData.financials.totalInvoiced)}
+              />
+              <InfoRow
+                label="Total Paid"
+                value={formatCurrency(dashboardData.financials.totalPaid)}
+              />
+              <InfoRow
+                label="Outstanding"
+                value={formatCurrency(
+                  dashboardData.financials.totalOutstanding
+                )}
+              />
+              {Number.parseFloat(dashboardData.financials.totalOverdue) > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground text-sm">Overdue</span>
+                  <span className="font-medium text-red-600 text-sm">
+                    {formatCurrency(dashboardData.financials.totalOverdue)} (
+                    {dashboardData.financials.overdueCount} invoices)
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Financial Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground text-sm">
+                {canViewFinancials
+                  ? "No invoice data available"
+                  : "You don't have permission to view financial data"}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Row 3: Recent Activity */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Recent Matters */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base">Recent Matters</CardTitle>
+            <Button asChild size="sm" variant="ghost">
+              <Link search={{ client: clientData }} to="/app/matters">
+                View All
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ) : (dashboardData?.matters.recent?.length || 0) > 0 ? (
+              <div className="space-y-2">
+                {dashboardData?.matters.recent.slice(0, 3).map((m) => (
+                  <MatterMiniCard
+                    business={m.business}
+                    id={m.id}
+                    key={m.id}
+                    referenceNumber={m.referenceNumber}
+                    status={m.status}
+                    title={m.title}
+                    updatedAt={m.updatedAt}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="py-4 text-center text-muted-foreground text-sm">
+                No matters yet
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Appointments */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base">Upcoming Appointments</CardTitle>
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/app/appointments">View All</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ) : (dashboardData?.appointments.upcoming?.length || 0) > 0 ? (
+              <div className="space-y-2">
+                {dashboardData?.appointments.upcoming.slice(0, 3).map((apt) => (
+                  <AppointmentMiniCard
+                    appointmentType={apt.appointmentType}
+                    assignedStaff={apt.assignedStaff}
+                    endAt={apt.endAt}
+                    id={apt.id}
+                    key={apt.id}
+                    locationType={apt.locationType}
+                    scheduledAt={apt.scheduledAt}
+                    status={apt.status}
+                    title={apt.title}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="py-4 text-center text-muted-foreground text-sm">
+                No upcoming appointments
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Communications */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Recent Communications</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            ) : (dashboardData?.communications.recent?.length || 0) > 0 ? (
+              <div className="space-y-2">
+                {dashboardData?.communications.recent
+                  .slice(0, 3)
+                  .map((comm) => (
+                    <CommunicationMiniCard
+                      communicatedAt={comm.communicatedAt}
+                      direction={comm.direction}
+                      id={comm.id}
+                      key={comm.id}
+                      staff={comm.staff}
+                      subject={comm.subject}
+                      summary={comm.summary}
+                      type={comm.type}
+                    />
+                  ))}
+              </div>
+            ) : (
+              <p className="py-4 text-center text-muted-foreground text-sm">
+                No communications logged
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 4: Client Information */}
+      <div>
+        <h3 className="mb-4 font-semibold text-lg">Client Information</h3>
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Basic Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isIndividual ? (
+                <>
+                  <InfoRow label="First Name" value={clientData.firstName} />
+                  <InfoRow label="Last Name" value={clientData.lastName} />
+                  <InfoRow
+                    label="Date of Birth"
+                    value={clientData.dateOfBirth}
+                  />
+                  <InfoRow label="Nationality" value={clientData.nationality} />
+                </>
+              ) : (
+                <>
+                  <InfoRow
+                    label="Business Name"
+                    value={clientData.businessName}
+                  />
+                  <InfoRow
+                    label="Registration #"
+                    value={clientData.registrationNumber}
+                  />
+                  <InfoRow
+                    label="Incorporation Date"
+                    value={clientData.incorporationDate}
+                  />
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Contact Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Contact Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <InfoRow label="Email" value={clientData.email} />
+              <InfoRow label="Phone" value={clientData.phone} />
+              <InfoRow
+                label="Alternate Phone"
+                value={clientData.alternatePhone}
+              />
+              <InfoRow label="Address" value={clientData.address} />
+              <InfoRow label="City" value={clientData.city} />
+              <InfoRow label="Country" value={clientData.country} />
+            </CardContent>
+          </Card>
+
+          {/* Identification */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Identification</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <InfoRow label="TIN Number" value={clientData.tinNumber} />
+              <InfoRow label="National ID" value={clientData.nationalId} />
+              <InfoRow label="Passport #" value={clientData.passportNumber} />
+            </CardContent>
+          </Card>
+
+          {/* Notes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Notes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {clientData.notes ? (
+                <p className="whitespace-pre-wrap text-sm">
+                  {clientData.notes}
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-sm">No notes</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 }

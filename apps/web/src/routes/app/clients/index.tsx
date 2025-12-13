@@ -1,7 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, MoreHorizontal, Plus, Search, Wand2 } from "lucide-react";
+import {
+  Grid3X3,
+  List,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Wand2,
+} from "lucide-react";
 import { useState } from "react";
+import { ClientCard } from "@/components/clients/client-card";
+import {
+  EngagementBadge,
+  FinancialBadge,
+  WorkloadBadge,
+} from "@/components/clients/client-stats-badge";
+import { ComplianceIndicator } from "@/components/clients/compliance-indicator";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -27,6 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/clients/")({
@@ -50,10 +66,14 @@ function ClientsPage() {
   const [businessFilter, setBusinessFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("ACTIVE");
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  const effectiveView = isMobile ? "cards" : viewMode;
 
   const { data, isLoading, error } = useQuery({
     queryKey: [
-      "clients",
+      "clientsWithStats",
       {
         search,
         type: typeFilter,
@@ -63,7 +83,7 @@ function ClientsPage() {
       },
     ],
     queryFn: () =>
-      client.clients.list({
+      client.clients.listWithStats({
         page,
         limit: 20,
         search: search || undefined,
@@ -89,6 +109,8 @@ function ClientsPage() {
             : (statusFilter as "ACTIVE" | "INACTIVE" | "ARCHIVED"),
       }),
   });
+
+  const canViewFinancials = data?.canViewFinancials ?? false;
 
   return (
     <div className="flex flex-col">
@@ -194,124 +216,276 @@ function ClientsPage() {
               <SelectItem value="ARCHIVED">Archived</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* View Toggle (hidden on mobile) */}
+          {!isMobile && (
+            <div className="flex rounded-md border">
+              <Button
+                className="rounded-r-none"
+                onClick={() => setViewMode("table")}
+                size="icon"
+                variant={viewMode === "table" ? "secondary" : "ghost"}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                className="rounded-l-none"
+                onClick={() => setViewMode("cards")}
+                size="icon"
+                variant={viewMode === "cards" ? "secondary" : "ghost"}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Error state */}
-        {!!error && (
+        {Boolean(error) && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
             Failed to load clients. Please try again.
           </div>
         )}
 
-        {/* Clients Table */}
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Businesses</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>TIN</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={7}>
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading clients...
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : data?.clients && data.clients.length > 0 ? (
-                data.clients.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">
-                      <Link
-                        className="hover:underline"
-                        params={{ clientId: c.id }}
-                        to="/app/clients/$clientId"
-                      >
-                        {c.displayName}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{clientTypeLabels[c.type] || c.type}</TableCell>
-                    <TableCell>
-                      <BusinessBadges businesses={c.businesses} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {!!c.email && <div>{c.email}</div>}
-                        {!!c.phone && (
-                          <div className="text-muted-foreground">{c.phone}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      {c.tinNumber || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={c.status} />
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link
-                              params={{ clientId: c.id }}
-                              to="/app/clients/$clientId"
-                            >
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link
-                              params={{ clientId: c.id }}
-                              search={{ edit: true }}
-                              to="/app/clients/$clientId"
-                            >
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+        {/* Loading state */}
+        {isLoading &&
+          (effectiveView === "cards" ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton className="h-48 rounded-lg" key={i} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Businesses</TableHead>
+                    <TableHead>Workload</TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      Compliance
+                    </TableHead>
+                    {canViewFinancials && (
+                      <TableHead className="hidden xl:table-cell">
+                        Financial
+                      </TableHead>
+                    )}
+                    <TableHead className="hidden md:table-cell">
+                      Contact
+                    </TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-12" />
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={7}>
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <p>No clients found</p>
-                      <Button asChild size="sm" variant="outline">
-                        <Link to="/app/clients/onboard">
-                          <Wand2 className="mr-2 h-4 w-4" />
-                          Add your first client
-                        </Link>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-4 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                      {canViewFinancials && (
+                        <TableCell className="hidden xl:table-cell">
+                          <Skeleton className="h-4 w-16" />
+                        </TableCell>
+                      )}
+                      <TableCell className="hidden md:table-cell">
+                        <Skeleton className="h-8 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-8 w-8" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ))}
+
+        {/* Content */}
+        {!isLoading &&
+          (effectiveView === "cards" ? (
+            // Card View
+            data?.clients && data.clients.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {data.clients.map((c) => (
+                  <ClientCard
+                    canViewFinancials={canViewFinancials}
+                    client={c}
+                    key={c.id}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border-2 border-dashed py-12 text-center">
+                <p className="text-muted-foreground">No clients found</p>
+                <Button asChild className="mt-4" size="sm" variant="outline">
+                  <Link to="/app/clients/onboard">
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Add your first client
+                  </Link>
+                </Button>
+              </div>
+            )
+          ) : (
+            // Table View
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Businesses</TableHead>
+                    <TableHead>Workload</TableHead>
+                    <TableHead className="hidden lg:table-cell">
+                      Compliance
+                    </TableHead>
+                    {canViewFinancials && (
+                      <TableHead className="hidden xl:table-cell">
+                        Financial
+                      </TableHead>
+                    )}
+                    <TableHead className="hidden md:table-cell">
+                      Engagement
+                    </TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-12" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data?.clients && data.clients.length > 0 ? (
+                    data.clients.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-medium">
+                          <Link
+                            className="hover:underline"
+                            params={{ clientId: c.id }}
+                            to="/app/clients/$clientId"
+                          >
+                            {c.displayName}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          {clientTypeLabels[c.type] || c.type}
+                        </TableCell>
+                        <TableCell>
+                          <BusinessBadges businesses={c.businesses} />
+                        </TableCell>
+                        <TableCell>
+                          <WorkloadBadge
+                            activeMatterCount={c.activeMatterCount}
+                            pendingMatterCount={c.pendingMatterCount}
+                            totalMatterCount={c.totalMatterCount}
+                          />
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <ComplianceIndicator
+                            amlRiskRating={c.amlRiskRating}
+                            compact
+                            graCompliant={c.graCompliant}
+                            nisCompliant={c.nisCompliant}
+                          />
+                        </TableCell>
+                        {canViewFinancials && (
+                          <TableCell className="hidden xl:table-cell">
+                            {c.financials ? (
+                              <FinancialBadge
+                                overdueAmount={c.financials.overdueAmount}
+                                overdueCount={c.financials.overdueCount}
+                                totalOutstanding={c.financials.totalOutstanding}
+                              />
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                        )}
+                        <TableCell className="hidden md:table-cell">
+                          <EngagementBadge
+                            lastContactDate={c.lastContactDate}
+                            nextAppointmentDate={c.nextAppointmentDate}
+                            upcomingAppointmentCount={
+                              c.upcomingAppointmentCount
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={c.status} />
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link
+                                  params={{ clientId: c.id }}
+                                  to="/app/clients/$clientId"
+                                >
+                                  View Details
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link
+                                  params={{ clientId: c.id }}
+                                  search={{ edit: true }}
+                                  to="/app/clients/$clientId"
+                                >
+                                  Edit
+                                </Link>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        className="h-32 text-center"
+                        colSpan={canViewFinancials ? 9 : 8}
+                      >
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                          <p>No clients found</p>
+                          <Button asChild size="sm" variant="outline">
+                            <Link to="/app/clients/onboard">
+                              <Wand2 className="mr-2 h-4 w-4" />
+                              Add your first client
+                            </Link>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          ))}
 
         {/* Pagination */}
-        {!!data?.totalPages && data.totalPages > 1 && (
+        {Boolean(data?.totalPages) && (data?.totalPages ?? 0) > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
-              Showing {(page - 1) * 20 + 1} to {Math.min(page * 20, data.total)}{" "}
-              of {data.total} clients
+              Showing {(page - 1) * 20 + 1} to{" "}
+              {Math.min(page * 20, data?.total ?? 0)} of {data?.total} clients
             </p>
             <div className="flex gap-2">
               <Button
@@ -323,7 +497,7 @@ function ClientsPage() {
                 Previous
               </Button>
               <Button
-                disabled={page === data.totalPages}
+                disabled={page === data?.totalPages}
                 onClick={() => setPage(page + 1)}
                 size="sm"
                 variant="outline"

@@ -8,6 +8,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- **Enhanced Service Selection for Client Onboarding Wizard** (December 12, 2024)
+  - **Individual Service Selection**: Granular selection of specific services within categories
+    - Replaced category-level selection with individual service checkboxes
+    - Full pricing transparency (all tiers displayed inline per user requirement)
+    - Service details modal with comprehensive information
+    - Search/filter functionality for quick service discovery
+  - **Backend Infrastructure**:
+    - `getForWizard` API endpoint in `service-catalog.ts` - Returns services grouped by category
+    - Updated `saveSelections` API to accept `serviceIds: string[]` instead of category codes
+    - Migration script: `migrate-to-service-catalog.ts` - Migrates 54 services from service_type to serviceCatalog
+    - Verification script: `verify-client-selections.ts` - Fixes broken client service selections
+  - **Frontend Types & Utilities**:
+    - `ServiceCatalogItem` type with full pricing and document requirement details
+    - `PricingTier` type supporting FIXED/RANGE/TIERED/CUSTOM pricing models
+    - Changed `ClientOnboardingData.selectedServiceIds: string[]` (from gcmcServices/kajServices arrays)
+    - Pricing utility (`apps/web/src/utils/pricing.ts`):
+      - `getServicePriceDisplay()` - Shows all pricing tiers inline (e.g., "3-day: GYD 35k | 5-day: GYD 50k")
+      - `formatCurrency()` - GYD formatting with compact mode
+      - `calculateTotalPrice()` - Estimates total cost for selected services
+      - `formatDuration()` - Service duration display
+  - **UI Components** (In Progress):
+    - ServiceCategoryAccordion - Expandable category cards with service count and price range
+    - ServiceCheckboxItem - Individual service with full pricing tiers, duration, and document count
+    - ServiceDetailsModal - Comprehensive service information with tiered pricing tables
+  - **Data Architecture Fix**: Resolved mismatch between wizard (sent category codes) and API (expected service UUIDs)
+
+- **Clients At-a-Glance Enhancement** (December 12, 2024)
+  - **API Layer**: New `listWithStats` endpoint with efficient SQL using LATERAL joins
+    - Aggregates workload, compliance, financial, and engagement data per client
+    - Permission-based financial data filtering (requires `canViewFinancials`)
+  - **New Shared Components** (`apps/web/src/components/clients/`):
+    - `client-stats-badge.tsx` - WorkloadBadge, FinancialBadge, EngagementBadge
+    - `compliance-indicator.tsx` - GRA/NIS/AML status display (compact + full modes)
+    - `client-card.tsx` - Mobile card view for the clients list
+    - `quick-stat-card.tsx` - Quick stat display cards for overview page
+    - `mini-cards.tsx` - MatterMiniCard, AppointmentMiniCard, CommunicationMiniCard
+  - **Clients List Page Enhancement**:
+    - Hybrid responsive view: Table on desktop, cards on mobile
+    - View toggle buttons (table/cards) on desktop
+    - Enhanced table columns: Workload, Compliance, Financial, Engagement
+    - Auto-switch to cards on mobile (<768px)
+    - Loading skeletons for both views
+  - **Client Detail Page Overview Tab**:
+    - Quick Stats Grid (Active Matters, Documents, Upcoming Appointments, Outstanding Balance)
+    - Compliance Status card (GRA/NIS/AML)
+    - Financial Summary card (Total Invoiced, Paid, Outstanding, Overdue)
+    - Recent Activity section (Matters, Appointments, Communications)
+    - Client Information section with existing info cards
+
 - **Enhanced Client Onboarding with AML/KYC Compliance - Phase 1** (December 12, 2024)
   - **Legal Compliance**: Full implementation of Guyana Beneficial Ownership Disclosure Act
     - GYD $200,000 penalty avoidance through proper beneficial owner tracking

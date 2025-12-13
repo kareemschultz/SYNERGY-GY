@@ -17,12 +17,11 @@ export const clientServicesRouter = router({
     .input(
       z.object({
         clientId: z.string().uuid(),
-        gcmcServices: z.array(z.string()),
-        kajServices: z.array(z.string()),
+        serviceIds: z.array(z.string().uuid()),
       })
     )
-    .mutation(async ({ input, ctx }) => {
-      const { clientId, gcmcServices, kajServices } = input;
+    .mutation(async ({ input }) => {
+      const { clientId, serviceIds } = input;
 
       // Verify client exists
       const clientExists = await db.query.client.findFirst({
@@ -33,53 +32,35 @@ export const clientServicesRouter = router({
         throw new Error("Client not found");
       }
 
-      // Fetch service definitions from service catalog
-      const allServiceCodes = [...gcmcServices, ...kajServices];
+      if (serviceIds.length === 0) {
+        return {
+          success: true,
+          count: 0,
+          selections: [],
+        };
+      }
 
+      // Fetch service definitions from service catalog
       const serviceDefinitions = await db.query.serviceCatalog.findMany({
-        where: inArray(serviceCatalog.id, allServiceCodes),
+        where: inArray(serviceCatalog.id, serviceIds),
       });
 
-      if (serviceDefinitions.length !== allServiceCodes.length) {
-        throw new Error("Some service codes are invalid");
+      if (serviceDefinitions.length !== serviceIds.length) {
+        throw new Error(
+          `Invalid service IDs: expected ${serviceIds.length}, found ${serviceDefinitions.length}`
+        );
       }
 
       // Create service selection records
-      const serviceSelections = [];
-
-      for (const serviceCode of gcmcServices) {
-        const serviceDef = serviceDefinitions.find((s) => s.id === serviceCode);
-        if (!serviceDef) {
-          continue;
-        }
-
-        serviceSelections.push({
-          clientId,
-          business: "GCMC" as const,
-          serviceCode: serviceDef.id,
-          serviceName: serviceDef.name,
-          requiredDocuments: serviceDef.documentRequirements || [],
-          uploadedDocuments: [],
-          status: "INTERESTED" as const,
-        });
-      }
-
-      for (const serviceCode of kajServices) {
-        const serviceDef = serviceDefinitions.find((s) => s.id === serviceCode);
-        if (!serviceDef) {
-          continue;
-        }
-
-        serviceSelections.push({
-          clientId,
-          business: "KAJ" as const,
-          serviceCode: serviceDef.id,
-          serviceName: serviceDef.name,
-          requiredDocuments: serviceDef.documentRequirements || [],
-          uploadedDocuments: [],
-          status: "INTERESTED" as const,
-        });
-      }
+      const serviceSelections = serviceDefinitions.map((serviceDef) => ({
+        clientId,
+        business: serviceDef.business,
+        serviceCode: serviceDef.id,
+        serviceName: serviceDef.name,
+        requiredDocuments: serviceDef.documentRequirements || [],
+        uploadedDocuments: [],
+        status: "INTERESTED" as const,
+      }));
 
       // Insert all service selections
       const created = await db

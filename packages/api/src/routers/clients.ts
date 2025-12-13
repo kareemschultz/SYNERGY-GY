@@ -105,6 +105,19 @@ const listClientsSchema = z.object({
   sortOrder: z.enum(["asc", "desc"]).default("asc"),
 });
 
+const listWithStatsSchema = z.object({
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(50).default(20),
+  search: z.string().optional(),
+  type: z.enum(clientTypeValues).optional(),
+  business: z.enum(businessValues).optional(),
+  status: z.enum(clientStatusValues).optional(),
+  sortBy: z
+    .enum(["displayName", "createdAt", "updatedAt", "activeMatterCount"])
+    .default("displayName"),
+  sortOrder: z.enum(["asc", "desc"]).default("asc"),
+});
+
 const createContactSchema = z.object({
   clientId: z.string(),
   name: z.string().min(1, "Name is required"),
@@ -220,6 +233,218 @@ export const clientsRouter = {
         page: input.page,
         limit: input.limit,
         totalPages: Math.ceil(total / input.limit),
+      };
+    }),
+
+  /**
+   * List clients with aggregated stats for at-a-glance information
+   * Includes: matter counts, compliance status, financials, engagement metrics
+   */
+  listWithStats: staffProcedure
+    .input(listWithStatsSchema)
+    .handler(async ({ input, context }) => {
+      const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+      const hasFinancialAccess = canViewFinancials(context.staff);
+
+      if (accessibleBusinesses.length === 0) {
+        return { clients: [], total: 0, page: input.page, limit: input.limit };
+      }
+
+      // biome-ignore lint/suspicious/noEvolvingTypes: Dynamic conditions
+      const conditions = [];
+
+      // Filter by accessible businesses
+      if (input.business) {
+        if (!accessibleBusinesses.includes(input.business)) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this business",
+          });
+        }
+        conditions.push(
+          sql`${client.businesses} && ARRAY[${input.business}]::text[]`
+        );
+      } else {
+        conditions.push(
+          sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`
+        );
+      }
+
+      // Search filter
+      if (input.search) {
+        const searchTerm = `%${input.search}%`;
+        conditions.push(
+          or(
+            ilike(client.displayName, searchTerm),
+            ilike(client.email, searchTerm),
+            ilike(client.tinNumber, searchTerm),
+            ilike(client.phone, searchTerm),
+            ilike(client.businessName, searchTerm)
+          )
+        );
+      }
+
+      // Type filter
+      if (input.type) {
+        conditions.push(eq(client.type, input.type));
+      }
+
+      // Status filter
+      if (input.status) {
+        conditions.push(eq(client.status, input.status));
+      }
+
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
+
+      // Get total count
+      const countResult = await db
+        .select({ total: count() })
+        .from(client)
+        .where(whereClause);
+
+      const total = countResult[0]?.total ?? 0;
+
+      // Get paginated results with stats using efficient subqueries
+      const offset = (input.page - 1) * input.limit;
+
+      // Build the main query with subqueries for aggregated stats
+      const clientsWithStats = await db.execute(sql`
+        SELECT
+          c.id,
+          c.display_name,
+          c.type,
+          c.email,
+          c.phone,
+          c.businesses,
+          c.status,
+          c.tin_number,
+          c.gra_compliant,
+          c.nis_compliant,
+          c.aml_risk_rating,
+          c.last_compliance_check_date,
+          c.onboarding_completed,
+          c.created_at,
+          c.updated_at,
+          -- Matter counts
+          COALESCE(m.active_count, 0)::int as active_matter_count,
+          COALESCE(m.pending_count, 0)::int as pending_matter_count,
+          COALESCE(m.total_count, 0)::int as total_matter_count,
+          -- Financial stats (only if user has access)
+          ${
+            hasFinancialAccess
+              ? sql`
+            COALESCE(f.total_outstanding, '0') as total_outstanding,
+            COALESCE(f.overdue_amount, '0') as overdue_amount,
+            COALESCE(f.overdue_count, 0)::int as overdue_count
+          `
+              : sql`
+            NULL as total_outstanding,
+            NULL as overdue_amount,
+            NULL as overdue_count
+          `
+          },
+          -- Engagement stats
+          cc.last_contact_date,
+          COALESCE(apt.upcoming_count, 0)::int as upcoming_appointment_count,
+          apt.next_appointment_date
+        FROM client c
+        -- Matter stats subquery
+        LEFT JOIN LATERAL (
+          SELECT
+            COUNT(*) FILTER (WHERE status IN ('NEW', 'IN_PROGRESS', 'PENDING_INFO', 'UNDER_REVIEW')) as active_count,
+            COUNT(*) FILTER (WHERE status IN ('PENDING_CLIENT', 'PENDING_INFO')) as pending_count,
+            COUNT(*) as total_count
+          FROM matter WHERE client_id = c.id
+        ) m ON true
+        -- Financial stats subquery (only calculated if user has access)
+        ${
+          hasFinancialAccess
+            ? sql`
+          LEFT JOIN LATERAL (
+            SELECT
+              SUM(CAST(amount_due AS DECIMAL)) as total_outstanding,
+              SUM(CASE WHEN status = 'OVERDUE' THEN CAST(amount_due AS DECIMAL) ELSE 0 END) as overdue_amount,
+              COUNT(*) FILTER (WHERE status = 'OVERDUE') as overdue_count
+            FROM invoice WHERE client_id = c.id AND status IN ('SENT', 'OVERDUE')
+          ) f ON true
+        `
+            : sql``
+        }
+        -- Last communication date
+        LEFT JOIN LATERAL (
+          SELECT MAX(communicated_at) as last_contact_date
+          FROM client_communication WHERE client_id = c.id
+        ) cc ON true
+        -- Upcoming appointments
+        LEFT JOIN LATERAL (
+          SELECT
+            COUNT(*) as upcoming_count,
+            MIN(scheduled_at) as next_appointment_date
+          FROM appointment
+          WHERE client_id = c.id
+            AND scheduled_at >= NOW()
+            AND status IN ('REQUESTED', 'CONFIRMED')
+        ) apt ON true
+        ${whereClause ? sql`WHERE ${whereClause}` : sql``}
+        ORDER BY ${
+          input.sortBy === "activeMatterCount"
+            ? sql`m.active_count`
+            : input.sortBy === "createdAt"
+              ? sql`c.created_at`
+              : input.sortBy === "updatedAt"
+                ? sql`c.updated_at`
+                : sql`c.display_name`
+        } ${input.sortOrder === "desc" ? sql`DESC` : sql`ASC`}
+        LIMIT ${input.limit}
+        OFFSET ${offset}
+      `);
+
+      // Transform results to match expected shape
+      const clients = clientsWithStats.rows.map(
+        (row: Record<string, unknown>) => ({
+          id: row.id as string,
+          displayName: row.display_name as string,
+          type: row.type as string,
+          email: row.email as string | null,
+          phone: row.phone as string | null,
+          businesses: row.businesses as string[],
+          status: row.status as string,
+          tinNumber: row.tin_number as string | null,
+          graCompliant: row.gra_compliant as boolean,
+          nisCompliant: row.nis_compliant as boolean,
+          amlRiskRating: row.aml_risk_rating as "LOW" | "MEDIUM" | "HIGH",
+          lastComplianceCheckDate: row.last_compliance_check_date as
+            | string
+            | null,
+          onboardingCompleted: row.onboarding_completed as boolean,
+          createdAt: row.created_at as string,
+          updatedAt: row.updated_at as string,
+          // Aggregated stats
+          activeMatterCount: row.active_matter_count as number,
+          pendingMatterCount: row.pending_matter_count as number,
+          totalMatterCount: row.total_matter_count as number,
+          // Financial stats (null if no access)
+          financials: hasFinancialAccess
+            ? {
+                totalOutstanding: row.total_outstanding as string,
+                overdueAmount: row.overdue_amount as string,
+                overdueCount: row.overdue_count as number,
+              }
+            : null,
+          // Engagement stats
+          lastContactDate: row.last_contact_date as string | null,
+          upcomingAppointmentCount: row.upcoming_appointment_count as number,
+          nextAppointmentDate: row.next_appointment_date as string | null,
+        })
+      );
+
+      return {
+        clients,
+        total,
+        page: input.page,
+        limit: input.limit,
+        totalPages: Math.ceil(total / input.limit),
+        canViewFinancials: hasFinancialAccess,
       };
     }),
 

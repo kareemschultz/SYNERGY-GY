@@ -123,7 +123,8 @@ export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
               <CardContent className="space-y-3">
                 {service.requiredDocuments.map((req: string) => {
                   const upload = service.uploadedDocuments.find(
-                    (u: any) => u.requirementName === req
+                    (u: { requirementName: string; documentId: string }) =>
+                      u.requirementName === req
                   );
                   return (
                     <div
