@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Template Generation in Client Onboarding Wizard** (December 13, 2024)
+  - Integrated template generator component into document step of client onboarding wizard
+  - Allows users to search, preview, and generate documents from templates during onboarding
+  - Template preview shows rendered content with client data (name, email, phone, address) before generation
+  - Generated documents automatically added to uploaded files list with proper categorization
+  - Category filtering (Letters, Agreements, Certificates, Forms, Reports, Invoices) for easy template discovery
+  - **Files Created/Modified**:
+    - `apps/web/src/components/wizards/client-onboarding/template-generator.tsx` - New component for template management
+    - `apps/web/src/components/wizards/client-onboarding/step-documents.tsx` - Integrated template generator with upload workflow
+  - **Impact**:
+    - Staff can generate client-specific documents during onboarding without leaving the wizard
+    - Reduces manual document creation time
+    - Ensures consistent document formatting across all clients
+
 ### Fixed
 
 - **Document Upload and Service-Specific Requirements** (December 13, 2024)

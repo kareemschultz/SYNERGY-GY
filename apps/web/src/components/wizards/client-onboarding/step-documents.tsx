@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { client } from "@/utils/orpc";
 import { WizardStep } from "../wizard-step";
+import { TemplateGenerator } from "./template-generator";
 import {
   type ClientOnboardingData,
   getRequiredDocumentsByServices,
@@ -149,6 +150,27 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
     });
   };
 
+  const handleTemplateGenerated = (fileName: string, content: string) => {
+    // Convert generated content to a File object
+    const blob = new Blob([content], { type: "text/plain" });
+    const file = new File([blob], fileName, { type: "text/plain" });
+
+    const newUpload = {
+      file,
+      category: inferDocumentCategory(fileName),
+      description: `Generated from template: ${fileName}`,
+      linkedService: undefined,
+      linkedRequirement: undefined,
+    };
+
+    onUpdate({
+      documents: {
+        files: [...(data.documents?.files || []), file],
+        uploads: [...(data.documents?.uploads || []), newUpload],
+      },
+    });
+  };
+
   return (
     <WizardStep
       description="Upload required documents or generate them from templates"
@@ -246,6 +268,16 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
                 </p>
               </div>
             )}
+        </div>
+      )}
+
+      {/* Template Generator */}
+      {data.businesses.length > 0 && (
+        <div className="mt-8">
+          <TemplateGenerator
+            data={data}
+            onTemplateGenerated={handleTemplateGenerated}
+          />
         </div>
       )}
 
