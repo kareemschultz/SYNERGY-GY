@@ -9,6 +9,10 @@ export * from "./auth";
 
 // Client management
 export * from "./clients";
+// Compliance and AML
+export * from "./compliance";
+// Emergency contacts and employment
+export * from "./contacts";
 // Core schema (enums and staff)
 export * from "./core";
 // Deadlines and calendar
@@ -31,3 +35,5 @@ export * from "./services";
 export * from "./tax-calculations";
 // Training management
 export * from "./training";
+// Document verification
+export * from "./verification";

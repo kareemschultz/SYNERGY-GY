@@ -2,7 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { client } from "@/utils/orpc";
 
 export function useImpersonation() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
 
   const startImpersonationMutation =
     client.portal.impersonation.start.useMutation();

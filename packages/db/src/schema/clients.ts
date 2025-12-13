@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  boolean,
   date,
   index,
   jsonb,
@@ -54,7 +55,27 @@ export const clientLinkTypeEnum = pgEnum("client_link_type", [
   "PARTNER",
   "ACCOUNTANT",
   "ATTORNEY",
+  "BENEFICIAL_OWNER",
+  "TRUSTEE",
+  "AUTHORIZED_SIGNATORY",
+  "FAMILY_MEMBER",
+  "BUSINESS_ASSOCIATE",
   "OTHER",
+]);
+
+// Preferred contact method enum
+export const preferredContactMethodEnum = pgEnum("preferred_contact_method", [
+  "EMAIL",
+  "PHONE",
+  "WHATSAPP",
+  "IN_PERSON",
+]);
+
+// Client AML risk rating enum
+export const clientAmlRiskRatingEnum = pgEnum("client_aml_risk_rating", [
+  "LOW",
+  "MEDIUM",
+  "HIGH",
 ]);
 
 // Main client table
@@ -92,6 +113,28 @@ export const client = pgTable(
     tinNumber: text("tin_number"), // Tax Identification Number
     nationalId: text("national_id"),
     passportNumber: text("passport_number"),
+
+    // Communication Preferences
+    preferredContactMethod: preferredContactMethodEnum(
+      "preferred_contact_method"
+    ).default("EMAIL"),
+    preferredLanguage: text("preferred_language").default("English"),
+
+    // AML/Risk Flags
+    amlRiskRating: clientAmlRiskRatingEnum("aml_risk_rating").default("LOW"),
+    isPep: boolean("is_pep").default(false),
+    requiresEnhancedDueDiligence: boolean(
+      "requires_enhanced_due_diligence"
+    ).default(false),
+
+    // Compliance Verification
+    graCompliant: boolean("gra_compliant").default(false), // Tax compliance verified
+    nisCompliant: boolean("nis_compliant").default(false), // NIS compliance verified
+    lastComplianceCheckDate: date("last_compliance_check_date"),
+
+    // Onboarding Completion
+    onboardingCompleted: boolean("onboarding_completed").default(false),
+    onboardingCompletedAt: timestamp("onboarding_completed_at"),
 
     // Business relationship
     businesses: text("businesses").array().notNull(), // Which businesses serve this client

@@ -19,7 +19,7 @@ dotenv.config({
 type Business = (typeof businessEnum.enumValues)[number];
 type PricingTierType = (typeof pricingTierTypeEnum.enumValues)[number];
 
-interface ServiceCategoryData {
+type ServiceCategoryData = {
   business: Business;
   name: string;
   displayName: string;
@@ -27,9 +27,9 @@ interface ServiceCategoryData {
   icon?: string;
   sortOrder: number;
   services: ServiceCatalogData[];
-}
+};
 
-interface ServiceCatalogData {
+type ServiceCatalogData = {
   name: string;
   displayName: string;
   shortDescription?: string;
@@ -60,7 +60,7 @@ interface ServiceCatalogData {
   isFeatured: boolean;
   sortOrder: number;
   tags?: string[];
-}
+};
 
 async function ingestServiceCatalog() {
   const pool = new Pool({

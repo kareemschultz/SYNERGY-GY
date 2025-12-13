@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/utils/classnames";
+import { cn } from "@/lib/utils";
 import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute(

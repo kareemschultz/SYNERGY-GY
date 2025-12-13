@@ -1,0 +1,2 @@
+DROP INDEX "portal_activity_log_impersonated_by_idx";--> statement-breakpoint
+CREATE INDEX "portal_activity_log_impersonated_by_user_id_idx" ON "portal_activity_log" USING btree ("impersonated_by_user_id");

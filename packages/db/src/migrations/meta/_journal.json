@@ -8,6 +8,13 @@
       "when": 1765555038448,
       "tag": "0000_dapper_titania",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765582929893,
+      "tag": "0001_perfect_grandmaster",
+      "breakpoints": true
     }
   ]
 }

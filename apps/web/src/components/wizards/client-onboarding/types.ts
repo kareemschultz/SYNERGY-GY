@@ -148,13 +148,27 @@ export type ClientOnboardingData = {
   passportCountry: string;
   currentLocation: string;
 
-  // Step 3: Contact Information
+  // Step 3: Contact Information & Preferences
   email: string;
   phone: string;
   alternatePhone: string;
   address: string;
   city: string;
   country: string;
+  preferredContactMethod: "EMAIL" | "PHONE" | "WHATSAPP" | "IN_PERSON";
+  preferredLanguage: string;
+  emergencyContact?: {
+    name: string;
+    relationship: string;
+    phone: string;
+    email?: string;
+  };
+  nextOfKin?: {
+    name: string;
+    relationship: string;
+    phone: string;
+    address?: string;
+  };
 
   // Step 4: Identification
   tinNumber: string;
@@ -162,15 +176,70 @@ export type ClientOnboardingData = {
   passportNumber: string;
   nisNumber: string;
 
-  // Step 5: Business Assignment & Services
+  // Step 5: Employment & Income (for individuals)
+  employment?: {
+    status:
+      | "EMPLOYED"
+      | "SELF_EMPLOYED"
+      | "UNEMPLOYED"
+      | "RETIRED"
+      | "STUDENT"
+      | "";
+    employerName?: string;
+    jobTitle?: string;
+    industry?: string;
+    employmentStartDate?: string;
+    annualIncomeRange?: string;
+    incomeSources?: string[];
+    employerPhone?: string;
+    employerAddress?: string;
+    verificationDocument?: File;
+  };
+
+  // Step 6: Beneficial Owners (for businesses)
+  beneficialOwners: Array<{
+    fullName: string;
+    dateOfBirth: string;
+    nationality: string;
+    nationalId?: string;
+    passportNumber?: string;
+    ownershipPercentage: number;
+    ownershipType: "DIRECT" | "INDIRECT" | "BENEFICIAL";
+    positionHeld?: string;
+    address?: string;
+    email?: string;
+    phone?: string;
+    isPep: boolean;
+    pepDetails?: string;
+    pepRelationship?: "SELF" | "FAMILY_MEMBER" | "CLOSE_ASSOCIATE";
+  }>;
+
+  // Step 7: AML/Compliance
+  amlCompliance?: {
+    sourceOfFunds:
+      | "EMPLOYMENT"
+      | "BUSINESS"
+      | "INHERITANCE"
+      | "INVESTMENTS"
+      | "OTHER"
+      | "";
+    sourceOfFundsDetails?: string;
+    isPep: boolean;
+    pepCategory?: "DOMESTIC" | "FOREIGN" | "INTERNATIONAL_ORG";
+    pepPosition?: string;
+    pepJurisdiction?: string;
+    sanctionsScreeningConsent: boolean;
+  };
+
+  // Step 8: Business Assignment & Services
   businesses: Business[];
   gcmcServices: GCMCService[];
   kajServices: KAJService[];
 
-  // Step 6: Notes
+  // Step 9: Notes
   notes: string;
 
-  // Step 7: Documents (optional)
+  // Step 10: Documents (optional)
   documents?: {
     files: File[];
     uploads: Array<{
@@ -179,6 +248,10 @@ export type ClientOnboardingData = {
       description: string;
       linkedService?: string; // service code
       linkedRequirement?: string; // requirement name
+      issueDate?: string;
+      expiryDate?: string;
+      documentNumber?: string;
+      issuingAuthority?: string;
     }>;
   };
 };
@@ -200,10 +273,13 @@ export const initialOnboardingData: ClientOnboardingData = {
   address: "",
   city: "",
   country: "Guyana",
+  preferredContactMethod: "EMAIL",
+  preferredLanguage: "English",
   tinNumber: "",
   nationalId: "",
   passportNumber: "",
   nisNumber: "",
+  beneficialOwners: [],
   businesses: [],
   gcmcServices: [],
   kajServices: [],
@@ -465,7 +541,9 @@ export function getRequiredDocumentsByServices(
 
   // Helper to add requirements
   const addReqs = (service: string, reqs: string[]) => {
-    if (!requirements[service]) requirements[service] = [];
+    if (!requirements[service]) {
+      requirements[service] = [];
+    }
     requirements[service].push(...reqs);
   };
 

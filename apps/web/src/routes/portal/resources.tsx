@@ -49,7 +49,7 @@ function PortalResourcesPage() {
   });
 
   const downloadMutation = client.knowledgeBase.download.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       toast.success("Download started");
       // Handle download URL
     },

@@ -244,7 +244,7 @@ export function useWizard<T extends Record<string, unknown>>(
       // Update only the specific field's error
       setErrors((prev) => {
         const newErrors = { ...prev };
-        if (validationErrors && validationErrors[fieldName]) {
+        if (validationErrors?.[fieldName]) {
           newErrors[fieldName] = validationErrors[fieldName];
         } else {
           delete newErrors[fieldName];

@@ -56,7 +56,7 @@ function KnowledgeBasePage() {
   );
 
   const downloadMutation = client.knowledgeBase.download.useMutation({
-    onSuccess: (data) => {
+    onSuccess: (_data) => {
       toast.success("Download started");
       // In a real app, we would handle the download URL or Blob here
       // For now, let's simulate a download link click if URL was provided
@@ -317,7 +317,7 @@ function KnowledgeBasePage() {
             ) : (
               <Button
                 className="w-full sm:w-auto"
-                onClick={() => handleDownload(itemDetails!.id)}
+                onClick={() => handleDownload(itemDetails?.id)}
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download

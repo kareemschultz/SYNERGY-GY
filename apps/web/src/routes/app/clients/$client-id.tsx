@@ -141,7 +141,7 @@ function ClientDetailPage() {
       impersonationReason,
       clientData?.displayName
     ).catch((err) =>
-      toast.error("Failed to start impersonation: " + err.message)
+      toast.error(`Failed to start impersonation: ${err.message}`)
     );
   };
 

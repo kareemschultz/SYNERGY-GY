@@ -83,7 +83,7 @@ function PortalMatterDetail() {
       await api.portal.documents.download.mutate({ documentId });
       toast.success("Download started");
     } catch (e: any) {
-      toast.error("Download failed: " + e.message);
+      toast.error(`Download failed: ${e.message}`);
     }
   };
 

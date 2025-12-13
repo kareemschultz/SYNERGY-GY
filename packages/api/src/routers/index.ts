@@ -2,11 +2,14 @@ import type { RouterClient } from "@orpc/server";
 import { protectedProcedure, publicProcedure } from "../index";
 import { activityRouter } from "./activity";
 import { adminRouter } from "./admin";
+import { amlComplianceRouter } from "./aml-compliance";
 import { appointmentsRouter } from "./appointments";
+import { beneficialOwnersRouter } from "./beneficial-owners";
 import { clientServicesRouter } from "./client-services";
 import { clientsRouter } from "./clients";
 import { dashboardRouter } from "./dashboard";
 import { deadlinesRouter } from "./deadlines";
+import { documentVerificationRouter } from "./document-verification";
 import { documentsRouter } from "./documents";
 import { invoicesRouter } from "./invoices";
 import { knowledgeBaseRouter } from "./knowledge-base";
@@ -28,6 +31,9 @@ export const appRouter = {
   appointments: appointmentsRouter,
   clients: clientsRouter,
   clientServices: clientServicesRouter,
+  beneficialOwners: beneficialOwnersRouter,
+  amlCompliance: amlComplianceRouter,
+  documentVerification: documentVerificationRouter,
   matters: mattersRouter,
   documents: documentsRouter,
   deadlines: deadlinesRouter,

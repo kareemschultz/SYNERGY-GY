@@ -67,11 +67,11 @@ const categoryColors: Record<string, string> = {
   STAFF: "bg-indigo-500/10 text-indigo-600 border-indigo-200",
 };
 
-interface ReportFilters {
+type ReportFilters = {
   business?: string;
   fromDate?: string;
   toDate?: string;
-}
+};
 
 function ReportsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -183,7 +183,9 @@ function ReportsPage() {
   });
 
   const handleRunReport = () => {
-    if (!selectedReport) return;
+    if (!selectedReport) {
+      return;
+    }
     executeReportMutation.mutate({
       reportCode: selectedReport.code,
       format,
@@ -192,7 +194,9 @@ function ReportsPage() {
   };
 
   const handleExportReport = (exportFormat: "PDF" | "EXCEL" | "CSV") => {
-    if (!selectedReport) return;
+    if (!selectedReport) {
+      return;
+    }
     exportReportMutation.mutate({
       reportCode: selectedReport.code,
       format: exportFormat,
@@ -201,7 +205,9 @@ function ReportsPage() {
   };
 
   const formatCellValue = (value: unknown, type?: string): string => {
-    if (value === null || value === undefined) return "-";
+    if (value === null || value === undefined) {
+      return "-";
+    }
     if (type === "currency" && typeof value === "string") {
       return `GYD ${Number.parseFloat(value).toLocaleString("en-US", {
         minimumFractionDigits: 2,

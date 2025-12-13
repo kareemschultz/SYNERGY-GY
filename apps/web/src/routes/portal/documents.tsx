@@ -62,10 +62,10 @@ const getCategoryColor = (category: string) => {
 };
 
 function PortalDocuments() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("ALL");
-  const [status, setStatus] = useState<string>("ALL");
+  const [_status, _setStatus] = useState<string>("ALL");
 
   const { data, isLoading, error } = api.portal.documents.list.useQuery({
     page: 1,
@@ -85,21 +85,24 @@ function PortalDocuments() {
       const result = await api.portal.documents.download.mutate({ documentId });
       // In a real app, this would be a signed URL
       // For now, let's assume we can navigate to download endpoint or simulate it
-      toast.success("Download started for " + result.fileName);
+      toast.success(`Download started for ${result.fileName}`);
       // window.open(result.downloadUrl, '_blank');
     } catch (e: any) {
-      toast.error("Download failed: " + e.message);
+      toast.error(`Download failed: ${e.message}`);
     }
   };
 
   const filteredDocuments = data?.documents.filter((doc) => {
-    if (category !== "ALL" && doc.category !== category) return false;
+    if (category !== "ALL" && doc.category !== category) {
+      return false;
+    }
     if (
       search &&
       !doc.originalName.toLowerCase().includes(search.toLowerCase()) &&
       !doc.description?.toLowerCase().includes(search.toLowerCase())
-    )
+    ) {
       return false;
+    }
     return true;
   });
 

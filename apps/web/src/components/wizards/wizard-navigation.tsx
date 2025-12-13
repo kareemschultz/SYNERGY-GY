@@ -64,8 +64,12 @@ export function WizardNavigation({
 
   // Generate human-readable error summary for tooltip
   const getErrorSummary = (): string => {
-    if (isSubmitting) return "Processing...";
-    if (!hasFieldErrors) return "Please complete all required fields";
+    if (isSubmitting) {
+      return "Processing...";
+    }
+    if (!hasFieldErrors) {
+      return "Please complete all required fields";
+    }
 
     const errorMessages = fieldErrors.map(([key, message]) => {
       const label = fieldLabels[key] || key.replace(/([A-Z])/g, " $1").trim();
@@ -167,9 +171,7 @@ export function WizardNavigation({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span tabIndex={0}>
-                    {isLastStep ? SubmitButton : NextButton}
-                  </span>
+                  <span>{isLastStep ? SubmitButton : NextButton}</span>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs" side="top">
                   <p className="whitespace-pre-line">{getErrorSummary()}</p>

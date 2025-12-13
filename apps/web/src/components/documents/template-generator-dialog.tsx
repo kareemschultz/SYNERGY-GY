@@ -110,7 +110,9 @@ export function TemplateGeneratorDialog({
   // Generate mutation
   const generateMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedTemplate) throw new Error("No template selected");
+      if (!selectedTemplate) {
+        throw new Error("No template selected");
+      }
       const result = await client.documents.templates.generate({
         templateId: selectedTemplate,
         clientId,
@@ -142,7 +144,9 @@ export function TemplateGeneratorDialog({
   };
 
   const filteredTemplates = templates?.filter((template) => {
-    if (!searchQuery) return true;
+    if (!searchQuery) {
+      return true;
+    }
     const query = searchQuery.toLowerCase();
     return (
       template.name.toLowerCase().includes(query) ||
@@ -159,7 +163,9 @@ export function TemplateGeneratorDialog({
     <Dialog
       onOpenChange={(isOpen) => {
         setOpen(isOpen);
-        if (!isOpen) resetState();
+        if (!isOpen) {
+          resetState();
+        }
       }}
       open={open}
     >

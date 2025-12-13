@@ -10,11 +10,11 @@ import {
 } from "@/components/ui/sheet";
 import { client } from "@/utils/orpc";
 
-interface PortalPreviewPanelProps {
+type PortalPreviewPanelProps = {
   clientId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
+};
 
 export function PortalPreviewPanel({
   clientId,
@@ -28,7 +28,9 @@ export function PortalPreviewPanel({
     client.portal.impersonation.start.useMutation();
 
   const handleOpen = async () => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -42,7 +44,7 @@ export function PortalPreviewPanel({
       // This requires the portal app to check query params on load
       setUrl(`/portal?token=${token}&preview=true`);
     } catch (error: any) {
-      toast.error("Failed to start preview: " + error.message);
+      toast.error(`Failed to start preview: ${error.message}`);
       onOpenChange(false);
     } finally {
       setIsLoading(false);

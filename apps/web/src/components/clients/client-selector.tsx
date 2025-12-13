@@ -40,8 +40,12 @@ function getBusinessGroup(businesses: string[]): BusinessGroup {
   const hasGCMC = businesses.includes("GCMC");
   const hasKAJ = businesses.includes("KAJ");
 
-  if (hasGCMC && hasKAJ) return "BOTH";
-  if (hasGCMC) return "GCMC";
+  if (hasGCMC && hasKAJ) {
+    return "BOTH";
+  }
+  if (hasGCMC) {
+    return "GCMC";
+  }
   return "KAJ";
 }
 
@@ -130,7 +134,9 @@ export function ClientSelector({
 
   // Get selected client info
   const selectedClient = useMemo(() => {
-    if (!(value && clientsData?.clients)) return null;
+    if (!(value && clientsData?.clients)) {
+      return null;
+    }
     return clientsData.clients.find((c) => c.id === value);
   }, [value, clientsData]);
 

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/app/matters/$matter-id")({
   component: MatterDetailPage,
 });
 
-const statusOptions = [
+const _statusOptions = [
   { value: "NEW", label: "New" },
   { value: "IN_PROGRESS", label: "In Progress" },
   { value: "PENDING_CLIENT", label: "Pending Client" },
@@ -20,7 +20,7 @@ const statusOptions = [
   { value: "CANCELLED", label: "Cancelled" },
 ] as const;
 
-const statusStyles: Record<string, string> = {
+const _statusStyles: Record<string, string> = {
   NEW: "bg-blue-500/10 text-blue-600 border-blue-200",
   IN_PROGRESS: "bg-yellow-500/10 text-yellow-600 border-yellow-200",
   PENDING_CLIENT: "bg-orange-500/10 text-orange-600 border-orange-200",
@@ -29,7 +29,7 @@ const statusStyles: Record<string, string> = {
   CANCELLED: "bg-gray-500/10 text-gray-600 border-gray-200",
 };
 
-const priorityStyles: Record<string, string> = {
+const _priorityStyles: Record<string, string> = {
   LOW: "bg-gray-500/10 text-gray-600",
   NORMAL: "bg-blue-500/10 text-blue-600",
   HIGH: "bg-orange-500/10 text-orange-600",
@@ -249,7 +249,7 @@ function DocumentsTab({ matterId }: { matterId: string }) {
 // ... ChecklistTab ... (keep existing)
 // ... NotesTab ... (keep existing)
 
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+function _InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <p className="mb-1 font-medium text-muted-foreground text-sm">{label}</p>

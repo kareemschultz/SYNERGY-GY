@@ -243,7 +243,7 @@ function KBItemDialog({
   // Move logic to wrapper or useEffect
 
   const createMutation = client.knowledgeBase.create.useMutation({
-    onSuccess: async (newItem) => {
+    onSuccess: async (_newItem) => {
       if (formData.file) {
         // Upload file if selected
         try {
@@ -275,7 +275,7 @@ function KBItemDialog({
           toast.success(
             "Resource created (File upload pending backend support)"
           );
-        } catch (e) {
+        } catch (_e) {
           toast.error("Failed to upload file");
         }
       } else {

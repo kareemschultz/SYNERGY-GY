@@ -6,7 +6,9 @@ export function ImpersonationBanner() {
   const { isImpersonating, endImpersonation } = useImpersonation();
   const clientName = sessionStorage.getItem("impersonated_client_name");
 
-  if (!isImpersonating()) return null;
+  if (!isImpersonating()) {
+    return null;
+  }
 
   return (
     <div className="border-amber-300 border-b bg-amber-100 px-4 py-2 dark:border-amber-800 dark:bg-amber-900/30">

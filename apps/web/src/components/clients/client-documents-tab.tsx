@@ -22,9 +22,9 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { client } from "@/utils/orpc";
 
-interface ClientDocumentsTabProps {
+type ClientDocumentsTabProps = {
   clientId: string;
-}
+};
 
 export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
   const [view, setView] = useState("service");

@@ -103,7 +103,9 @@ function getDeadlineStatus(
   isCompleted: boolean,
   dueDate: Date | string
 ): string {
-  if (isCompleted) return "COMPLETED";
+  if (isCompleted) {
+    return "COMPLETED";
+  }
   const today = new Date();
   const due = new Date(dueDate);
   return due < today ? "OVERDUE" : "PENDING";
@@ -395,12 +397,15 @@ export const reportsRouter = {
               (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
             );
             let agingBucket = "Current";
-            if (daysOverdue > 0 && daysOverdue <= 30) agingBucket = "1-30 Days";
-            else if (daysOverdue > 30 && daysOverdue <= 60)
+            if (daysOverdue > 0 && daysOverdue <= 30) {
+              agingBucket = "1-30 Days";
+            } else if (daysOverdue > 30 && daysOverdue <= 60) {
               agingBucket = "31-60 Days";
-            else if (daysOverdue > 60 && daysOverdue <= 90)
+            } else if (daysOverdue > 60 && daysOverdue <= 90) {
               agingBucket = "61-90 Days";
-            else if (daysOverdue > 90) agingBucket = "90+ Days";
+            } else if (daysOverdue > 90) {
+              agingBucket = "90+ Days";
+            }
 
             return {
               ...inv,
@@ -550,7 +555,7 @@ export const reportsRouter = {
             .orderBy(deadline.dueDate);
 
           // Compute status from isCompleted and dueDate
-          const today = new Date();
+          const _today = new Date();
           const deadlinesWithStatus = deadlinesData.map((d) => ({
             ...d,
             status: getDeadlineStatus(d.isCompleted, d.dueDate),
@@ -904,12 +909,15 @@ export const reportsRouter = {
               (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
             );
             let agingBucket = "Current";
-            if (daysOverdue > 0 && daysOverdue <= 30) agingBucket = "1-30 Days";
-            else if (daysOverdue > 30 && daysOverdue <= 60)
+            if (daysOverdue > 0 && daysOverdue <= 30) {
+              agingBucket = "1-30 Days";
+            } else if (daysOverdue > 30 && daysOverdue <= 60) {
               agingBucket = "31-60 Days";
-            else if (daysOverdue > 60 && daysOverdue <= 90)
+            } else if (daysOverdue > 60 && daysOverdue <= 90) {
               agingBucket = "61-90 Days";
-            else if (daysOverdue > 90) agingBucket = "90+ Days";
+            } else if (daysOverdue > 90) {
+              agingBucket = "90+ Days";
+            }
 
             return {
               ...inv,

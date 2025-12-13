@@ -1,5 +1,14 @@
+import { Info } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   WizardStep,
@@ -15,6 +24,23 @@ type StepContactProps = {
   onFieldBlur?: (fieldName: string) => void;
 };
 
+const CONTACT_METHODS = [
+  { value: "EMAIL", label: "Email" },
+  { value: "PHONE", label: "Phone" },
+  { value: "WHATSAPP", label: "WhatsApp" },
+  { value: "IN_PERSON", label: "In Person" },
+] as const;
+
+const LANGUAGES = [
+  "English",
+  "Spanish",
+  "Portuguese",
+  "Chinese",
+  "Hindi",
+  "Urdu",
+  "Other",
+];
+
 export function StepContact({
   data,
   errors,
@@ -23,9 +49,10 @@ export function StepContact({
 }: StepContactProps) {
   return (
     <WizardStep
-      description="Provide contact details for the client"
+      description="Provide contact details and communication preferences"
       title="Contact Information"
     >
+      {/* Primary Contact Section */}
       <WizardStepSection title="Primary Contact">
         <WizardStepFields columns={2}>
           <div className="space-y-2">
@@ -92,6 +119,60 @@ export function StepContact({
         ) : null}
       </WizardStepSection>
 
+      {/* Communication Preferences Section */}
+      <WizardStepSection className="mt-6" title="Communication Preferences">
+        <WizardStepFields columns={2}>
+          <div className="space-y-2">
+            <Label htmlFor="preferredContactMethod">
+              Preferred Contact Method
+            </Label>
+            <Select
+              onValueChange={(value) =>
+                onUpdate({
+                  preferredContactMethod: value as
+                    | "EMAIL"
+                    | "PHONE"
+                    | "WHATSAPP"
+                    | "IN_PERSON",
+                })
+              }
+              value={data.preferredContactMethod}
+            >
+              <SelectTrigger id="preferredContactMethod">
+                <SelectValue placeholder="Select method" />
+              </SelectTrigger>
+              <SelectContent>
+                {CONTACT_METHODS.map((method) => (
+                  <SelectItem key={method.value} value={method.value}>
+                    {method.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="preferredLanguage">Preferred Language</Label>
+            <Select
+              onValueChange={(value) => onUpdate({ preferredLanguage: value })}
+              value={data.preferredLanguage}
+            >
+              <SelectTrigger id="preferredLanguage">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((language) => (
+                  <SelectItem key={language} value={language}>
+                    {language}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </WizardStepFields>
+      </WizardStepSection>
+
+      {/* Address Section */}
       <WizardStepSection className="mt-6" title="Address">
         <WizardStepFields columns={1}>
           <div className="space-y-2">
@@ -123,6 +204,162 @@ export function StepContact({
               id="country"
               onChange={(e) => onUpdate({ country: e.target.value })}
               value={data.country}
+            />
+          </div>
+        </WizardStepFields>
+      </WizardStepSection>
+
+      {/* Emergency Contact Section */}
+      <WizardStepSection className="mt-6" title="Emergency Contact (Optional)">
+        <Alert className="mb-4">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Provide emergency contact information for urgent situations
+          </AlertDescription>
+        </Alert>
+
+        <WizardStepFields columns={2}>
+          <div className="space-y-2">
+            <Label htmlFor="emergencyContactName">Contact Name</Label>
+            <Input
+              id="emergencyContactName"
+              onChange={(e) =>
+                onUpdate({
+                  emergencyContact: {
+                    ...data.emergencyContact,
+                    name: e.target.value,
+                  },
+                })
+              }
+              placeholder="Full name"
+              value={data.emergencyContact?.name || ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="emergencyContactRelationship">Relationship</Label>
+            <Input
+              id="emergencyContactRelationship"
+              onChange={(e) =>
+                onUpdate({
+                  emergencyContact: {
+                    ...data.emergencyContact,
+                    relationship: e.target.value,
+                  },
+                })
+              }
+              placeholder="e.g., Spouse, Parent"
+              value={data.emergencyContact?.relationship || ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="emergencyContactPhone">Phone Number</Label>
+            <Input
+              id="emergencyContactPhone"
+              onChange={(e) =>
+                onUpdate({
+                  emergencyContact: {
+                    ...data.emergencyContact,
+                    phone: e.target.value,
+                  },
+                })
+              }
+              placeholder="592-XXX-XXXX"
+              type="tel"
+              value={data.emergencyContact?.phone || ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="emergencyContactEmail">Email</Label>
+            <Input
+              id="emergencyContactEmail"
+              onChange={(e) =>
+                onUpdate({
+                  emergencyContact: {
+                    ...data.emergencyContact,
+                    email: e.target.value,
+                  },
+                })
+              }
+              placeholder="contact@example.com"
+              type="email"
+              value={data.emergencyContact?.email || ""}
+            />
+          </div>
+        </WizardStepFields>
+      </WizardStepSection>
+
+      {/* Next of Kin Section */}
+      <WizardStepSection className="mt-6" title="Next of Kin (Optional)">
+        <WizardStepFields columns={2}>
+          <div className="space-y-2">
+            <Label htmlFor="nextOfKinName">Full Name</Label>
+            <Input
+              id="nextOfKinName"
+              onChange={(e) =>
+                onUpdate({
+                  nextOfKin: {
+                    ...data.nextOfKin,
+                    name: e.target.value,
+                  },
+                })
+              }
+              placeholder="Full name"
+              value={data.nextOfKin?.name || ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="nextOfKinRelationship">Relationship</Label>
+            <Input
+              id="nextOfKinRelationship"
+              onChange={(e) =>
+                onUpdate({
+                  nextOfKin: {
+                    ...data.nextOfKin,
+                    relationship: e.target.value,
+                  },
+                })
+              }
+              placeholder="e.g., Child, Sibling"
+              value={data.nextOfKin?.relationship || ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="nextOfKinPhone">Phone Number</Label>
+            <Input
+              id="nextOfKinPhone"
+              onChange={(e) =>
+                onUpdate({
+                  nextOfKin: {
+                    ...data.nextOfKin,
+                    phone: e.target.value,
+                  },
+                })
+              }
+              placeholder="592-XXX-XXXX"
+              type="tel"
+              value={data.nextOfKin?.phone || ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="nextOfKinAddress">Address</Label>
+            <Input
+              id="nextOfKinAddress"
+              onChange={(e) =>
+                onUpdate({
+                  nextOfKin: {
+                    ...data.nextOfKin,
+                    address: e.target.value,
+                  },
+                })
+              }
+              placeholder="Street address"
+              value={data.nextOfKin?.address || ""}
             />
           </div>
         </WizardStepFields>

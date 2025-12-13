@@ -1425,7 +1425,7 @@ export const portalRouter = {
         const token = crypto.randomUUID();
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
-        const [session] = await db
+        const [_session] = await db
           .insert(staffImpersonationSession)
           .values({
             token,

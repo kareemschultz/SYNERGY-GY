@@ -49,7 +49,9 @@ export const clientServicesRouter = router({
 
       for (const serviceCode of gcmcServices) {
         const serviceDef = serviceDefinitions.find((s) => s.id === serviceCode);
-        if (!serviceDef) continue;
+        if (!serviceDef) {
+          continue;
+        }
 
         serviceSelections.push({
           clientId,
@@ -64,7 +66,9 @@ export const clientServicesRouter = router({
 
       for (const serviceCode of kajServices) {
         const serviceDef = serviceDefinitions.find((s) => s.id === serviceCode);
-        if (!serviceDef) continue;
+        if (!serviceDef) {
+          continue;
+        }
 
         serviceSelections.push({
           clientId,

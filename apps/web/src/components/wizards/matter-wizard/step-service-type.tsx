@@ -37,7 +37,9 @@ export function StepServiceType({
 
   // Group service types by category
   const groupedServiceTypes = useMemo(() => {
-    if (!serviceTypes) return null;
+    if (!serviceTypes) {
+      return null;
+    }
     return serviceTypes.reduce(
       (acc, st) => {
         const category = st.category || "Other";

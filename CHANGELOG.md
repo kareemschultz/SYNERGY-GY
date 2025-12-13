@@ -7,6 +7,128 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Enhanced Client Onboarding with AML/KYC Compliance - Phase 1** (December 12, 2024)
+  - **Legal Compliance**: Full implementation of Guyana Beneficial Ownership Disclosure Act
+    - GYD $200,000 penalty avoidance through proper beneficial owner tracking
+    - 25%+ ownership disclosure requirement enforcement
+    - Complete audit trail for regulatory inspections
+  - **CFATF Standards Implementation**: Caribbean Financial Action Task Force Recommendations
+    - Recommendation 10: Customer Due Diligence (CDD) with risk-based approach
+    - Recommendation 11: Record Keeping with 7-year retention capability
+    - Recommendation 12: Politically Exposed Persons (PEP) identification and enhanced due diligence
+    - Recommendation 20: Suspicious transaction monitoring framework foundation
+  - **Database Schema (5 New Tables, 12 New Enums)**:
+    - `client_beneficial_owner` table (24 columns, 3 indexes) - Beneficial ownership tracking
+      - 25-100% ownership validation, ownership type classification (DIRECT/INDIRECT/BENEFICIAL)
+      - PEP declarations with relationship tracking (SELF/FAMILY_MEMBER/CLOSE_ASSOCIATE)
+      - Risk level assessment (LOW/MEDIUM/HIGH), verification workflow with document linking
+      - Age validation (18+), national ID and passport number fields
+    - `client_aml_assessment` table (32 columns, 4 indexes) - AML/KYC risk scoring
+      - 4-factor risk scoring: Client Type (0-25), Service (0-25), Geographic (0-25), Transaction (0-25)
+      - Risk ratings: LOW (0-33), MEDIUM (34-66), HIGH (67-84), PROHIBITED (85-100)
+      - PEP category classification (9 categories from HEAD_OF_STATE to CLOSE_ASSOCIATE)
+      - Source of funds tracking (5 categories: EMPLOYMENT, BUSINESS, INHERITANCE, INVESTMENTS, OTHER)
+      - Sanctions screening integration placeholders (OFAC, UN, EU lists)
+      - Enhanced Due Diligence (EDD) triggers and requirement tracking
+      - Review scheduling: LOW (3 years), MEDIUM (2 years), HIGH (1 year)
+      - Approval workflow for HIGH/PROHIBITED ratings (admin-only)
+    - `client_emergency_contact` table (12 columns, 2 indexes) - Emergency contacts
+      - Contact types: EMERGENCY, NEXT_OF_KIN
+      - Full contact details with relationship tracking
+    - `client_employment_info` table (17 columns, 3 indexes) - Employment verification
+      - Employment status: EMPLOYED, SELF_EMPLOYED, UNEMPLOYED, RETIRED, STUDENT
+      - Employer details, job title, industry, annual income ranges
+      - Income source tracking (8 categories), verification document linking
+      - Employment history tracking with isCurrent flag
+    - `document_verification` table (17 columns, 3 indexes) - Document lifecycle management
+      - Verification status: PENDING, VERIFIED, REJECTED, EXPIRED, REQUIRES_RENEWAL
+      - Issue/expiry date tracking, renewal reminder system (configurable days ahead)
+      - Issuing authority and document number fields
+      - Expiry notification tracking to prevent duplicate alerts
+  - **Client Table Enhancements**:
+    - Added 10 new compliance fields: preferredContactMethod, preferredLanguage, amlRiskRating
+    - PEP flags: isPep, requiresEnhancedDueDiligence
+    - Compliance tracking: graCompliant, nisCompliant, lastComplianceCheckDate
+    - Onboarding completion: onboardingCompleted, onboardingCompletedAt
+    - Extended clientLinkTypeEnum with 5 new relationship types
+  - **Risk Scoring Algorithm** (`packages/api/src/utils/risk-scoring.ts`)
+    - CFATF-compliant weighted risk assessment across 4 dimensions
+    - Client type scoring: INDIVIDUAL (5) to INVESTOR (25)
+    - Service risk scoring: TRAINING (5) to IMMIGRATION (18)
+    - Geographic risk: Guyana (5), CARICOM (10), FATF Blacklist countries (25)
+    - Transaction risk: PEP status (+15), high transaction amounts (+10), complex ownership (+5)
+    - Helper functions: calculateNextReviewDate(), validateOwnershipPercentages(), isLegalAge()
+  - **API Routers (3 New Routers, 25 Endpoints)**:
+    - `beneficial-owners` router (7 endpoints):
+      - `list`, `get`, `create`, `update`, `delete`, `verify`, `getTotalOwnership`
+      - Age validation (18+ required), ownership percentage validation (25-100%)
+      - Staff verification workflow with document linking
+    - `aml-compliance` router (8 endpoints):
+      - `calculateRiskScore` - Real-time risk calculation utility
+      - `createAssessment` - Create assessment with auto-approval logic (LOW/MEDIUM)
+      - `getAssessment`, `getAssessmentHistory` - Retrieve assessments and audit trail
+      - `approveAssessment` - Admin-only approval for HIGH/PROHIBITED ratings
+      - `getPendingReviews` - Admin dashboard for pending EDD approvals
+      - `getClientsRequiringReview` - Upcoming review date alerts (configurable days ahead)
+      - `screenSanctions` - Mock sanctions screening (ComplyAdvantage integration in Phase 3)
+    - `document-verification` router (10 endpoints):
+      - `create`, `get`, `verify`, `update` - Verification CRUD operations
+      - `getExpiringDocuments` - Documents expiring in next N days (default: 30)
+      - `markNotificationSent` - Track expiry notifications
+      - `checkExpiredDocuments` - Background job to auto-expire documents
+      - `getStatistics` - Verification dashboard statistics
+      - Date validation: issue date before expiry, expiry date in future
+  - **Enhanced Wizard UI Components (4 New/Updated Steps)**:
+    - Enhanced `step-contact.tsx` - Communication preferences and emergency contacts
+      - Dropdown: Preferred Contact Method (Email, Phone, WhatsApp, In Person)
+      - Dropdown: Preferred Language (English, Spanish, Portuguese, Chinese, Hindi, Urdu, Other)
+      - Emergency Contact section (optional): name, relationship, phone, email
+      - Next of Kin section (optional): name, relationship, phone, address
+    - New `step-employment.tsx` - Employment and income verification (INDIVIDUAL/FOREIGN_NATIONAL only)
+      - Dropdown: Employment Status (5 options)
+      - Dropdown: Annual Income Range (7 ranges from Under 500K to Over 10M GYD)
+      - Multi-select checkboxes: Income Sources (8 categories)
+      - Conditional employer fields (shown only for EMPLOYED/SELF_EMPLOYED)
+      - Date picker for employment start date
+    - New `step-beneficial-owners.tsx` - Beneficial ownership disclosure (BUSINESS types only)
+      - Legal warning alert: GYD $200,000 penalty for non-compliance
+      - Interactive table with Add/Edit/Delete actions
+      - Modal dialog for adding beneficial owners:
+        - Dropdown: Nationality (11 common nationalities)
+        - Dropdown: Ownership Type (Direct, Indirect, Beneficial)
+        - Ownership percentage input (25-100% validation)
+        - PEP checkbox with conditional dropdown (PEP Relationship: Self, Family Member, Close Associate)
+        - Real-time ownership total calculation with <100% warnings
+      - Form validation: required fields, age 18+, PEP details if declared
+    - New `step-aml-compliance.tsx` - AML/KYC compliance and risk assessment
+      - Multi-select checkboxes: Source of Funds (8 categories)
+      - Conditional textarea for "Other" source details
+      - PEP declaration checkbox with conditional fields:
+        - Dropdown: PEP Category (9 categories)
+        - Inputs: Position/Title, Jurisdiction/Country
+      - Required checkbox: Sanctions Screening Consent
+      - Preliminary Risk Assessment Card:
+        - Real-time risk calculation (LOW/MEDIUM/HIGH)
+        - Colored badge display (green/yellow/red)
+        - Enhanced Due Diligence warning for HIGH risk
+  - **TypeScript Types**:
+    - Extended `ClientOnboardingData` with 10 new field groups
+    - All wizard components fully typed with proper inference
+  - **Database Migration**:
+    - Migration file: `0001_perfect_grandmaster.sql`
+    - Creates 5 new tables, 12 new enums, adds 10 columns to client table
+    - 15 new indexes for query performance optimization
+    - 11 foreign key constraints with proper cascade rules
+  - **Compliance Features**:
+    - Automatic risk score calculation on client creation
+    - Enhanced Due Diligence (EDD) workflow for HIGH/PROHIBITED risk clients
+    - Manager approval required for HIGH risk clients (blocks onboarding until approved)
+    - Automated review date scheduling based on risk rating
+    - Complete audit trail for all assessments, verifications, and approvals
+    - Document expiry tracking with automated notification system foundation
+    - GRA and NIS compliance status tracking
+
 ### Fixed
 - **Service Catalog API Bug** - Fixed serviceCatalog.code → serviceCatalog.id references (December 12, 2024)
   - Fixed 5 locations in `client-services.ts` where non-existent `.code` field was used
