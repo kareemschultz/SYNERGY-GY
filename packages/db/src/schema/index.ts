@@ -31,6 +31,8 @@ export * from "./reports";
 export * from "./service-catalog";
 // Services and matter tracking
 export * from "./services";
+// System backup and restore
+export * from "./system";
 // Tax calculations
 export * from "./tax-calculations";
 // Training management

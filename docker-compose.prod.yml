@@ -1,0 +1,87 @@
+# GK-Nexus Production Docker Compose
+#
+# Usage:
+#   docker-compose -f docker-compose.prod.yml up -d
+#
+# First time setup:
+#   1. Copy .env.production.example to .env.production
+#   2. Fill in all required values
+#   3. Run: docker-compose -f docker-compose.prod.yml up -d
+#   4. Run migrations: docker-compose -f docker-compose.prod.yml exec app bun run db:migrate
+#
+
+name: gk-nexus-prod
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: gk-nexus-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-synergy_gy}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups:rw
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-synergy_gy}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - gk-nexus-network
+
+  # Application Server (API + Static files)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      args:
+        - VITE_SERVER_URL=${VITE_SERVER_URL:-http://localhost:3000}
+    container_name: gk-nexus-app
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-synergy_gy}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
+      - CORS_ORIGIN=${CORS_ORIGIN:-*}
+      # Optional: Email configuration
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - EMAIL_FROM=${EMAIL_FROM:-}
+      # Optional: Cloud backup
+      - BACKUP_S3_ENDPOINT=${BACKUP_S3_ENDPOINT:-}
+      - BACKUP_S3_ACCESS_KEY_ID=${BACKUP_S3_ACCESS_KEY_ID:-}
+      - BACKUP_S3_SECRET_ACCESS_KEY=${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      - BACKUP_S3_BUCKET=${BACKUP_S3_BUCKET:-}
+      - BACKUP_S3_REGION=${BACKUP_S3_REGION:-auto}
+    volumes:
+      - ./data/uploads:/app/data/uploads:rw
+      - ./backups:/app/backups:rw
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - gk-nexus-network
+
+volumes:
+  postgres_data:
+    name: gk-nexus-postgres-data
+
+networks:
+  gk-nexus-network:
+    name: gk-nexus-network
+    driver: bridge

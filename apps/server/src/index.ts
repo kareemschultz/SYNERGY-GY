@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { createContext } from "@SYNERGY-GY/api/context";
 import { appRouter } from "@SYNERGY-GY/api/routers/index";
+import { startBackupScheduler } from "@SYNERGY-GY/api/utils/backup-scheduler";
 import { runInitialSetup } from "@SYNERGY-GY/api/utils/initial-setup";
 import { auth } from "@SYNERGY-GY/auth";
 import { db, document as documentTable } from "@SYNERGY-GY/db";
@@ -21,6 +22,9 @@ import { stream } from "hono/streaming";
 
 // Run initial setup to create first owner account (if needed)
 await runInitialSetup();
+
+// Start backup scheduler for automatic backups
+startBackupScheduler();
 
 // Storage configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./data/uploads";
@@ -250,6 +254,27 @@ app.use("/*", async (c, next) => {
   }
 
   await next();
+});
+
+// Health check endpoint for Docker
+app.get("/health", async (c) => {
+  try {
+    // Test database connection by querying a table
+    await db.query.staff.findFirst();
+    return c.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+    });
+  } catch {
+    return c.json(
+      {
+        status: "unhealthy",
+        error: "Database connection failed",
+        timestamp: new Date().toISOString(),
+      },
+      503
+    );
+  }
 });
 
 app.get("/", (c) => c.text("OK"));

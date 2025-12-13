@@ -4,6 +4,7 @@ import { activityRouter } from "./activity";
 import { adminRouter } from "./admin";
 import { amlComplianceRouter } from "./aml-compliance";
 import { appointmentsRouter } from "./appointments";
+import { backupRouter } from "./backup";
 import { beneficialOwnersRouter } from "./beneficial-owners";
 import { clientServicesRouter } from "./client-services";
 import { clientsRouter } from "./clients";
@@ -28,24 +29,25 @@ export const appRouter = {
     message: "This is private",
     user: context.session?.user,
   })),
-  appointments: appointmentsRouter,
-  clients: clientsRouter,
-  clientServices: clientServicesRouter,
-  beneficialOwners: beneficialOwnersRouter,
-  amlCompliance: amlComplianceRouter,
-  documentVerification: documentVerificationRouter,
-  matters: mattersRouter,
-  documents: documentsRouter,
-  deadlines: deadlinesRouter,
-  invoices: invoicesRouter,
-  dashboard: dashboardRouter,
   activity: activityRouter,
   admin: adminRouter,
-  reports: reportsRouter,
-  settings: settingsRouter,
-  portal: portalRouter,
+  amlCompliance: amlComplianceRouter,
+  appointments: appointmentsRouter,
+  backup: backupRouter,
+  beneficialOwners: beneficialOwnersRouter,
+  clientServices: clientServicesRouter,
+  clients: clientsRouter,
+  dashboard: dashboardRouter,
+  deadlines: deadlinesRouter,
+  documentVerification: documentVerificationRouter,
+  documents: documentsRouter,
+  invoices: invoicesRouter,
   knowledgeBase: knowledgeBaseRouter,
+  matters: mattersRouter,
+  portal: portalRouter,
+  reports: reportsRouter,
   serviceCatalog: serviceCatalogRouter,
+  settings: settingsRouter,
   staffSetup: staffSetupRouter,
   taxCalculators: taxCalculatorsRouter,
   training: trainingRouter,
