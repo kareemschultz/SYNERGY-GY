@@ -856,8 +856,8 @@ export const portalRouter = {
     const matterSummary = await db
       .select({
         total: count(),
-        active: sql<number>`COUNT(CASE WHEN ${matter.status} IN ('NEW', 'IN_PROGRESS', 'PENDING_INFO', 'UNDER_REVIEW') THEN 1 END)`,
-        completed: sql<number>`COUNT(CASE WHEN ${matter.status} = 'COMPLETED' THEN 1 END)`,
+        active: sql<number>`COUNT(CASE WHEN ${matter.status} IN ('NEW', 'IN_PROGRESS', 'PENDING_CLIENT', 'SUBMITTED') THEN 1 END)`,
+        completed: sql<number>`COUNT(CASE WHEN ${matter.status} = 'COMPLETE' THEN 1 END)`,
       })
       .from(matter)
       .where(eq(matter.clientId, context.portalUser.clientId));

@@ -23,10 +23,9 @@ type MatterMiniCardProps = {
 const matterStatusColors: Record<string, string> = {
   NEW: "bg-blue-500/10 text-blue-600",
   IN_PROGRESS: "bg-yellow-500/10 text-yellow-600",
-  PENDING_INFO: "bg-orange-500/10 text-orange-600",
   PENDING_CLIENT: "bg-purple-500/10 text-purple-600",
-  UNDER_REVIEW: "bg-cyan-500/10 text-cyan-600",
-  COMPLETED: "bg-green-500/10 text-green-600",
+  SUBMITTED: "bg-cyan-500/10 text-cyan-600",
+  COMPLETE: "bg-green-500/10 text-green-600",
   CANCELLED: "bg-gray-500/10 text-gray-600",
 };
 

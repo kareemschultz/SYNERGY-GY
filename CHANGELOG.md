@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Client Pages Database Enum Errors** (December 12, 2024)
+  - Fixed critical 500 errors on client list page caused by invalid `matter_status` enum values
+  - **Root Cause**: SQL queries were using invalid enum values (`PENDING_INFO`, `UNDER_REVIEW`, `COMPLETED`) instead of valid database enum values (`PENDING_CLIENT`, `SUBMITTED`, `COMPLETE`)
+  - **Files Fixed**:
+    - `packages/api/src/routers/clients.ts` - Updated `listWithStats` SQL queries to use correct enum values and fixed table alias references in raw SQL WHERE clauses
+    - `packages/api/src/routers/portal.ts` - Updated portal dashboard matter summary queries
+    - `apps/web/src/components/clients/mini-cards.tsx` - Updated `matterStatusColors` object to only include valid enum values
+  - **Impact**: All client pages now fully functional
+    - Client list displays correctly with all statistics
+    - Client wizard loads and navigates properly through all 10 steps
+    - Quick add form renders without errors
+    - Client detail pages show all tabs and information correctly
+  - **Technical Details**: Converted raw SQL conditions from Drizzle schema objects to string-based raw SQL to properly use table alias `c` instead of `"client"` table reference
+
 ### Added
 
 - **Service Catalog Database Population** (December 12, 2024)

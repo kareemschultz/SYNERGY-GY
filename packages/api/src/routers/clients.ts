@@ -252,6 +252,7 @@ export const clientsRouter = {
 
       // biome-ignore lint/suspicious/noEvolvingTypes: Dynamic conditions
       const conditions = [];
+      const rawSqlConditions: string[] = [];
 
       // Filter by accessible businesses
       if (input.business) {
@@ -263,15 +264,23 @@ export const clientsRouter = {
         conditions.push(
           sql`${client.businesses} && ARRAY[${input.business}]::text[]`
         );
+        rawSqlConditions.push(
+          `c.businesses && ARRAY['${input.business}']::text[]`
+        );
       } else {
+        const businessList = accessibleBusinesses
+          .map((b) => `'${b}'`)
+          .join(", ");
         conditions.push(
           sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`
         );
+        rawSqlConditions.push(`c.businesses && ARRAY[${businessList}]::text[]`);
       }
 
       // Search filter
       if (input.search) {
         const searchTerm = `%${input.search}%`;
+        const escapedTerm = searchTerm.replace(/'/g, "''");
         conditions.push(
           or(
             ilike(client.displayName, searchTerm),
@@ -281,20 +290,28 @@ export const clientsRouter = {
             ilike(client.businessName, searchTerm)
           )
         );
+        rawSqlConditions.push(
+          `(c.display_name ILIKE '${escapedTerm}' OR c.email ILIKE '${escapedTerm}' OR c.tin_number ILIKE '${escapedTerm}' OR c.phone ILIKE '${escapedTerm}' OR c.business_name ILIKE '${escapedTerm}')`
+        );
       }
 
       // Type filter
       if (input.type) {
         conditions.push(eq(client.type, input.type));
+        rawSqlConditions.push(`c.type = '${input.type}'`);
       }
 
       // Status filter
       if (input.status) {
         conditions.push(eq(client.status, input.status));
+        rawSqlConditions.push(`c.status = '${input.status}'`);
       }
 
       const whereClause =
         conditions.length > 0 ? and(...conditions) : undefined;
+
+      const rawWhereString =
+        rawSqlConditions.length > 0 ? rawSqlConditions.join(" AND ") : "";
 
       // Get total count
       const countResult = await db
@@ -351,8 +368,8 @@ export const clientsRouter = {
         -- Matter stats subquery
         LEFT JOIN LATERAL (
           SELECT
-            COUNT(*) FILTER (WHERE status IN ('NEW', 'IN_PROGRESS', 'PENDING_INFO', 'UNDER_REVIEW')) as active_count,
-            COUNT(*) FILTER (WHERE status IN ('PENDING_CLIENT', 'PENDING_INFO')) as pending_count,
+            COUNT(*) FILTER (WHERE status IN ('NEW', 'IN_PROGRESS', 'PENDING_CLIENT', 'SUBMITTED')) as active_count,
+            COUNT(*) FILTER (WHERE status = 'PENDING_CLIENT') as pending_count,
             COUNT(*) as total_count
           FROM matter WHERE client_id = c.id
         ) m ON true
@@ -385,7 +402,7 @@ export const clientsRouter = {
             AND scheduled_at >= NOW()
             AND status IN ('REQUESTED', 'CONFIRMED')
         ) apt ON true
-        ${whereClause ? sql`WHERE ${whereClause}` : sql``}
+        ${rawWhereString ? sql.raw(`WHERE ${rawWhereString}`) : sql``}
         ORDER BY ${
           input.sortBy === "activeMatterCount"
             ? sql`m.active_count`
@@ -798,8 +815,8 @@ export const clientsRouter = {
       const matterSummary = await db
         .select({
           total: count(),
-          active: sql<number>`COUNT(CASE WHEN ${matter.status} IN ('NEW', 'IN_PROGRESS', 'PENDING_INFO', 'UNDER_REVIEW') THEN 1 END)`,
-          completed: sql<number>`COUNT(CASE WHEN ${matter.status} = 'COMPLETED' THEN 1 END)`,
+          active: sql<number>`COUNT(CASE WHEN ${matter.status} IN ('NEW', 'IN_PROGRESS', 'PENDING_CLIENT', 'SUBMITTED') THEN 1 END)`,
+          completed: sql<number>`COUNT(CASE WHEN ${matter.status} = 'COMPLETE' THEN 1 END)`,
         })
         .from(matter)
         .where(eq(matter.clientId, input.clientId));
