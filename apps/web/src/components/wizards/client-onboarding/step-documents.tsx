@@ -1,4 +1,5 @@
 import { AlertCircle, CheckCircle, FileText, Upload, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,12 +12,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { client } from "@/utils/orpc";
 import { WizardStep } from "../wizard-step";
 import {
   type ClientOnboardingData,
   getRequiredDocumentsByServices,
   inferDocumentCategory,
 } from "./types";
+
+type ServiceWithDocuments = {
+  id: string;
+  name: string;
+  displayName: string;
+  documentRequirements: string[];
+};
 
 type StepDocumentsProps = {
   data: ClientOnboardingData;
@@ -25,10 +34,83 @@ type StepDocumentsProps = {
 };
 
 export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
-  const requirements = getRequiredDocumentsByServices(data);
-  const allRequirements = Object.values(requirements).flat();
+  const [servicesWithDocs, setServicesWithDocs] = useState<
+    ServiceWithDocuments[]
+  >([]);
+  const [isLoadingServices, setIsLoadingServices] = useState(false);
+
+  // Fetch selected services to get their document requirements
+  useEffect(() => {
+    async function fetchServiceDetails() {
+      if (!data.selectedServiceIds || data.selectedServiceIds.length === 0) {
+        setServicesWithDocs([]);
+        return;
+      }
+
+      setIsLoadingServices(true);
+      try {
+        // Fetch all service details (use allSettled to handle individual failures)
+        const servicePromises = data.selectedServiceIds.map((id) =>
+          client.serviceCatalog.services.getById.query({ id })
+        );
+        const results = await Promise.allSettled(servicePromises);
+
+        // Extract successful results and filter for services with document requirements
+        const services = results
+          .filter(
+            (
+              result
+            ): result is PromiseFulfilledResult<
+              Awaited<(typeof servicePromises)[0]>
+            > => result.status === "fulfilled"
+          )
+          .map((result) => result.value)
+          .filter(
+            (service) =>
+              service.documentRequirements &&
+              service.documentRequirements.length > 0
+          )
+          .map((service) => ({
+            id: service.id,
+            name: service.name,
+            displayName: service.displayName,
+            documentRequirements: service.documentRequirements || [],
+          }));
+
+        setServicesWithDocs(services);
+
+        // Log any failed service lookups
+        const failedResults = results.filter(
+          (result) => result.status === "rejected"
+        );
+        if (failedResults.length > 0) {
+          console.warn(
+            `Failed to fetch ${failedResults.length} service(s):`,
+            failedResults
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch service details:", error);
+      } finally {
+        setIsLoadingServices(false);
+      }
+    }
+
+    fetchServiceDetails();
+  }, [data.selectedServiceIds]);
+
+  // Combine service-based and general requirements
+  const generalRequirements = getRequiredDocumentsByServices(data);
+  const allGeneralDocs = Object.values(generalRequirements).flat();
+
+  // Count total requirements
+  const serviceRequiredCount = servicesWithDocs.reduce(
+    (sum, service) => sum + service.documentRequirements.length,
+    0
+  );
+  const totalRequired = allGeneralDocs.length + serviceRequiredCount;
+
   const uploadedCount = data.documents?.uploads.length || 0;
-  const totalRequired = allRequirements.length;
 
   const handleUpload = (
     file: File,
@@ -69,8 +151,8 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
 
   return (
     <WizardStep
-      description="Upload required documents based on selected services (optional)"
-      title="Upload Documents"
+      description="Upload required documents or generate them from templates"
+      title="Documents"
     >
       {/* Document fulfillment progress */}
       <div className="mb-8 space-y-2">
@@ -86,34 +168,95 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
         />
       </div>
 
-      <div className="space-y-6">
-        {Object.entries(requirements).map(([service, docs]) => (
-          <ServiceDocumentGroup
-            key={service}
-            onRemove={handleRemove}
-            onUpload={handleUpload}
-            requiredDocs={docs}
-            serviceName={service}
-            uploads={data.documents?.uploads || []}
-          />
-        ))}
+      {/* Service-specific document requirements */}
+      {isLoadingServices ? (
+        <div className="rounded-lg border border-dashed bg-muted/20 py-8 text-center text-muted-foreground">
+          <p>Loading service requirements...</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {servicesWithDocs.length > 0 && (
+            <>
+              <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+                <div className="flex items-start gap-3">
+                  <FileText className="mt-0.5 h-5 w-5 text-primary" />
+                  <div>
+                    <h3 className="font-semibold text-sm">
+                      Service-Specific Documents
+                    </h3>
+                    <p className="mt-1 text-muted-foreground text-xs">
+                      The following documents are required based on your
+                      selected services. Upload them now or collect them later.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-        {Object.keys(requirements).length === 0 && (
-          <div className="rounded-lg border border-dashed bg-muted/20 py-8 text-center text-muted-foreground">
-            <p>No specific documents required based on current selections.</p>
-            <p className="mt-1 text-sm">
-              You can still upload general documents later.
-            </p>
-          </div>
-        )}
-      </div>
+              {servicesWithDocs.map((service) => (
+                <ServiceDocumentGroup
+                  key={service.id}
+                  onRemove={handleRemove}
+                  onUpload={handleUpload}
+                  requiredDocs={service.documentRequirements}
+                  serviceName={service.displayName}
+                  uploads={data.documents?.uploads || []}
+                />
+              ))}
+            </>
+          )}
 
-      {/* Prominent skip button */}
+          {/* General/Client-type requirements */}
+          {Object.keys(generalRequirements).length > 0 && (
+            <>
+              {servicesWithDocs.length > 0 && (
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      General Requirements
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {Object.entries(generalRequirements).map(([category, docs]) => (
+                <ServiceDocumentGroup
+                  key={category}
+                  onRemove={handleRemove}
+                  onUpload={handleUpload}
+                  requiredDocs={docs}
+                  serviceName={category}
+                  uploads={data.documents?.uploads || []}
+                />
+              ))}
+            </>
+          )}
+
+          {servicesWithDocs.length === 0 &&
+            Object.keys(generalRequirements).length === 0 && (
+              <div className="rounded-lg border border-dashed bg-muted/20 py-8 text-center text-muted-foreground">
+                <p>
+                  No specific documents required based on current selections.
+                </p>
+                <p className="mt-1 text-sm">
+                  You can upload general documents later from the client detail
+                  page.
+                </p>
+              </div>
+            )}
+        </div>
+      )}
+
+      {/* Skip information */}
       <Alert className="mt-8 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-200">
         <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
         <AlertDescription>
-          You can skip this step and upload these documents later from the
-          client detail page.
+          <span className="font-medium">Optional Step:</span> You can skip
+          document upload now and collect them later. After creating the client,
+          you'll find a "Collect Documents" page with all requirements and
+          upload capability.
         </AlertDescription>
       </Alert>
     </WizardStep>
@@ -143,7 +286,8 @@ function ServiceDocumentGroup({
       <CardHeader className="pb-3">
         <CardTitle className="font-medium text-base">{serviceName}</CardTitle>
         <CardDescription>
-          {requiredDocs.length} documents required
+          {requiredDocs.length} document{requiredDocs.length !== 1 ? "s" : ""}{" "}
+          required
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -197,6 +341,7 @@ function ServiceDocumentGroup({
                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
                   onClick={() => onRemove(uploadIndex!)}
                   size="icon"
+                  type="button"
                   variant="ghost"
                 >
                   <X className="h-4 w-4" />
@@ -204,7 +349,8 @@ function ServiceDocumentGroup({
               ) : (
                 <div className="relative">
                   <Input
-                    className="absolute inset-0 cursor-pointer opacity-0"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -218,6 +364,7 @@ function ServiceDocumentGroup({
                   <Button
                     className="pointer-events-none"
                     size="sm"
+                    type="button"
                     variant="outline"
                   >
                     <Upload className="mr-2 h-3 w-3" />

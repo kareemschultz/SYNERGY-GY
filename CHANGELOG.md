@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Document Upload and Service-Specific Requirements** (December 13, 2024)
+  - Fixed document upload button functionality in client onboarding wizard
+  - Added graceful error handling for service catalog lookups using `Promise.allSettled()` instead of `Promise.all()`
+  - Implemented service-specific document requirement fetching via `client.serviceCatalog.services.getById.query()`
+  - **Root Cause**: Upload button had `pointer-events-none` preventing clicks; service lookup failures crashed the wizard
+  - **Files Modified**:
+    - `apps/web/src/components/wizards/client-onboarding/step-documents.tsx` - Fixed upload button, added service-specific document fetching with error resilience
+  - **Impact**:
+    - Upload buttons now functional with proper file type filtering (`.pdf,.doc,.docx,.jpg,.jpeg,.png`)
+    - Document completion progress tracking works correctly
+    - Wizard gracefully handles missing or invalid service IDs with warning instead of crash
+    - Service-specific document requirements display when services are available
+
 - **Client Pages Database Enum Errors** (December 12, 2024)
   - Fixed critical 500 errors on client list page caused by invalid `matter_status` enum values
   - **Root Cause**: SQL queries were using invalid enum values (`PENDING_INFO`, `UNDER_REVIEW`, `COMPLETED`) instead of valid database enum values (`PENDING_CLIENT`, `SUBMITTED`, `COMPLETE`)
