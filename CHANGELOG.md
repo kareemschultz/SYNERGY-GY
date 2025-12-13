@@ -25,6 +25,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Edit Client Button in Client Detail Page** (December 13, 2024)
+  - Fixed "Edit Client" dropdown menu item that had no handler
+  - Now properly navigates to client detail page with `?edit=true` search parameter
+  - **Root Cause**: DropdownMenuItem was missing `asChild` prop and Link component
+  - **Files Modified**:
+    - `apps/web/src/routes/app/clients/$client-id.tsx` - Added Link wrapper with search parameter to Edit Client menu item
+  - **Impact**:
+    - Users can now click "Edit Client" to navigate to edit mode
+    - Consistent with edit pattern used in client card and client list
+    - Completes the client editing workflow from detail page
+
 - **Document Upload and Service-Specific Requirements** (December 13, 2024)
   - Fixed document upload button functionality in client onboarding wizard
   - Added graceful error handling for service catalog lookups using `Promise.allSettled()` instead of `Promise.all()`

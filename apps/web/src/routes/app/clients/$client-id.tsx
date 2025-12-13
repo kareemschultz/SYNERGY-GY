@@ -217,9 +217,15 @@ function ClientDetailPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Client
+                <DropdownMenuItem asChild>
+                  <Link
+                    params={{ clientId }}
+                    search={{ edit: true }}
+                    to="/app/clients/$clientId"
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Client
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link search={{ clientId }} to="/app/matters/new">
