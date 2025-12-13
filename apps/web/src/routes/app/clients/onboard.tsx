@@ -244,7 +244,7 @@ function ClientOnboardingWizard() {
         );
       case 4:
         return (
-          <StepServices
+          <StepEmployment
             data={wizard.data}
             errors={wizard.errors}
             onUpdate={wizard.updateData}
@@ -252,13 +252,37 @@ function ClientOnboardingWizard() {
         );
       case 5:
         return (
-          <StepDocuments
+          <StepBeneficialOwners
             data={wizard.data}
             errors={wizard.errors}
             onUpdate={wizard.updateData}
           />
         );
       case 6:
+        return (
+          <StepAmlCompliance
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      case 7:
+        return (
+          <StepServices
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      case 8:
+        return (
+          <StepDocuments
+            data={wizard.data}
+            errors={wizard.errors}
+            onUpdate={wizard.updateData}
+          />
+        );
+      case 9:
         return (
           <StepReview
             data={wizard.data}

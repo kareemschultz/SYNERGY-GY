@@ -385,6 +385,101 @@ export const onboardingSteps: OnboardingStep[] = [
     isOptional: true,
   },
   {
+    id: "employment",
+    title: "Employment & Income",
+    description: "Employment and income information",
+    isOptional: false,
+    validate: (data: ClientOnboardingData) => {
+      // Only required for individuals and foreign nationals
+      if (
+        !isIndividualType(data.clientType) &&
+        data.clientType !== "FOREIGN_NATIONAL"
+      ) {
+        return null;
+      }
+
+      const errors: Record<string, string> = {};
+
+      if (!data.employment?.status) {
+        errors.employmentStatus = "Employment status is required";
+      }
+
+      return Object.keys(errors).length > 0 ? errors : null;
+    },
+  },
+  {
+    id: "beneficial-owners",
+    title: "Beneficial Ownership",
+    description: "Disclose beneficial owners (25%+ ownership)",
+    isOptional: false,
+    validate: (data: ClientOnboardingData) => {
+      // Only required for business types
+      if (!isBusinessType(data.clientType)) {
+        return null;
+      }
+
+      const errors: Record<string, string> = {};
+
+      // Corporations must have at least one beneficial owner
+      if (
+        data.clientType === "CORPORATION" &&
+        (!data.beneficialOwners || data.beneficialOwners.length === 0)
+      ) {
+        errors.beneficialOwners =
+          "At least one beneficial owner (25%+ ownership) must be disclosed for corporations";
+      }
+
+      return Object.keys(errors).length > 0 ? errors : null;
+    },
+  },
+  {
+    id: "aml-compliance",
+    title: "AML/KYC Compliance",
+    description: "Anti-Money Laundering compliance",
+    isOptional: false,
+    validate: (data: ClientOnboardingData) => {
+      const errors: Record<string, string> = {};
+
+      // Source of funds required for all clients
+      if (
+        !data.amlCompliance?.sourceOfFunds ||
+        data.amlCompliance.sourceOfFunds.length === 0
+      ) {
+        errors.sourceOfFunds = "Please select at least one source of funds";
+      }
+
+      // If OTHER is selected, details are required
+      if (
+        data.amlCompliance?.sourceOfFunds?.includes("OTHER") &&
+        !data.amlCompliance.sourceOfFundsDetails
+      ) {
+        errors.sourceOfFundsDetails =
+          "Please provide details about your source of funds";
+      }
+
+      // PEP fields required if isPep is true
+      if (data.amlCompliance?.isPep) {
+        if (!data.amlCompliance.pepCategory) {
+          errors.pepCategory = "PEP category is required";
+        }
+        if (!data.amlCompliance.pepPosition) {
+          errors.pepPosition = "Position/title is required for PEPs";
+        }
+        if (!data.amlCompliance.pepJurisdiction) {
+          errors.pepJurisdiction = "Jurisdiction/country is required for PEPs";
+        }
+      }
+
+      // Sanctions screening consent required
+      if (!data.amlCompliance?.sanctionsScreeningConsent) {
+        errors.sanctionsScreeningConsent =
+          "You must consent to sanctions screening to proceed";
+      }
+
+      return Object.keys(errors).length > 0 ? errors : null;
+    },
+  },
+  {
     id: "services",
     title: "Services",
     description: "Select businesses and services",
