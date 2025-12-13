@@ -1,3 +1,6 @@
+export { ServiceCategoryAccordion } from "./service-category-accordion";
+export { ServiceCheckboxItem } from "./service-checkbox-item";
+export { ServiceDetailsModal } from "./service-details-modal";
 export { StepAmlCompliance } from "./step-aml-compliance";
 export { StepBasicInfo } from "./step-basic-info";
 export { StepBeneficialOwners } from "./step-beneficial-owners";
@@ -8,6 +11,7 @@ export { StepEmployment } from "./step-employment";
 export { StepIdentification } from "./step-identification";
 export { StepReview } from "./step-review";
 export { StepServices } from "./step-services";
+export { StepServicesEnhanced } from "./step-services-enhanced";
 export {
   BUSINESSES,
   type Business,
@@ -24,4 +28,6 @@ export {
   KAJ_SERVICES,
   type KAJService,
   onboardingSteps,
+  type PricingTier,
+  type ServiceCatalogItem,
 } from "./types";

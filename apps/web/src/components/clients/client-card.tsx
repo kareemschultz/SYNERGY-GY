@@ -196,7 +196,7 @@ export function ClientCard({ client, canViewFinancials }: ClientCardProps) {
 
           {/* Financial */}
           <div className="flex flex-col items-center">
-            {financials ? (
+            {financials !== null ? (
               <>
                 <FinancialBadge
                   overdueAmount={financials.overdueAmount}

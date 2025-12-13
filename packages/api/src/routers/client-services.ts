@@ -7,9 +7,9 @@ import {
 } from "@SYNERGY-GY/db";
 import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import { adminProcedure, router, staffProcedure } from "../index";
+import { adminProcedure, staffProcedure } from "../index";
 
-export const clientServicesRouter = router({
+export const clientServicesRouter = {
   /**
    * Save service selections from onboarding wizard
    */
@@ -20,7 +20,7 @@ export const clientServicesRouter = router({
         serviceIds: z.array(z.string().uuid()),
       })
     )
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       const { clientId, serviceIds } = input;
 
       // Verify client exists
@@ -80,7 +80,7 @@ export const clientServicesRouter = router({
    */
   getByClient: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const selections = await db.query.clientServiceSelection.findMany({
         where: eq(clientServiceSelection.clientId, input.clientId),
         orderBy: (t, { desc }) => desc(t.selectedAt),
@@ -117,7 +117,7 @@ export const clientServicesRouter = router({
         notes: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       const { selectionId, status, notes } = input;
 
       // Prepare update data with appropriate timestamp
@@ -159,7 +159,7 @@ export const clientServicesRouter = router({
         requirementName: z.string(),
       })
     )
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       const { selectionId, documentId, requirementName } = input;
 
       // Fetch the service selection
@@ -205,7 +205,7 @@ export const clientServicesRouter = router({
    */
   getFulfillmentProgress: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const selections = await db.query.clientServiceSelection.findMany({
         where: eq(clientServiceSelection.clientId, input.clientId),
       });
@@ -257,7 +257,7 @@ export const clientServicesRouter = router({
         endDate: z.date().optional(),
       })
     )
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const { business, startDate, endDate } = input;
 
       const conditions = [];
@@ -308,7 +308,7 @@ export const clientServicesRouter = router({
         business: z.enum(["GCMC", "KAJ"]).optional(),
       })
     )
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const { serviceCode, business } = input;
 
       const conditions = [eq(clientServiceSelection.status, "COMPLETED")];
@@ -404,11 +404,11 @@ export const clientServicesRouter = router({
    */
   delete: staffProcedure
     .input(z.object({ selectionId: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       await db
         .delete(clientServiceSelection)
         .where(eq(clientServiceSelection.id, input.selectionId));
 
       return { success: true };
     }),
-});
+};

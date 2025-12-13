@@ -56,7 +56,7 @@ export const beneficialOwnersRouter = {
   /**
    * List all beneficial owners for a client
    */
-  list: staffProcedure.input(listByClientSchema).query(async ({ input }) => {
+  list: staffProcedure.input(listByClientSchema).handler(async ({ input }) => {
     const owners = await db
       .select({
         id: clientBeneficialOwner.id,
@@ -105,7 +105,7 @@ export const beneficialOwnersRouter = {
    */
   get: staffProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const owner = await db.query.clientBeneficialOwner.findFirst({
         where: eq(clientBeneficialOwner.id, input.id),
         with: {
@@ -130,7 +130,7 @@ export const beneficialOwnersRouter = {
    */
   create: staffProcedure
     .input(createBeneficialOwnerSchema)
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       // Verify client exists
       const clientExists = await db.query.client.findFirst({
         where: eq(client.id, input.clientId),
@@ -196,7 +196,7 @@ export const beneficialOwnersRouter = {
    */
   update: staffProcedure
     .input(updateBeneficialOwnerSchema)
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       const { id, ...updates } = input;
 
       // Verify exists
@@ -246,7 +246,7 @@ export const beneficialOwnersRouter = {
    */
   delete: staffProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       const existing = await db.query.clientBeneficialOwner.findFirst({
         where: eq(clientBeneficialOwner.id, input.id),
       });
@@ -270,7 +270,7 @@ export const beneficialOwnersRouter = {
    */
   verify: staffProcedure
     .input(verifyBeneficialOwnerSchema)
-    .mutation(async ({ input, context }) => {
+    .handler(async ({ input, context }) => {
       const existing = await db.query.clientBeneficialOwner.findFirst({
         where: eq(clientBeneficialOwner.id, input.id),
       });
@@ -314,7 +314,7 @@ export const beneficialOwnersRouter = {
    */
   getTotalOwnership: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const owners = await db
         .select({
           ownershipPercentage: clientBeneficialOwner.ownershipPercentage,

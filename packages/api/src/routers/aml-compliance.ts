@@ -105,7 +105,7 @@ export const amlComplianceRouter = {
    */
   calculateRiskScore: staffProcedure
     .input(calculateRiskScoreSchema)
-    .query(({ input }) => {
+    .handler(({ input }) => {
       const riskInput: RiskScoreInput = {
         clientType: input.clientType,
         serviceTypes: input.serviceTypes,
@@ -131,7 +131,7 @@ export const amlComplianceRouter = {
    */
   createAssessment: staffProcedure
     .input(createAssessmentSchema)
-    .mutation(async ({ input, context }) => {
+    .handler(async ({ input, context }) => {
       // Verify client exists
       const clientExists = await db.query.client.findFirst({
         where: eq(client.id, input.clientId),
@@ -218,7 +218,7 @@ export const amlComplianceRouter = {
    */
   getAssessment: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const assessment = await db.query.clientAmlAssessment.findFirst({
         where: eq(clientAmlAssessment.clientId, input.clientId),
         orderBy: desc(clientAmlAssessment.assessmentDate),
@@ -237,7 +237,7 @@ export const amlComplianceRouter = {
    */
   getAssessmentHistory: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const assessments = await db.query.clientAmlAssessment.findMany({
         where: eq(clientAmlAssessment.clientId, input.clientId),
         orderBy: desc(clientAmlAssessment.assessmentDate),
@@ -255,7 +255,7 @@ export const amlComplianceRouter = {
    */
   approveAssessment: adminProcedure
     .input(approveAssessmentSchema)
-    .mutation(async ({ input, context }) => {
+    .handler(async ({ input, context }) => {
       const existing = await db.query.clientAmlAssessment.findFirst({
         where: eq(clientAmlAssessment.id, input.id),
       });
@@ -298,7 +298,7 @@ export const amlComplianceRouter = {
    */
   getPendingReviews: adminProcedure
     .input(listPendingReviewsSchema)
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const offset = (input.page - 1) * input.limit;
 
       const where = input.riskRating
@@ -345,7 +345,7 @@ export const amlComplianceRouter = {
         daysAhead: z.number().min(1).max(365).default(30),
       })
     )
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const today = new Date();
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + input.daysAhead);
@@ -373,7 +373,7 @@ export const amlComplianceRouter = {
    */
   screenSanctions: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       const clientRecord = await db.query.client.findFirst({
         where: eq(client.id, input.clientId),
       });

@@ -95,12 +95,12 @@ async function verifyClientSelections() {
         );
 
         console.log(`  ✓ Fixed: "${selection.service_name}" → ${service.id}`);
-        fixedCount++;
+        fixedCount += 1;
       } else {
         console.log(
           `  ✗ Cannot fix: "${selection.service_name}" (no matching service found)`
         );
-        unfixableCount++;
+        unfixableCount += 1;
       }
     }
 

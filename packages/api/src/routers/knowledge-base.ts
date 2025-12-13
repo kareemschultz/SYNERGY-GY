@@ -7,14 +7,9 @@ import {
 } from "@SYNERGY-GY/db";
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import {
-  adminProcedure,
-  publicProcedure,
-  router,
-  staffProcedure,
-} from "../index";
+import { adminProcedure, publicProcedure, staffProcedure } from "../index";
 
-export const knowledgeBaseRouter = router({
+export const knowledgeBaseRouter = {
   /**
    * List KB items with filters (accessible to staff and clients)
    */
@@ -43,7 +38,7 @@ export const knowledgeBaseRouter = router({
         limit: z.number().default(50),
       })
     )
-    .query(async ({ input, ctx }) => {
+    .handler(async ({ input, ctx }) => {
       const {
         type,
         category,
@@ -135,7 +130,7 @@ export const knowledgeBaseRouter = router({
    */
   getById: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input, ctx }) => {
+    .handler(async ({ input, ctx }) => {
       const item = await db.query.knowledgeBaseItem.findFirst({
         where: and(
           eq(knowledgeBaseItem.id, input.id),
@@ -181,7 +176,7 @@ export const knowledgeBaseRouter = router({
         clientId: z.string().uuid().optional(), // For client downloads
       })
     )
-    .mutation(async ({ input, ctx }) => {
+    .handler(async ({ input, ctx }) => {
       const item = await db.query.knowledgeBaseItem.findFirst({
         where: and(
           eq(knowledgeBaseItem.id, input.id),
@@ -232,7 +227,7 @@ export const knowledgeBaseRouter = router({
         matterId: z.string().uuid().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       const item = await db.query.knowledgeBaseItem.findFirst({
         where: eq(knowledgeBaseItem.id, input.id),
       });
@@ -312,7 +307,7 @@ export const knowledgeBaseRouter = router({
         isFeatured: z.boolean(),
       })
     )
-    .mutation(async ({ input, ctx }) => {
+    .handler(async ({ input, ctx }) => {
       const [created] = await db
         .insert(knowledgeBaseItem)
         .values({
@@ -365,7 +360,7 @@ export const knowledgeBaseRouter = router({
         isActive: z.boolean().optional(),
       })
     )
-    .mutation(async ({ input, ctx }) => {
+    .handler(async ({ input, ctx }) => {
       const { id, ...updateData } = input;
 
       const [updated] = await db
@@ -386,7 +381,7 @@ export const knowledgeBaseRouter = router({
    */
   delete: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       await db
         .update(knowledgeBaseItem)
         .set({ isActive: false })
@@ -400,7 +395,7 @@ export const knowledgeBaseRouter = router({
    */
   getDownloadStats: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const downloads = await db.query.knowledgeBaseDownload.findMany({
         where: eq(knowledgeBaseDownload.knowledgeBaseItemId, input.id),
         orderBy: (t) => desc(t.createdAt),
@@ -435,7 +430,7 @@ export const knowledgeBaseRouter = router({
           .optional(),
       })
     )
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const { limit: inputLimit, type } = input;
 
       const conditions = [];
@@ -470,4 +465,4 @@ export const knowledgeBaseRouter = router({
 
       return items.filter((item) => item !== null);
     }),
-});
+};

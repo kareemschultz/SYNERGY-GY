@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Service Catalog Database Population** (December 12, 2024)
+  - Created seed script `packages/db/src/scripts/seed-service-catalog.ts` with real GCMC and KAJ services
+  - Populated **33 services** across **10 categories**:
+    - **GCMC** (17 services): Training & Development (4), Business Consulting (2), Paralegal (5), Immigration (3), Proposals (3)
+    - **KAJ** (16 services): Tax Services (5), Compliance (3), Audit (2), NIS Services (3), PAYE (3)
+  - Each service includes tiered pricing, estimated duration, document requirements, and government agencies
+  - Fixed API router patterns: replaced `.query()` and `.mutation()` with `.handler()` in 5 router files
+  - Verified wizard displays all services correctly with proper category grouping and expandable accordions
+
 - **Enhanced Service Selection for Client Onboarding Wizard** (December 12, 2024)
   - **Individual Service Selection**: Granular selection of specific services within categories
     - Replaced category-level selection with individual service checkboxes
@@ -29,10 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       - `formatCurrency()` - GYD formatting with compact mode
       - `calculateTotalPrice()` - Estimates total cost for selected services
       - `formatDuration()` - Service duration display
-  - **UI Components** (In Progress):
-    - ServiceCategoryAccordion - Expandable category cards with service count and price range
-    - ServiceCheckboxItem - Individual service with full pricing tiers, duration, and document count
-    - ServiceDetailsModal - Comprehensive service information with tiered pricing tables
+  - **UI Components** (✅ COMPLETED):
+    - `ServiceCategoryAccordion` - Expandable category cards with service count and price range
+    - `ServiceCheckboxItem` - Individual service with full pricing tiers, duration, and document count
+    - `ServiceDetailsModal` - Comprehensive service information with tiered pricing tables
+    - `StepServicesEnhanced` - Enhanced wizard step with category accordion and service selection
+    - Integrated with TanStack Query for real-time service catalog data
+    - Business-specific filtering (GCMC/KAJ) with conditional rendering
   - **Data Architecture Fix**: Resolved mismatch between wizard (sent category codes) and API (expected service UUIDs)
 
 - **Clients At-a-Glance Enhancement** (December 12, 2024)

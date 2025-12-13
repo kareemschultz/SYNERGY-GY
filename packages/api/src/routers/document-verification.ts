@@ -53,7 +53,7 @@ export const documentVerificationRouter = {
    */
   create: staffProcedure
     .input(createVerificationSchema)
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       // Verify document exists
       const documentRecord = await db.query.document.findFirst({
         where: eq(document.id, input.documentId),
@@ -121,7 +121,7 @@ export const documentVerificationRouter = {
    */
   get: staffProcedure
     .input(z.object({ documentId: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const verification = await db.query.documentVerification.findFirst({
         where: eq(documentVerification.documentId, input.documentId),
         with: {
@@ -145,7 +145,7 @@ export const documentVerificationRouter = {
    */
   verify: staffProcedure
     .input(verifyDocumentSchema)
-    .mutation(async ({ input, context }) => {
+    .handler(async ({ input, context }) => {
       const existing = await db.query.documentVerification.findFirst({
         where: eq(documentVerification.id, input.verificationId),
       });
@@ -191,7 +191,7 @@ export const documentVerificationRouter = {
    */
   update: staffProcedure
     .input(updateVerificationSchema)
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       const { verificationId, ...updates } = input;
 
       const existing = await db.query.documentVerification.findFirst({
@@ -232,7 +232,7 @@ export const documentVerificationRouter = {
    */
   getExpiringDocuments: staffProcedure
     .input(getExpiringDocumentsSchema)
-    .query(async ({ input }) => {
+    .handler(async ({ input }) => {
       const today = new Date();
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + input.daysAhead);
@@ -271,7 +271,7 @@ export const documentVerificationRouter = {
    */
   markNotificationSent: staffProcedure
     .input(z.object({ verificationId: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .handler(async ({ input }) => {
       const existing = await db.query.documentVerification.findFirst({
         where: eq(documentVerification.id, input.verificationId),
       });
@@ -299,7 +299,7 @@ export const documentVerificationRouter = {
    * Check and update expired documents
    * This would typically run as a background job
    */
-  checkExpiredDocuments: staffProcedure.mutation(async () => {
+  checkExpiredDocuments: staffProcedure.handler(async () => {
     const today = new Date().toISOString().split("T")[0];
 
     const expiredVerifications = await db.query.documentVerification.findMany({
@@ -331,7 +331,7 @@ export const documentVerificationRouter = {
   /**
    * Get verification statistics
    */
-  getStatistics: staffProcedure.query(async () => {
+  getStatistics: staffProcedure.handler(async () => {
     const allVerifications = await db
       .select({
         status: documentVerification.verificationStatus,

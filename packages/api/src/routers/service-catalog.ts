@@ -649,5 +649,70 @@ export const serviceCatalogRouter = {
 
         return results;
       }),
+
+    // Get services grouped by category for wizard
+    getForWizard: staffProcedure
+      .input(
+        z.object({
+          business: z.enum(["GCMC", "KAJ"]),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Check business access
+        if (!accessibleBusinesses.includes(input.business)) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this business",
+          });
+        }
+
+        // Fetch all active services with their categories
+        const services = await db.query.serviceCatalog.findMany({
+          where: and(
+            eq(serviceCatalog.business, input.business),
+            eq(serviceCatalog.isActive, true)
+          ),
+          orderBy: [
+            asc(serviceCatalog.sortOrder),
+            asc(serviceCatalog.displayName),
+          ],
+          with: {
+            category: true,
+          },
+        });
+
+        // Group services by category
+        const grouped: Record<
+          string,
+          {
+            categoryId: string;
+            categoryName: string;
+            categoryDisplayName: string;
+            categoryDescription: string;
+            services: typeof services;
+          }
+        > = {};
+
+        for (const service of services) {
+          if (!service.category) continue;
+
+          const categoryKey = service.category.name;
+
+          if (!grouped[categoryKey]) {
+            grouped[categoryKey] = {
+              categoryId: service.category.id,
+              categoryName: service.category.name,
+              categoryDisplayName: service.category.displayName,
+              categoryDescription: service.category.description || "",
+              services: [],
+            };
+          }
+
+          grouped[categoryKey].services.push(service);
+        }
+
+        return grouped;
+      }),
   },
 };
