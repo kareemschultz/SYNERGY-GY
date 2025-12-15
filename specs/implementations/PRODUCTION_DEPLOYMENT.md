@@ -165,13 +165,22 @@ Transform GK-Nexus from development to production-ready with industry-standard D
 - [x] Add loading states to auth checks
 - [x] Test authentication flow thoroughly
 - [x] Verify no flash of unauthenticated content
+- [x] Fix "Access Pending" bug caused by oRPC v1.12.3 response structure change (December 15, 2024)
 
 **Files:**
 - `apps/web/src/routes/index.tsx` (REPLACED - smart auth-based redirect)
 - `apps/web/src/components/sign-in-form.tsx` (MODIFIED - fixed redirect target)
-- `apps/web/src/routes/app.tsx` (MODIFIED - added LoadingApp pending component)
+- `apps/web/src/routes/app.tsx` (MODIFIED - added LoadingApp pending component + fixed oRPC response access)
 
 **Completed:** January 15, 2025
+
+**Post-Completion Fix (December 15, 2024):**
+- Discovered and fixed "Access Pending" bug caused by oRPC v1.12.3 upgrade
+- Issue: oRPC wraps responses in `.json` property, but frontend code wasn't updated
+- Solution: Changed `staffStatus?.hasStaffProfile` → `staffStatus?.json?.hasStaffProfile`
+- Impact: All authenticated users were stuck at Access Pending screen, now resolved
+- Testing: Verified fix with local Docker testing - dashboard loads correctly after login
+- Commit: `977cd50`
 
 ---
 
