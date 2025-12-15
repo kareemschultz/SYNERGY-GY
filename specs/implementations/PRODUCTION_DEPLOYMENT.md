@@ -176,11 +176,17 @@ Transform GK-Nexus from development to production-ready with industry-standard D
 
 **Post-Completion Fix (December 15, 2024):**
 - Discovered and fixed "Access Pending" bug caused by oRPC v1.12.3 upgrade
-- Issue: oRPC wraps responses in `.json` property, but frontend code wasn't updated
-- Solution: Changed `staffStatus?.hasStaffProfile` → `staffStatus?.json?.hasStaffProfile`
-- Impact: All authenticated users were stuck at Access Pending screen, now resolved
-- Testing: Verified fix with local Docker testing - dashboard loads correctly after login
-- Commit: `977cd50`
+- **Root Cause**: oRPC wraps responses in `.json` property, but frontend code wasn't updated after upgrade
+- **Solution**: Created centralized `unwrapOrpc<T>()` helper function for consistent response unwrapping
+  - New file: `apps/web/src/utils/orpc-response.ts` (unwrap helper with TypeScript generics)
+  - Updated: `apps/web/src/routes/app.tsx` (staff status checks)
+  - Updated: `apps/web/src/routes/app/clients/$client-id.tsx` (financial access - was hidden from all users)
+- **Prevention**: Added comprehensive documentation in CLAUDE.md with examples and troubleshooting
+- **Testing**:
+  - Verified fix with local Docker testing - dashboard loads correctly after login
+  - Created E2E regression test (`apps/web/e2e/authentication.spec.ts`) to prevent future regressions
+- **Impact**: All authenticated users were stuck at Access Pending screen, now resolved
+- Commits: `977cd50` (initial fix), `708f6de` (centralized helper), `12fec91` (E2E test)
 
 ---
 
