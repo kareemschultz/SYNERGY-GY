@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **RPC Path Construction Protocol Mismatch** (#PROD-007) - December 15, 2024
+  - Fixed oRPC protocol incompatibility where client used dot notation (`settings.getStaffStatus`) but server expected slash notation (`settings/getStaffStatus`)
+  - **Root cause**: oRPC v1.12+ uses slash-separated paths but legacy clients may still use dot notation
+  - **Solution**: Added automatic path normalization in client-side fetch wrapper (`apps/web/src/utils/orpc.ts`)
+  - Normalization converts dots to slashes ONLY in `/rpc/` paths, preserving query parameters and file extensions
+  - Upgraded oRPC packages from v1.10.0 to v1.12.3 for latest improvements and bug fixes
+  - Prevents "Cannot find procedure" errors in production
+  - Commits: `f6d19c3`, `2d447aa`
+
 - **RPC API Routes Returning 404** (#PROD-007) - December 15, 2024
   - Fixed critical bug where all `/rpc/*` requests returned 404 Not Found
   - **Root cause**: `serveStatic` middleware was intercepting API routes with `/*` pattern
