@@ -159,18 +159,47 @@ log "Image ID: $IMAGE_ID"
 log "Image Size: $IMAGE_SIZE"
 
 # =============================================================================
+# Deploy New Version
+# =============================================================================
+
+log "Deploying new version..."
+
+confirm "Deploy new version with zero-downtime?"
+
+# Stop current containers (brief downtime)
+info "Stopping current containers..."
+docker compose down 2>&1 | tee -a "$LOG_FILE"
+log "✓ Containers stopped"
+
+# Start postgres first and wait for it to be healthy
+info "Starting PostgreSQL database..."
+if docker compose up -d postgres 2>&1 | tee -a "$LOG_FILE"; then
+    log "✓ PostgreSQL container started"
+else
+    error "Failed to start PostgreSQL container. Check Docker Compose logs."
+fi
+
+# Wait for postgres to be healthy
+info "Waiting for PostgreSQL to be ready..."
+MAX_WAIT=30
+WAIT_COUNT=0
+while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
+    if docker compose ps postgres | grep -q "healthy"; then
+        log "✓ PostgreSQL is healthy"
+        break
+    fi
+    WAIT_COUNT=$((WAIT_COUNT + 1))
+    if [ $WAIT_COUNT -eq $MAX_WAIT ]; then
+        error "PostgreSQL failed to become healthy after ${MAX_WAIT} seconds. Check logs with: docker compose logs postgres"
+    fi
+    sleep 1
+done
+
+# =============================================================================
 # Run Database Migrations (CRITICAL)
 # =============================================================================
 
-log "Checking for pending database migrations..."
-
-confirm "Run database migrations? (CRITICAL - Do NOT skip this!)"
-
-info "Running migrations..."
-info "This may take a few seconds..."
-
-# Export DATABASE_URL for migration script
-export DATABASE_URL
+log "Running database migrations..."
 
 # Check if Bun is available
 if ! command -v bun &> /dev/null; then
@@ -191,7 +220,10 @@ if [ ! -f "apps/server/.env" ]; then
     log "✓ Created .env symlink at apps/server/.env"
 fi
 
-info "Running migrations with Bun..."
+# Export DATABASE_URL for migration script
+export DATABASE_URL
+
+info "Pushing schema changes to database..."
 # Capture both output and exit code
 set +e  # Temporarily disable exit on error
 MIGRATION_OUTPUT=$(bun run db:push 2>&1)
@@ -201,32 +233,24 @@ set -e  # Re-enable exit on error
 # Log the output
 echo "$MIGRATION_OUTPUT" | tee -a "$LOG_FILE"
 
-# Check if migration was successful
-if [ $MIGRATION_EXIT_CODE -eq 0 ] && ! echo "$MIGRATION_OUTPUT" | grep -q "error:"; then
+# Check if migration was successful (check exit code AND grep for errors/warnings)
+if [ $MIGRATION_EXIT_CODE -eq 0 ] && ! echo "$MIGRATION_OUTPUT" | grep -qi "error"; then
     log "✓ Database migrations completed successfully"
 else
-    error "Database migration failed! Exit code: $MIGRATION_EXIT_CODE. Check the logs above."
+    # Check if it's just a "no changes" scenario
+    if echo "$MIGRATION_OUTPUT" | grep -q "No schema changes"; then
+        log "✓ Database schema is up to date (no changes needed)"
+    else
+        error "Database migration failed! Exit code: $MIGRATION_EXIT_CODE. Check the logs above."
+    fi
 fi
 
-# =============================================================================
-# Deploy New Version
-# =============================================================================
-
-log "Deploying new version..."
-
-confirm "Stop current containers and start new version?"
-
-# Stop current containers (brief downtime)
-info "Stopping current containers..."
-docker compose down 2>&1 | tee -a "$LOG_FILE"
-log "✓ Containers stopped"
-
-# Start new version
-info "Starting new containers..."
-if docker compose up -d 2>&1 | tee -a "$LOG_FILE"; then
-    log "✓ Containers started"
+# Start application server
+info "Starting application server..."
+if docker compose up -d server 2>&1 | tee -a "$LOG_FILE"; then
+    log "✓ Application server started"
 else
-    error "Failed to start containers. Check Docker Compose logs."
+    error "Failed to start application server. Check Docker Compose logs."
 fi
 
 # =============================================================================

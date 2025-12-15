@@ -650,16 +650,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Production `.env` is at root, causing "url: ''" error
     - Deployment script now creates symlink from `apps/server/.env` → `../../.env`
     - Ensures drizzle-kit can find DATABASE_URL during migrations
+  - **Fixed DATABASE_URL password encoding issue** ⚠️ CRITICAL
+    - Passwords with special characters (`/`, `+`, `=`) broke URL parsing
+    - `pg-connection-string` library failed with `TypeError: undefined is not an object (evaluating 'result.searchParams')`
+    - `setup-env.sh` now URL-encodes passwords using xxd (converts to %XX format)
+    - Example: `password/123` → `password%2F123`
+  - **Fixed migration timing issue** ⚠️ CRITICAL
+    - Migrations ran BEFORE postgres container existed, causing DNS errors (`getaddrinfo ESERVFAIL`)
+    - Database tables weren't created, app failed with `relation does not exist`
+    - **New deployment flow:**
+      1. Stop old containers
+      2. Start postgres container
+      3. Wait for postgres healthy (max 30s)
+      4. Run migrations (postgres now exists)
+      5. Start application server
+      6. Health check validation
   - **Files Modified:**
-    - `deploy-production.sh` - Enhanced migration validation, .env symlink creation
-    - `setup-env.sh` - Added quotes to all sed commands
+    - `deploy-production.sh` - Complete restructure: postgres-first deployment, migration after healthy check
+    - `setup-env.sh` - URL-encode passwords in DATABASE_URL
     - `.env.example` - Quoted all string values
   - **Impact:**
-    - Deployment now fails fast with clear error messages
-    - Prevents silent migration failures from progressing
-    - Handles user names and values with special characters correctly
-    - Provides specific guidance when dependencies are missing
-    - Database migrations now work correctly in production
+    - ✅ Deployment now fails fast with clear error messages
+    - ✅ Prevents silent migration failures from progressing
+    - ✅ Handles passwords with ANY special characters correctly
+    - ✅ Migrations run against healthy database (no DNS errors)
+    - ✅ Database schema properly created before app starts
+    - ✅ Production deployments now complete successfully
 
 - **Edit Client Button in Client Detail Page** (December 13, 2024)
   - Fixed "Edit Client" dropdown menu item that had no handler

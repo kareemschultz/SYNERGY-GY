@@ -134,8 +134,12 @@ cp .env.example .env
 
 info "Populating configuration..."
 
-# Update DATABASE_URL with generated password
-DATABASE_URL="postgresql://gknexus:${POSTGRES_PASSWORD}@postgres:5432/gknexus"
+# URL-encode the password for DATABASE_URL (special chars like / + = break URL parsing)
+# Using printf and xxd for URL encoding
+ENCODED_PASSWORD=$(printf '%s' "$POSTGRES_PASSWORD" | xxd -plain | tr -d '\n' | sed 's/\(..\)/%\1/g')
+
+# Update DATABASE_URL with URL-encoded password
+DATABASE_URL="postgresql://gknexus:${ENCODED_PASSWORD}@postgres:5432/gknexus"
 sed -i "s|DATABASE_URL=.*|DATABASE_URL=\"$DATABASE_URL\"|g" .env
 
 # Update secrets
