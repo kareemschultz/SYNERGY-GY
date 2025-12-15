@@ -64,14 +64,14 @@ ENV VITE_SERVER_URL=$VITE_SERVER_URL
 RUN --mount=type=cache,target=/root/.cache/turbo \
     bunx turbo build --filter=web...
 
-# Bundle server into single 2.5MB file (all @SYNERGY-GY/* packages inlined)
+# Bundle server into single file (all @SYNERGY-GY/* packages inlined)
 # Eliminates need for node_modules at runtime (458MB → 0MB)
+# Note: --minify removed due to @orpc/openapi bundling issues
 RUN mkdir -p dist && \
     bun build apps/server/src/index.ts \
     --target=bun \
     --outdir=dist \
     --entry-naming=server.bundled.js \
-    --minify \
     --sourcemap=external
 
 # =============================================================================
