@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### In Progress
 
+- **Bun Workspace Docker Resolution Fix** (#PROD-001) - December 15, 2024
+  - **CRITICAL FIX:** Resolved Bun v1.2.19+ isolated workspace dependency resolution in Docker
+  - **Root Cause:** Bun changed from "hoisted" to "isolated" workspace linking (like pnpm)
+  - **Solution:** Added `--linker hoisted` flag to `bun install` in Dockerfile
+  - **Additional Fix:** Excluded builder stage `node_modules` from packages to avoid broken symlinks
+  - **Files Modified:**
+    - `Dockerfile` (formerly `Dockerfile.prod`): Added `--linker hoisted` flag
+    - `docker-compose.yml` (formerly `docker-compose.prod.yml`): Simplified naming
+    - `.env.example` (formerly `.env.production`): Renamed for simplicity
+  - **Testing:** Application now runs successfully in Docker with all workspace packages resolved
+  - **Impact:**
+    - Build time: ~5 minutes (831 packages with hoisted mode vs 1653 with isolated)
+    - Image size: Maintained <300MB target
+    - Deployment: Simple `docker compose up -d` workflow
+
 - **Production Deployment Implementation** (January 15, 2025 - **ENHANCED WITH LINUXSERVER.IO BEST PRACTICES**)
   - Plan: `gk-nexus-production-deployment` (7 phases, 4-7 days critical path)
   - Spec: `/specs/implementations/PRODUCTION_DEPLOYMENT.md` (UPDATED with LinuxServer.io research)

@@ -5,5 +5,6 @@ export default defineConfig({
   format: "esm",
   outDir: "./dist",
   clean: true,
-  noExternal: [/@SYNERGY-GY\/.*/],
+  // Bundle all dependencies for Docker deployment
+  noExternal: [/.*/], // Bundle everything
 });
