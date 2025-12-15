@@ -9,13 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Frontend API Connection in Production** (#PROD-007) - December 15, 2024
-  - Fixed "Something went wrong!" error on production deployment
-  - **Root cause**: Frontend was hardcoded to connect to `http://localhost:3000/rpc`
-  - **Solution**: Implemented smart URL detection in `apps/web/src/utils/orpc.ts`
-  - Frontend now uses relative URL (`/rpc`) when VITE_SERVER_URL is localhost
+- **Frontend API and Auth Connection in Production** (#PROD-007) - December 15, 2024
+  - Fixed authentication and API connection issues on production deployment
+  - **Root cause**: Both API client and Better-Auth client were hardcoded to `http://localhost:3000`
+  - **Solution**: Implemented smart URL detection in both clients:
+    - `apps/web/src/utils/orpc.ts` - API client uses relative URL (`/rpc`)
+    - `apps/web/src/lib/auth-client.ts` - Auth client uses same origin (no baseURL)
   - Works seamlessly with reverse proxy setups (Pangolin, Nginx, Caddy, etc.)
   - No need to rebuild images for different domains - one image works everywhere
+  - Resolves CORS errors and "localhost:3000" connection attempts in production
 
 - **Docker Compose Image Configuration** (#PROD-007) - December 15, 2024
   - Updated docker-compose.yml to pull from GHCR instead of building locally
