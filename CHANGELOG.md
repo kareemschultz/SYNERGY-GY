@@ -27,12 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Dashboard loads with all statistics and navigation
     - All routes accessible (Clients, Matters, Documents, Calendar, etc.)
     - Initial owner account created automatically on first run
-  - **CRITICAL FIX**: Added password URL encoding to deploy-production.sh
-    - Handles special characters (+, =, /) in auto-generated passwords
-    - Ensures reliable database connections during migrations
-    - Uses same encoding as setup-env.sh for consistency
-    - **Quote stripping fix**: Strips quotes from .env variables before URL encoding
-    - Resolves authentication failures when .env uses quoted values (e.g., `POSTGRES_PASSWORD="value"`)
+  - **CRITICAL FIX**: Fixed .env quote handling for Docker Compose compatibility
+    - **Root cause**: Docker Compose and bash interpret quotes literally in .env files
+    - **Issue**: `POSTGRES_PASSWORD="value"` was setting password to `"value"` (with quotes)
+    - **Solution**: Removed quotes from all sed commands in setup-env.sh
+    - **Exception**: INITIAL_OWNER_NAME keeps quotes to support spaces in names
+    - **deploy-production.sh**: Added quote stripping as defensive fallback
+    - **PostgreSQL password behavior**: Password only set on first database initialization
+    - Changing .env and restarting doesn't update password in existing volume
+    - Solution: Use `docker compose down -v` to recreate database with new password
   - **Production readiness confirmed** ✅
 
 - **Production Deployment Automation** (#PROD-007) - December 15, 2024

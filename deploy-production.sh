@@ -173,6 +173,9 @@ log "Deploying new version..."
 confirm "Deploy new version with zero-downtime?"
 
 # Stop current containers (brief downtime)
+# NOTE: This keeps the database volume intact. PostgreSQL password is only set
+# on first initialization. If you changed POSTGRES_PASSWORD in .env and need to
+# reset the database, use: docker compose down -v (WARNING: deletes all data)
 info "Stopping current containers..."
 docker compose down 2>&1 | tee -a "$LOG_FILE"
 log "✓ Containers stopped"

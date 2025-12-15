@@ -138,25 +138,25 @@ info "Populating configuration..."
 # Using printf and xxd for URL encoding
 ENCODED_PASSWORD=$(printf '%s' "$POSTGRES_PASSWORD" | xxd -plain | tr -d '\n' | sed 's/\(..\)/%\1/g')
 
-# Update DATABASE_URL with URL-encoded password
+# Update DATABASE_URL with URL-encoded password (no quotes needed)
 DATABASE_URL="postgresql://gknexus:${ENCODED_PASSWORD}@postgres:5432/gknexus"
-sed -i "s|DATABASE_URL=.*|DATABASE_URL=\"$DATABASE_URL\"|g" .env
+sed -i "s|DATABASE_URL=.*|DATABASE_URL=$DATABASE_URL|g" .env
 
-# Update secrets
-sed -i "s|POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=\"$POSTGRES_PASSWORD\"|g" .env
-sed -i "s|BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=\"$BETTER_AUTH_SECRET\"|g" .env
+# Update secrets (no quotes - Docker Compose and bash interpret quotes literally)
+sed -i "s|POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$POSTGRES_PASSWORD|g" .env
+sed -i "s|BETTER_AUTH_SECRET=.*|BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET|g" .env
 
-# Update URLs and domains
-sed -i "s|BETTER_AUTH_URL=.*|BETTER_AUTH_URL=\"$BETTER_AUTH_URL\"|g" .env
-sed -i "s|CORS_ORIGIN=.*|CORS_ORIGIN=\"$CORS_ORIGIN\"|g" .env
-sed -i "s|TRUSTED_ORIGINS=.*|TRUSTED_ORIGINS=\"$TRUSTED_ORIGINS\"|g" .env
+# Update URLs and domains (no quotes)
+sed -i "s|BETTER_AUTH_URL=.*|BETTER_AUTH_URL=$BETTER_AUTH_URL|g" .env
+sed -i "s|CORS_ORIGIN=.*|CORS_ORIGIN=$CORS_ORIGIN|g" .env
+sed -i "s|TRUSTED_ORIGINS=.*|TRUSTED_ORIGINS=$TRUSTED_ORIGINS|g" .env
 
-# Update port
-sed -i "s|APP_PORT=.*|APP_PORT=\"$APP_PORT\"|g" .env
+# Update port (no quotes)
+sed -i "s|APP_PORT=.*|APP_PORT=$APP_PORT|g" .env
 
-# Update admin details
-sed -i "s|INITIAL_OWNER_EMAIL=.*|INITIAL_OWNER_EMAIL=\"$INITIAL_OWNER_EMAIL\"|g" .env
-sed -i "s|INITIAL_OWNER_PASSWORD=.*|INITIAL_OWNER_PASSWORD=\"$INITIAL_OWNER_PASSWORD\"|g" .env
+# Update admin details (no quotes for email/password, quotes for name with spaces)
+sed -i "s|INITIAL_OWNER_EMAIL=.*|INITIAL_OWNER_EMAIL=$INITIAL_OWNER_EMAIL|g" .env
+sed -i "s|INITIAL_OWNER_PASSWORD=.*|INITIAL_OWNER_PASSWORD=$INITIAL_OWNER_PASSWORD|g" .env
 sed -i "s|INITIAL_OWNER_NAME=.*|INITIAL_OWNER_NAME=\"$INITIAL_OWNER_NAME\"|g" .env
 
 log ".env file created successfully!"
