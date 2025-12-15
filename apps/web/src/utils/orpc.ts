@@ -37,7 +37,12 @@ const getServerUrl = () => {
 export const link = new RPCLink({
   url: getServerUrl(),
   fetch(_url, options) {
-    return fetch(_url, {
+    // Normalize RPC paths: convert dot notation to slash notation
+    // e.g., /rpc/settings.getStaffStatus → /rpc/settings/getStaffStatus
+    const url = typeof _url === "string" ? _url : _url.toString();
+    const normalizedUrl = url.replace(/\.(\w)/g, "/$1");
+
+    return fetch(normalizedUrl, {
       ...options,
       credentials: "include",
     });

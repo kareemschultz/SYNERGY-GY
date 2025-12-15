@@ -18,7 +18,6 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 import { stream } from "hono/streaming";
 
 // Run initial setup to create first owner account (if needed)
@@ -51,7 +50,27 @@ const ALLOWED_MIME_TYPES = new Set([
 
 const app = new Hono();
 
-app.use(logger());
+console.log("SERVER_BOOT_MARKER", new Date().toISOString());
+
+// Hard-block RPC paths with dots (route-level guard, runs before middleware)
+// This prevents Request mutation issues and provides clear error messages
+app.all(/^\/rpc\/.*\..*$/, (c) => {
+  const url = new URL(c.req.url);
+  const expectedPath = url.pathname.replace(/\./g, "/");
+  console.log(
+    `[DOT_PATH_BLOCKED] receivedPath: ${url.pathname}, expectedPath: ${expectedPath}`
+  );
+  return c.json(
+    {
+      error: "Invalid RPC path format",
+      message: "Use forward slashes instead of dots.",
+      receivedPath: url.pathname,
+      expectedPath,
+    },
+    400
+  );
+});
+
 app.use(
   "/*",
   cors({
