@@ -277,6 +277,28 @@ app.get("/health", async (c) => {
   }
 });
 
-app.get("/", (c) => c.text("OK"));
+// Serve static files from the frontend build
+const FRONTEND_DIST = process.env.FRONTEND_DIST || "/app/apps/web/dist";
+
+app.use(
+  "/*",
+  serveStatic({
+    root: FRONTEND_DIST,
+    onNotFound: (path, c) => {
+      // For client-side routing, serve index.html for all non-API routes
+      return c.redirect("/index.html", 302);
+    },
+  })
+);
+
+// Fallback for SPA routing - serve index.html for any unmatched routes
+app.get("*", async (c) => {
+  const indexPath = join(FRONTEND_DIST, "index.html");
+  if (existsSync(indexPath)) {
+    const content = Bun.file(indexPath);
+    return c.html(await content.text());
+  }
+  return c.text("Frontend not found", 404);
+});
 
 export default app;

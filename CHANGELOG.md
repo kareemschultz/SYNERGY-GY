@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Frontend Static File Serving** (#PROD-007) - December 15, 2024
+  - Added `serveStatic` middleware to serve frontend from `/app/apps/web/dist`
+  - Configured SPA routing fallback to serve `index.html` for client-side routes
+  - Resolves 404 errors on `/login` and other frontend routes
+  - Frontend now accessible at root URL without separate web server
+
 ### Added
 
 - **Production Deployment Testing & Validation** (#PROD-007) - December 15, 2024
