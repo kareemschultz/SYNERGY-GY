@@ -209,7 +209,11 @@ fi
 # Create temporary DATABASE_URL for migrations (localhost instead of postgres hostname)
 # PostgreSQL port is exposed on host, so we can connect via localhost
 POSTGRES_PORT=${POSTGRES_PORT:-5432}
-MIGRATION_DB_URL="postgresql://${POSTGRES_USER:-gknexus}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB:-gknexus}"
+
+# URL-encode the password (handle special characters like + = /)
+ENCODED_PASSWORD=$(printf '%s' "${POSTGRES_PASSWORD}" | xxd -plain | tr -d '\n' | sed 's/\(..\)/%\1/g')
+
+MIGRATION_DB_URL="postgresql://${POSTGRES_USER:-gknexus}:${ENCODED_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB:-gknexus}"
 
 info "Pushing schema changes to database (via localhost:${POSTGRES_PORT})..."
 

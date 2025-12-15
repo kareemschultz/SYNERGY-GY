@@ -20,13 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Key fixes validated:**
     - Database migrations run from host via localhost:5432 (works perfectly)
     - CORS configured correctly for frontend-backend communication
-    - Simple alphanumeric passwords avoid URL encoding issues
+    - Password URL encoding in deploy script (handles +, =, / characters) 🔐
     - Docker containers start in correct order (postgres → migrations → server)
   - **Test results:**
     - Login successful with admin credentials
     - Dashboard loads with all statistics and navigation
     - All routes accessible (Clients, Matters, Documents, Calendar, etc.)
     - Initial owner account created automatically on first run
+  - **CRITICAL FIX**: Added password URL encoding to deploy-production.sh
+    - Handles special characters (+, =, /) in auto-generated passwords
+    - Ensures reliable database connections during migrations
+    - Uses same encoding as setup-env.sh for consistency
   - **Production readiness confirmed** ✅
 
 - **Production Deployment Automation** (#PROD-007) - December 15, 2024
