@@ -1,0 +1,58 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules
+**/node_modules
+**/.turbo
+
+# Build outputs
+**/dist
+**/build
+**/.next
+**/.cache
+**/.vinxi
+
+# Development
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+bun.lockb
+.DS_Store
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README*.md
+CHANGELOG.md
+docs
+specs
+*.md
+
+# CI/CD
+.github
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Backups (don't include in build context)
+backups
+data/uploads
+
+# E2E tests
+**/e2e
+**/*.spec.ts
+**/*.test.ts
+playwright-report
+test-results

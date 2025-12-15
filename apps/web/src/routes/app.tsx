@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { Menu } from "lucide-react";
+import { Loader2, Menu } from "lucide-react";
 import { useState } from "react";
 import { MobileSidebar, Sidebar } from "@/components/layout/sidebar";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -28,7 +28,19 @@ export const Route = createFileRoute("/app")({
     }
     return { session: session.data };
   },
+  pendingComponent: LoadingApp,
 });
+
+function LoadingApp() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">Verifying access...</p>
+      </div>
+    </div>
+  );
+}
 
 function AppLayout() {
   const { session } = Route.useRouteContext();

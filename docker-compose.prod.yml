@@ -38,11 +38,15 @@ services:
 
   # Application Server (API + Static files)
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-      args:
-        - VITE_SERVER_URL=${VITE_SERVER_URL:-http://localhost:3000}
+    # Use pre-built image from GHCR (for production)
+    # For local builds, use: docker compose -f docker-compose.prod.yml build
+    image: ghcr.io/kareemschultz/gk-nexus:latest
+    # Uncomment below for local building:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.prod
+    #   args:
+    #     - VITE_SERVER_URL=${VITE_SERVER_URL:-http://localhost:3000}
     container_name: gk-nexus-app
     environment:
       - NODE_ENV=production
@@ -59,6 +63,14 @@ services:
       - BACKUP_S3_SECRET_ACCESS_KEY=${BACKUP_S3_SECRET_ACCESS_KEY:-}
       - BACKUP_S3_BUCKET=${BACKUP_S3_BUCKET:-}
       - BACKUP_S3_REGION=${BACKUP_S3_REGION:-auto}
+    # LinuxServer.io Security Hardening
+    read_only: true  # Filesystem is read-only
+    tmpfs:
+      - /tmp  # Allow temporary files
+    cap_drop:
+      - ALL  # Drop all Linux capabilities
+    security_opt:
+      - no-new-privileges:true  # Prevent privilege escalation
     volumes:
       - ./data/uploads:/app/data/uploads:rw
       - ./backups:/app/backups:rw

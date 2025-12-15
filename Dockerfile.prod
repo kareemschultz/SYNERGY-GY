@@ -1,113 +1,87 @@
-# GK-Nexus Production Dockerfile
-# Multi-stage build for optimized image size
-#
-# Build: docker build -f Dockerfile.prod -t gk-nexus:latest .
-# Run:   docker run -p 3000:3000 --env-file .env.production gk-nexus:latest
+# syntax=docker/dockerfile:1.7
 
-# =============================================================================
-# Stage 1: Dependencies
-# =============================================================================
-FROM oven/bun:1.2 AS deps
-
+# ==========================================
+# Stage 1: Prune (create minimal build context)
+# ==========================================
+FROM oven/bun:1.2 AS pruner
 WORKDIR /app
 
-# Copy package files
-COPY package.json bun.lock ./
-COPY apps/server/package.json ./apps/server/
-COPY apps/web/package.json ./apps/web/
-COPY packages/api/package.json ./packages/api/
-COPY packages/auth/package.json ./packages/auth/
-COPY packages/db/package.json ./packages/db/
-COPY packages/config/package.json ./packages/config/
-
-# Install dependencies
-RUN bun install --frozen-lockfile
-
-# =============================================================================
-# Stage 2: Build Web App
-# =============================================================================
-FROM oven/bun:1.2 AS web-builder
-
-WORKDIR /app
-
-# Copy deps and source
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+# Copy repo and prune to server scope only
 COPY . .
+RUN bunx turbo prune --scope=server --docker
 
-# Build argument for API URL
+# ==========================================
+# Stage 2: Builder (install deps + build)
+# ==========================================
+FROM oven/bun:1.2 AS builder
+WORKDIR /app
+
+# Copy pruned lockfile and package.json files
+COPY --from=pruner /app/out/json/ .
+COPY --from=pruner /app/out/bun.lock ./bun.lock
+
+# Install dependencies with BuildKit cache
+RUN --mount=type=cache,target=/root/.bun \
+    bun install --frozen-lockfile
+
+# Copy pruned source code
+COPY --from=pruner /app/out/full/ .
+
+# Build all apps with Turbo cache
 ARG VITE_SERVER_URL=http://localhost:3000
 ENV VITE_SERVER_URL=$VITE_SERVER_URL
 
-# Build web app
-RUN cd apps/web && bun run build
+RUN --mount=type=cache,target=/root/.cache/turbo \
+    bunx turbo build --filter=server... --filter=web...
 
-# =============================================================================
-# Stage 3: Build Server
-# =============================================================================
-FROM oven/bun:1.2 AS server-builder
-
+# ==========================================
+# Stage 3: Production Runner
+# ==========================================
+FROM oven/bun:1.2-slim AS runner
 WORKDIR /app
-
-# Copy deps and source
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-# Build packages and server
-RUN bun run build
-
-# =============================================================================
-# Stage 4: Production Image
-# =============================================================================
-FROM oven/bun:1.2-slim AS production
 
 # Install curl for health checks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Create non-root user
+RUN groupadd -r gknexus && useradd -r -g gknexus -u 1001 gknexus
 
-# Create non-root user for security
-RUN groupadd -r gknexus && useradd -r -g gknexus gknexus
+# Copy dependency manifests for production install
+COPY --from=pruner /app/out/json/ .
+COPY --from=pruner /app/out/bun.lock ./bun.lock
 
-# Copy package files for workspace resolution
-COPY package.json bun.lock ./
-COPY apps/server/package.json ./apps/server/
-COPY packages/api/package.json ./packages/api/
-COPY packages/auth/package.json ./packages/auth/
-COPY packages/db/package.json ./packages/db/
+# Install production-only dependencies (skip postinstall scripts like husky)
+RUN --mount=type=cache,target=/root/.bun \
+    bun install --frozen-lockfile --production --ignore-scripts
 
-# Copy node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
+# Copy build artifacts from builder
+COPY --from=builder /app/apps/server/dist ./apps/server/dist
+COPY --from=builder /app/apps/web/dist ./apps/web/dist
+COPY --from=builder /app/packages ./packages
 
-# Copy built server
-COPY --from=server-builder /app/apps/server/dist ./apps/server/dist
-COPY --from=server-builder /app/apps/server/src ./apps/server/src
-COPY --from=server-builder /app/packages ./packages
+# Copy server source (needed for Hono to serve static files)
+COPY --from=builder /app/apps/server/src ./apps/server/src
 
-# Copy built web app
-COPY --from=web-builder /app/apps/web/dist ./apps/web/dist
-
-# Copy scripts for backup/restore
-COPY scripts ./scripts
-
-# Create required directories
-RUN mkdir -p /app/data/uploads /app/backups && \
+# Create writable directories
+RUN mkdir -p /app/data/uploads /app/backups /tmp && \
     chown -R gknexus:gknexus /app
 
 # Switch to non-root user
 USER gknexus
 
-# Environment defaults
+# Environment
 ENV NODE_ENV=production \
     PORT=3000
 
-# Expose port
 EXPOSE 3000
 
-# Health check
+# Health check (runs as gknexus user)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
-# Run server
+# Start server (run from apps/server directory)
 WORKDIR /app/apps/server
-CMD ["bun", "run", "src/index.ts"]
+CMD ["bun", "run", "dist/index.js"]
