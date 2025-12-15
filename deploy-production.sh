@@ -182,6 +182,15 @@ if [ ! -d "node_modules" ]; then
     error "Dependencies not installed. Run 'bun install' first."
 fi
 
+# Ensure .env exists where drizzle-kit expects it (apps/server/.env)
+# This is needed because drizzle.config.ts uses dotenv.config() with a hardcoded path
+if [ ! -f "apps/server/.env" ]; then
+    info "Creating .env symlink for drizzle-kit..."
+    mkdir -p apps/server
+    ln -sf ../../.env apps/server/.env
+    log "✓ Created .env symlink at apps/server/.env"
+fi
+
 info "Running migrations with Bun..."
 # Capture both output and exit code
 set +e  # Temporarily disable exit on error

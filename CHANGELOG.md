@@ -645,8 +645,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Names with spaces (e.g., "Kareem Schultz") caused bash execution errors
     - All values in `setup-env.sh` now properly quoted
     - Updated `.env.example` to use quotes for all string values
+  - **Fixed drizzle-kit .env file path issue**
+    - Drizzle config hardcoded to load from `apps/server/.env`
+    - Production `.env` is at root, causing "url: ''" error
+    - Deployment script now creates symlink from `apps/server/.env` → `../../.env`
+    - Ensures drizzle-kit can find DATABASE_URL during migrations
   - **Files Modified:**
-    - `deploy-production.sh` - Enhanced migration validation (lines 180-200)
+    - `deploy-production.sh` - Enhanced migration validation, .env symlink creation
     - `setup-env.sh` - Added quotes to all sed commands
     - `.env.example` - Quoted all string values
   - **Impact:**
@@ -654,6 +659,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Prevents silent migration failures from progressing
     - Handles user names and values with special characters correctly
     - Provides specific guidance when dependencies are missing
+    - Database migrations now work correctly in production
 
 - **Edit Client Button in Client Detail Page** (December 13, 2024)
   - Fixed "Edit Client" dropdown menu item that had no handler
