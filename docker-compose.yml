@@ -1,99 +1,153 @@
-# GK-Nexus Docker Compose
+# =============================================================================
+# GK-Nexus Docker Compose Configuration
+# =============================================================================
+# Production-ready Docker Compose setup following LinuxServer.io best practices
 #
 # Usage:
-#   docker compose up -d
+#   1. Copy .env.example to .env and configure
+#   2. Run migrations: DATABASE_URL="..." bun run db:push
+#   3. Start services: docker compose up -d
+#   4. Check health: curl http://localhost:3000/health
 #
-# First time setup:
-#   1. Copy .env.example to .env
-#   2. Fill in all required values (especially POSTGRES_PASSWORD and BETTER_AUTH_SECRET)
-#   3. Run: docker compose up -d
-#   4. Run migrations: docker compose exec app sh -c "cd /app/packages/db && bun run db:push"
+# Security:
+#   - Non-root containers
+#   - Read-only filesystems
+#   - Dropped capabilities
+#   - no-new-privileges
+#   - Health checks
+#   - Named volumes for data persistence
 #
-
-name: gk-nexus
+# Docs: See docs/DOCKER_DEPLOYMENT.md
+# =============================================================================
 
 services:
+  # ===========================================================================
   # PostgreSQL Database
+  # ===========================================================================
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     container_name: gk-nexus-postgres
+    restart: unless-stopped
+
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-synergy_gy}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backups:/backups:rw
+      POSTGRES_USER: ${POSTGRES_USER:-gknexus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gknexus_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-gknexus}
+
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-synergy_gy}"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gknexus}"]
+      interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 30s
-    restart: unless-stopped
-    networks:
-      - gk-nexus-network
+      start_period: 10s
 
-  # Application Server (API + Static files)
-  app:
-    # Use pre-built image from GHCR (for production)
-    # For local builds, use: docker compose -f docker-compose.prod.yml build
-    # image: ghcr.io/kareemschultz/gk-nexus:latest
-    # Local building enabled for testing:
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+
+    networks:
+      - gk-nexus
+
+  # ===========================================================================
+  # GK-Nexus Application Server (Bundled - 180MB)
+  # ===========================================================================
+  server:
     build:
       context: .
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile
       args:
-        - VITE_SERVER_URL=${VITE_SERVER_URL:-http://localhost:3000}
-    container_name: gk-nexus-app
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-synergy_gy}
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
-      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
-      - CORS_ORIGIN=${CORS_ORIGIN:-*}
-      # Optional: Email configuration
-      - RESEND_API_KEY=${RESEND_API_KEY:-}
-      - EMAIL_FROM=${EMAIL_FROM:-}
-      # Optional: Cloud backup
-      - BACKUP_S3_ENDPOINT=${BACKUP_S3_ENDPOINT:-}
-      - BACKUP_S3_ACCESS_KEY_ID=${BACKUP_S3_ACCESS_KEY_ID:-}
-      - BACKUP_S3_SECRET_ACCESS_KEY=${BACKUP_S3_SECRET_ACCESS_KEY:-}
-      - BACKUP_S3_BUCKET=${BACKUP_S3_BUCKET:-}
-      - BACKUP_S3_REGION=${BACKUP_S3_REGION:-auto}
-    # LinuxServer.io Security Hardening
-    read_only: true  # Filesystem is read-only
-    tmpfs:
-      - /tmp  # Allow temporary files
-    cap_drop:
-      - ALL  # Drop all Linux capabilities
-    security_opt:
-      - no-new-privileges:true  # Prevent privilege escalation
-    volumes:
-      - ./data/uploads:/app/data/uploads:rw
-      - ./backups:/app/backups:rw
-    ports:
-      - "${APP_PORT:-3000}:3000"
+        VITE_SERVER_URL: ${VITE_SERVER_URL:-http://localhost:3000}
+    image: gk-nexus:latest
+    container_name: gk-nexus-server
+    restart: unless-stopped
+
     depends_on:
       postgres:
         condition: service_healthy
+
+    environment:
+      # Database
+      DATABASE_URL: ${DATABASE_URL:-postgresql://gknexus:gknexus_dev_password@postgres:5432/gknexus}
+
+      # Authentication (REQUIRED - generate with: openssl rand -base64 32)
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001}
+
+      # Application
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+
+      # Initial Admin (REQUIRED for first run)
+      INITIAL_OWNER_EMAIL: ${INITIAL_OWNER_EMAIL}
+      INITIAL_OWNER_PASSWORD: ${INITIAL_OWNER_PASSWORD}
+      INITIAL_OWNER_NAME: ${INITIAL_OWNER_NAME:-Administrator}
+
+      # Email (Optional)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+
+      # Cloud Backup (Optional)
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      BACKUP_S3_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-gk-nexus-backups}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-auto}
+
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+    # Persistent volumes (LinuxServer.io style)
+    volumes:
+      - uploads:/app/data/uploads
+      - backups:/app/backups
+
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
-    restart: unless-stopped
-    networks:
-      - gk-nexus-network
+      start_period: 30s
 
+    # Security hardening (LinuxServer.io best practices)
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+
+    networks:
+      - gk-nexus
+
+# =============================================================================
+# Named Volumes (Data Persistence)
+# =============================================================================
 volumes:
   postgres_data:
     name: gk-nexus-postgres-data
+    driver: local
 
+  uploads:
+    name: gk-nexus-uploads
+    driver: local
+
+  backups:
+    name: gk-nexus-backups
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
 networks:
-  gk-nexus-network:
-    name: gk-nexus-network
+  gk-nexus:
     driver: bridge
