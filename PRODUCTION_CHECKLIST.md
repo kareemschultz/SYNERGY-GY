@@ -72,7 +72,26 @@ Complete this checklist **before** running the production deployment script.
   git clone https://github.com/kareemschultz/SYNERGY-GY.git .
   ```
 
-- [ ] **.env file created and configured**
+- [ ] **Configure environment** (choose ONE method below)
+
+#### Option A: Automated Setup (Recommended) 🚀
+
+Run the interactive setup script:
+```bash
+./setup-env.sh
+```
+
+The script will:
+- ✅ Generate all secure secrets automatically
+- ✅ Prompt for your domain (e.g., gcmc.karetechsolutions.com)
+- ✅ Prompt for your port (e.g., 8843 for Pangolin)
+- ✅ Prompt for admin email and name
+- ✅ Create fully configured .env file
+- ✅ Display your admin password (save it!)
+
+#### Option B: Manual Setup
+
+- [ ] **.env file created**
   ```bash
   cp .env.example .env
   nano .env

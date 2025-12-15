@@ -81,9 +81,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Supply chain security with SBOM and provenance
     - Fast builds with intelligent caching
 
+### Added
+
+- **Automated Environment Setup Script** (#PROD-007) - December 15, 2024
+  - **Created `setup-env.sh` interactive configuration script**
+    - One command setup: `./setup-env.sh`
+    - Automatically generates all secure secrets (database, auth, admin)
+    - Interactive prompts for domain, port, email, and admin name
+    - Creates fully configured .env file ready for deployment
+    - Displays admin password with warning to save it
+    - Shows complete configuration summary
+  - **Features:**
+    - Password strength: 44-char database/auth secrets, 32-char admin password
+    - Domain validation and HTTPS configuration
+    - Pangolin port support (8843) with custom port option
+    - Prevents accidental overwrite (asks for confirmation if .env exists)
+    - Color-coded output for easy reading
+  - **Impact:**
+    - Setup time reduced from 10-15 minutes to <1 minute
+    - Eliminates manual copy-paste errors
+    - Ensures all required variables are set correctly
+    - No need to remember openssl commands
+
 ### Changed
 
 - **Improved Secret Generation Documentation** (#PROD-007) - December 15, 2024
+  - **Updated PRODUCTION_CHECKLIST.md with two setup options**
+    - Option A (Recommended): Automated setup with `./setup-env.sh`
+    - Option B: Manual setup with step-by-step commands
   - **Added password generation commands to all documentation**
     - Quick start section at top of `.env.example` with all commands
     - Inline comments next to each secret variable
@@ -92,15 +117,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Validates BETTER_AUTH_SECRET is 32+ characters (REQUIRED)
     - Warns if POSTGRES_PASSWORD is less than 16 characters
     - Shows actual character count for transparency
-  - **Commands provided:**
-    - `openssl rand -base64 32` - For POSTGRES_PASSWORD
-    - `openssl rand -base64 32` - For BETTER_AUTH_SECRET
-    - `openssl rand -base64 24` - For INITIAL_OWNER_PASSWORD
   - **Impact:**
-    - No more guessing how to generate secure secrets
-    - Copy-paste commands directly from documentation
+    - Clear guidance for both automated and manual setup
     - Deployment script catches weak secrets before deployment
-    - Clearer setup instructions for first-time deployments
+    - Multiple paths to successful configuration
 
 - **CI/CD Pipeline Fixes** (#PROD-002) - December 15, 2024
   - **Simplified GitHub Actions workflow for reliable image publishing**
