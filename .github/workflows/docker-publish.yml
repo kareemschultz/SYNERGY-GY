@@ -48,8 +48,10 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.vars.outputs.sha_short }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache disabled temporarily to ensure fresh build with Access Pending fix
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
+          no-cache: true
           sbom: true
           provenance: true
           build-args: |
