@@ -27,9 +27,15 @@ Complete this checklist **before** running the production deployment script.
   docker compose version
   ```
 
-- [ ] **Bun is installed (for migrations)**
+- [ ] **Bun is installed (REQUIRED for database migrations)**
   ```bash
+  # Install Bun
   curl -fsSL https://bun.sh/install | bash
+
+  # Reload shell to add Bun to PATH
+  source ~/.bashrc
+
+  # Verify installation
   bun --version
   ```
 

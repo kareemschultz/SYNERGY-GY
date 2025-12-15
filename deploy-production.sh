@@ -172,15 +172,16 @@ info "This may take a few seconds..."
 # Export DATABASE_URL for migration script
 export DATABASE_URL
 
-# Run migrations using local Bun installation
-if command -v bun &> /dev/null; then
-    if bun run db:push 2>&1 | tee -a "$LOG_FILE"; then
-        log "✓ Database migrations completed successfully"
-    else
-        error "Database migration failed! Check the logs above."
-    fi
+# Check if Bun is available
+if ! command -v bun &> /dev/null; then
+    error "Bun is not installed. Install with: curl -fsSL https://bun.sh/install | bash && source ~/.bashrc"
+fi
+
+info "Running migrations with Bun..."
+if bun run db:push 2>&1 | tee -a "$LOG_FILE"; then
+    log "✓ Database migrations completed successfully"
 else
-    error "Bun is not installed. Install Bun or run migrations manually: DATABASE_URL='$DATABASE_URL' bun run db:push"
+    error "Database migration failed! Check the logs above."
 fi
 
 # =============================================================================
