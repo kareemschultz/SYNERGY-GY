@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Handles special characters (+, =, /) in auto-generated passwords
     - Ensures reliable database connections during migrations
     - Uses same encoding as setup-env.sh for consistency
+    - **Quote stripping fix**: Strips quotes from .env variables before URL encoding
+    - Resolves authentication failures when .env uses quoted values (e.g., `POSTGRES_PASSWORD="value"`)
   - **Production readiness confirmed** ✅
 
 - **Production Deployment Automation** (#PROD-007) - December 15, 2024

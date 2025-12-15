@@ -72,6 +72,12 @@ fi
 log "Checking required environment variables..."
 source .env
 
+# Strip quotes from environment variables (in case .env has quoted values)
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD%\"}"  # Remove trailing quote
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD#\"}"  # Remove leading quote
+BETTER_AUTH_SECRET="${BETTER_AUTH_SECRET%\"}"
+BETTER_AUTH_SECRET="${BETTER_AUTH_SECRET#\"}"
+
 REQUIRED_VARS=(
     "DATABASE_URL"
     "BETTER_AUTH_SECRET"
