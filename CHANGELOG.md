@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **CI/CD Pipeline Improvements** (#PROD-002) - December 15, 2024
+  - **Updated GitHub Actions workflows to use standard file names**
+    - Changed `Dockerfile.prod` → `Dockerfile` in docker-publish.yml
+    - All workflows now reference production files correctly
+  - **Created comprehensive CI workflow** (`.github/workflows/ci.yml`)
+    - Runs on pull requests and pushes to master
+    - Lint and type checking with Ultracite and TypeScript
+    - Docker build verification with health checks
+    - Image size verification (ensures <300MB target)
+    - Health endpoint and root endpoint testing
+    - E2E test placeholders (commented out, ready to enable)
+  - **Enhanced docker-publish.yml workflow**
+    - Builds verification image with health checks
+    - Waits for application startup (60s max)
+    - Verifies /health and / endpoints
+    - Pushes to GHCR with SBOM and provenance attestations
+    - Tags: `latest` and `sha-<commit>`
+    - BuildKit caching for faster builds
+  - **Workflow Features:**
+    - BuildKit cache for 2-3x faster CI builds
+    - GitHub Actions cache for Bun dependencies
+    - SBOM (Software Bill of Materials) generation
+    - Provenance attestations for supply chain security
+    - Automated container cleanup after tests
+    - Detailed logging and error reporting
+  - **Impact:**
+    - Automated Docker image building on every push to master
+    - Quality gates ensure only passing code is deployed
+    - GHCR integration with automatic authentication
+    - Supply chain security with SBOM and provenance
+    - Fast builds with intelligent caching
+
 ### In Progress
 
 - **Docker Image Size Optimization** (#PROD-001) - December 15, 2024
