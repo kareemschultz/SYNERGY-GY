@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Docker Compose Image Configuration** (#PROD-007) - December 15, 2024
+  - Updated docker-compose.yml to pull from GHCR instead of building locally
+  - Changed image from `gk-nexus:latest` to `ghcr.io/kareemschultz/gk-nexus:latest`
+  - Removed local build configuration (use pre-built images for production)
+  - Enables proper image updates via `docker compose pull`
+
 - **Frontend Static File Serving** (#PROD-007) - December 15, 2024
   - Added `serveStatic` middleware to serve frontend from `/app/apps/web/dist`
   - Configured SPA routing fallback to serve `index.html` for client-side routes

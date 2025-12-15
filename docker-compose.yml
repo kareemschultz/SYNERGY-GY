@@ -55,15 +55,11 @@ services:
       - gk-nexus
 
   # ===========================================================================
-  # GK-Nexus Application Server (Bundled - 180MB)
+  # GK-Nexus Application Server (Bundled - 128MB)
   # ===========================================================================
   server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        VITE_SERVER_URL: ${VITE_SERVER_URL:-http://localhost:3000}
-    image: gk-nexus:latest
+    # Pull pre-built image from GitHub Container Registry
+    image: ghcr.io/kareemschultz/gk-nexus:latest
     container_name: gk-nexus-server
     restart: unless-stopped
 
