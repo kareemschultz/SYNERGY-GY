@@ -78,19 +78,29 @@ Complete this checklist **before** running the production deployment script.
   nano .env
   ```
 
-- [ ] **Required environment variables set**
-  - [ ] `DATABASE_URL` - PostgreSQL connection string
-  - [ ] `POSTGRES_DB` - Database name (default: gknexus)
-  - [ ] `POSTGRES_USER` - Database user (default: gknexus)
-  - [ ] `POSTGRES_PASSWORD` - **STRONG PASSWORD** (use `openssl rand -base64 32`)
-  - [ ] `BETTER_AUTH_SECRET` - **32+ character secret** (use `openssl rand -base64 32`)
-  - [ ] `BETTER_AUTH_URL` - **Your actual domain** (e.g., `https://gcmc.karetechsolutions.com`)
-  - [ ] `CORS_ORIGIN` - **Your actual domain** (e.g., `https://gcmc.karetechsolutions.com`)
-  - [ ] `TRUSTED_ORIGINS` - **All domains** (e.g., `https://gcmc.karetechsolutions.com,https://www.gcmc.karetechsolutions.com`)
-  - [ ] `APP_PORT` - **External port** (e.g., `8843` for Pangolin, default: `3000`)
-  - [ ] `INITIAL_OWNER_EMAIL` - Your admin email
-  - [ ] `INITIAL_OWNER_PASSWORD` - **Strong admin password**
-  - [ ] `INITIAL_OWNER_NAME` - Your admin name
+- [ ] **Generate secure secrets** (run these commands and save the output)
+  ```bash
+  # Generate database password
+  openssl rand -base64 32
+
+  # Generate authentication secret
+  openssl rand -base64 32
+
+  # Generate admin password (or use password manager)
+  openssl rand -base64 24
+  ```
+
+- [ ] **Required environment variables set** (paste generated values above)
+  - [ ] `POSTGRES_PASSWORD` - Output from first `openssl` command
+  - [ ] `BETTER_AUTH_SECRET` - Output from second `openssl` command
+  - [ ] `INITIAL_OWNER_PASSWORD` - Output from third `openssl` command
+  - [ ] `DATABASE_URL` - Update with your `POSTGRES_PASSWORD`
+  - [ ] `BETTER_AUTH_URL` - **Your domain** → `https://gcmc.karetechsolutions.com`
+  - [ ] `CORS_ORIGIN` - **Your domain** → `https://gcmc.karetechsolutions.com`
+  - [ ] `TRUSTED_ORIGINS` - **All domains** → `https://gcmc.karetechsolutions.com`
+  - [ ] `APP_PORT` - **Port for Pangolin** → `8843`
+  - [ ] `INITIAL_OWNER_EMAIL` - Your email address
+  - [ ] `INITIAL_OWNER_NAME` - Your full name
 
 - [ ] **Optional environment variables configured (if needed)**
   - [ ] `RESEND_API_KEY` - For email notifications

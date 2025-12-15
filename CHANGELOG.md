@@ -83,6 +83,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Improved Secret Generation Documentation** (#PROD-007) - December 15, 2024
+  - **Added password generation commands to all documentation**
+    - Quick start section at top of `.env.example` with all commands
+    - Inline comments next to each secret variable
+    - Step-by-step commands in PRODUCTION_CHECKLIST.md
+  - **Added password strength validation to deployment script**
+    - Validates BETTER_AUTH_SECRET is 32+ characters (REQUIRED)
+    - Warns if POSTGRES_PASSWORD is less than 16 characters
+    - Shows actual character count for transparency
+  - **Commands provided:**
+    - `openssl rand -base64 32` - For POSTGRES_PASSWORD
+    - `openssl rand -base64 32` - For BETTER_AUTH_SECRET
+    - `openssl rand -base64 24` - For INITIAL_OWNER_PASSWORD
+  - **Impact:**
+    - No more guessing how to generate secure secrets
+    - Copy-paste commands directly from documentation
+    - Deployment script catches weak secrets before deployment
+    - Clearer setup instructions for first-time deployments
+
 - **CI/CD Pipeline Fixes** (#PROD-002) - December 15, 2024
   - **Simplified GitHub Actions workflow for reliable image publishing**
     - Removed health check step that required database migrations in CI

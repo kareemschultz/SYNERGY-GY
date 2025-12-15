@@ -86,6 +86,20 @@ for var in "${REQUIRED_VARS[@]}"; do
     log "✓ $var is set"
 done
 
+# Check password/secret strength
+log "Checking secret strength..."
+
+if [ ${#BETTER_AUTH_SECRET} -lt 32 ]; then
+    error "BETTER_AUTH_SECRET must be at least 32 characters. Generate with: openssl rand -base64 32"
+fi
+log "✓ BETTER_AUTH_SECRET is strong (${#BETTER_AUTH_SECRET} chars)"
+
+if [ ${#POSTGRES_PASSWORD} -lt 16 ]; then
+    warn "POSTGRES_PASSWORD is weak (${#POSTGRES_PASSWORD} chars). Recommended: openssl rand -base64 32"
+else
+    log "✓ POSTGRES_PASSWORD is strong (${#POSTGRES_PASSWORD} chars)"
+fi
+
 # Check Docker is running
 if ! docker info > /dev/null 2>&1; then
     error "Docker is not running or not accessible"
