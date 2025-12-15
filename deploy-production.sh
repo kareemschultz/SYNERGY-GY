@@ -201,16 +201,32 @@ done
 
 log "Running database migrations..."
 
-info "Pushing schema changes to database..."
-info "Running migrations inside Docker container (to access postgres network)..."
+# Check if dependencies are installed
+if [ ! -d "node_modules" ]; then
+    error "Dependencies not installed. Run 'bun install' first."
+fi
 
-# Run drizzle-kit directly inside a temporary container
-# The container shares the postgres network so it can resolve "postgres" hostname
+# Create temporary DATABASE_URL for migrations (localhost instead of postgres hostname)
+# PostgreSQL port is exposed on host, so we can connect via localhost
+POSTGRES_PORT=${POSTGRES_PORT:-5432}
+MIGRATION_DB_URL="postgresql://${POSTGRES_USER:-gknexus}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB:-gknexus}"
+
+info "Pushing schema changes to database (via localhost:${POSTGRES_PORT})..."
+
+# Create temporary .env for drizzle-kit
+mkdir -p apps/server
+cat > apps/server/.env << EOF
+DATABASE_URL="${MIGRATION_DB_URL}"
+EOF
+
+# Run migrations from host (can connect via localhost port mapping)
 set +e  # Temporarily disable exit on error
-MIGRATION_OUTPUT=$(docker compose run --rm --no-deps server \
-    bun x drizzle-kit push --config=/app/packages/db/drizzle.config.ts 2>&1)
+MIGRATION_OUTPUT=$(DATABASE_URL="$MIGRATION_DB_URL" bun run db:push 2>&1)
 MIGRATION_EXIT_CODE=$?
 set -e  # Re-enable exit on error
+
+# Clean up temporary .env
+rm -f apps/server/.env
 
 # Log the output
 echo "$MIGRATION_OUTPUT" | tee -a "$LOG_FILE"
