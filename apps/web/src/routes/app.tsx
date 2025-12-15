@@ -15,6 +15,7 @@ import UserMenu from "@/components/user-menu";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { authClient } from "@/lib/auth-client";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -48,11 +49,24 @@ function AppLayout() {
   const isDesktop = useMediaQuery("(min-width: 640px)");
 
   // Check if user has staff profile
-  const { data: staffStatus, isLoading: staffLoading } = useQuery({
+  const { data: staffStatusRaw, isLoading: staffLoading } = useQuery({
     queryKey: ["staffStatus"],
     queryFn: () => client.settings.getStaffStatus(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Unwrap oRPC response envelope (v1.12+ wraps in { json: T })
+  const staffStatus = unwrapOrpc<{
+    hasStaffProfile: boolean;
+    isActive: boolean;
+    staff: {
+      id: string;
+      role: string;
+      businesses: string[];
+      jobTitle: string | null;
+      canViewFinancials: boolean;
+    } | null;
+  }>(staffStatusRaw);
 
   // Show loading state while checking staff status
   if (staffLoading) {
@@ -64,7 +78,7 @@ function AppLayout() {
   }
 
   // Show "Access Pending" message if user doesn't have a staff profile
-  if (!staffStatus?.json?.hasStaffProfile) {
+  if (!staffStatus?.hasStaffProfile) {
     return (
       <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-900 dark:to-slate-800">
         <Card className="w-full max-w-md">
@@ -93,7 +107,7 @@ function AppLayout() {
   }
 
   // Show "Account Deactivated" if staff profile exists but is inactive
-  if (!staffStatus?.json?.isActive) {
+  if (!staffStatus?.isActive) {
     return (
       <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-900 dark:to-slate-800">
         <Card className="w-full max-w-md">

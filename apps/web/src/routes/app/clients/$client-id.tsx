@@ -69,6 +69,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useImpersonation } from "@/hooks/use-impersonation";
 import { client, queryClient } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app/clients/$client-id")({
   component: ClientDetailPage,
@@ -120,11 +121,20 @@ function ClientDetailPage() {
   });
 
   // Get staff status to check financial access permissions
-  const { data: staffStatus } = useQuery({
+  const { data: staffStatusRaw } = useQuery({
     queryKey: ["staffStatus"],
     queryFn: () => client.settings.getStaffStatus(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Unwrap oRPC response envelope (v1.12+ wraps in { json: T })
+  const staffStatus = unwrapOrpc<{
+    hasStaffProfile: boolean;
+    isActive: boolean;
+    staff: {
+      canViewFinancials: boolean;
+    } | null;
+  }>(staffStatusRaw);
 
   const canViewFinancials = staffStatus?.staff?.canViewFinancials ?? false;
 
