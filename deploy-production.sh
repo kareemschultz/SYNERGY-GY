@@ -177,11 +177,26 @@ if ! command -v bun &> /dev/null; then
     error "Bun is not installed. Install with: curl -fsSL https://bun.sh/install | bash && source ~/.bashrc"
 fi
 
+# Check if dependencies are installed
+if [ ! -d "node_modules" ]; then
+    error "Dependencies not installed. Run 'bun install' first."
+fi
+
 info "Running migrations with Bun..."
-if bun run db:push 2>&1 | tee -a "$LOG_FILE"; then
+# Capture both output and exit code
+set +e  # Temporarily disable exit on error
+MIGRATION_OUTPUT=$(bun run db:push 2>&1)
+MIGRATION_EXIT_CODE=$?
+set -e  # Re-enable exit on error
+
+# Log the output
+echo "$MIGRATION_OUTPUT" | tee -a "$LOG_FILE"
+
+# Check if migration was successful
+if [ $MIGRATION_EXIT_CODE -eq 0 ] && ! echo "$MIGRATION_OUTPUT" | grep -q "error:"; then
     log "✓ Database migrations completed successfully"
 else
-    error "Database migration failed! Check the logs above."
+    error "Database migration failed! Exit code: $MIGRATION_EXIT_CODE. Check the logs above."
 fi
 
 # =============================================================================
