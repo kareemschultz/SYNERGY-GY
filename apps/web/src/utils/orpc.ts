@@ -39,13 +39,31 @@ export const link = new RPCLink({
   fetch(_url, options) {
     // Normalize RPC paths: convert dot notation to slash notation
     // e.g., /rpc/settings.getStaffStatus → /rpc/settings/getStaffStatus
-    const url = typeof _url === "string" ? _url : _url.toString();
-    const normalizedUrl = url.replace(/\.(\w)/g, "/$1");
+    // Only transform dots in the pathname, not in query parameters or fragments
+    const urlString = typeof _url === "string" ? _url : _url.toString();
 
-    return fetch(normalizedUrl, {
-      ...options,
-      credentials: "include",
-    });
+    try {
+      const urlObj = new URL(urlString, window.location.origin);
+
+      // Only normalize if pathname contains /rpc/ and has dots
+      if (
+        urlObj.pathname.startsWith("/rpc/") &&
+        urlObj.pathname.includes(".")
+      ) {
+        urlObj.pathname = urlObj.pathname.replace(/\./g, "/");
+      }
+
+      return fetch(urlObj.toString(), {
+        ...options,
+        credentials: "include",
+      });
+    } catch {
+      // Fallback: if URL parsing fails, use original URL
+      return fetch(urlString, {
+        ...options,
+        credentials: "include",
+      });
+    }
   },
 });
 
