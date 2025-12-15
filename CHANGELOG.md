@@ -670,7 +670,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - DNS error: `getaddrinfo ESERVFAIL` (postgres hostname only works inside Docker)
     - Solution: Run migrations inside Docker container using `docker compose run`
     - Container joins postgres network, can resolve hostname correctly
-    - Command: `docker compose run --rm --no-deps server bun run db:push`
+    - Run drizzle-kit directly (not via workspace script): `bun x drizzle-kit push`
+    - Command: `docker compose run --rm --no-deps server bun x drizzle-kit push --config=/app/packages/db/drizzle.config.ts`
   - **Files Modified:**
     - `deploy-production.sh` - Complete restructure: postgres-first deployment, migrations run inside Docker container
     - `setup-env.sh` - URL-encode passwords in DATABASE_URL

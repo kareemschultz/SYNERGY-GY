@@ -204,10 +204,11 @@ log "Running database migrations..."
 info "Pushing schema changes to database..."
 info "Running migrations inside Docker container (to access postgres network)..."
 
-# Run migrations inside a temporary container that shares the postgres network
-# This allows the migration to connect to "postgres" hostname
+# Run drizzle-kit directly inside a temporary container
+# The container shares the postgres network so it can resolve "postgres" hostname
 set +e  # Temporarily disable exit on error
-MIGRATION_OUTPUT=$(docker compose run --rm --no-deps server bun run db:push 2>&1)
+MIGRATION_OUTPUT=$(docker compose run --rm --no-deps server \
+    bun x drizzle-kit push --config=/app/packages/db/drizzle.config.ts 2>&1)
 MIGRATION_EXIT_CODE=$?
 set -e  # Re-enable exit on error
 
