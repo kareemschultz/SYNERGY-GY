@@ -201,32 +201,13 @@ done
 
 log "Running database migrations..."
 
-# Check if Bun is available
-if ! command -v bun &> /dev/null; then
-    error "Bun is not installed. Install with: curl -fsSL https://bun.sh/install | bash && source ~/.bashrc"
-fi
-
-# Check if dependencies are installed
-if [ ! -d "node_modules" ]; then
-    error "Dependencies not installed. Run 'bun install' first."
-fi
-
-# Ensure .env exists where drizzle-kit expects it (apps/server/.env)
-# This is needed because drizzle.config.ts uses dotenv.config() with a hardcoded path
-if [ ! -f "apps/server/.env" ]; then
-    info "Creating .env symlink for drizzle-kit..."
-    mkdir -p apps/server
-    ln -sf ../../.env apps/server/.env
-    log "✓ Created .env symlink at apps/server/.env"
-fi
-
-# Export DATABASE_URL for migration script
-export DATABASE_URL
-
 info "Pushing schema changes to database..."
-# Capture both output and exit code
+info "Running migrations inside Docker container (to access postgres network)..."
+
+# Run migrations inside a temporary container that shares the postgres network
+# This allows the migration to connect to "postgres" hostname
 set +e  # Temporarily disable exit on error
-MIGRATION_OUTPUT=$(bun run db:push 2>&1)
+MIGRATION_OUTPUT=$(docker compose run --rm --no-deps server bun run db:push 2>&1)
 MIGRATION_EXIT_CODE=$?
 set -e  # Re-enable exit on error
 

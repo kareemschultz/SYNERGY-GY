@@ -665,17 +665,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       4. Run migrations (postgres now exists)
       5. Start application server
       6. Health check validation
+  - **Fixed migration network connectivity** ⚠️ CRITICAL
+    - Migrations ran from HOST machine which can't resolve "postgres" hostname
+    - DNS error: `getaddrinfo ESERVFAIL` (postgres hostname only works inside Docker)
+    - Solution: Run migrations inside Docker container using `docker compose run`
+    - Container joins postgres network, can resolve hostname correctly
+    - Command: `docker compose run --rm --no-deps server bun run db:push`
   - **Files Modified:**
-    - `deploy-production.sh` - Complete restructure: postgres-first deployment, migration after healthy check
+    - `deploy-production.sh` - Complete restructure: postgres-first deployment, migrations run inside Docker container
     - `setup-env.sh` - URL-encode passwords in DATABASE_URL
     - `.env.example` - Quoted all string values
   - **Impact:**
     - ✅ Deployment now fails fast with clear error messages
     - ✅ Prevents silent migration failures from progressing
     - ✅ Handles passwords with ANY special characters correctly
-    - ✅ Migrations run against healthy database (no DNS errors)
+    - ✅ Migrations run against healthy database with correct network access
     - ✅ Database schema properly created before app starts
-    - ✅ Production deployments now complete successfully
+    - ✅ **Production deployments now complete successfully end-to-end**
 
 - **Edit Client Button in Client Detail Page** (December 13, 2024)
   - Fixed "Edit Client" dropdown menu item that had no handler
