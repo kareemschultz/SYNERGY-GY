@@ -101,6 +101,9 @@ services:
       BACKUP_S3_REGION: ${BACKUP_S3_REGION:-auto}
 
     ports:
+      # External:Internal port mapping
+      # Set APP_PORT in .env to change external port (e.g., APP_PORT=8843 for Pangolin)
+      # Internal port always 3000 (do not change)
       - "${APP_PORT:-3000}:3000"
 
     # Persistent volumes (LinuxServer.io style)

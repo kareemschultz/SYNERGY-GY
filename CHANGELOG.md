@@ -81,6 +81,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Supply chain security with SBOM and provenance
     - Fast builds with intelligent caching
 
+### Changed
+
+- **CI/CD Pipeline Fixes** (#PROD-002) - December 15, 2024
+  - **Fixed GitHub Actions health check failure**
+    - Increased `BETTER_AUTH_SECRET` to 57 characters (was 28, needs 32+)
+    - Added PostgreSQL service to workflow for database connection
+    - Updated `DATABASE_URL` to connect to test database
+    - Added `--network host` for container-to-service communication
+  - **Added custom port support for reverse proxies**
+    - Added `APP_PORT` environment variable to docker-compose.yml
+    - Clear comments explaining external:internal port mapping
+    - Example: Set `APP_PORT=8843` for Pangolin reverse proxy
+  - **Updated production configuration examples**
+    - Updated .env.example with `gcmc.karetechsolutions.com` domain examples
+    - Updated PRODUCTION_CHECKLIST.md with port 8843 configuration
+    - Added Pangolin reverse proxy setup notes
+  - **Impact:**
+    - CI workflow now passes health checks and publishes to GHCR
+    - Flexible port configuration for different reverse proxy setups
+    - Clear production deployment examples for VPS deployment
+
 ### In Progress
 
 - **Docker Image Size Optimization** (#PROD-001) - December 15, 2024

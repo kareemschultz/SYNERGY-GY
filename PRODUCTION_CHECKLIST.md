@@ -50,11 +50,12 @@ Complete this checklist **before** running the production deployment script.
   ```
 
 - [ ] **Reverse proxy installed and configured**
-  - [ ] Nginx or Caddy installed
+  - [ ] Nginx, Caddy, or Pangolin installed
   - [ ] SSL certificates obtained (Let's Encrypt recommended)
   - [ ] SSL certificates auto-renewal configured
-  - [ ] Proxy configuration points to `http://localhost:3000`
+  - [ ] Proxy configuration points to `http://localhost:3000` (or custom `APP_PORT`)
   - [ ] Proxy passes `X-Forwarded-Proto`, `X-Real-IP`, `Host` headers
+  - [ ] Note: If using Pangolin or custom port, set `APP_PORT=8843` in .env
 
 - [ ] **Domain DNS configured**
   - [ ] A record points to VPS IP address
@@ -83,9 +84,10 @@ Complete this checklist **before** running the production deployment script.
   - [ ] `POSTGRES_USER` - Database user (default: gknexus)
   - [ ] `POSTGRES_PASSWORD` - **STRONG PASSWORD** (use `openssl rand -base64 32`)
   - [ ] `BETTER_AUTH_SECRET` - **32+ character secret** (use `openssl rand -base64 32`)
-  - [ ] `BETTER_AUTH_URL` - **Your actual domain** (e.g., `https://gk-nexus.yourdomain.com`)
-  - [ ] `CORS_ORIGIN` - **Your actual domain** (e.g., `https://gk-nexus.yourdomain.com`)
-  - [ ] `TRUSTED_ORIGINS` - **All domains** (e.g., `https://gk-nexus.yourdomain.com,https://www.gk-nexus.yourdomain.com`)
+  - [ ] `BETTER_AUTH_URL` - **Your actual domain** (e.g., `https://gcmc.karetechsolutions.com`)
+  - [ ] `CORS_ORIGIN` - **Your actual domain** (e.g., `https://gcmc.karetechsolutions.com`)
+  - [ ] `TRUSTED_ORIGINS` - **All domains** (e.g., `https://gcmc.karetechsolutions.com,https://www.gcmc.karetechsolutions.com`)
+  - [ ] `APP_PORT` - **External port** (e.g., `8843` for Pangolin, default: `3000`)
   - [ ] `INITIAL_OWNER_EMAIL` - Your admin email
   - [ ] `INITIAL_OWNER_PASSWORD` - **Strong admin password**
   - [ ] `INITIAL_OWNER_NAME` - Your admin name
@@ -205,12 +207,12 @@ curl http://localhost:3000/health
 
 ### 3. Test Public Access
 ```bash
-curl https://your-domain.com/health
+curl https://gcmc.karetechsolutions.com/health
 # Should return: {"status":"healthy","timestamp":"..."}
 ```
 
 ### 4. Test Application in Browser
-- Open `https://your-domain.com` in browser
+- Open `https://gcmc.karetechsolutions.com` in browser
 - Login with admin credentials
 - Navigate through main sections
 - Create test data
