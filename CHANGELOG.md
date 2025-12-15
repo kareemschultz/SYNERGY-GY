@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Frontend API Connection in Production** (#PROD-007) - December 15, 2024
+  - Fixed "Something went wrong!" error on production deployment
+  - **Root cause**: Frontend was hardcoded to connect to `http://localhost:3000/rpc`
+  - **Solution**: Implemented smart URL detection in `apps/web/src/utils/orpc.ts`
+  - Frontend now uses relative URL (`/rpc`) when VITE_SERVER_URL is localhost
+  - Works seamlessly with reverse proxy setups (Pangolin, Nginx, Caddy, etc.)
+  - No need to rebuild images for different domains - one image works everywhere
+
 - **Docker Compose Image Configuration** (#PROD-007) - December 15, 2024
   - Updated docker-compose.yml to pull from GHCR instead of building locally
   - Changed image from `gk-nexus:latest` to `ghcr.io/kareemschultz/gk-nexus:latest`
