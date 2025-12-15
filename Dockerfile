@@ -1,27 +1,23 @@
 # syntax=docker/dockerfile:1.7
 # =============================================================================
-# GK-Nexus Production Docker Image (Bundled)
+# GK-Nexus Production Docker Image (Unbundled)
 # =============================================================================
-# Production-optimized Docker image using Bun bundler for minimal size
+# Production Docker image running server directly from TypeScript
 #
 # Architecture:
 #   - Stage 1 (Pruner): Creates minimal build context using Turbo prune
-#   - Stage 2 (Builder): Installs deps, builds web app, bundles server code
-#   - Stage 3 (Runner): Copies only bundle + web assets (NO node_modules)
+#   - Stage 2 (Builder): Installs deps, builds web app
+#   - Stage 3 (Runner): Copies source + node_modules, runs TypeScript directly
 #
-# Result: 180MB image with 2.5MB bundled server (vs 736MB unbundled)
+# Note: Bundling disabled due to @orpc package compatibility issues.
+# Image is larger (~700MB) but works reliably.
 #
 # Security (LinuxServer.io best practices):
 #   - Non-root user (gknexus:1001)
-#   - Read-only filesystem with tmpfs mounts
-#   - Dropped all capabilities
-#   - no-new-privileges security opt
-#   - Minimal Alpine base
 #   - Health checks included
 #
 # Build: docker build -t gk-nexus:latest .
 # Run:   docker compose up -d
-# Docs:  See docs/DOCKER_DEPLOYMENT.md
 # =============================================================================
 
 # Build arguments
@@ -35,12 +31,11 @@ FROM oven/bun:${BUN_VERSION} AS pruner
 WORKDIR /app
 
 # Copy entire monorepo and prune to server scope only
-# This creates a minimal subset of files needed to build the server
 COPY . .
 RUN bunx turbo prune --scope=server --docker
 
 # =============================================================================
-# Stage 2: Builder (install deps + build + bundle)
+# Stage 2: Builder (install deps + build web app)
 # =============================================================================
 FROM oven/bun:${BUN_VERSION} AS builder
 WORKDIR /app
@@ -64,52 +59,48 @@ ENV VITE_SERVER_URL=$VITE_SERVER_URL
 RUN --mount=type=cache,target=/root/.cache/turbo \
     bunx turbo build --filter=web...
 
-# Bundle server into single file (all @SYNERGY-GY/* packages inlined)
-# Eliminates need for node_modules at runtime (458MB → 0MB)
-# Note: --minify removed due to @orpc/openapi bundling issues
-RUN mkdir -p dist && \
-    bun build apps/server/src/index.ts \
-    --target=bun \
-    --outdir=dist \
-    --entry-naming=server.bundled.js \
-    --sourcemap=external
-
 # =============================================================================
-# Stage 3: Slim Production Runner (Bundled)
+# Stage 3: Production Runner (Unbundled - runs TypeScript directly)
 # =============================================================================
 FROM oven/bun:${BUN_VERSION}-alpine AS runner
 WORKDIR /app
 
-# OCI Labels (LinuxServer.io standard metadata)
+# OCI Labels
 LABEL org.opencontainers.image.title="GK-Nexus" \
       org.opencontainers.image.description="Business management platform for GCMC and KAJ" \
       org.opencontainers.image.vendor="Green Crescent Management Consultancy" \
       org.opencontainers.image.source="https://github.com/kareemschultz/SYNERGY-GY" \
-      org.opencontainers.image.documentation="https://github.com/kareemschultz/SYNERGY-GY/blob/main/docs/DOCKER_DEPLOYMENT.md" \
-      org.opencontainers.image.licenses="UNLICENSED" \
       maintainer="Kareem Schultz"
 
-# Install curl for health checks and ca-certificates for SSL
+# Install curl for health checks
 RUN apk add --no-cache curl ca-certificates tzdata
 
 # Create non-root user (gknexus:1001)
-# LinuxServer.io style: Could support PUID/PGID but not needed for single-user app
 RUN addgroup -g 1001 gknexus && \
     adduser -D -u 1001 -G gknexus gknexus
 
-# Copy bundled server (2.49MB - all code bundled, zero node_modules!)
-COPY --from=builder --chown=gknexus:gknexus /app/dist/server.bundled.js ./server.bundled.js
-COPY --from=builder --chown=gknexus:gknexus /app/dist/server.bundled.js.map ./server.bundled.js.map
+# Copy node_modules from builder (required for unbundled approach)
+COPY --from=builder --chown=gknexus:gknexus /app/node_modules ./node_modules
 
-# Copy web build artifacts (for API to serve if needed)
+# Copy all package.json files for workspace resolution
+COPY --from=builder --chown=gknexus:gknexus /app/package.json ./package.json
+COPY --from=builder --chown=gknexus:gknexus /app/turbo.json ./turbo.json
+
+# Copy server source code
+COPY --from=builder --chown=gknexus:gknexus /app/apps/server ./apps/server
+
+# Copy workspace packages source code
+COPY --from=builder --chown=gknexus:gknexus /app/packages ./packages
+
+# Copy web build artifacts
 COPY --from=builder --chown=gknexus:gknexus /app/apps/web/dist ./apps/web/dist
+COPY --from=builder --chown=gknexus:gknexus /app/apps/web/package.json ./apps/web/package.json
 
-# Create writable directories for uploads and backups
-# These should be mounted as volumes in production
+# Create writable directories
 RUN mkdir -p /app/data/uploads /app/backups && \
     chown -R gknexus:gknexus /app/data /app/backups
 
-# Switch to non-root user (security best practice)
+# Switch to non-root user
 USER gknexus
 
 # Environment variables
@@ -119,11 +110,9 @@ ENV NODE_ENV=production \
 # Expose application port
 EXPOSE 3000
 
-# Health check (LinuxServer.io standard)
-# Runs as non-root user, quick response expected
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
-# Start bundled server
-# Note: Database migrations should be run separately (see docs/DOCKER_DEPLOYMENT.md)
-CMD ["bun", "run", "/app/server.bundled.js"]
+# Start server directly from TypeScript (unbundled)
+CMD ["bun", "run", "/app/apps/server/src/index.ts"]
