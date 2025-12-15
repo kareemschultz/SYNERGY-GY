@@ -64,7 +64,7 @@ function AppLayout() {
   }
 
   // Show "Access Pending" message if user doesn't have a staff profile
-  if (!staffStatus?.hasStaffProfile) {
+  if (!staffStatus?.json?.hasStaffProfile) {
     return (
       <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-900 dark:to-slate-800">
         <Card className="w-full max-w-md">
@@ -93,7 +93,7 @@ function AppLayout() {
   }
 
   // Show "Account Deactivated" if staff profile exists but is inactive
-  if (!staffStatus?.isActive) {
+  if (!staffStatus?.json?.isActive) {
     return (
       <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4 dark:from-slate-900 dark:to-slate-800">
         <Card className="w-full max-w-md">

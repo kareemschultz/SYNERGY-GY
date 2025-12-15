@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Access Pending Bug After oRPC Upgrade** (#PROD-007) - December 15, 2024
+  - Fixed "Access Pending" screen showing for authenticated users with valid staff profiles
+  - **Root cause**: oRPC v1.12.3 wraps responses in a `json` property, but frontend code wasn't updated after upgrade
+  - **Solution**: Updated staff status checks in `apps/web/src/routes/app.tsx` to access `staffStatus?.json?.hasStaffProfile` instead of `staffStatus?.hasStaffProfile`
+  - **Impact**: All authenticated users were stuck at "Access Pending" screen even with valid OWNER accounts
+  - **Testing**: Verified locally with Docker - dashboard now loads correctly after login
+  - Commit: (current)
+
 - **RPC Path Construction Protocol Mismatch** (#PROD-007) - December 15, 2024
   - Fixed oRPC protocol incompatibility where client used dot notation (`settings.getStaffStatus`) but server expected slash notation (`settings/getStaffStatus`)
   - **Root cause**: oRPC v1.12+ uses slash-separated paths but legacy clients may still use dot notation
