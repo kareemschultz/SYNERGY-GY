@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Root cause**: Both API client and Better-Auth client were hardcoded to `http://localhost:3000`
   - **Solution**: Implemented smart URL detection in both clients:
     - `apps/web/src/utils/orpc.ts` - API client uses relative URL (`/rpc`)
-    - `apps/web/src/lib/auth-client.ts` - Auth client uses same origin (no baseURL)
+    - `apps/web/src/lib/auth-client.ts` - Auth client omits baseURL property entirely
+  - **Additional fix**: Return empty object instead of `{ baseURL: undefined }` to prevent "Invalid URL" errors
   - Works seamlessly with reverse proxy setups (Pangolin, Nginx, Caddy, etc.)
   - No need to rebuild images for different domains - one image works everywhere
   - Resolves CORS errors and "localhost:3000" connection attempts in production
