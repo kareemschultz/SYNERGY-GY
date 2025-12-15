@@ -12,10 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Access Pending Bug After oRPC Upgrade** (#PROD-007) - December 15, 2024
   - Fixed "Access Pending" screen showing for authenticated users with valid staff profiles
   - **Root cause**: oRPC v1.12.3 wraps responses in a `json` property, but frontend code wasn't updated after upgrade
-  - **Solution**: Updated staff status checks in `apps/web/src/routes/app.tsx` to access `staffStatus?.json?.hasStaffProfile` instead of `staffStatus?.hasStaffProfile`
+  - **Solution**:
+    - Created centralized `unwrapOrpc<T>()` helper in `apps/web/src/utils/orpc-response.ts`
+    - Updated `apps/web/src/routes/app.tsx` to use helper for staff status checks
+    - Fixed `apps/web/src/routes/app/clients/$client-id.tsx` - financial data was hidden from all users
+    - Added comprehensive documentation in CLAUDE.md with examples and troubleshooting
   - **Impact**: All authenticated users were stuck at "Access Pending" screen even with valid OWNER accounts
   - **Testing**: Verified locally with Docker - dashboard now loads correctly after login
-  - Commit: (current)
+  - **Prevention**: Documentation added to prevent similar issues in future oRPC upgrades
+  - Commits: `977cd50`, `708f6de`
 
 - **RPC Path Construction Protocol Mismatch** (#PROD-007) - December 15, 2024
   - Fixed oRPC protocol incompatibility where client used dot notation (`settings.getStaffStatus`) but server expected slash notation (`settings/getStaffStatus`)
