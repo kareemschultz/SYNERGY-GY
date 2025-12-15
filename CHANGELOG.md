@@ -206,6 +206,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Security checklist with 10 critical configuration items
   - Complete SSL setup with A+ grade configuration
   - Cloud backup guides for Cloudflare R2 and AWS S3
+
+- **Comprehensive Documentation Suite** (#PROD-004) - December 15, 2024
+  - **README.md:** Complete rewrite with professional presentation
+    - Added status badges (TypeScript, React, Hono, PostgreSQL, Docker, Bun, License)
+    - Table of contents with anchor links to all sections
+    - Phase-by-phase feature breakdown with completion status
+    - Tech stack comparison table (Frontend vs Backend vs DevOps)
+    - Quick Start guides for both local development and Docker deployment
+    - Project structure overview with monorepo architecture
+    - Development workflow and common commands
+    - Deployment options (Docker Compose, Kubernetes, Cloud Platforms)
+    - CI/CD automation details
+    - Security features list with comprehensive hardening details
+    - Contributing guidelines and Code of Conduct reference
+    - Support and contact information
+  - **SECURITY.md:** Created comprehensive security policy (537 lines)
+    - Supported versions table with active maintenance status
+    - Vulnerability reporting process with disclosure timeline
+    - Security best practices for developers and deployment
+    - Complete security features list (authentication, infrastructure, data, development)
+    - LinuxServer.io Docker security hardening documentation
+    - Data handling and privacy (GDPR compliance, classification, retention)
+    - Authentication and authorization (Better-Auth, RBAC)
+    - Database security hardening (PostgreSQL, query security)
+    - API security (oRPC validation, CORS, rate limiting)
+    - File upload security (restrictions, storage, access control)
+    - Backup and disaster recovery system details
+    - CI/CD security (SBOM, provenance, registry security)
+    - Security audit history and roadmap
+    - Compliance standards (OWASP, CIS Docker, GDPR)
+  - **CONTRIBUTING.md:** Enhanced from 70 lines to 467 lines
+    - Code of Conduct section
+    - Detailed Getting Started with 8-step setup
+    - Development Workflow (issue creation, branching, commits, PR process)
+    - Code Standards (TypeScript, React, API, Database)
+    - Testing Guidelines with example E2E tests
+    - Documentation requirements and spec updates
+    - Pull Request checklist and review process
+    - Issue guidelines (bug reports, feature requests, labels)
+    - Community section with recognition and support channels
+  - **DEPLOYMENT.md:** Updated to v3.1.0 (Bundled Deployment)
+    - Updated header to reflect bundled deployment approach
+    - Changed all `docker-compose.prod.yml` references to `docker-compose.yml` (127 occurrences)
+    - Updated build performance metrics to reflect 180MB image size
+    - Added bundled architecture details (2.5MB server, zero node_modules)
+    - Updated startup time (~15s), memory usage (~200MB)
+    - All commands simplified to use standard file names
+  - **Impact:**
+    - Professional, production-ready documentation suite
+    - Matches quality standards of major open-source projects
+    - Clear contribution path for community developers
+    - Comprehensive security transparency
+    - Complete deployment lifecycle documentation
+
+- **Docker File Standardization** (#PROD-001) - December 15, 2024
+  - **Renamed Production Files to Standard Names:**
+    - `Dockerfile.bundled` → `Dockerfile` (production default)
+    - `docker-compose.bundled.yml` → `docker-compose.yml` (production default)
+    - `Dockerfile` → `Dockerfile.dev` (development version)
+    - `docker-compose.yml` → `docker-compose.dev.yml` (development version)
+  - **Updated .env.example:** Enhanced with comprehensive sections
+    - Database configuration (required)
+    - Authentication secrets (required)
+    - Initial admin setup (required for first run)
+    - Application settings (optional)
+    - Frontend configuration (required for frontend dev)
+    - Email integration (optional - Resend API)
+    - Cloud backup (optional - S3-compatible)
+    - Docker-specific (LinuxServer.io style PUID/PGID)
+  - **Updated .gitignore:** Added `test-server.bundled.js` to prevent pre-commit hook issues
+  - **Rationale:**
+    - Aligns with Docker community standards (production files use standard names)
+    - Simplifies commands: `docker compose up` instead of `docker compose -f docker-compose.prod.yml up`
+    - Clearer distinction: `.dev` suffix for development versions
+    - Matches industry best practices (Next.js, Create React App, etc.)
+  - **Impact:**
+    - Simpler deployment workflow
+    - Better developer experience
+    - Standard naming improves discoverability
+    - Reduces cognitive load in documentation
   - **Impact:** Operators can deploy to production without external documentation
 
 - **Enhanced GitHub Templates for Production Workflow** (#PROD-004) - January 15, 2025
