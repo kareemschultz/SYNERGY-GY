@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **RPC API Routes Returning 404** (#PROD-007) - December 15, 2024
+  - Fixed critical bug where all `/rpc/*` requests returned 404 Not Found
+  - **Root cause**: `serveStatic` middleware was intercepting API routes with `/*` pattern
+  - **Solution**: Added path check to skip static file serving for `/rpc/`, `/api/`, and `/api-reference/` routes
+  - **Impact**: This was preventing the frontend from checking staff status, causing "Access Pending" for all users
+  - Resolves "Access Pending" issue where authenticated users couldn't access the dashboard
+
 - **Frontend API and Auth Connection in Production** (#PROD-007) - December 15, 2024
   - Fixed authentication and API connection issues on production deployment
   - **Root cause**: Both API client and Better-Auth client were hardcoded to `http://localhost:3000`

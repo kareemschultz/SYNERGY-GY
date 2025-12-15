@@ -281,16 +281,29 @@ app.get("/health", async (c) => {
 // Serve static files from the frontend build
 const FRONTEND_DIST = process.env.FRONTEND_DIST || "/app/apps/web/dist";
 
-app.use(
-  "/*",
-  serveStatic({
+// Only serve static files for non-API routes
+// This prevents serveStatic from intercepting /rpc/* and /api/* requests
+app.use("/*", async (c, next) => {
+  const path = new URL(c.req.url).pathname;
+
+  // Skip static file serving for API routes
+  if (
+    path.startsWith("/rpc/") ||
+    path.startsWith("/api/") ||
+    path.startsWith("/api-reference/")
+  ) {
+    return next();
+  }
+
+  // Serve static files for everything else
+  return serveStatic({
     root: FRONTEND_DIST,
     onNotFound: (path, c) => {
       // For client-side routing, serve index.html for all non-API routes
       return c.redirect("/index.html", 302);
     },
-  })
-);
+  })(c, next);
+});
 
 // Fallback for SPA routing - serve index.html for any unmatched routes
 app.get("*", async (c) => {
