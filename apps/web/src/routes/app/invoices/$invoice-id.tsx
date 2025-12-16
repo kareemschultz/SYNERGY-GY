@@ -34,10 +34,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { client, queryClient } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app/invoices/$invoice-id")({
   component: InvoiceDetailPage,
 });
+
+// Invoice type for unwrapping
+type InvoiceData = {
+  id: string;
+  invoiceNumber: string;
+  status: string;
+  issueDate: string;
+  dueDate: string;
+  subtotal: string;
+  taxAmount: string;
+  discountAmount: string;
+  totalAmount: string;
+  notes: string | null;
+  client: { id: string; displayName: string } | null;
+  matter: { id: string; title: string; referenceNumber: string } | null;
+  items: unknown[];
+  payments: unknown[];
+  createdAt: string;
+  updatedAt: string;
+};
 
 const statusLabels: Record<string, { label: string; className: string }> = {
   DRAFT: {
@@ -111,13 +132,16 @@ function InvoiceDetailPage() {
   const [status, setStatus] = useState<string>("");
 
   const {
-    data: invoice,
+    data: invoiceRaw,
     isLoading,
     error: queryError,
   } = useQuery({
     queryKey: ["invoice", invoiceId],
     queryFn: () => client.invoices.getById({ id: invoiceId }),
   });
+
+  // Unwrap oRPC response envelope (v1.12+ wraps in { json: T })
+  const invoice = unwrapOrpc<InvoiceData>(invoiceRaw);
 
   const updateStatusMutation = useMutation({
     mutationFn: (newStatus: string) =>

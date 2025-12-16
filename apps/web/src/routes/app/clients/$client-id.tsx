@@ -26,6 +26,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { ClientDocumentsTab } from "@/components/clients/client-documents-tab";
+import { ClientServicesTab } from "@/components/clients/client-services-tab";
 import { ComplianceIndicator } from "@/components/clients/compliance-indicator";
 import {
   AppointmentMiniCard,
@@ -112,13 +113,16 @@ function ClientDetailPage() {
   const { startImpersonation } = useImpersonation();
 
   const {
-    data: clientData,
+    data: clientDataRaw,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["client", clientId],
     queryFn: () => client.clients.getById({ id: clientId }),
   });
+
+  // Unwrap oRPC response envelope (v1.12+ wraps in { json: T })
+  const clientData = unwrapOrpc<ClientData>(clientDataRaw);
 
   // Get staff status to check financial access permissions
   const { data: staffStatusRaw } = useQuery({
@@ -359,6 +363,10 @@ function ClientDetailPage() {
               <Users className="mr-2 h-4 w-4" />
               Contacts
             </TabsTrigger>
+            <TabsTrigger value="services">
+              <Briefcase className="mr-2 h-4 w-4" />
+              Services
+            </TabsTrigger>
             <TabsTrigger value="matters">
               <FileText className="mr-2 h-4 w-4" />
               Matters
@@ -396,6 +404,11 @@ function ClientDetailPage() {
               clientId={clientId}
               contacts={clientData.contacts}
             />
+          </TabsContent>
+
+          {/* Services Tab */}
+          <TabsContent className="mt-6" value="services">
+            <ClientServicesTab clientId={clientId} />
           </TabsContent>
 
           {/* Matters Tab */}

@@ -11,6 +11,24 @@ export const Route = createFileRoute("/app/matters/$matter-id")({
   component: MatterDetailPage,
 });
 
+// Matter type for unwrapping
+type MatterData = {
+  id: string;
+  referenceNumber: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  business: string;
+  checklist: unknown[];
+  client: { id: string; displayName: string } | null;
+  assignedStaff: unknown | null;
+  documents: unknown[];
+  deadlines: unknown[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 const _statusOptions = [
   { value: "NEW", label: "New" },
   { value: "IN_PROGRESS", label: "In Progress" },
@@ -40,13 +58,16 @@ function MatterDetailPage() {
   const { "matter-id": matterId } = Route.useParams();
 
   const {
-    data: matter,
+    data: matterRaw,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["matter", matterId],
     queryFn: () => client.matters.getById({ id: matterId }),
   });
+
+  // Unwrap oRPC response envelope (v1.12+ wraps in { json: T })
+  const matter = unwrapOrpc<MatterData>(matterRaw);
 
   if (isLoading) {
     return (

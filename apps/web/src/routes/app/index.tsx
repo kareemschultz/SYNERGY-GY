@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app/")({
   component: DashboardPage,
@@ -21,25 +22,38 @@ export const Route = createFileRoute("/app/")({
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
 function DashboardPage() {
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: statsRaw, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboardStats"],
     queryFn: () => client.dashboard.getStats(),
   });
 
-  const { data: mattersByStatus } = useQuery({
+  const { data: mattersByStatusRaw } = useQuery({
     queryKey: ["mattersByStatus"],
     queryFn: () => client.dashboard.getMattersByStatus(),
   });
 
-  const { data: recentMatters } = useQuery({
+  const { data: recentMattersRaw } = useQuery({
     queryKey: ["recentMatters"],
     queryFn: () => client.dashboard.getRecentMatters({ limit: 5 }),
   });
 
-  const { data: upcomingDeadlines } = useQuery({
+  const { data: upcomingDeadlinesRaw } = useQuery({
     queryKey: ["dashboardUpcomingDeadlines"],
     queryFn: () => client.dashboard.getUpcomingDeadlines({ limit: 5 }),
   });
+
+  // Unwrap oRPC response envelopes
+  const stats = unwrapOrpc<{
+    activeClients: number;
+    openMatters: number;
+    upcomingDeadlines: number;
+    overdueDeadlines: number;
+    totalDocuments: number;
+  }>(statsRaw);
+  const mattersByStatus =
+    unwrapOrpc<Record<string, number>>(mattersByStatusRaw);
+  const recentMatters = unwrapOrpc<unknown[]>(recentMattersRaw);
+  const upcomingDeadlines = unwrapOrpc<unknown[]>(upcomingDeadlinesRaw);
 
   return (
     <div className="flex flex-col">

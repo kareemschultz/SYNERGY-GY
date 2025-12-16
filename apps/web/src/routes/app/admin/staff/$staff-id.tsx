@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app/admin/staff/$staff-id")({
   component: StaffDetailPage,
@@ -120,13 +121,26 @@ function StaffDetailPage() {
   const [isEditing, setIsEditing] = useState(edit);
 
   const {
-    data: staff,
+    data: staffRaw,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["admin", "staff", staffId],
     queryFn: () => client.admin.staff.getById({ id: staffId }),
   });
+
+  // Unwrap oRPC response envelope (v1.12+ wraps in { json: T })
+  const staff = unwrapOrpc<{
+    id: string;
+    role: string;
+    businesses: string[];
+    phone: string | null;
+    jobTitle: string | null;
+    canViewFinancials: boolean;
+    isActive: boolean;
+    user: { id: string; name: string; email: string };
+    createdAt: string;
+  }>(staffRaw);
 
   const form = useForm<UpdateStaffFormValues>({
     resolver: zodResolver(updateStaffSchema),
