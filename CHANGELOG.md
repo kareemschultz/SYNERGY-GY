@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **TanStack Query Not Making oRPC Requests** (#PROD-007) - December 16, 2024
+  - Fixed "Loading..." screen stuck forever after login - TanStack Query never made RPC calls
+  - **Root cause**: Using `client.settings.getStaffStatus()` directly in `queryFn` doesn't work correctly with oRPC v1.12
+  - **Solution**: Changed to use `orpc.settings.getStaffStatus.queryOptions()` pattern as per oRPC documentation
+  - **Diagnosis**:
+    - Manual fetch to `/rpc/settings/getStaffStatus` worked correctly (returned `hasStaffProfile: true`)
+    - Browser had valid session cookie after login
+    - But TanStack Query never initiated any RPC network requests
+    - Page stuck on "Loading..." indefinitely, then eventually showed "Access Pending"
+  - **Fix**: Updated `apps/web/src/routes/app.tsx` to use recommended oRPC queryOptions pattern
+  - **Reference**: [oRPC TanStack Query Integration](https://orpc.dev/docs/integrations/tanstack-query)
+
 - **Docker Bundling Crash: "handler is not a function"** (#PROD-007) - December 15, 2024
   - Fixed server crash on request handling with `TypeError: handler is not a function (handler is RegExp)`
   - **Root cause**: Bun's bundler with `--minify` incorrectly transforms code patterns in `@orpc/*` and `hono` packages
