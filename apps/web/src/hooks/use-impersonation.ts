@@ -6,8 +6,7 @@ export function useImpersonation() {
 
   const startImpersonationMutation =
     orpc.portal.impersonation.start.useMutation();
-  const endImpersonationMutation =
-    orpc.portal.impersonation.end.useMutation();
+  const endImpersonationMutation = orpc.portal.impersonation.end.useMutation();
 
   const startImpersonation = async (
     clientId: string,

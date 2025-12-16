@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { orpc, queryClient, rawClient } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 type TemplateGeneratorDialogProps = {
   clientId?: string;
@@ -91,7 +91,7 @@ export function TemplateGeneratorDialog({
   // Preview mutation
   const previewMutation = useMutation({
     mutationFn: async (templateId: string) => {
-      const result = await rawClient.documents.templates.preview({
+      const result = await client.documents.templates.preview({
         id: templateId,
         clientId,
         matterId,
@@ -113,7 +113,7 @@ export function TemplateGeneratorDialog({
       if (!selectedTemplate) {
         throw new Error("No template selected");
       }
-      const result = await rawClient.documents.templates.generate({
+      const result = await client.documents.templates.generate({
         templateId: selectedTemplate,
         clientId,
         matterId,
