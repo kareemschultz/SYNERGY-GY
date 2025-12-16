@@ -137,28 +137,29 @@ function AnalyticsPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        actions={
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app/reports">
+                <FileText className="mr-2 h-4 w-4" />
+                Reports
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/app/analytics/audit">
+                <BarChart3 className="mr-2 h-4 w-4" />
+                Audit Trail
+              </Link>
+            </Button>
+          </div>
+        }
         breadcrumbs={[
           { label: "Dashboard", href: "/app" },
           { label: "Analytics" },
         ]}
         description="Business performance insights and visualizations"
         title="Analytics Dashboard"
-      >
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link to="/app/reports">
-              <FileText className="mr-2 h-4 w-4" />
-              Reports
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link to="/app/analytics/audit">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Audit Trail
-            </Link>
-          </Button>
-        </div>
-      </PageHeader>
+      />
 
       <div className="space-y-6 p-6">
         {/* KPI Cards */}

@@ -572,23 +572,30 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: "beneficial-owners",
     title: "Beneficial Ownership",
-    description: "Disclose beneficial owners (25%+ ownership)",
-    isOptional: false,
+    description: "Disclose beneficial owners (25%+ ownership) - optional",
+    isOptional: true,
     validate: (data: ClientOnboardingData) => {
-      // Only required for business types
+      // Skip validation if not a business type
       if (!isBusinessType(data.clientType)) {
         return null;
       }
 
-      const errors: Record<string, string> = {};
+      // Skip validation if no owners provided (user chose to skip)
+      if (!data.beneficialOwners || data.beneficialOwners.length === 0) {
+        return null;
+      }
 
-      // Corporations must have at least one beneficial owner
-      if (
-        data.clientType === "CORPORATION" &&
-        (!data.beneficialOwners || data.beneficialOwners.length === 0)
-      ) {
-        errors.beneficialOwners =
-          "At least one beneficial owner (25%+ ownership) must be disclosed for corporations";
+      // Validate provided owners
+      const errors: Record<string, string> = {};
+      for (const [index, owner] of data.beneficialOwners.entries()) {
+        if (!owner.fullName) {
+          errors[`owner_${index}_name`] =
+            `Owner ${index + 1}: Name is required`;
+        }
+        if (owner.ownershipPercentage < 0 || owner.ownershipPercentage > 100) {
+          errors[`owner_${index}_percentage`] =
+            `Owner ${index + 1}: Ownership must be 0-100%`;
+        }
       }
 
       return Object.keys(errors).length > 0 ? errors : null;
@@ -597,18 +604,15 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: "aml-compliance",
     title: "AML/KYC Compliance",
-    description: "Anti-Money Laundering compliance",
-    isOptional: false,
+    description: "Anti-Money Laundering compliance (optional)",
+    isOptional: true,
     validate: (data: ClientOnboardingData) => {
-      const errors: Record<string, string> = {};
-
-      // Source of funds required for all clients
-      if (
-        !data.amlCompliance?.sourceOfFunds ||
-        data.amlCompliance.sourceOfFunds.length === 0
-      ) {
-        errors.sourceOfFunds = "Please select at least one source of funds";
+      // Skip validation if no AML data provided (user skipped)
+      if (!data.amlCompliance?.sourceOfFunds) {
+        return null;
       }
+
+      const errors: Record<string, string> = {};
 
       // If OTHER is selected, details are required
       if (
@@ -632,8 +636,11 @@ export const onboardingSteps: OnboardingStep[] = [
         }
       }
 
-      // Sanctions screening consent required
-      if (!data.amlCompliance?.sanctionsScreeningConsent) {
+      // Only require consent if user started filling out AML data
+      if (
+        data.amlCompliance?.sourceOfFunds &&
+        !data.amlCompliance?.sanctionsScreeningConsent
+      ) {
         errors.sanctionsScreeningConsent =
           "You must consent to sanctions screening to proceed";
       }
