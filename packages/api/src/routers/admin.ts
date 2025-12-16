@@ -505,5 +505,167 @@ export const adminRouter = {
         },
       };
     }),
+
+    // Resend password setup link to staff member
+    resendSetupLink: adminProcedure
+      .input(z.object({ staffId: z.string() }))
+      .handler(async ({ input, context }) => {
+        // Get staff member with user info
+        const staffMember = await db.query.staff.findFirst({
+          where: eq(staff.id, input.staffId),
+          with: { user: true },
+        });
+
+        if (!staffMember) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Staff member not found",
+          });
+        }
+
+        // Check if user already has credentials (account exists)
+        const { account } = await import("@SYNERGY-GY/db/schema/auth");
+        const existingAccount = await db.query.account.findFirst({
+          where: eq(account.userId, staffMember.userId),
+        });
+
+        if (existingAccount) {
+          throw new ORPCError("BAD_REQUEST", {
+            message:
+              "This user already has a password set. Use 'Reset Password' instead.",
+          });
+        }
+
+        // Delete any existing unused tokens for this user
+        await db
+          .delete(passwordSetupToken)
+          .where(eq(passwordSetupToken.userId, staffMember.userId));
+
+        // Generate new setup token
+        const setupToken = generateSecureToken();
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+
+        await db.insert(passwordSetupToken).values({
+          id: randomUUID(),
+          userId: staffMember.userId,
+          token: setupToken,
+          expiresAt,
+        });
+
+        const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
+        const setupUrl = `${appUrl}/staff/setup-password?token=${setupToken}`;
+
+        const invitedByName = context.session.user.name || "GK-Nexus Admin";
+
+        // Send password setup email
+        await sendStaffPasswordSetup({
+          staffName: staffMember.user.name,
+          email: staffMember.user.email,
+          setupUrl,
+          expiresInHours: 24,
+          invitedBy: invitedByName,
+        });
+
+        return {
+          success: true,
+          message: `Password setup link sent to ${staffMember.user.email}`,
+          email: staffMember.user.email,
+        };
+      }),
+
+    // Reset password for existing user (generates new setup token)
+    resetPassword: adminProcedure
+      .input(z.object({ staffId: z.string() }))
+      .handler(async ({ input, context }) => {
+        // Get staff member with user info
+        const staffMember = await db.query.staff.findFirst({
+          where: eq(staff.id, input.staffId),
+          with: { user: true },
+        });
+
+        if (!staffMember) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Staff member not found",
+          });
+        }
+
+        // Delete any existing account credentials
+        const { account } = await import("@SYNERGY-GY/db/schema/auth");
+        await db.delete(account).where(eq(account.userId, staffMember.userId));
+
+        // Delete any existing setup tokens
+        await db
+          .delete(passwordSetupToken)
+          .where(eq(passwordSetupToken.userId, staffMember.userId));
+
+        // Generate new setup token
+        const setupToken = generateSecureToken();
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+
+        await db.insert(passwordSetupToken).values({
+          id: randomUUID(),
+          userId: staffMember.userId,
+          token: setupToken,
+          expiresAt,
+        });
+
+        const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
+        const setupUrl = `${appUrl}/staff/setup-password?token=${setupToken}`;
+
+        const invitedByName = context.session.user.name || "GK-Nexus Admin";
+
+        // Send password reset email
+        await sendStaffPasswordSetup({
+          staffName: staffMember.user.name,
+          email: staffMember.user.email,
+          setupUrl,
+          expiresInHours: 24,
+          invitedBy: invitedByName,
+        });
+
+        return {
+          success: true,
+          message: `Password reset link sent to ${staffMember.user.email}`,
+          email: staffMember.user.email,
+        };
+      }),
+
+    // Check if staff member has set up their password
+    checkPasswordStatus: adminProcedure
+      .input(z.object({ staffId: z.string() }))
+      .handler(async ({ input }) => {
+        const staffMember = await db.query.staff.findFirst({
+          where: eq(staff.id, input.staffId),
+          with: { user: true },
+        });
+
+        if (!staffMember) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Staff member not found",
+          });
+        }
+
+        // Check if user has credentials
+        const { account } = await import("@SYNERGY-GY/db/schema/auth");
+        const existingAccount = await db.query.account.findFirst({
+          where: eq(account.userId, staffMember.userId),
+        });
+
+        // Check for pending setup token
+        const pendingToken = await db.query.passwordSetupToken.findFirst({
+          where: and(
+            eq(passwordSetupToken.userId, staffMember.userId),
+            sql`${passwordSetupToken.usedAt} IS NULL`,
+            sql`${passwordSetupToken.expiresAt} > NOW()`
+          ),
+        });
+
+        return {
+          hasPassword: !!existingAccount,
+          hasPendingSetup: !!pendingToken,
+          pendingSetupExpires: pendingToken?.expiresAt || null,
+        };
+      }),
   },
 };
