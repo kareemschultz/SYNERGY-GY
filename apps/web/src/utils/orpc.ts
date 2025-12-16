@@ -20,22 +20,24 @@ export const queryClient = new QueryClient({
   }),
 });
 
-// Use relative URL in production for reverse proxy compatibility
-// In development, use VITE_SERVER_URL if set, otherwise default to relative
-const getServerUrl = () => {
+// RPCLink requires an absolute URL, not a relative one
+// Pass a function to dynamically resolve URL at request time
+// This ensures proper URL construction in browser environment
+const getServerUrl = (): string => {
   const viteServerUrl = import.meta.env.VITE_SERVER_URL;
 
-  // If VITE_SERVER_URL is not set or is localhost, use relative URL
-  // This works with reverse proxies where frontend and backend share the same domain
+  // In production or when VITE_SERVER_URL is not set/localhost
+  // use the browser's origin for reverse proxy compatibility
   if (!viteServerUrl || viteServerUrl.includes("localhost")) {
-    return "/rpc";
+    return `${window.location.origin}/rpc`;
   }
 
   return `${viteServerUrl}/rpc`;
 };
 
 export const link = new RPCLink({
-  url: getServerUrl(),
+  // Pass function to defer URL resolution until request time
+  url: getServerUrl,
   fetch(_url, options) {
     // Normalize RPC paths: convert dot notation to slash notation
     // e.g., /rpc/settings.getStaffStatus → /rpc/settings/getStaffStatus
