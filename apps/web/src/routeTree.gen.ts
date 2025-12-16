@@ -35,6 +35,7 @@ import { Route as AppClientsIndexRouteImport } from './routes/app/clients/index'
 import { Route as AppCalendarIndexRouteImport } from './routes/app/calendar/index'
 import { Route as AppCalculatorsIndexRouteImport } from './routes/app/calculators/index'
 import { Route as AppAppointmentsIndexRouteImport } from './routes/app/appointments/index'
+import { Route as AppAnalyticsIndexRouteImport } from './routes/app/analytics/index'
 import { Route as AppAdminIndexRouteImport } from './routes/app/admin/index'
 import { Route as PortalMattersMatterIdRouteImport } from './routes/portal/matters/$matter-id'
 import { Route as AppTrainingNewRouteImport } from './routes/app/training/new'
@@ -54,6 +55,7 @@ import { Route as AppCalculatorsVatRouteImport } from './routes/app/calculators/
 import { Route as AppCalculatorsPayeRouteImport } from './routes/app/calculators/paye'
 import { Route as AppCalculatorsNisRouteImport } from './routes/app/calculators/nis'
 import { Route as AppAppointmentsNewRouteImport } from './routes/app/appointments/new'
+import { Route as AppAnalyticsAuditRouteImport } from './routes/app/analytics/audit'
 import { Route as AppAdminKnowledgeBaseRouteImport } from './routes/app/admin/knowledge-base'
 import { Route as AppDocumentsTemplatesIndexRouteImport } from './routes/app/documents/templates/index'
 import { Route as AppAdminStaffIndexRouteImport } from './routes/app/admin/staff/index'
@@ -197,6 +199,11 @@ const AppAppointmentsIndexRoute = AppAppointmentsIndexRouteImport.update({
   path: '/appointments/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAnalyticsIndexRoute = AppAnalyticsIndexRouteImport.update({
+  id: '/analytics/',
+  path: '/analytics/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -292,6 +299,11 @@ const AppAppointmentsNewRoute = AppAppointmentsNewRouteImport.update({
   path: '/appointments/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAnalyticsAuditRoute = AppAnalyticsAuditRouteImport.update({
+  id: '/analytics/audit',
+  path: '/analytics/audit',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminKnowledgeBaseRoute = AppAdminKnowledgeBaseRouteImport.update({
   id: '/admin/knowledge-base',
   path: '/admin/knowledge-base',
@@ -376,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/portal': typeof PortalIndexRoute
   '/app/admin/knowledge-base': typeof AppAdminKnowledgeBaseRoute
+  '/app/analytics/audit': typeof AppAnalyticsAuditRoute
   '/app/appointments/new': typeof AppAppointmentsNewRoute
   '/app/calculators/nis': typeof AppCalculatorsNisRoute
   '/app/calculators/paye': typeof AppCalculatorsPayeRoute
@@ -395,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/app/training/new': typeof AppTrainingNewRoute
   '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
   '/app/admin': typeof AppAdminIndexRoute
+  '/app/analytics': typeof AppAnalyticsIndexRoute
   '/app/appointments': typeof AppAppointmentsIndexRoute
   '/app/calculators': typeof AppCalculatorsIndexRoute
   '/app/calendar': typeof AppCalendarIndexRoute
@@ -434,6 +448,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/portal': typeof PortalIndexRoute
   '/app/admin/knowledge-base': typeof AppAdminKnowledgeBaseRoute
+  '/app/analytics/audit': typeof AppAnalyticsAuditRoute
   '/app/appointments/new': typeof AppAppointmentsNewRoute
   '/app/calculators/nis': typeof AppCalculatorsNisRoute
   '/app/calculators/paye': typeof AppCalculatorsPayeRoute
@@ -453,6 +468,7 @@ export interface FileRoutesByTo {
   '/app/training/new': typeof AppTrainingNewRoute
   '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
   '/app/admin': typeof AppAdminIndexRoute
+  '/app/analytics': typeof AppAnalyticsIndexRoute
   '/app/appointments': typeof AppAppointmentsIndexRoute
   '/app/calculators': typeof AppCalculatorsIndexRoute
   '/app/calendar': typeof AppCalendarIndexRoute
@@ -494,6 +510,7 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/app/admin/knowledge-base': typeof AppAdminKnowledgeBaseRoute
+  '/app/analytics/audit': typeof AppAnalyticsAuditRoute
   '/app/appointments/new': typeof AppAppointmentsNewRoute
   '/app/calculators/nis': typeof AppCalculatorsNisRoute
   '/app/calculators/paye': typeof AppCalculatorsPayeRoute
@@ -513,6 +530,7 @@ export interface FileRoutesById {
   '/app/training/new': typeof AppTrainingNewRoute
   '/portal/matters/$matter-id': typeof PortalMattersMatterIdRoute
   '/app/admin/': typeof AppAdminIndexRoute
+  '/app/analytics/': typeof AppAnalyticsIndexRoute
   '/app/appointments/': typeof AppAppointmentsIndexRoute
   '/app/calculators/': typeof AppCalculatorsIndexRoute
   '/app/calendar/': typeof AppCalendarIndexRoute
@@ -555,6 +573,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/portal'
     | '/app/admin/knowledge-base'
+    | '/app/analytics/audit'
     | '/app/appointments/new'
     | '/app/calculators/nis'
     | '/app/calculators/paye'
@@ -574,6 +593,7 @@ export interface FileRouteTypes {
     | '/app/training/new'
     | '/portal/matters/$matter-id'
     | '/app/admin'
+    | '/app/analytics'
     | '/app/appointments'
     | '/app/calculators'
     | '/app/calendar'
@@ -613,6 +633,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/portal'
     | '/app/admin/knowledge-base'
+    | '/app/analytics/audit'
     | '/app/appointments/new'
     | '/app/calculators/nis'
     | '/app/calculators/paye'
@@ -632,6 +653,7 @@ export interface FileRouteTypes {
     | '/app/training/new'
     | '/portal/matters/$matter-id'
     | '/app/admin'
+    | '/app/analytics'
     | '/app/appointments'
     | '/app/calculators'
     | '/app/calendar'
@@ -672,6 +694,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/portal/'
     | '/app/admin/knowledge-base'
+    | '/app/analytics/audit'
     | '/app/appointments/new'
     | '/app/calculators/nis'
     | '/app/calculators/paye'
@@ -691,6 +714,7 @@ export interface FileRouteTypes {
     | '/app/training/new'
     | '/portal/matters/$matter-id'
     | '/app/admin/'
+    | '/app/analytics/'
     | '/app/appointments/'
     | '/app/calculators/'
     | '/app/calendar/'
@@ -917,6 +941,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppointmentsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/analytics/': {
+      id: '/app/analytics/'
+      path: '/analytics'
+      fullPath: '/app/analytics'
+      preLoaderRoute: typeof AppAnalyticsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin/': {
       id: '/app/admin/'
       path: '/admin'
@@ -1050,6 +1081,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppointmentsNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/analytics/audit': {
+      id: '/app/analytics/audit'
+      path: '/analytics/audit'
+      fullPath: '/app/analytics/audit'
+      preLoaderRoute: typeof AppAnalyticsAuditRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin/knowledge-base': {
       id: '/app/admin/knowledge-base'
       path: '/admin/knowledge-base'
@@ -1154,6 +1192,7 @@ const AppClientsClientIdRouteWithChildren =
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppAdminKnowledgeBaseRoute: typeof AppAdminKnowledgeBaseRoute
+  AppAnalyticsAuditRoute: typeof AppAnalyticsAuditRoute
   AppAppointmentsNewRoute: typeof AppAppointmentsNewRoute
   AppCalculatorsNisRoute: typeof AppCalculatorsNisRoute
   AppCalculatorsPayeRoute: typeof AppCalculatorsPayeRoute
@@ -1172,6 +1211,7 @@ interface AppRouteChildren {
   AppServicesServiceIdRoute: typeof AppServicesServiceIdRoute
   AppTrainingNewRoute: typeof AppTrainingNewRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
+  AppAnalyticsIndexRoute: typeof AppAnalyticsIndexRoute
   AppAppointmentsIndexRoute: typeof AppAppointmentsIndexRoute
   AppCalculatorsIndexRoute: typeof AppCalculatorsIndexRoute
   AppCalendarIndexRoute: typeof AppCalendarIndexRoute
@@ -1198,6 +1238,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppAdminKnowledgeBaseRoute: AppAdminKnowledgeBaseRoute,
+  AppAnalyticsAuditRoute: AppAnalyticsAuditRoute,
   AppAppointmentsNewRoute: AppAppointmentsNewRoute,
   AppCalculatorsNisRoute: AppCalculatorsNisRoute,
   AppCalculatorsPayeRoute: AppCalculatorsPayeRoute,
@@ -1216,6 +1257,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppServicesServiceIdRoute: AppServicesServiceIdRoute,
   AppTrainingNewRoute: AppTrainingNewRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
+  AppAnalyticsIndexRoute: AppAnalyticsIndexRoute,
   AppAppointmentsIndexRoute: AppAppointmentsIndexRoute,
   AppCalculatorsIndexRoute: AppCalculatorsIndexRoute,
   AppCalendarIndexRoute: AppCalendarIndexRoute,

@@ -7,13 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Analytics Dashboard** - December 16, 2024 (#14)
+  - New Analytics page with KPI overview cards (clients, matters, deadlines, revenue)
+  - Monthly trend charts showing 12-month growth patterns
+  - Interactive data visualizations using Recharts library
+  - Matter status distribution and business breakdown pie charts
+  - Client type distribution analytics
+  - Revenue by business breakdown
+  - Staff workload distribution bar charts
+  - Navigation added to sidebar
+
+- **Audit Trail** - December 16, 2024 (#14)
+  - New Audit Trail page for tracking all system activities
+  - Activity log table with filtering by entity type and action
+  - Stats cards showing total activities, creates, updates, logins
+  - Charts for activity by action type and entity type
+  - Pagination for browsing large activity logs
+  - User and IP address tracking for each action
+
+- **Analytics API Endpoints** - December 16, 2024
+  - `analytics.getKPIs` - Key performance indicators with growth metrics
+  - `analytics.getMonthlyTrends` - 12-month trends for charts
+  - `analytics.getMattersByCategory` - Service type breakdown
+  - `analytics.getRevenueByBusiness` - Revenue by GCMC/KAJ
+  - `analytics.getStaffWorkload` - Staff assignment distribution
+  - `analytics.getDeadlineDistribution` - Deadline status breakdown
+  - `analytics.getClientTypeDistribution` - Client type breakdown
+
 ### Deployment
 - **Production Deployment Complete** - December 16, 2024
   - App successfully deployed to production via Docker/GHCR
   - Staff actively adding real client data
   - Docker image: `ghcr.io/kareemschultz/gk-nexus:latest`
 
-### Added
 - **Branch Workflow** - December 16, 2024
   - Created `develop` branch for active development
   - Created `staging` branch for pre-production testing
