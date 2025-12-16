@@ -219,7 +219,41 @@ DATABASE_URL="postgresql://..." bun run db:push
 1. **NO MOCK DATA** - Never create seed data or placeholder content
 2. **Docker security** - Maintain non-root user, read-only filesystem
 3. **Code quality** - Run `npx ultracite fix` before ALL commits
-4. **oRPC pattern** - Use `orpc.xxx.queryOptions()` for TanStack Query
+
+#### oRPC + TanStack Query Patterns:
+1. **For queries (reading data)**: Use `orpc.xxx.useQuery()`
+   ```typescript
+   const { data } = orpc.clients.list.useQuery({ limit: 10 });
+   ```
+
+2. **For mutations (creating/updating)**: Use `useMutation` from @tanstack/react-query with `client`
+   ```typescript
+   import { useMutation } from "@tanstack/react-query";
+   import { client } from "@/utils/orpc";
+
+   const mutation = useMutation({
+     mutationFn: (input) => client.clients.create(input),
+   });
+   ```
+
+3. **For nested routers**: NEVER use `orpc.nested.sub.useMutation()` - it doesn't work with nested objects
+   ```typescript
+   // ❌ WRONG - won't work with nested routers
+   const mutation = orpc.portal.impersonation.start.useMutation();
+
+   // ✅ CORRECT - use useMutation with client directly
+   const mutation = useMutation({
+     mutationFn: (input) => client.portal.impersonation.start(input),
+   });
+   ```
+
+4. **Unwrap responses**: oRPC v1.12+ wraps responses in `{ json: T }` envelope
+   ```typescript
+   import { unwrapOrpc } from "@/utils/orpc-response";
+
+   const { data: dataRaw } = useQuery({ ... });
+   const data = unwrapOrpc<MyType>(dataRaw);
+   ```
 
 #### What NOT to Do:
 - ❌ Don't commit directly to master (use develop → staging → master)
