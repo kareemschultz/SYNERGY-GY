@@ -24,11 +24,17 @@ export default defineConfig({
         // Exclude API routes from service worker interception
         // This ensures credentials are properly passed to the server
         navigateFallbackDenylist: [/^\/api/, /^\/rpc/],
-        // Don't cache API/RPC responses
+        // Don't cache API/RPC responses - match all HTTP methods including POST
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\/(api|rpc)\/.*/,
+            urlPattern: /^https?:\/\/.*\/(api|rpc)\/.*/,
             handler: "NetworkOnly",
+            method: "POST",
+          },
+          {
+            urlPattern: /^https?:\/\/.*\/(api|rpc)\/.*/,
+            handler: "NetworkOnly",
+            method: "GET",
           },
         ],
       },

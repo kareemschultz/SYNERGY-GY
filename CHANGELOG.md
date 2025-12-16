@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PWA Service Worker Intercepting API Requests** (#PROD-007) - December 16, 2024
   - Fixed "Access Pending" bug where service worker intercepted API requests without proper credentials
   - **Root cause**: VitePWA service worker was caching and intercepting `/api` and `/rpc` routes, preventing session cookies from being sent
-  - **Solution**: Added Workbox configuration to exclude API routes from service worker with `navigateFallbackDenylist` and `NetworkOnly` handler
+  - **Solution**: Added Workbox configuration to exclude API routes from service worker with `navigateFallbackDenylist` and `NetworkOnly` handler for both GET and POST methods
   - **Impact**: All API/RPC requests now bypass service worker and properly include credentials
   - **Affected files**: `apps/web/vite.config.ts`
 
