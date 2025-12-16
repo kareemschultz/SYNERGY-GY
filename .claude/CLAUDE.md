@@ -173,15 +173,13 @@ Most formatting and common issues are automatically fixed by Biome. Run `npx ult
 
 ```
 master (production)     ← What's deployed, image on GHCR
-  └── staging           ← Pre-production testing
-        └── develop     ← Active development (work here!)
+  └── develop           ← Active development (work here!)
 ```
 
 **Daily workflow:**
 1. Work on `develop` branch
 2. Test locally with `docker compose -f docker-compose.local.yml up --build`
-3. When ready, merge to `staging` for final testing
-4. Merge to `master` triggers GHCR publish and production deployment
+3. When ready, merge to `master` (triggers GHCR publish + production update)
 
 ### Updating Production
 

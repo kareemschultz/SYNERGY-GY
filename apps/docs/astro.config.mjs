@@ -17,10 +17,17 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: "Guides",
+          label: "Getting Started",
+          items: [{ label: "Overview", slug: "guides/getting-started" }],
+        },
+        {
+          label: "Staff Guides",
+          items: [{ label: "Staff Training", slug: "guides/staff/training" }],
+        },
+        {
+          label: "Client Portal",
           items: [
-            { label: "Getting Started", slug: "guides/getting-started" },
-            { label: "Example Guide", slug: "guides/example" },
+            { label: "Portal Access", slug: "guides/clients/portal-access" },
           ],
         },
         {
@@ -60,7 +67,10 @@ export default defineConfig({
         },
         {
           label: "Reference",
-          autogenerate: { directory: "reference" },
+          items: [
+            { label: "System Reference", slug: "reference/system-reference" },
+            { label: "Forms & Templates", slug: "reference/forms-templates" },
+          ],
         },
       ],
     }),
