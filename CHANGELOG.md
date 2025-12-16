@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Bulk Actions for Clients** - December 16, 2024
+  - Added checkbox selection for client rows in table view
+  - Implemented bulk archive action for multiple clients
+  - Implemented bulk export to CSV for selected clients
+  - Created reusable `useSelection` hook for managing selection state
+  - Created `BulkActionsToolbar` component for consistent bulk action UI
+  - Added `clients.bulk.archive`, `clients.bulk.export`, `clients.bulk.updateStatus`, `clients.bulk.assignStaff` API endpoints
+  - Selection clears when filters, search, or page changes
+  - **Files added**: `use-selection.ts`, `bulk-actions-toolbar.tsx`
+  - **Files modified**: `clients/index.tsx`, `routers/clients.ts`
+
 - **Services Tab on Client Detail Page** - December 16, 2024
   - Added Services tab to client detail page for managing services after initial onboarding
   - Uses existing ClientServicesTab component with full CRUD capabilities

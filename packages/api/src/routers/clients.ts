@@ -1032,4 +1032,230 @@ export const clientsRouter = {
         canViewFinancials: canViewFinancials(context.staff),
       };
     }),
+
+  // Bulk Actions
+  bulk: {
+    /**
+     * Update status for multiple clients
+     */
+    updateStatus: staffProcedure
+      .input(
+        z.object({
+          ids: z.array(z.string()).min(1),
+          status: z.enum(clientStatusValues),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Verify access to all clients
+        const clients = await db
+          .select({ id: client.id, businesses: client.businesses })
+          .from(client)
+          .where(
+            sql`${client.id} = ANY(ARRAY[${sql.join(
+              input.ids.map((id) => sql`${id}`),
+              sql`, `
+            )}]::uuid[])`
+          );
+
+        for (const c of clients) {
+          const hasAccess = c.businesses.some((b) =>
+            accessibleBusinesses.includes(b as "GCMC" | "KAJ")
+          );
+          if (!hasAccess) {
+            throw new ORPCError("FORBIDDEN", {
+              message: "You don't have access to all selected clients",
+            });
+          }
+        }
+
+        // Update all clients
+        const updated = await db
+          .update(client)
+          .set({ status: input.status, updatedAt: new Date() })
+          .where(
+            sql`${client.id} = ANY(ARRAY[${sql.join(
+              input.ids.map((id) => sql`${id}`),
+              sql`, `
+            )}]::uuid[])`
+          )
+          .returning({ id: client.id });
+
+        return {
+          success: true,
+          updatedCount: updated.length,
+          ids: updated.map((c) => c.id),
+        };
+      }),
+
+    /**
+     * Archive multiple clients
+     */
+    archive: staffProcedure
+      .input(z.object({ ids: z.array(z.string()).min(1) }))
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Verify access to all clients
+        const clients = await db
+          .select({ id: client.id, businesses: client.businesses })
+          .from(client)
+          .where(
+            sql`${client.id} = ANY(ARRAY[${sql.join(
+              input.ids.map((id) => sql`${id}`),
+              sql`, `
+            )}]::uuid[])`
+          );
+
+        for (const c of clients) {
+          const hasAccess = c.businesses.some((b) =>
+            accessibleBusinesses.includes(b as "GCMC" | "KAJ")
+          );
+          if (!hasAccess) {
+            throw new ORPCError("FORBIDDEN", {
+              message: "You don't have access to all selected clients",
+            });
+          }
+        }
+
+        // Archive all clients
+        const archived = await db
+          .update(client)
+          .set({ status: "ARCHIVED", updatedAt: new Date() })
+          .where(
+            sql`${client.id} = ANY(ARRAY[${sql.join(
+              input.ids.map((id) => sql`${id}`),
+              sql`, `
+            )}]::uuid[])`
+          )
+          .returning({ id: client.id });
+
+        return {
+          success: true,
+          archivedCount: archived.length,
+          ids: archived.map((c) => c.id),
+        };
+      }),
+
+    /**
+     * Export clients data as CSV
+     */
+    export: staffProcedure
+      .input(z.object({ ids: z.array(z.string()).min(1) }))
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Get all selected clients
+        const clients = await db
+          .select()
+          .from(client)
+          .where(
+            sql`${client.id} = ANY(ARRAY[${sql.join(
+              input.ids.map((id) => sql`${id}`),
+              sql`, `
+            )}]::uuid[])`
+          );
+
+        // Filter to accessible clients
+        const accessibleClients = clients.filter((c) =>
+          c.businesses.some((b) =>
+            accessibleBusinesses.includes(b as "GCMC" | "KAJ")
+          )
+        );
+
+        // Generate CSV content
+        const headers = [
+          "ID",
+          "Display Name",
+          "Type",
+          "Email",
+          "Phone",
+          "TIN Number",
+          "Businesses",
+          "Status",
+          "Created At",
+        ];
+
+        const rows = accessibleClients.map((c) => [
+          c.id,
+          c.displayName,
+          c.type,
+          c.email || "",
+          c.phone || "",
+          c.tinNumber || "",
+          c.businesses.join(";"),
+          c.status,
+          c.createdAt?.toISOString() || "",
+        ]);
+
+        const csvContent = [
+          headers.join(","),
+          ...rows.map((row) =>
+            row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+          ),
+        ].join("\n");
+
+        return {
+          success: true,
+          exportedCount: accessibleClients.length,
+          csv: csvContent,
+          filename: `clients-export-${new Date().toISOString().split("T")[0]}.csv`,
+        };
+      }),
+
+    /**
+     * Assign primary staff to multiple clients
+     */
+    assignStaff: staffProcedure
+      .input(
+        z.object({
+          ids: z.array(z.string()).min(1),
+          primaryStaffId: z.string(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Verify access to all clients
+        const clients = await db
+          .select({ id: client.id, businesses: client.businesses })
+          .from(client)
+          .where(
+            sql`${client.id} = ANY(ARRAY[${sql.join(
+              input.ids.map((id) => sql`${id}`),
+              sql`, `
+            )}]::uuid[])`
+          );
+
+        for (const c of clients) {
+          const hasAccess = c.businesses.some((b) =>
+            accessibleBusinesses.includes(b as "GCMC" | "KAJ")
+          );
+          if (!hasAccess) {
+            throw new ORPCError("FORBIDDEN", {
+              message: "You don't have access to all selected clients",
+            });
+          }
+        }
+
+        // Update all clients
+        const updated = await db
+          .update(client)
+          .set({ primaryStaffId: input.primaryStaffId, updatedAt: new Date() })
+          .where(
+            sql`${client.id} = ANY(ARRAY[${sql.join(
+              input.ids.map((id) => sql`${id}`),
+              sql`, `
+            )}]::uuid[])`
+          )
+          .returning({ id: client.id });
+
+        return {
+          success: true,
+          updatedCount: updated.length,
+          ids: updated.map((c) => c.id),
+        };
+      }),
+  },
 };

@@ -1,6 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  Archive,
+  Download,
   Grid3X3,
   List,
   MoreHorizontal,
@@ -9,6 +11,8 @@ import {
   Wand2,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+import { BulkActionsToolbar } from "@/components/bulk-actions/bulk-actions-toolbar";
 import { ClientCard } from "@/components/clients/client-card";
 import {
   EngagementBadge,
@@ -19,6 +23,7 @@ import { ComplianceIndicator } from "@/components/clients/compliance-indicator";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,7 +48,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { client } from "@/utils/orpc";
+import { useSelection } from "@/hooks/use-selection";
+import { client, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/clients/")({
   component: ClientsPage,
@@ -112,6 +118,65 @@ function ClientsPage() {
 
   const canViewFinancials = data?.canViewFinancials ?? false;
 
+  // Selection state for bulk actions
+  const {
+    selectedIds,
+    selectedCount,
+    hasSelection,
+    isAllSelected,
+    isPartiallySelected,
+    isSelected,
+    toggleSelection,
+    toggleSelectAll,
+    clearSelection,
+  } = useSelection(data?.clients ?? []);
+
+  // Bulk archive mutation
+  const archiveMutation = useMutation({
+    mutationFn: (ids: string[]) => client.clients.bulk.archive({ ids }),
+    onSuccess: (result) => {
+      toast.success(`${result.archivedCount} clients archived`);
+      clearSelection();
+      queryClient.invalidateQueries({ queryKey: ["clientsWithStats"] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to archive clients");
+    },
+  });
+
+  // Bulk export mutation
+  const exportMutation = useMutation({
+    mutationFn: (ids: string[]) => client.clients.bulk.export({ ids }),
+    onSuccess: (result) => {
+      // Create and download CSV file
+      const blob = new Blob([result.csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(`${result.exportedCount} clients exported`);
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to export clients");
+    },
+  });
+
+  const handleBulkArchive = () => {
+    if (selectedCount > 0) {
+      archiveMutation.mutate(Array.from(selectedIds));
+    }
+  };
+
+  const handleBulkExport = () => {
+    if (selectedCount > 0) {
+      exportMutation.mutate(Array.from(selectedIds));
+    }
+  };
+
   return (
     <div className="flex flex-col">
       <PageHeader
@@ -153,6 +218,7 @@ function ClientsPage() {
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
+                clearSelection();
               }}
               placeholder="Search clients by name, email, or TIN..."
               value={search}
@@ -163,6 +229,7 @@ function ClientsPage() {
             onValueChange={(value) => {
               setBusinessFilter(value);
               setPage(1);
+              clearSelection();
             }}
             value={businessFilter}
           >
@@ -180,6 +247,7 @@ function ClientsPage() {
             onValueChange={(value) => {
               setTypeFilter(value);
               setPage(1);
+              clearSelection();
             }}
             value={typeFilter}
           >
@@ -203,6 +271,7 @@ function ClientsPage() {
             onValueChange={(value) => {
               setStatusFilter(value);
               setPage(1);
+              clearSelection();
             }}
             value={statusFilter}
           >
@@ -260,6 +329,7 @@ function ClientsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12" />
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Businesses</TableHead>
@@ -282,6 +352,9 @@ function ClientsPage() {
                 <TableBody>
                   {Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-4 w-4" />
+                      </TableCell>
                       <TableCell>
                         <Skeleton className="h-4 w-32" />
                       </TableCell>
@@ -349,6 +422,16 @@ function ClientsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        aria-label="Select all clients"
+                        checked={isAllSelected}
+                        data-state={
+                          isPartiallySelected ? "indeterminate" : undefined
+                        }
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Businesses</TableHead>
@@ -371,7 +454,17 @@ function ClientsPage() {
                 <TableBody>
                   {data?.clients && data.clients.length > 0 ? (
                     data.clients.map((c) => (
-                      <TableRow key={c.id}>
+                      <TableRow
+                        data-state={isSelected(c.id) ? "selected" : undefined}
+                        key={c.id}
+                      >
+                        <TableCell>
+                          <Checkbox
+                            aria-label={`Select ${c.displayName}`}
+                            checked={isSelected(c.id)}
+                            onCheckedChange={() => toggleSelection(c.id)}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           <Link
                             className="hover:underline"
@@ -461,7 +554,7 @@ function ClientsPage() {
                     <TableRow>
                       <TableCell
                         className="h-32 text-center"
-                        colSpan={canViewFinancials ? 9 : 8}
+                        colSpan={canViewFinancials ? 10 : 9}
                       >
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <p>No clients found</p>
@@ -480,6 +573,36 @@ function ClientsPage() {
             </div>
           ))}
 
+        {/* Bulk Actions Toolbar */}
+        {hasSelection && (
+          <div className="mt-4">
+            <BulkActionsToolbar
+              entityName="clients"
+              onClearSelection={clearSelection}
+              selectedCount={selectedCount}
+            >
+              <Button
+                disabled={exportMutation.isPending}
+                onClick={handleBulkExport}
+                size="sm"
+                variant="outline"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button
+                disabled={archiveMutation.isPending}
+                onClick={handleBulkArchive}
+                size="sm"
+                variant="destructive"
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Archive
+              </Button>
+            </BulkActionsToolbar>
+          </div>
+        )}
+
         {/* Pagination */}
         {Boolean(data?.totalPages) && (data?.totalPages ?? 0) > 1 && (
           <div className="mt-4 flex items-center justify-between">
@@ -490,7 +613,10 @@ function ClientsPage() {
             <div className="flex gap-2">
               <Button
                 disabled={page === 1}
-                onClick={() => setPage(page - 1)}
+                onClick={() => {
+                  setPage(page - 1);
+                  clearSelection();
+                }}
                 size="sm"
                 variant="outline"
               >
@@ -498,7 +624,10 @@ function ClientsPage() {
               </Button>
               <Button
                 disabled={page === data?.totalPages}
-                onClick={() => setPage(page + 1)}
+                onClick={() => {
+                  setPage(page + 1);
+                  clearSelection();
+                }}
                 size="sm"
                 variant="outline"
               >
