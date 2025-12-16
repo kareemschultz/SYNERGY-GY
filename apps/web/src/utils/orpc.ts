@@ -40,75 +40,65 @@ const getServerUrl = (): string => {
 };
 
 export const link = new RPCLink({
-
-  // Pass the function reference as per @orpc/client documentation for dynamic URL resolution
-
-  url: getServerUrl,
-
+  // Call getServerUrl() to pass a resolved URL string
+  url: getServerUrl(),
   fetch(_url, options) {
-
-    // If _url is a function (as passed by RPCLink), execute it to get the actual URL string
-
-    const resolvedUrl = typeof _url === "function" ? _url() : _url;
-
-
-
-    // Now resolvedUrl should be a string (or a URL object)
-
-    const urlString = typeof resolvedUrl === "string" ? resolvedUrl : resolvedUrl.toString();
-
-
-
-    try {
-
-      const urlObj = new URL(urlString, window.location.origin);
-
-
-
-      // Only normalize if pathname contains /rpc/ and has dots
-
-      if (
-
-        urlObj.pathname.startsWith("/rpc/") &&
-
-        urlObj.pathname.includes(".")
-
-      ) {
-
-        urlObj.pathname = urlObj.pathname.replace(/\./g, "/");
-
-      }
-
-
-
-      const finalUrl = urlObj.toString();
-
-
-
-      return fetch(finalUrl, {
-
-        ...options,
-
-        credentials: "include",
-
-      });
-
-    } catch (e) {
-
-      // Fallback: if URL parsing fails, use original resolved URL
-
-      return fetch(resolvedUrl, {
-
-        ...options,
-
-        credentials: "include",
-
-      });
-
+    // Extract URL string from various input types
+    // RPCLink may pass a Request object, URL object, or string
+    let urlString: string;
+    if (typeof _url === "string") {
+      urlString = _url;
+    } else if (_url instanceof Request) {
+      // Request object - extract URL from it
+      urlString = _url.url;
+    } else if (_url instanceof URL) {
+      urlString = _url.toString();
+    } else if (typeof _url === "function") {
+      // Function - call it to get URL
+      urlString = (_url as () => string)();
+    } else {
+      // Fallback
+      urlString = String(_url);
     }
 
-  },
+    // Debug logging
+    console.log("[oRPC] URL extracted:", urlString);
 
+    try {
+      const urlObj = new URL(urlString, window.location.origin);
+      const originalPath = urlObj.pathname;
+
+      // Normalize RPC paths: convert dot notation to slash notation
+      // e.g., /rpc/settings.getStaffStatus → /rpc/settings/getStaffStatus
+      if (
+        urlObj.pathname.startsWith("/rpc/") &&
+        urlObj.pathname.includes(".")
+      ) {
+        urlObj.pathname = urlObj.pathname.replace(/\./g, "/");
+        console.log(
+          "[oRPC] Path normalized:",
+          originalPath,
+          "->",
+          urlObj.pathname
+        );
+      }
+
+      const finalUrl = urlObj.toString();
+      console.log("[oRPC] Final URL:", finalUrl);
+
+      return fetch(finalUrl, {
+        ...options,
+        credentials: "include",
+      });
+    } catch (e) {
+      console.error("[oRPC] URL parsing error:", e);
+      // Fallback: use original URL
+      return fetch(urlString, {
+        ...options,
+        credentials: "include",
+      });
+    }
+  },
 });
 
 export const client: AppRouterClient = createORPCClient(link);
