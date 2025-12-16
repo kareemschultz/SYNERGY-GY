@@ -44,8 +44,12 @@ export const link = new RPCLink({
     // Only transform dots in the pathname, not in query parameters or fragments
     const urlString = typeof _url === "string" ? _url : _url.toString();
 
+    // Debug logging (remove in production)
+    console.log("[oRPC] fetch called with URL:", urlString);
+
     try {
       const urlObj = new URL(urlString, window.location.origin);
+      const originalPathname = urlObj.pathname;
 
       // Only normalize if pathname contains /rpc/ and has dots
       if (
@@ -53,14 +57,24 @@ export const link = new RPCLink({
         urlObj.pathname.includes(".")
       ) {
         urlObj.pathname = urlObj.pathname.replace(/\./g, "/");
+        console.log(
+          "[oRPC] Normalized path:",
+          originalPathname,
+          "->",
+          urlObj.pathname
+        );
       }
 
-      return fetch(urlObj.toString(), {
+      const finalUrl = urlObj.toString();
+      console.log("[oRPC] Final URL:", finalUrl);
+
+      return fetch(finalUrl, {
         ...options,
         credentials: "include",
       });
-    } catch {
+    } catch (e) {
       // Fallback: if URL parsing fails, use original URL
+      console.error("[oRPC] URL parsing error:", e);
       return fetch(urlString, {
         ...options,
         credentials: "include",
