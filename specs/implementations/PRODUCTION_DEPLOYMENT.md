@@ -190,6 +190,16 @@ Transform GK-Nexus from development to production-ready with industry-standard D
 - **Impact**: All authenticated users were stuck at Access Pending screen, now resolved
 - Commits: `977cd50` (initial fix), `708f6de` (centralized helper), `12fec91` (E2E test)
 
+**Additional Fixes (December 16, 2024):**
+- **oRPC Request Body Streaming Fix**: Fixed "duplex member must be specified" error by reading Request body as text using `.text()` instead of passing streaming body
+- **Cache-Control Headers**: Added `Cache-Control: no-cache, no-store, must-revalidate` to index.html to prevent browsers from serving stale JavaScript bundles
+- **PWA Service Worker Configuration**: Fixed service worker intercepting API requests without proper credentials
+  - Added `navigateFallbackDenylist: [/^\/api/, /^\/rpc/]` to exclude API routes from navigation fallback
+  - Added `NetworkOnly` handlers for both POST and GET methods on API/RPC routes
+  - This ensures session cookies are properly sent with all RPC requests
+- **Verified Working**: Server logs now show authenticated sessions (`session: found`) for RPC requests
+- Commits: `d0f62b4` (body streaming), `246aac8` (cache headers), `1deea9a` (PWA config), `8b6d979` (POST method)
+
 ---
 
 ### Phase 4: Documentation (MEDIUM - Day 4-5) ✅ COMPLETE
@@ -300,19 +310,28 @@ Transform GK-Nexus from development to production-ready with industry-standard D
 
 ---
 
-### Phase 7: Production Deployment (CRITICAL - Day 5-6)
+### Phase 7: Production Deployment (CRITICAL - Day 5-6) 🚧 IN PROGRESS
 **Goal:** Deploy to production with SSL
 
 **GitHub Issue:** [#PROD-007] Production Deployment Checklist
 
 **Tasks:**
-- [ ] Configure production environment
-- [ ] Pull Docker image from GHCR
-- [ ] Run database migrations
-- [ ] Configure Nginx reverse proxy
-- [ ] Setup SSL with Let's Encrypt
-- [ ] Configure automatic backups
-- [ ] Verify all systems operational
+- [x] Configure production environment (.env with BETTER_AUTH_URL, CORS_ORIGIN, etc.)
+- [x] Pull Docker image from GHCR (`ghcr.io/kareemschultz/gk-nexus:latest`)
+- [x] Run database migrations (Drizzle push)
+- [x] Configure Nginx/Pangolin reverse proxy (SSL termination at proxy)
+- [x] Setup SSL with Let's Encrypt (via Pangolin)
+- [ ] Configure automatic backups (cron job)
+- [x] Verify all systems operational
+
+**Production URL:** https://gcmc.karetechsolutions.com
+
+**Verified Working (December 16, 2024):**
+- Health endpoint: `{"status":"healthy"}` ✅
+- Authentication flow: Login → Dashboard ✅
+- Session cookies: Properly sent with RPC requests ✅
+- PWA service worker: Not intercepting API routes ✅
+- Cache-control: Fresh JS bundles served on each load ✅
 
 ---
 
