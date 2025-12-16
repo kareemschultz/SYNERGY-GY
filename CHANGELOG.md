@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **oRPC ReadableStream Body Error** (#PROD-007) - December 16, 2024
+  - Fixed "ReadableStream not allowed" error when making RPC requests
+  - **Root cause**: Request.body is a ReadableStream that can only be consumed once; passing it directly to a new fetch fails
+  - **Solution**: Clone the Request object using `request.clone()` before extracting body, then create a new Request with the modified URL
+  - **Impact**: All RPC requests now work correctly with proper body/headers preservation
+  - **Affected files**: `apps/web/src/utils/orpc.ts`
+
 - **oRPC Request Body Not Sent for Procedures with Input** (#PROD-007) - December 16, 2024
   - Fixed 400 "Input validation failed" errors on list endpoints (clients, matters, documents)
   - **Root cause**: When RPCLink passes a `Request` object to fetch handler, the body and headers are inside the Request object, not in the `options` parameter
