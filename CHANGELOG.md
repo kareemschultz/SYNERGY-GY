@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Browser Caching Old JavaScript Bundle** (#PROD-007) - December 16, 2024
+  - Added Cache-Control headers to prevent browsers from caching index.html
+  - **Root cause**: Browsers and service workers were caching old index.html which referenced old JS bundles
+  - **Solution**: Set `Cache-Control: no-cache, no-store, must-revalidate` headers on index.html
+  - **Impact**: Users will always get the latest JavaScript bundle on page load
+  - **Affected files**: `apps/server/src/index.ts`
+
 - **oRPC ReadableStream Body Error** (#PROD-007) - December 16, 2024
   - Fixed "ReadableStream not allowed" error when making RPC requests
   - **Root cause**: Request.body is a ReadableStream that can only be consumed once; passing it directly to a new fetch fails

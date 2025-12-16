@@ -333,6 +333,10 @@ app.get("*", async (c) => {
   const indexPath = join(FRONTEND_DIST, "index.html");
   if (existsSync(indexPath)) {
     const content = Bun.file(indexPath);
+    // Prevent caching of index.html to ensure users get latest version
+    c.header("Cache-Control", "no-cache, no-store, must-revalidate");
+    c.header("Pragma", "no-cache");
+    c.header("Expires", "0");
     return c.html(await content.text());
   }
   return c.text("Frontend not found", 404);
