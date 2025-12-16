@@ -86,15 +86,18 @@ export const link = new RPCLink({
       const finalUrl = urlObj.toString();
       console.log("[oRPC] Final URL:", finalUrl);
 
+      // Force POST method - server's StrictGetMethodPlugin rejects GET requests
       return fetch(finalUrl, {
         ...options,
+        method: "POST",
         credentials: "include",
       });
     } catch (e) {
       console.error("[oRPC] URL parsing error:", e);
-      // Fallback: use original URL
+      // Fallback: use original URL with POST method
       return fetch(urlString, {
         ...options,
+        method: "POST",
         credentials: "include",
       });
     }
