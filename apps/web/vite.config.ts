@@ -20,6 +20,18 @@ export default defineConfig({
       },
       pwaAssets: { disabled: false, config: true },
       devOptions: { enabled: true },
+      workbox: {
+        // Exclude API routes from service worker interception
+        // This ensures credentials are properly passed to the server
+        navigateFallbackDenylist: [/^\/api/, /^\/rpc/],
+        // Don't cache API/RPC responses
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\/(api|rpc)\/.*/,
+            handler: "NetworkOnly",
+          },
+        ],
+      },
     }),
   ],
   resolve: {
