@@ -1,12 +1,18 @@
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export function useImpersonation() {
   const _navigate = useNavigate();
 
-  const startImpersonationMutation =
-    orpc.portal.impersonation.start.useMutation();
-  const endImpersonationMutation = orpc.portal.impersonation.end.useMutation();
+  const startImpersonationMutation = useMutation({
+    mutationFn: (input: { clientId: string; reason: string }) =>
+      client.portal.impersonation.start(input),
+  });
+  const endImpersonationMutation = useMutation({
+    mutationFn: (input: { token: string }) =>
+      client.portal.impersonation.end(input),
+  });
 
   const startImpersonation = async (
     clientId: string,
