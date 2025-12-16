@@ -43,11 +43,9 @@ export const link = new RPCLink({
   // Call getServerUrl() to pass a resolved URL string
   url: getServerUrl(),
   async fetch(_url, options) {
-    // Handle Request objects specially - clone and modify URL
+    // Handle Request objects specially - extract URL and body
     if (_url instanceof Request) {
-      // Clone the request to avoid "body already read" errors
-      const clonedRequest = _url.clone();
-      let finalUrl = clonedRequest.url;
+      let finalUrl = _url.url;
 
       // Normalize RPC paths: convert dot notation to slash notation
       try {
@@ -63,21 +61,17 @@ export const link = new RPCLink({
         // Keep original URL if parsing fails
       }
 
-      // Create new request with modified URL, preserving body and headers
-      return fetch(
-        new Request(finalUrl, {
-          method: "POST",
-          headers: clonedRequest.headers,
-          body: clonedRequest.body,
-          credentials: "include",
-          // Preserve other request properties
-          mode: clonedRequest.mode,
-          cache: clonedRequest.cache,
-          redirect: clonedRequest.redirect,
-          referrer: clonedRequest.referrer,
-          integrity: clonedRequest.integrity,
-        })
-      );
+      // Read the body as text to avoid streaming body issues
+      // This prevents "duplex member must be specified" errors
+      const bodyText = await _url.text();
+
+      // Create fetch with extracted data
+      return fetch(finalUrl, {
+        method: "POST",
+        headers: _url.headers,
+        body: bodyText || undefined,
+        credentials: "include",
+      });
     }
 
     // Handle URL string or URL object
