@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Document Templates Seeded** - December 16, 2024
+  - Seeded 16 document templates covering GCMC and KAJ services
+  - GCMC templates: Work Permit Cover Letter, Citizenship Application Cover Letter, Sponsor Letter, Service Agreement (Immigration), Power of Attorney, Training Completion Certificate, Client Intake Form (Immigration)
+  - KAJ templates: Tax Return Submission Letter, Tax Compliance Request Letter, NIS Registration Cover Letter, Service Agreement (Bookkeeping), Service Agreement (Tax Returns), Client Intake Form (Tax Services)
+  - Shared templates: Client Welcome Letter, Document Request Letter, Service Completion Letter
+  - Templates include dynamic placeholders for client, matter, staff, and date data
+
 - **Analytics Dashboard** - December 16, 2024 (#14)
   - New Analytics page with KPI overview cards (clients, matters, deadlines, revenue)
   - Monthly trend charts showing 12-month growth patterns
@@ -66,6 +73,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated production deployment spec with completion status
 
 ### Fixed
+
+- **Audit Trail Button Not Visible** - December 16, 2024
+  - Fixed Analytics page Audit Trail button not being visible
+  - Changed PageHeader to use `actions` prop instead of children for action buttons
+  - Both Reports and Audit Trail buttons now properly render in the header
+
+- **Client Onboarding Wizard Steps Optional** - December 16, 2024
+  - Made AML/KYC Compliance step optional with skip button
+  - Made Beneficial Ownership Disclosure step optional with skip button
+  - Validation only runs when user provides data, allowing steps to be skipped
+  - Improves UX by not requiring compliance information for all client types
+
+- **Wizard Service Selection Fallback** - December 16, 2024
+  - Added missing imports for GCMC_SERVICES, KAJ_SERVICES, Checkbox, and Label components
+  - Fixed runtime errors when service catalog is empty and fallback static services are displayed
 
 - **PWA Service Worker Intercepting API Requests** (#PROD-007) - December 16, 2024
   - Fixed "Access Pending" bug where service worker intercepted API requests without proper credentials
