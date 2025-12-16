@@ -161,6 +161,74 @@ Most formatting and common issues are automatically fixed by Biome. Run `npx ult
 
 ---
 
+## oRPC + TanStack Query Patterns
+
+> **CRITICAL KNOWLEDGE** - This project uses oRPC with TanStack Query. These patterns are essential.
+
+### The Problem: 3-Level Nested oRPC Paths
+
+`createTanstackQueryUtils` from oRPC **does NOT support** 3-level nested paths. This causes "useQuery is not a function" errors.
+
+**Broken Pattern (DO NOT USE):**
+```typescript
+// ❌ This fails with "useQuery is not a function"
+orpc.clientServices.getFulfillmentProgress.useQuery({ clientId })
+orpc.knowledgeBase.delete.useMutation({ ... })
+```
+
+**Working Pattern (USE THIS):**
+```typescript
+// ✅ Use useQuery/useMutation from @tanstack/react-query directly
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { client } from "@/utils/orpc";
+
+// For queries:
+const { data } = useQuery({
+  queryKey: ["clientServices", "getFulfillmentProgress", clientId],
+  queryFn: () => client.clientServices.getFulfillmentProgress({ clientId }),
+});
+
+// For mutations:
+const mutation = useMutation({
+  mutationFn: (input: { id: string }) => client.knowledgeBase.delete(input),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
+  },
+});
+```
+
+### When Each Pattern Works
+
+| Pattern | Levels | Example | Works? |
+|---------|--------|---------|--------|
+| `orpc.clients.list.useQuery()` | 2 | `clients.list` | ✅ Yes |
+| `orpc.clientServices.getByClient.useQuery()` | 3 | `clientServices.getByClient` | ❌ No |
+| `orpc.documents.templates.list.useQuery()` | 3 | `documents.templates.list` | ❌ No |
+
+### Files That Were Fixed
+
+These files had nested oRPC patterns that were changed to use `useQuery`/`useMutation` directly:
+
+- `apps/web/src/components/clients/client-documents-tab.tsx`
+- `apps/web/src/routes/app/clients/$client-id/documents/collect.tsx`
+- `apps/web/src/routes/app/admin/knowledge-base.tsx`
+- `apps/web/src/components/documents/template-generator-dialog.tsx`
+
+### Quick Reference
+
+```typescript
+// Import from @tanstack/react-query
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+// Import client (NOT orpc) from utils
+import { client, queryClient } from "@/utils/orpc";
+
+// Use client.xxx.yyy() for API calls
+// Use queryClient.invalidateQueries() for cache invalidation
+```
+
+---
+
 ## 🚀 Production Status & Development Workflow
 
 > **CONTEXT FOR ALL AGENTS** - App is deployed to production. Use `develop` branch for new work.
