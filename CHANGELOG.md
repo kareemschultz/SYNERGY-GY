@@ -80,12 +80,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Impersonation and Template Generation Errors** - December 16, 2024
+- **Nested oRPC Router Pattern Fixes** - December 16, 2024
   - Fixed "_n.portal.impersonation.start.useMutation is not a function" error on client wizard
   - Fixed "Cannot read properties of undefined (reading 'firstName')" error on document generation
-  - **Root cause**: Nested router objects (portal.impersonation.start) don't work with `createTanstackQueryUtils`
-  - **Solution**: Changed to use `useMutation` from `@tanstack/react-query` directly with `client.portal.impersonation.start()`
-  - Added missing `client` import to `template-generator-dialog.tsx`
+  - Fixed template generator dialog using broken 3-level nested query pattern
+  - **Root cause**: Nested router objects (>2 levels like `portal.impersonation.start`, `documents.templates.list`) don't work with `createTanstackQueryUtils`
+  - **Solution**: Changed to use `useMutation`/`useQuery` from `@tanstack/react-query` directly with `client.xxx.yyy.zzz()`
   - **Affected files**: `use-impersonation.ts`, `portal-preview-panel.tsx`, `template-generator-dialog.tsx`
 
 - **oRPC Response Unwrapping** - December 16, 2024

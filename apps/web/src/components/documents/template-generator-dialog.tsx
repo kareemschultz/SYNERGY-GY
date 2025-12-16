@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Download,
   Eye,
@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { client, orpc, queryClient } from "@/utils/orpc";
+import { client, queryClient } from "@/utils/orpc";
 
 type TemplateGeneratorDialogProps = {
   clientId?: string;
@@ -64,10 +64,19 @@ export function TemplateGeneratorDialog({
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("select");
 
-  // Fetch available templates
-  const { data: templates, isLoading: loadingTemplates } =
-    orpc.documents.templates.list.useQuery(
+  // Fetch available templates - using useQuery with client for nested router pattern
+  const { data: templates, isLoading: loadingTemplates } = useQuery({
+    queryKey: [
+      "documents",
+      "templates",
+      "list",
       {
+        isActive: true,
+        category: categoryFilter === "all" ? undefined : categoryFilter,
+      },
+    ],
+    queryFn: () =>
+      client.documents.templates.list({
         isActive: true,
         category:
           categoryFilter === "all"
@@ -84,9 +93,9 @@ export function TemplateGeneratorDialog({
                 | "INVOICE"
                 | "RECEIPT"
                 | "OTHER"),
-      },
-      { enabled: open }
-    );
+      }),
+    enabled: open,
+  });
 
   // Preview mutation
   const previewMutation = useMutation({
