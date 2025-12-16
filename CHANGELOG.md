@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Deployment
+- **Production Deployment Complete** - December 16, 2024
+  - App successfully deployed to production via Docker/GHCR
+  - Staff actively adding real client data
+  - Docker image: `ghcr.io/kareemschultz/gk-nexus:latest`
+
+### Added
+- **Branch Workflow** - December 16, 2024
+  - Created `develop` branch for active development
+  - Created `staging` branch for pre-production testing
+  - Workflow: develop → staging → master (production)
+
+- **Local Docker Testing** - December 16, 2024
+  - Added `docker-compose.local.yml` for local development testing
+  - Uses separate ports (5433 for Postgres) to avoid conflicts
+  - Builds from source instead of pulling from GHCR
+
+### Changed
+- **Documentation Updates** - December 16, 2024
+  - Updated CLAUDE.md with correct oRPC + TanStack Query integration pattern
+  - Clarified: use `orpc.xxx.queryOptions()` for TanStack Query, not `client.xxx()`
+  - Added production update instructions
+  - Synced `.claude/CLAUDE.md` with root documentation
+  - Updated production deployment spec with completion status
+
 ### Fixed
 
 - **PWA Service Worker Intercepting API Requests** (#PROD-007) - December 16, 2024

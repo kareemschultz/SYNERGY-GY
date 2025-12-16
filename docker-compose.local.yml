@@ -1,0 +1,130 @@
+# =============================================================================
+# GK-Nexus Local Development Docker Compose
+# =============================================================================
+# Local testing configuration that builds fresh images from source code.
+# Uses separate ports to avoid conflicts with production deployment.
+#
+# Usage:
+#   docker compose -f docker-compose.local.yml up --build
+#   docker compose -f docker-compose.local.yml down -v  # removes volumes
+#
+# This file is for local testing only - production uses docker-compose.yml
+# with pre-built images from GHCR.
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # PostgreSQL Database (Local Testing)
+  # ===========================================================================
+  postgres:
+    image: postgres:17-alpine
+    container_name: gk-nexus-postgres-local
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: gknexus
+      POSTGRES_PASSWORD: local_dev_password
+      POSTGRES_DB: gknexus
+
+    ports:
+      # Different port to avoid conflicts with production
+      - "5433:5432"
+
+    volumes:
+      - postgres_local:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gknexus"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - gk-nexus-local
+
+  # ===========================================================================
+  # GK-Nexus Application Server (Built from Source)
+  # ===========================================================================
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_SERVER_URL: http://localhost:3000
+
+    container_name: gk-nexus-server-local
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      # Database (uses internal Docker network hostname)
+      DATABASE_URL: postgresql://gknexus:local_dev_password@postgres:5432/gknexus
+
+      # Authentication
+      BETTER_AUTH_SECRET: local-dev-secret-must-be-at-least-32-characters-long
+      BETTER_AUTH_URL: http://localhost:3000
+      CORS_ORIGIN: http://localhost:3000
+
+      # Application
+      NODE_ENV: production
+      PORT: 3000
+
+      # Initial Admin (for first run)
+      INITIAL_OWNER_EMAIL: admin@local.dev
+      INITIAL_OWNER_PASSWORD: LocalDev123!
+      INITIAL_OWNER_NAME: Local Admin
+
+    ports:
+      - "3000:3000"
+
+    volumes:
+      - uploads_local:/app/data/uploads
+      - backups_local:/app/backups
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Security hardening (same as production)
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+
+    networks:
+      - gk-nexus-local
+
+# =============================================================================
+# Named Volumes (Local Testing)
+# =============================================================================
+volumes:
+  postgres_local:
+    name: gk-nexus-postgres-local
+    driver: local
+
+  uploads_local:
+    name: gk-nexus-uploads-local
+    driver: local
+
+  backups_local:
+    name: gk-nexus-backups-local
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  gk-nexus-local:
+    driver: bridge
