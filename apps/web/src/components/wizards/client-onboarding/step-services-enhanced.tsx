@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Check, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { client } from "@/utils/orpc";
 import { WizardStep, WizardStepSection } from "../wizard-step";
@@ -12,7 +14,9 @@ import {
   BUSINESSES,
   type Business,
   type ClientOnboardingData,
+  GCMC_SERVICES,
   type GCMCService,
+  KAJ_SERVICES,
   type KAJService,
   type ServiceCatalogItem,
 } from "./types";
