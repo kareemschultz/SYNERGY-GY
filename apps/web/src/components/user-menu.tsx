@@ -19,7 +19,7 @@ export default function UserMenu() {
     return <Skeleton className="h-9 w-24" />;
   }
 
-  if (!session) {
+  if (!session?.user) {
     return (
       <Button asChild variant="outline">
         <Link to="/login">Sign In</Link>
@@ -30,12 +30,12 @@ export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">{session.user.name}</Button>
+        <Button variant="outline">{session.user.name || "User"}</Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-card">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
+        <DropdownMenuItem>{session.user.email || "No email"}</DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Button
             className="w-full"
