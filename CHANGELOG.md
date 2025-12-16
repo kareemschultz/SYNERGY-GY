@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Analytics & Audit Page oRPC Fixes** - December 16, 2024 (#PROD-007)
+  - Fixed `app.tsx` - Changed `staleTime` from procedure input to query config option
+  - Fixed `analytics/index.tsx` - Changed 8 queryOptions() calls to use `useQuery` directly
+  - Fixed `analytics/audit.tsx` - Changed 2 queryOptions() calls to use `useQuery` directly
+  - Root cause: `queryOptions()` was receiving TanStack Query options (like `staleTime`) as procedure input
+
 - **Nested oRPC Query/Mutation Pattern Fixes** - December 16, 2024 (#PROD-007)
   - Fixed `client-documents-tab.tsx` - Changed 3 nested oRPC patterns to use `useQuery` from `@tanstack/react-query`
   - Fixed `collect.tsx` - Changed 2 nested oRPC patterns for client services

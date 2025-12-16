@@ -55,7 +55,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/analytics/audit")({
   component: AuditTrailPage,
@@ -125,19 +125,22 @@ function AuditTrailPage() {
   const limit = 25;
 
   // Fetch activity logs
-  const { data: logsData, isLoading: logsLoading } = useQuery(
-    orpc.activity.list.queryOptions({
-      page,
-      limit,
-      entityType: entityType === "all" ? undefined : (entityType as "CLIENT"),
-      action: action === "all" ? undefined : (action as "CREATE"),
-    })
-  );
+  const { data: logsData, isLoading: logsLoading } = useQuery({
+    queryKey: ["activity", "list", page, limit, entityType, action],
+    queryFn: () =>
+      client.activity.list({
+        page,
+        limit,
+        entityType: entityType === "all" ? undefined : (entityType as "CLIENT"),
+        action: action === "all" ? undefined : (action as "CREATE"),
+      }),
+  });
 
   // Fetch activity stats
-  const { data: stats, isLoading: statsLoading } = useQuery(
-    orpc.activity.getStats.queryOptions({ days: 30 })
-  );
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ["activity", "getStats", 30],
+    queryFn: () => client.activity.getStats({ days: 30 }),
+  });
 
   // Transform stats for charts
   const actionChartData = stats?.byAction

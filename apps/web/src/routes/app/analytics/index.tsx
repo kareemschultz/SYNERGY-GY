@@ -31,7 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/analytics/")({
   component: AnalyticsPage,
@@ -69,44 +69,52 @@ function formatCurrency(value: number): string {
 
 function AnalyticsPage() {
   // Fetch KPIs
-  const { data: kpis, isLoading: kpisLoading } = useQuery(
-    orpc.analytics.getKPIs.queryOptions()
-  );
+  const { data: kpis, isLoading: kpisLoading } = useQuery({
+    queryKey: ["analytics", "getKPIs"],
+    queryFn: () => client.analytics.getKPIs(),
+  });
 
   // Fetch monthly trends
-  const { data: trends, isLoading: trendsLoading } = useQuery(
-    orpc.analytics.getMonthlyTrends.queryOptions({ months: 12 })
-  );
+  const { data: trends, isLoading: trendsLoading } = useQuery({
+    queryKey: ["analytics", "getMonthlyTrends", 12],
+    queryFn: () => client.analytics.getMonthlyTrends({ months: 12 }),
+  });
 
   // Fetch matters by status
-  const { data: mattersByStatus, isLoading: mattersLoading } = useQuery(
-    orpc.dashboard.getMattersByStatus.queryOptions()
-  );
+  const { data: mattersByStatus, isLoading: mattersLoading } = useQuery({
+    queryKey: ["dashboard", "getMattersByStatus"],
+    queryFn: () => client.dashboard.getMattersByStatus(),
+  });
 
   // Fetch matters by business
-  const { data: mattersByBusiness } = useQuery(
-    orpc.dashboard.getMattersByBusiness.queryOptions()
-  );
+  const { data: mattersByBusiness } = useQuery({
+    queryKey: ["dashboard", "getMattersByBusiness"],
+    queryFn: () => client.dashboard.getMattersByBusiness(),
+  });
 
   // Fetch deadline distribution
-  const { data: deadlineDistribution } = useQuery(
-    orpc.analytics.getDeadlineDistribution.queryOptions()
-  );
+  const { data: deadlineDistribution } = useQuery({
+    queryKey: ["analytics", "getDeadlineDistribution"],
+    queryFn: () => client.analytics.getDeadlineDistribution(),
+  });
 
   // Fetch client type distribution
-  const { data: clientTypes } = useQuery(
-    orpc.analytics.getClientTypeDistribution.queryOptions()
-  );
+  const { data: clientTypes } = useQuery({
+    queryKey: ["analytics", "getClientTypeDistribution"],
+    queryFn: () => client.analytics.getClientTypeDistribution(),
+  });
 
   // Fetch revenue by business
-  const { data: revenueByBusiness } = useQuery(
-    orpc.analytics.getRevenueByBusiness.queryOptions()
-  );
+  const { data: revenueByBusiness } = useQuery({
+    queryKey: ["analytics", "getRevenueByBusiness"],
+    queryFn: () => client.analytics.getRevenueByBusiness(),
+  });
 
   // Fetch staff workload
-  const { data: staffWorkload } = useQuery(
-    orpc.analytics.getStaffWorkload.queryOptions()
-  );
+  const { data: staffWorkload } = useQuery({
+    queryKey: ["analytics", "getStaffWorkload"],
+    queryFn: () => client.analytics.getStaffWorkload(),
+  });
 
   // Transform matters by status for pie chart
   const matterStatusData = mattersByStatus
