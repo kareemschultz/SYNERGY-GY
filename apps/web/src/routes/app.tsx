@@ -14,7 +14,7 @@ import {
 import UserMenu from "@/components/user-menu";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { authClient } from "@/lib/auth-client";
-import { client } from "@/utils/orpc";
+import { orpc } from "@/utils/orpc";
 import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app")({
@@ -48,12 +48,12 @@ function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 640px)");
 
-  // Check if user has staff profile - use client.xxx() pattern like dashboard
-  const { data: staffStatusRaw, isLoading: staffLoading } = useQuery({
-    queryKey: ["staffStatus"],
-    queryFn: () => client.settings.getStaffStatus(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  // Check if user has staff profile using oRPC queryOptions pattern
+  const { data: staffStatusRaw, isLoading: staffLoading } = useQuery(
+    orpc.settings.getStaffStatus.queryOptions({
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    })
+  );
 
   // Unwrap oRPC response envelope (v1.12+ wraps in { json: T })
   const staffStatus = unwrapOrpc<{

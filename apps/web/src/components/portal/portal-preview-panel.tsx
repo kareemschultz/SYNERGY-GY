@@ -8,7 +8,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { client } from "@/utils/orpc";
+import { orpc } from "@/utils/orpc";
 
 type PortalPreviewPanelProps = {
   clientId: string;
@@ -25,7 +25,7 @@ export function PortalPreviewPanel({
   const [isLoading, setIsLoading] = useState(false);
 
   const startImpersonationMutation =
-    client.portal.impersonation.start.useMutation();
+    orpc.portal.impersonation.start.useMutation();
 
   const handleOpen = async () => {
     if (!open) {

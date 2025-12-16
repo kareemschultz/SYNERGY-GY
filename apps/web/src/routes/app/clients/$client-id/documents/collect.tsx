@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { client } from "@/utils/orpc";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/app/clients/$client-id/documents/collect"
@@ -23,9 +23,9 @@ function ClientDocumentCollectionPage() {
   const { "client-id": clientId } = Route.useParams();
 
   const { data: services, refetch: refetchServices } =
-    client.clientServices.getByClient.useQuery({ clientId });
+    orpc.clientServices.getByClient.useQuery({ clientId });
   const { data: progress, refetch: refetchProgress } =
-    client.clientServices.getFulfillmentProgress.useQuery({ clientId });
+    orpc.clientServices.getFulfillmentProgress.useQuery({ clientId });
 
   const refetch = () => {
     refetchServices();

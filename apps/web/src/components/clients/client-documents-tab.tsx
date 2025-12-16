@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { client } from "@/utils/orpc";
+import { orpc } from "@/utils/orpc";
 
 type ClientDocumentsTabProps = {
   clientId: string;
@@ -30,11 +30,11 @@ export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
   const [view, setView] = useState("service");
 
   const { data: progress } =
-    client.clientServices.getFulfillmentProgress.useQuery({ clientId });
-  const { data: services } = client.clientServices.getByClient.useQuery({
+    orpc.clientServices.getFulfillmentProgress.useQuery({ clientId });
+  const { data: services } = orpc.clientServices.getByClient.useQuery({
     clientId,
   });
-  const { data: allDocuments } = client.documents.getByClient.useQuery({
+  const { data: allDocuments } = orpc.documents.getByClient.useQuery({
     clientId,
   });
 

@@ -38,7 +38,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { client, queryClient } from "@/utils/orpc";
+import { orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/admin/knowledge-base")({
   component: AdminKnowledgeBasePage,
@@ -49,11 +49,11 @@ function AdminKnowledgeBasePage() {
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = client.knowledgeBase.list.useQuery({
+  const { data, isLoading } = orpc.knowledgeBase.list.useQuery({
     search: search || undefined,
   });
 
-  const deleteMutation = client.knowledgeBase.delete.useMutation({
+  const deleteMutation = orpc.knowledgeBase.delete.useMutation({
     onSuccess: () => {
       toast.success("Item deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
@@ -242,7 +242,7 @@ function KBItemDialog({
   // Use a key to force re-render when initialData changes or dialog opens
   // Move logic to wrapper or useEffect
 
-  const createMutation = client.knowledgeBase.create.useMutation({
+  const createMutation = orpc.knowledgeBase.create.useMutation({
     onSuccess: async (_newItem) => {
       if (formData.file) {
         // Upload file if selected
@@ -287,7 +287,7 @@ function KBItemDialog({
     onError: (error) => toast.error(error.message),
   });
 
-  const updateMutation = client.knowledgeBase.update.useMutation({
+  const updateMutation = orpc.knowledgeBase.update.useMutation({
     onSuccess: () => {
       toast.success("Resource updated successfully");
       queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
