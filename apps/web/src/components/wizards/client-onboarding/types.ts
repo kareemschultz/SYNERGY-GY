@@ -114,31 +114,55 @@ export const GCMC_SERVICES = [
     value: "TRAINING",
     label: "Training Services",
     description: "HR, Customer Relations, Supervisory Management",
+    documentRequirements: [],
   },
   {
     value: "CONSULTING",
     label: "Consulting",
     description: "Business Development, Management Consulting",
+    documentRequirements: [],
   },
   {
     value: "PARALEGAL",
     label: "Paralegal Services",
     description: "Affidavits, Agreements, Wills, Power of Attorney",
+    documentRequirements: [
+      "National ID or Passport",
+      "Proof of Address",
+      "Relevant Supporting Documents",
+    ],
   },
   {
     value: "IMMIGRATION",
     label: "Immigration",
     description: "Work Permits, Citizenship, Business Visas",
+    documentRequirements: [
+      "Valid Passport (6+ months validity)",
+      "Passport Photos (4 copies)",
+      "Police Clearance Certificate",
+      "Medical Certificate",
+      "Employment Contract/Letter",
+    ],
   },
   {
     value: "BUSINESS_REGISTRATION",
     label: "Business Registration",
     description: "Incorporation, Business Name, Partnerships",
+    documentRequirements: [
+      "National ID of Directors/Owners",
+      "Proof of Address",
+      "Draft Articles of Association",
+    ],
   },
   {
     value: "BUSINESS_PROPOSAL",
     label: "Business Proposals",
     description: "Land Applications, Investment Proposals",
+    documentRequirements: [
+      "Business Plan",
+      "Financial Projections",
+      "Company Profile",
+    ],
   },
 ] as const;
 
@@ -147,36 +171,73 @@ export const KAJ_SERVICES = [
     value: "TAX_RETURN",
     label: "Tax Returns",
     description: "Individual, Corporate, Self-Employed",
+    documentRequirements: [
+      "TIN Certificate",
+      "Previous Year Tax Return (if any)",
+      "Income Documentation (Pay Slips, Contracts)",
+      "Bank Statements",
+    ],
   },
   {
     value: "COMPLIANCE",
     label: "Compliance Certificates",
     description: "Tender, Work Permit, Land Transfer",
+    documentRequirements: [
+      "TIN Certificate",
+      "NIS Compliance",
+      "Latest Tax Return",
+    ],
   },
   {
     value: "PAYE",
     label: "PAYE Services",
     description: "PAYE Returns",
+    documentRequirements: [
+      "Employee List with TINs",
+      "Payroll Records",
+      "Previous PAYE Returns",
+    ],
   },
   {
     value: "FINANCIAL_STATEMENT",
     label: "Financial Statements",
     description: "Income/Expenditure, Balance Sheets",
+    documentRequirements: [
+      "Bank Statements (12 months)",
+      "Invoices and Receipts",
+      "Previous Financial Statements",
+    ],
   },
   {
     value: "NIS_SERVICES",
     label: "NIS Services",
     description: "Registration, Contributions, Pension",
+    documentRequirements: [
+      "National ID",
+      "Birth Certificate",
+      "Proof of Employment",
+    ],
   },
   {
     value: "BOOKKEEPING",
     label: "Bookkeeping",
     description: "Monthly Bookkeeping, Payroll",
+    documentRequirements: [
+      "Bank Statements",
+      "Invoices and Receipts",
+      "Expense Records",
+    ],
   },
   {
     value: "AUDIT",
     label: "Audit Services",
     description: "NGO & Co-operative Audits",
+    documentRequirements: [
+      "Financial Statements",
+      "Bank Statements",
+      "Minutes of Meetings",
+      "Membership Register",
+    ],
   },
 ] as const;
 

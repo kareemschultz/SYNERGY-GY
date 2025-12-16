@@ -12,6 +12,8 @@ import {
   BUSINESSES,
   type Business,
   type ClientOnboardingData,
+  type GCMCService,
+  type KAJService,
   type ServiceCatalogItem,
 } from "./types";
 
@@ -45,6 +47,10 @@ export function StepServicesEnhanced({
     enabled: data.businesses.includes("KAJ"),
   });
 
+  // Check if catalog data is available
+  const hasGcmcCatalog = gcmcData && Object.keys(gcmcData).length > 0;
+  const hasKajCatalog = kajData && Object.keys(kajData).length > 0;
+
   const toggleBusiness = (business: Business) => {
     const current = data.businesses;
     const updated = current.includes(business)
@@ -53,28 +59,32 @@ export function StepServicesEnhanced({
 
     // Clear services for deselected businesses
     const updates: Partial<ClientOnboardingData> = { businesses: updated };
-    if (!updated.includes("GCMC") && gcmcData) {
-      // Remove GCMC service IDs from selectedServiceIds
-      const gcmcServiceIds = new Set(
-        Object.values(gcmcData).flatMap((cat: any) =>
-          cat.services.map((s: any) => s.id)
-        )
-      );
-      updates.selectedServiceIds = data.selectedServiceIds.filter(
-        (id) => !gcmcServiceIds.has(id)
-      );
+    if (!updated.includes("GCMC")) {
+      if (gcmcData) {
+        // Remove GCMC service IDs from selectedServiceIds
+        const gcmcServiceIds = new Set(
+          Object.values(gcmcData).flatMap((cat: any) =>
+            cat.services.map((s: any) => s.id)
+          )
+        );
+        updates.selectedServiceIds = data.selectedServiceIds.filter(
+          (id) => !gcmcServiceIds.has(id)
+        );
+      }
       updates.gcmcServices = [];
     }
-    if (!updated.includes("KAJ") && kajData) {
-      // Remove KAJ service IDs from selectedServiceIds
-      const kajServiceIds = new Set(
-        Object.values(kajData).flatMap((cat: any) =>
-          cat.services.map((s: any) => s.id)
-        )
-      );
-      updates.selectedServiceIds = data.selectedServiceIds.filter(
-        (id) => !kajServiceIds.has(id)
-      );
+    if (!updated.includes("KAJ")) {
+      if (kajData) {
+        // Remove KAJ service IDs from selectedServiceIds
+        const kajServiceIds = new Set(
+          Object.values(kajData).flatMap((cat: any) =>
+            cat.services.map((s: any) => s.id)
+          )
+        );
+        updates.selectedServiceIds = data.selectedServiceIds.filter(
+          (id) => !kajServiceIds.has(id)
+        );
+      }
       updates.kajServices = [];
     }
 
@@ -88,6 +98,23 @@ export function StepServicesEnhanced({
       : [...current, serviceId];
 
     onUpdate({ selectedServiceIds: updated });
+  };
+
+  // Fallback toggle functions for static services
+  const toggleGCMCService = (service: GCMCService) => {
+    const current = data.gcmcServices;
+    const updated = current.includes(service)
+      ? current.filter((s) => s !== service)
+      : [...current, service];
+    onUpdate({ gcmcServices: updated });
+  };
+
+  const toggleKAJService = (service: KAJService) => {
+    const current = data.kajServices;
+    const updated = current.includes(service)
+      ? current.filter((s) => s !== service)
+      : [...current, service];
+    onUpdate({ kajServices: updated });
   };
 
   return (
@@ -151,7 +178,7 @@ export function StepServicesEnhanced({
       {data.businesses.includes("GCMC") ? (
         <WizardStepSection
           className="mt-6"
-          description="Select the specific GCMC services the client needs"
+          description="Select the GCMC services the client is interested in"
           title={
             <span className="flex items-center gap-2">
               GCMC Services
@@ -168,7 +195,7 @@ export function StepServicesEnhanced({
             <div className="flex items-center justify-center py-8">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
-          ) : gcmcData && Object.keys(gcmcData).length > 0 ? (
+          ) : hasGcmcCatalog ? (
             <div className="space-y-3">
               {Object.entries(gcmcData).map(
                 ([categoryKey, category]: [string, any]) => (
@@ -197,9 +224,32 @@ export function StepServicesEnhanced({
               )}
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">
-              No services available. Please contact support.
-            </p>
+            // Fallback to static services when catalog is empty
+            <div className="grid gap-2 sm:grid-cols-2">
+              {GCMC_SERVICES.map((service) => (
+                <div
+                  className="flex items-start space-x-3 rounded-lg border p-3"
+                  key={service.value}
+                >
+                  <Checkbox
+                    checked={data.gcmcServices.includes(service.value)}
+                    id={`gcmc-${service.value}`}
+                    onCheckedChange={() => toggleGCMCService(service.value)}
+                  />
+                  <div className="grid gap-0.5 leading-none">
+                    <Label
+                      className="cursor-pointer font-medium"
+                      htmlFor={`gcmc-${service.value}`}
+                    >
+                      {service.label}
+                    </Label>
+                    <span className="text-muted-foreground text-xs">
+                      {service.description}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </WizardStepSection>
       ) : null}
@@ -208,7 +258,7 @@ export function StepServicesEnhanced({
       {data.businesses.includes("KAJ") ? (
         <WizardStepSection
           className="mt-6"
-          description="Select the specific KAJ services the client needs"
+          description="Select the KAJ services the client is interested in"
           title={
             <span className="flex items-center gap-2">
               KAJ Services
@@ -225,7 +275,7 @@ export function StepServicesEnhanced({
             <div className="flex items-center justify-center py-8">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
-          ) : kajData && Object.keys(kajData).length > 0 ? (
+          ) : hasKajCatalog ? (
             <div className="space-y-3">
               {Object.entries(kajData).map(
                 ([categoryKey, category]: [string, any]) => (
@@ -254,9 +304,32 @@ export function StepServicesEnhanced({
               )}
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm">
-              No services available. Please contact support.
-            </p>
+            // Fallback to static services when catalog is empty
+            <div className="grid gap-2 sm:grid-cols-2">
+              {KAJ_SERVICES.map((service) => (
+                <div
+                  className="flex items-start space-x-3 rounded-lg border p-3"
+                  key={service.value}
+                >
+                  <Checkbox
+                    checked={data.kajServices.includes(service.value)}
+                    id={`kaj-${service.value}`}
+                    onCheckedChange={() => toggleKAJService(service.value)}
+                  />
+                  <div className="grid gap-0.5 leading-none">
+                    <Label
+                      className="cursor-pointer font-medium"
+                      htmlFor={`kaj-${service.value}`}
+                    >
+                      {service.label}
+                    </Label>
+                    <span className="text-muted-foreground text-xs">
+                      {service.description}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </WizardStepSection>
       ) : null}

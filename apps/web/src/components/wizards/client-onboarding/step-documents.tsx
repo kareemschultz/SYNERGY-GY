@@ -43,62 +43,94 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
   // Fetch selected services to get their document requirements
   useEffect(() => {
     async function fetchServiceDetails() {
-      if (!data.selectedServiceIds || data.selectedServiceIds.length === 0) {
-        setServicesWithDocs([]);
-        return;
-      }
+      const allServices: ServiceWithDocuments[] = [];
 
-      setIsLoadingServices(true);
-      try {
-        // Fetch all service details (use allSettled to handle individual failures)
-        const servicePromises = data.selectedServiceIds.map((id) =>
-          client.serviceCatalog.services.getById.query({ id })
-        );
-        const results = await Promise.allSettled(servicePromises);
-
-        // Extract successful results and filter for services with document requirements
-        const services = results
-          .filter(
-            (
-              result
-            ): result is PromiseFulfilledResult<
-              Awaited<(typeof servicePromises)[0]>
-            > => result.status === "fulfilled"
-          )
-          .map((result) => result.value)
-          .filter(
-            (service) =>
-              service.documentRequirements &&
-              service.documentRequirements.length > 0
-          )
-          .map((service) => ({
-            id: service.id,
-            name: service.name,
-            displayName: service.displayName,
-            documentRequirements: service.documentRequirements || [],
-          }));
-
-        setServicesWithDocs(services);
-
-        // Log any failed service lookups
-        const failedResults = results.filter(
-          (result) => result.status === "rejected"
-        );
-        if (failedResults.length > 0) {
-          console.warn(
-            `Failed to fetch ${failedResults.length} service(s):`,
-            failedResults
+      // First, check for catalog-based services (selectedServiceIds)
+      if (data.selectedServiceIds && data.selectedServiceIds.length > 0) {
+        setIsLoadingServices(true);
+        try {
+          // Fetch all service details (use allSettled to handle individual failures)
+          const servicePromises = data.selectedServiceIds.map((id) =>
+            client.serviceCatalog.services.getById.query({ id })
           );
+          const results = await Promise.allSettled(servicePromises);
+
+          // Extract successful results and filter for services with document requirements
+          const catalogServices = results
+            .filter(
+              (
+                result
+              ): result is PromiseFulfilledResult<
+                Awaited<(typeof servicePromises)[0]>
+              > => result.status === "fulfilled"
+            )
+            .map((result) => result.value)
+            .filter(
+              (service) =>
+                service.documentRequirements &&
+                service.documentRequirements.length > 0
+            )
+            .map((service) => ({
+              id: service.id,
+              name: service.name,
+              displayName: service.displayName,
+              documentRequirements: service.documentRequirements || [],
+            }));
+
+          allServices.push(...catalogServices);
+
+          // Log any failed service lookups
+          const failedResults = results.filter(
+            (result) => result.status === "rejected"
+          );
+          if (failedResults.length > 0) {
+            console.warn(
+              `Failed to fetch ${failedResults.length} service(s):`,
+              failedResults
+            );
+          }
+        } catch (error) {
+          console.error("Failed to fetch service details:", error);
+        } finally {
+          setIsLoadingServices(false);
         }
-      } catch (error) {
-        console.error("Failed to fetch service details:", error);
-      } finally {
-        setIsLoadingServices(false);
       }
+
+      // Then, check for static/fallback services (gcmcServices, kajServices)
+      // This handles the case when service catalog is empty
+      if (data.gcmcServices && data.gcmcServices.length > 0) {
+        const gcmcStaticServices = GCMC_SERVICES.filter((s) =>
+          data.gcmcServices.includes(s.value)
+        )
+          .filter((s) => s.documentRequirements.length > 0)
+          .map((s) => ({
+            id: `static-gcmc-${s.value}`,
+            name: s.value,
+            displayName: s.label,
+            documentRequirements: [...s.documentRequirements],
+          }));
+        allServices.push(...gcmcStaticServices);
+      }
+
+      if (data.kajServices && data.kajServices.length > 0) {
+        const kajStaticServices = KAJ_SERVICES.filter((s) =>
+          data.kajServices.includes(s.value)
+        )
+          .filter((s) => s.documentRequirements.length > 0)
+          .map((s) => ({
+            id: `static-kaj-${s.value}`,
+            name: s.value,
+            displayName: s.label,
+            documentRequirements: [...s.documentRequirements],
+          }));
+        allServices.push(...kajStaticServices);
+      }
+
+      setServicesWithDocs(allServices);
     }
 
     fetchServiceDetails();
-  }, [data.selectedServiceIds]);
+  }, [data.selectedServiceIds, data.gcmcServices, data.kajServices]);
 
   // Combine service-based and general requirements
   const generalRequirements = getRequiredDocumentsByServices(data);
