@@ -52,23 +52,27 @@ const app = new Hono();
 
 console.log("SERVER_BOOT_MARKER", new Date().toISOString());
 
-// Hard-block RPC paths with dots (route-level guard, runs before middleware)
+// Hard-block RPC paths with dots (middleware guard, runs before other handlers)
 // This prevents Request mutation issues and provides clear error messages
-app.all(/^\/rpc\/.*\..*$/, (c) => {
-  const url = new URL(c.req.url);
-  const expectedPath = url.pathname.replace(/\./g, "/");
-  console.log(
-    `[DOT_PATH_BLOCKED] receivedPath: ${url.pathname}, expectedPath: ${expectedPath}`
-  );
-  return c.json(
-    {
-      error: "Invalid RPC path format",
-      message: "Use forward slashes instead of dots.",
-      receivedPath: url.pathname,
-      expectedPath,
-    },
-    400
-  );
+const DOT_IN_RPC_PATH = /^\/rpc\/.*\..*$/;
+app.use("/*", async (c, next) => {
+  const path = new URL(c.req.url).pathname;
+  if (DOT_IN_RPC_PATH.test(path)) {
+    const expectedPath = path.replace(/\./g, "/");
+    console.log(
+      `[DOT_PATH_BLOCKED] receivedPath: ${path}, expectedPath: ${expectedPath}`
+    );
+    return c.json(
+      {
+        error: "Invalid RPC path format",
+        message: "Use forward slashes instead of dots.",
+        receivedPath: path,
+        expectedPath,
+      },
+      400
+    );
+  }
+  return next();
 });
 
 app.use(

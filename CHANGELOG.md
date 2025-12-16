@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Docker Bundling Crash: "handler is not a function"** (#PROD-007) - December 15, 2024
+  - Fixed server crash on request handling with `TypeError: handler is not a function (handler is RegExp)`
+  - **Root cause**: Bun's bundler with `--minify` incorrectly transforms code patterns in `@orpc/*` and `hono` packages
+  - **Solution**: Mark problematic packages as external during bundling (`--external hono --external '@orpc/*' --external better-auth --external drizzle-orm --external postgres`)
+  - **Trade-off**: Image size increases slightly since node_modules must be included, but server now starts reliably
+  - **Packages affected**: hono, @hono/*, @orpc/*, better-auth, drizzle-orm, postgres
+  - These packages have dynamic code patterns that break when minified
+
 - **Access Pending Bug After oRPC Upgrade** (#PROD-007) - December 15, 2024
   - Fixed "Access Pending" screen showing for authenticated users with valid staff profiles
   - **Root cause**: oRPC v1.12.3 wraps responses in a `json` property, but frontend code wasn't updated after upgrade
