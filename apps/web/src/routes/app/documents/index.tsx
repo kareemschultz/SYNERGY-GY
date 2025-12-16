@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Archive,
@@ -13,11 +13,13 @@ import {
   Search,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { BulkActionsToolbar } from "@/components/bulk-actions/bulk-actions-toolbar";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +42,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { client, queryClient } from "@/utils/orpc";
+import { useSelection } from "@/hooks/use-selection";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/documents/")({
   component: DocumentsPage,
@@ -85,6 +88,18 @@ const categoryLabels: Record<string, { label: string; className: string }> = {
   },
 };
 
+const categoryValues = [
+  "IDENTITY",
+  "TAX",
+  "FINANCIAL",
+  "LEGAL",
+  "IMMIGRATION",
+  "BUSINESS",
+  "CORRESPONDENCE",
+  "TRAINING",
+  "OTHER",
+] as const;
+
 function getFileIcon(mimeType: string) {
   if (mimeType.startsWith("image/")) {
     return <Image className="h-4 w-4" />;
@@ -110,6 +125,8 @@ function DocumentsPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
 
+  const queryClient = useQueryClient();
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["documents", { search, category: categoryFilter, page }],
     queryFn: () =>
@@ -120,16 +137,7 @@ function DocumentsPage() {
         category:
           categoryFilter === "all"
             ? undefined
-            : (categoryFilter as
-                | "IDENTITY"
-                | "TAX"
-                | "FINANCIAL"
-                | "LEGAL"
-                | "IMMIGRATION"
-                | "BUSINESS"
-                | "CORRESPONDENCE"
-                | "TRAINING"
-                | "OTHER"),
+            : (categoryFilter as (typeof categoryValues)[number]),
         status: "ACTIVE",
       }),
   });
@@ -138,6 +146,23 @@ function DocumentsPage() {
     queryKey: ["documentStats"],
     queryFn: () => client.documents.getStats(),
   });
+
+  const documents = data?.documents || [];
+  const {
+    selectedIdsArray,
+    selectedCount,
+    isAllSelected,
+    isPartiallySelected,
+    isSelected,
+    toggleSelection,
+    toggleSelectAll,
+    clearSelection,
+  } = useSelection(documents);
+
+  // Clear selection when filters/search/page changes
+  useEffect(() => {
+    clearSelection();
+  }, [search, categoryFilter, page, clearSelection]);
 
   const handleDownload = async (docId: string) => {
     try {
@@ -162,7 +187,6 @@ function DocumentsPage() {
     mutationFn: (docId: string) => client.documents.archive({ id: docId }),
     onSuccess: () => {
       toast.success("Document archived successfully");
-      // Invalidate queries to refresh the list
       // biome-ignore lint/complexity/noVoid: Auto-fix
       void queryClient.invalidateQueries({ queryKey: ["documents"] });
       // biome-ignore lint/complexity/noVoid: Auto-fix
@@ -172,6 +196,58 @@ function DocumentsPage() {
       toast.error("Failed to archive document");
     },
   });
+
+  // Bulk archive mutation
+  const bulkArchiveMutation = useMutation({
+    mutationFn: (ids: string[]) => client.documents.bulk.archive({ ids }),
+    onSuccess: (result) => {
+      toast.success(`Archived ${result.count} document(s)`);
+      // biome-ignore lint/complexity/noVoid: Auto-fix
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      // biome-ignore lint/complexity/noVoid: Auto-fix
+      void queryClient.invalidateQueries({ queryKey: ["documentStats"] });
+      clearSelection();
+    },
+    onError: () => {
+      toast.error("Failed to archive documents");
+    },
+  });
+
+  // Bulk update category mutation
+  const bulkUpdateCategoryMutation = useMutation({
+    mutationFn: ({
+      ids,
+      category,
+    }: {
+      ids: string[];
+      category: (typeof categoryValues)[number];
+    }) => client.documents.bulk.updateCategory({ ids, category }),
+    onSuccess: (result) => {
+      toast.success(`Updated category for ${result.count} document(s)`);
+      // biome-ignore lint/complexity/noVoid: Auto-fix
+      void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      // biome-ignore lint/complexity/noVoid: Auto-fix
+      void queryClient.invalidateQueries({ queryKey: ["documentStats"] });
+      clearSelection();
+    },
+    onError: () => {
+      toast.error("Failed to update category");
+    },
+  });
+
+  const handleBulkArchive = () => {
+    if (selectedIdsArray.length > 0) {
+      bulkArchiveMutation.mutate(selectedIdsArray);
+    }
+  };
+
+  const handleBulkUpdateCategory = (
+    category: (typeof categoryValues)[number]
+  ) => {
+    if (selectedIdsArray.length > 0) {
+      bulkUpdateCategoryMutation.mutate({ ids: selectedIdsArray, category });
+    }
+  };
 
   return (
     <div className="flex flex-col">
@@ -287,6 +363,15 @@ function DocumentsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    aria-label="Select all documents"
+                    checked={
+                      isAllSelected || (isPartiallySelected && "indeterminate")
+                    }
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Client</TableHead>
@@ -299,7 +384,7 @@ function DocumentsPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={7}>
+                  <TableCell className="h-32 text-center" colSpan={8}>
                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading documents...
@@ -308,9 +393,19 @@ function DocumentsPage() {
                 </TableRow>
                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
                 // biome-ignore lint/style/noNestedTernary: Auto-fix
-              ) : data?.documents && data.documents.length > 0 ? (
-                data.documents.map((doc) => (
-                  <TableRow key={doc.id}>
+              ) : documents.length > 0 ? (
+                documents.map((doc) => (
+                  <TableRow
+                    className={isSelected(doc.id) ? "bg-muted/50" : undefined}
+                    key={doc.id}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Select ${doc.originalName}`}
+                        checked={isSelected(doc.id)}
+                        onCheckedChange={() => toggleSelection(doc.id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getFileIcon(doc.mimeType)}
@@ -386,7 +481,7 @@ function DocumentsPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={7}>
+                  <TableCell className="h-32 text-center" colSpan={8}>
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <FolderOpen className="h-8 w-8" />
                       <p>No documents found</p>
@@ -431,6 +526,46 @@ function DocumentsPage() {
             </div>
           </div>
         )}
+
+        {/* Bulk Actions Toolbar */}
+        <BulkActionsToolbar
+          entityName="documents"
+          onClearSelection={clearSelection}
+          selectedCount={selectedCount}
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                disabled={bulkUpdateCategoryMutation.isPending}
+                size="sm"
+                variant="outline"
+              >
+                {bulkUpdateCategoryMutation.isPending
+                  ? "Updating..."
+                  : "Change Category"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {categoryValues.map((category) => (
+                <DropdownMenuItem
+                  key={category}
+                  onClick={() => handleBulkUpdateCategory(category)}
+                >
+                  <CategoryBadge category={category} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            disabled={bulkArchiveMutation.isPending}
+            onClick={handleBulkArchive}
+            size="sm"
+            variant="destructive"
+          >
+            <Archive className="mr-2 h-4 w-4" />
+            {bulkArchiveMutation.isPending ? "Archiving..." : "Archive"}
+          </Button>
+        </BulkActionsToolbar>
       </div>
     </div>
   );

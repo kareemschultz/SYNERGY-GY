@@ -1,10 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, MoreHorizontal, Plus, Search, Wand2 } from "lucide-react";
-import { useState } from "react";
+import {
+  Download,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Wand2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { BulkActionsToolbar } from "@/components/bulk-actions/bulk-actions-toolbar";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +36,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useSelection } from "@/hooks/use-selection";
+import { useToast } from "@/hooks/use-toast";
 import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/matters/")({
@@ -79,11 +90,25 @@ const priorityLabels: Record<string, { label: string; className: string }> = {
   },
 };
 
+const statusValues = [
+  "NEW",
+  "IN_PROGRESS",
+  "PENDING_CLIENT",
+  "SUBMITTED",
+  "COMPLETE",
+  "CANCELLED",
+] as const;
+
+const priorityValues = ["LOW", "NORMAL", "HIGH", "URGENT"] as const;
+
 function MattersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [businessFilter, setBusinessFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data, isLoading, error } = useQuery({
     queryKey: [
@@ -111,6 +136,121 @@ function MattersPage() {
             : (businessFilter as "GCMC" | "KAJ"),
       }),
   });
+
+  const matters = data?.matters || [];
+  const {
+    selectedIds,
+    selectedIdsArray,
+    selectedCount,
+    isAllSelected,
+    isPartiallySelected,
+    isSelected,
+    toggleSelection,
+    toggleSelectAll,
+    clearSelection,
+  } = useSelection(matters);
+
+  // Clear selection when filters/search/page changes
+  useEffect(() => {
+    clearSelection();
+  }, [search, statusFilter, businessFilter, page, clearSelection]);
+
+  // Bulk export mutation
+  const exportMutation = useMutation({
+    mutationFn: (ids: string[]) => client.matters.bulk.export({ ids }),
+    onSuccess: (result) => {
+      // Download CSV file
+      const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `matters-export-${new Date().toISOString().split("T")[0]}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+
+      toast({
+        title: "Export complete",
+        description: `Exported ${result.count} matter(s) to CSV`,
+      });
+      clearSelection();
+    },
+    onError: () => {
+      toast({
+        title: "Export failed",
+        description: "Failed to export matters. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk update status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: ({
+      ids,
+      status,
+    }: {
+      ids: string[];
+      status: (typeof statusValues)[number];
+    }) => client.matters.bulk.updateStatus({ ids, status }),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["matters"] });
+      toast({
+        title: "Status updated",
+        description: `Updated ${result.count} matter(s)`,
+      });
+      clearSelection();
+    },
+    onError: () => {
+      toast({
+        title: "Update failed",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Bulk update priority mutation
+  const updatePriorityMutation = useMutation({
+    mutationFn: ({
+      ids,
+      priority,
+    }: {
+      ids: string[];
+      priority: (typeof priorityValues)[number];
+    }) => client.matters.bulk.updatePriority({ ids, priority }),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["matters"] });
+      toast({
+        title: "Priority updated",
+        description: `Updated ${result.count} matter(s)`,
+      });
+      clearSelection();
+    },
+    onError: () => {
+      toast({
+        title: "Update failed",
+        description: "Failed to update priority. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleExport = () => {
+    if (selectedIdsArray.length > 0) {
+      exportMutation.mutate(selectedIdsArray);
+    }
+  };
+
+  const handleUpdateStatus = (status: (typeof statusValues)[number]) => {
+    if (selectedIdsArray.length > 0) {
+      updateStatusMutation.mutate({ ids: selectedIdsArray, status });
+    }
+  };
+
+  const handleUpdatePriority = (priority: (typeof priorityValues)[number]) => {
+    if (selectedIdsArray.length > 0) {
+      updatePriorityMutation.mutate({ ids: selectedIdsArray, priority });
+    }
+  };
 
   return (
     <div className="flex flex-col">
@@ -206,6 +346,15 @@ function MattersPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    aria-label="Select all matters"
+                    checked={
+                      isAllSelected || (isPartiallySelected && "indeterminate")
+                    }
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Reference</TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>Client</TableHead>
@@ -219,7 +368,7 @@ function MattersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={8}>
+                  <TableCell className="h-32 text-center" colSpan={9}>
                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading matters...
@@ -228,9 +377,19 @@ function MattersPage() {
                 </TableRow>
                 // biome-ignore lint/nursery/noLeakedRender: Auto-fix
                 // biome-ignore lint/style/noNestedTernary: Auto-fix
-              ) : data?.matters && data.matters.length > 0 ? (
-                data.matters.map((m) => (
-                  <TableRow key={m.id}>
+              ) : matters.length > 0 ? (
+                matters.map((m) => (
+                  <TableRow
+                    className={isSelected(m.id) ? "bg-muted/50" : undefined}
+                    key={m.id}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Select ${m.referenceNumber}`}
+                        checked={isSelected(m.id)}
+                        onCheckedChange={() => toggleSelection(m.id)}
+                      />
+                    </TableCell>
                     <TableCell className="font-mono text-sm">
                       <Link
                         className="hover:underline"
@@ -304,7 +463,7 @@ function MattersPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={8}>
+                  <TableCell className="h-32 text-center" colSpan={9}>
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <p>No matters found</p>
                       <Button asChild size="sm">
@@ -348,6 +507,69 @@ function MattersPage() {
             </div>
           </div>
         )}
+
+        {/* Bulk Actions Toolbar */}
+        <BulkActionsToolbar
+          entityName="matters"
+          onClearSelection={clearSelection}
+          selectedCount={selectedCount}
+        >
+          <Button
+            disabled={exportMutation.isPending}
+            onClick={handleExport}
+            size="sm"
+            variant="outline"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {exportMutation.isPending ? "Exporting..." : "Export CSV"}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                disabled={updateStatusMutation.isPending}
+                size="sm"
+                variant="outline"
+              >
+                {updateStatusMutation.isPending
+                  ? "Updating..."
+                  : "Update Status"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {statusValues.map((status) => (
+                <DropdownMenuItem
+                  key={status}
+                  onClick={() => handleUpdateStatus(status)}
+                >
+                  <StatusBadge status={status} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                disabled={updatePriorityMutation.isPending}
+                size="sm"
+                variant="outline"
+              >
+                {updatePriorityMutation.isPending
+                  ? "Updating..."
+                  : "Update Priority"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {priorityValues.map((priority) => (
+                <DropdownMenuItem
+                  key={priority}
+                  onClick={() => handleUpdatePriority(priority)}
+                >
+                  <PriorityBadge priority={priority} />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </BulkActionsToolbar>
       </div>
     </div>
   );

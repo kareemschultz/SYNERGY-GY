@@ -9,16 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Bulk Actions for Clients** - December 16, 2024
-  - Added checkbox selection for client rows in table view
-  - Implemented bulk archive action for multiple clients
-  - Implemented bulk export to CSV for selected clients
-  - Created reusable `useSelection` hook for managing selection state
-  - Created `BulkActionsToolbar` component for consistent bulk action UI
-  - Added `clients.bulk.archive`, `clients.bulk.export`, `clients.bulk.updateStatus`, `clients.bulk.assignStaff` API endpoints
-  - Selection clears when filters, search, or page changes
+- **Bulk Actions for All List Pages** - December 16, 2024
+  - Created reusable `useSelection` hook for managing row selection state
+  - Created `BulkActionsToolbar` component for consistent bulk action UI across all lists
+  - Selection clears automatically when filters, search, or page changes
   - **Files added**: `use-selection.ts`, `bulk-actions-toolbar.tsx`
-  - **Files modified**: `clients/index.tsx`, `routers/clients.ts`
+
+  - **Clients bulk actions**: Archive, Export CSV, Update Status, Assign Staff
+    - API endpoints: `clients.bulk.archive`, `clients.bulk.export`, `clients.bulk.updateStatus`, `clients.bulk.assignStaff`
+    - **Files modified**: `clients/index.tsx`, `routers/clients.ts`
+
+  - **Matters bulk actions**: Export CSV, Update Status, Update Priority
+    - API endpoints: `matters.bulk.export`, `matters.bulk.updateStatus`, `matters.bulk.updatePriority`, `matters.bulk.assignStaff`
+    - **Files modified**: `matters/index.tsx`, `routers/matters.ts`
+
+  - **Documents bulk actions**: Change Category, Archive
+    - API endpoints: `documents.bulk.archive`, `documents.bulk.updateCategory`, `documents.bulk.assignToClient`, `documents.bulk.assignToMatter`
+    - **Files modified**: `documents/index.tsx`, `routers/documents.ts`
+
+  - **Invoices bulk actions**: Export CSV, Mark as Paid
+    - API endpoints: `invoices.bulk.export`, `invoices.bulk.updateStatus`, `invoices.bulk.markAsPaid`
+    - **Files modified**: `invoices/index.tsx`, `routers/invoices.ts`
 
 - **Services Tab on Client Detail Page** - December 16, 2024
   - Added Services tab to client detail page for managing services after initial onboarding

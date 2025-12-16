@@ -1040,4 +1040,190 @@ export const invoicesRouter = {
 
       return updated;
     }),
+
+  // Bulk operations
+  bulk: {
+    /**
+     * Update status for multiple invoices
+     */
+    updateStatus: staffProcedure
+      .input(
+        z.object({
+          ids: z.array(z.string()).min(1),
+          status: z.enum(invoiceStatusValues),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Verify access to all invoices
+        const invoicesToUpdate = await db.query.invoice.findMany({
+          where: sql`${invoice.id} = ANY(ARRAY[${sql.join(
+            input.ids.map((id) => sql`${id}`),
+            sql`, `
+          )}]::uuid[])`,
+        });
+
+        for (const inv of invoicesToUpdate) {
+          if (!accessibleBusinesses.includes(inv.business)) {
+            throw new ORPCError("FORBIDDEN", {
+              message: `You don't have access to invoice ${inv.invoiceNumber}`,
+            });
+          }
+        }
+
+        // If status is PAID, set paidDate
+        const additionalUpdates: Record<string, unknown> = {};
+        if (input.status === "PAID") {
+          additionalUpdates.paidDate = new Date().toISOString().split("T")[0];
+        }
+
+        const updated = await db
+          .update(invoice)
+          .set({ status: input.status, ...additionalUpdates })
+          .where(
+            sql`${invoice.id} = ANY(ARRAY[${sql.join(
+              input.ids.map((id) => sql`${id}`),
+              sql`, `
+            )}]::uuid[])`
+          )
+          .returning({ id: invoice.id });
+
+        return {
+          success: true,
+          updatedCount: updated.length,
+          ids: updated.map((inv) => inv.id),
+        };
+      }),
+
+    /**
+     * Export invoices data as CSV
+     */
+    export: staffProcedure
+      .input(z.object({ ids: z.array(z.string()).min(1) }))
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Get all selected invoices
+        const invoices = await db.query.invoice.findMany({
+          where: sql`${invoice.id} = ANY(ARRAY[${sql.join(
+            input.ids.map((id) => sql`${id}`),
+            sql`, `
+          )}]::uuid[])`,
+          with: {
+            client: {
+              columns: { id: true, displayName: true },
+            },
+            matter: {
+              columns: { id: true, referenceNumber: true },
+            },
+          },
+        });
+
+        // Filter to accessible invoices
+        const accessibleInvoices = invoices.filter((inv) =>
+          accessibleBusinesses.includes(inv.business)
+        );
+
+        // Generate CSV content
+        const headers = [
+          "Invoice Number",
+          "Business",
+          "Client",
+          "Matter",
+          "Invoice Date",
+          "Due Date",
+          "Status",
+          "Subtotal",
+          "Tax Amount",
+          "Discount Amount",
+          "Total Amount",
+          "Amount Paid",
+          "Amount Due",
+          "Created At",
+        ];
+
+        const rows = accessibleInvoices.map((inv) => [
+          inv.invoiceNumber,
+          inv.business,
+          inv.client?.displayName || "",
+          inv.matter?.referenceNumber || "",
+          inv.invoiceDate,
+          inv.dueDate,
+          inv.status,
+          inv.subtotal,
+          inv.taxAmount,
+          inv.discountAmount,
+          inv.totalAmount,
+          inv.amountPaid,
+          inv.amountDue,
+          inv.createdAt ? new Date(inv.createdAt).toISOString() : "",
+        ]);
+
+        const csvContent = [
+          headers.join(","),
+          ...rows.map((row) =>
+            row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+          ),
+        ].join("\n");
+
+        return {
+          success: true,
+          exportedCount: accessibleInvoices.length,
+          csv: csvContent,
+          filename: `invoices-export-${new Date().toISOString().split("T")[0]}.csv`,
+        };
+      }),
+
+    /**
+     * Mark multiple invoices as paid
+     */
+    markAsPaid: staffProcedure
+      .input(z.object({ ids: z.array(z.string()).min(1) }))
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Verify access to all invoices
+        const invoicesToUpdate = await db.query.invoice.findMany({
+          where: sql`${invoice.id} = ANY(ARRAY[${sql.join(
+            input.ids.map((id) => sql`${id}`),
+            sql`, `
+          )}]::uuid[])`,
+        });
+
+        for (const inv of invoicesToUpdate) {
+          if (!accessibleBusinesses.includes(inv.business)) {
+            throw new ORPCError("FORBIDDEN", {
+              message: `You don't have access to invoice ${inv.invoiceNumber}`,
+            });
+          }
+        }
+
+        // Update all invoices to PAID status
+        // Set amountPaid = totalAmount and amountDue = 0
+        const paidDate = new Date().toISOString().split("T")[0];
+
+        const updated = await db
+          .update(invoice)
+          .set({
+            status: "PAID",
+            paidDate,
+            amountPaid: sql`${invoice.totalAmount}`,
+            amountDue: "0",
+          })
+          .where(
+            sql`${invoice.id} = ANY(ARRAY[${sql.join(
+              input.ids.map((id) => sql`${id}`),
+              sql`, `
+            )}]::uuid[])`
+          )
+          .returning({ id: invoice.id });
+
+        return {
+          success: true,
+          updatedCount: updated.length,
+          ids: updated.map((inv) => inv.id),
+        };
+      }),
+  },
 };
