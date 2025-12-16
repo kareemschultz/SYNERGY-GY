@@ -40,51 +40,75 @@ const getServerUrl = (): string => {
 };
 
 export const link = new RPCLink({
-  // Pass the resolved absolute URL string
-  url: getServerUrl(),
-  fetch(_url, options) {
-    // Normalize RPC paths: convert dot notation to slash notation
-    // e.g., /rpc/settings.getStaffStatus → /rpc/settings/getStaffStatus
-    // Only transform dots in the pathname, not in query parameters or fragments
-    const urlString = typeof _url === "string" ? _url : _url.toString();
 
-    // Debug logging (remove in production)
-    console.log("[oRPC] fetch called with URL:", urlString);
+  // Pass the function reference as per @orpc/client documentation for dynamic URL resolution
+
+  url: getServerUrl,
+
+  fetch(_url, options) {
+
+    // If _url is a function (as passed by RPCLink), execute it to get the actual URL string
+
+    const resolvedUrl = typeof _url === "function" ? _url() : _url;
+
+
+
+    // Now resolvedUrl should be a string (or a URL object)
+
+    const urlString = typeof resolvedUrl === "string" ? resolvedUrl : resolvedUrl.toString();
+
+
 
     try {
+
       const urlObj = new URL(urlString, window.location.origin);
-      const originalPathname = urlObj.pathname;
+
+
 
       // Only normalize if pathname contains /rpc/ and has dots
+
       if (
+
         urlObj.pathname.startsWith("/rpc/") &&
+
         urlObj.pathname.includes(".")
+
       ) {
+
         urlObj.pathname = urlObj.pathname.replace(/\./g, "/");
-        console.log(
-          "[oRPC] Normalized path:",
-          originalPathname,
-          "->",
-          urlObj.pathname
-        );
+
       }
 
+
+
       const finalUrl = urlObj.toString();
-      console.log("[oRPC] Final URL:", finalUrl);
+
+
 
       return fetch(finalUrl, {
+
         ...options,
+
         credentials: "include",
+
       });
+
     } catch (e) {
-      // Fallback: if URL parsing fails, use original URL
-      console.error("[oRPC] URL parsing error:", e);
-      return fetch(urlString, {
+
+      // Fallback: if URL parsing fails, use original resolved URL
+
+      return fetch(resolvedUrl, {
+
         ...options,
+
         credentials: "include",
+
       });
+
     }
+
   },
+
 });
 
 export const client: AppRouterClient = createORPCClient(link);
