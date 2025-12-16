@@ -318,6 +318,21 @@ app.use("/*", async (c, next) => {
     return next();
   }
 
+  // Set cache headers based on file type
+  // Hashed assets (Vite bundles) can be cached long-term
+  // Non-hashed assets should have shorter cache times
+  const isHashedAsset = /\.[a-zA-Z0-9]{8,}\.(js|css)$/.test(path);
+  const isStaticAsset =
+    /\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)$/.test(path);
+
+  if (isHashedAsset) {
+    // Hashed assets are immutable - cache for 1 year
+    c.header("Cache-Control", "public, max-age=31536000, immutable");
+  } else if (isStaticAsset) {
+    // Non-hashed assets - cache for 1 hour, must revalidate
+    c.header("Cache-Control", "public, max-age=3600, must-revalidate");
+  }
+
   // Serve static files for everything else
   return serveStatic({
     root: FRONTEND_DIST,

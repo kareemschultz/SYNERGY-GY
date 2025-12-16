@@ -80,6 +80,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Browser Cache Issues with App Updates** - December 16, 2024
+  - Users no longer need to use incognito/clear cache to see updates
+  - Added proper Cache-Control headers for static assets in server
+  - Hashed assets (JS/CSS with content hash) get 1-year immutable cache
+  - Non-hashed assets get 1-hour cache with must-revalidate
+  - index.html always served fresh with no-cache headers
+  - Service worker configured with `skipWaiting` and `clientsClaim` for immediate updates
+  - Added `cleanupOutdatedCaches` to remove old cached assets
+  - **Affected files**: `apps/server/src/index.ts`, `apps/web/vite.config.ts`
+
 - **Nested oRPC Router Pattern Fixes** - December 16, 2024
   - Fixed "_n.portal.impersonation.start.useMutation is not a function" error on client wizard
   - Fixed "Cannot read properties of undefined (reading 'firstName')" error on document generation

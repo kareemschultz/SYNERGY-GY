@@ -21,6 +21,12 @@ export default defineConfig({
       pwaAssets: { disabled: false, config: true },
       devOptions: { enabled: true },
       workbox: {
+        // Skip waiting and claim clients immediately for faster updates
+        // This ensures users get the latest version without needing incognito
+        skipWaiting: true,
+        clientsClaim: true,
+        // Clean up old caches on new version
+        cleanupOutdatedCaches: true,
         // Exclude API routes from service worker interception
         // This ensures credentials are properly passed to the server
         navigateFallbackDenylist: [/^\/api/, /^\/rpc/],
