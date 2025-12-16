@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 type ClientDocumentsTabProps = {
   clientId: string;
@@ -29,13 +30,17 @@ type ClientDocumentsTabProps = {
 export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
   const [view, setView] = useState("service");
 
-  const { data: progress } =
-    orpc.clientServices.getFulfillmentProgress.useQuery({ clientId });
-  const { data: services } = orpc.clientServices.getByClient.useQuery({
-    clientId,
+  const { data: progress } = useQuery({
+    queryKey: ["clientServices", "getFulfillmentProgress", clientId],
+    queryFn: () => client.clientServices.getFulfillmentProgress({ clientId }),
   });
-  const { data: allDocuments } = orpc.documents.getByClient.useQuery({
-    clientId,
+  const { data: services } = useQuery({
+    queryKey: ["clientServices", "getByClient", clientId],
+    queryFn: () => client.clientServices.getByClient({ clientId }),
+  });
+  const { data: allDocuments } = useQuery({
+    queryKey: ["documents", "getByClient", clientId],
+    queryFn: () => client.documents.getByClient({ clientId }),
   });
 
   return (

@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle, FileText, Upload } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/app/clients/$client-id/documents/collect"
@@ -22,10 +23,14 @@ export const Route = createFileRoute(
 function ClientDocumentCollectionPage() {
   const { "client-id": clientId } = Route.useParams();
 
-  const { data: services, refetch: refetchServices } =
-    orpc.clientServices.getByClient.useQuery({ clientId });
-  const { data: progress, refetch: refetchProgress } =
-    orpc.clientServices.getFulfillmentProgress.useQuery({ clientId });
+  const { data: services, refetch: refetchServices } = useQuery({
+    queryKey: ["clientServices", "getByClient", clientId],
+    queryFn: () => client.clientServices.getByClient({ clientId }),
+  });
+  const { data: progress, refetch: refetchProgress } = useQuery({
+    queryKey: ["clientServices", "getFulfillmentProgress", clientId],
+    queryFn: () => client.clientServices.getFulfillmentProgress({ clientId }),
+  });
 
   const refetch = () => {
     refetchServices();

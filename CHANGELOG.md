@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Nested oRPC Query/Mutation Pattern Fixes** - December 16, 2024 (#PROD-007)
+  - Fixed `client-documents-tab.tsx` - Changed 3 nested oRPC patterns to use `useQuery` from `@tanstack/react-query`
+  - Fixed `collect.tsx` - Changed 2 nested oRPC patterns for client services
+  - Fixed `knowledge-base.tsx` - Changed 4 nested oRPC patterns (1 query, 3 mutations) to use `useQuery`/`useMutation`
+  - Root cause: `createTanstackQueryUtils` from oRPC doesn't support 3-level nested paths like `orpc.clientServices.getFulfillmentProgress.useQuery`
+  - Solution: Use `useQuery`/`useMutation` directly from `@tanstack/react-query` with `client.xxx.yyy()` pattern
+
 ### Added
 
 - **Bulk Actions for All List Pages** - December 16, 2024
