@@ -36,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `analytics.getDeadlineDistribution` - Deadline status breakdown
   - `analytics.getClientTypeDistribution` - Client type breakdown
 
+- **UX Improvements** - December 16, 2024 (#19)
+  - Added 404 Not Found page with helpful navigation and support link
+  - Added ConfirmDialog and DeleteConfirmDialog components for destructive actions
+  - Integrated NotFound component into TanStack Router root
+
 ### Deployment
 - **Production Deployment Complete** - December 16, 2024
   - App successfully deployed to production via Docker/GHCR
