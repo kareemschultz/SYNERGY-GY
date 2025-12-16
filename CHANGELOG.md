@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Services Tab on Client Detail Page** - December 16, 2024
+  - Added Services tab to client detail page for managing services after initial onboarding
+  - Uses existing ClientServicesTab component with full CRUD capabilities
+  - Allows adding new services via AddServiceDialog component
+  - Shows service status, progress, and document requirements
+
 - **Document Templates Seeded** - December 16, 2024
   - Seeded 16 document templates covering GCMC and KAJ services
   - GCMC templates: Work Permit Cover Letter, Citizenship Application Cover Letter, Sponsor Letter, Service Agreement (Immigration), Power of Attorney, Training Completion Certificate, Client Intake Form (Immigration)
@@ -73,6 +79,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated production deployment spec with completion status
 
 ### Fixed
+
+- **oRPC Response Unwrapping** - December 16, 2024
+  - Fixed "Something went wrong" error on client detail page and other detail views
+  - **Root cause**: oRPC v1.12+ wraps responses in `{ json: T }` envelope which wasn't being unwrapped
+  - **Solution**: Added `unwrapOrpc()` calls to client, matter, invoice, staff detail pages, and dashboard
+  - **Affected files**: `$client-id.tsx`, `$matter-id.tsx`, `$invoice-id.tsx`, `$staff-id.tsx`, `app/index.tsx`
 
 - **Audit Trail Button Not Visible** - December 16, 2024
   - Fixed Analytics page Audit Trail button not being visible
