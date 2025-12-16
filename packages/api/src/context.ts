@@ -11,15 +11,9 @@ export type CreateContextOptions = {
 export type Staff = typeof staff.$inferSelect;
 
 export async function createContext({ context }: CreateContextOptions) {
-  // Debug: Log incoming cookies
-  const cookies = context.req.raw.headers.get("cookie");
-  console.log("[DEBUG] createContext - cookies:", cookies?.slice(0, 100));
-
   const session = await auth.api.getSession({
     headers: context.req.raw.headers,
   });
-
-  console.log("[DEBUG] createContext - session:", session ? "found" : "null");
 
   // Fetch staff profile if user is authenticated
   let staffProfile: Staff | null = null;
