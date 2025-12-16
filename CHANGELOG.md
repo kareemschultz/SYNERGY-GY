@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **oRPC Request Body Not Sent for Procedures with Input** (#PROD-007) - December 16, 2024
+  - Fixed 400 "Input validation failed" errors on list endpoints (clients, matters, documents)
+  - **Root cause**: When RPCLink passes a `Request` object to fetch handler, the body and headers are inside the Request object, not in the `options` parameter
+  - **Solution**: Extract `body` and `headers` from Request object when it's passed as the first argument
+  - **Impact**: All list/query procedures with input validation now work correctly
+  - **Affected files**: `apps/web/src/utils/orpc.ts`
+
 - **oRPC Client HTTP Method Issue** (#PROD-007) - December 16, 2024
   - Fixed "Method Not Supported" (405) errors from server's StrictGetMethodPlugin
   - **Root cause**: oRPC's queryOptions pattern sends GET requests by default, but server rejects non-POST requests

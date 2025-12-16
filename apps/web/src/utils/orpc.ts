@@ -42,31 +42,35 @@ const getServerUrl = (): string => {
 export const link = new RPCLink({
   // Call getServerUrl() to pass a resolved URL string
   url: getServerUrl(),
-  fetch(_url, options) {
-    // Extract URL string from various input types
+  async fetch(_url, options) {
+    // Extract URL string and request body/headers
     // RPCLink may pass a Request object, URL object, or string
     let urlString: string;
+    let body: BodyInit | null | undefined = options?.body;
+    let headers: HeadersInit | undefined = options?.headers;
+
     if (typeof _url === "string") {
       urlString = _url;
     } else if (_url instanceof Request) {
-      // Request object - extract URL from it
+      // Request object - extract URL, body, and headers from it
       urlString = _url.url;
+      // When Request object is passed, body and headers are inside it, not in options
+      if (!body) {
+        body = _url.body;
+      }
+      if (!headers) {
+        headers = _url.headers;
+      }
     } else if (_url instanceof URL) {
       urlString = _url.toString();
     } else if (typeof _url === "function") {
-      // Function - call it to get URL
       urlString = (_url as () => string)();
     } else {
-      // Fallback
       urlString = String(_url);
     }
 
-    // Debug logging
-    console.log("[oRPC] URL extracted:", urlString);
-
     try {
       const urlObj = new URL(urlString, window.location.origin);
-      const originalPath = urlObj.pathname;
 
       // Normalize RPC paths: convert dot notation to slash notation
       // e.g., /rpc/settings.getStaffStatus → /rpc/settings/getStaffStatus
@@ -75,28 +79,24 @@ export const link = new RPCLink({
         urlObj.pathname.includes(".")
       ) {
         urlObj.pathname = urlObj.pathname.replace(/\./g, "/");
-        console.log(
-          "[oRPC] Path normalized:",
-          originalPath,
-          "->",
-          urlObj.pathname
-        );
       }
 
       const finalUrl = urlObj.toString();
-      console.log("[oRPC] Final URL:", finalUrl);
 
-      // Force POST method - server's StrictGetMethodPlugin rejects GET requests
+      // Merge options with extracted body/headers, force POST method
       return fetch(finalUrl, {
         ...options,
+        body,
+        headers,
         method: "POST",
         credentials: "include",
       });
     } catch (e) {
       console.error("[oRPC] URL parsing error:", e);
-      // Fallback: use original URL with POST method
       return fetch(urlString, {
         ...options,
+        body,
+        headers,
         method: "POST",
         credentials: "include",
       });
