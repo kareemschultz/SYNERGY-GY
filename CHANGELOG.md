@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **oRPC Client HTTP Method Issue** (#PROD-007) - December 16, 2024
+  - Fixed "Method Not Supported" (405) errors from server's StrictGetMethodPlugin
+  - **Root cause**: oRPC's queryOptions pattern sends GET requests by default, but server rejects non-POST requests
+  - **Solution**: Force POST method in RPCLink fetch handler (`apps/web/src/utils/orpc.ts`)
+  - **Impact**: All RPC queries now work correctly with server-side validation
+
+- **oRPC Client URL Extraction from Request Object** (#PROD-007) - December 16, 2024
+  - Fixed URL construction error showing `[object Request]` in URLs
+  - **Root cause**: RPCLink passes a `Request` object to fetch handler, not a URL string
+  - **Solution**: Added proper URL extraction handling for `Request`, `URL`, `string`, and `function` types
+  - **Key fix**: Extract URL via `request.url` instead of `request.toString()`
+  - Commits: `0f251e1`, `0671a1e`
+
 - **TanStack Query Not Making oRPC Requests** (#PROD-007) - December 16, 2024
   - Fixed "Loading..." screen stuck forever after login - TanStack Query never made RPC calls
   - **Root cause**: Using `client.settings.getStaffStatus()` directly in `queryFn` doesn't work correctly with oRPC v1.12
