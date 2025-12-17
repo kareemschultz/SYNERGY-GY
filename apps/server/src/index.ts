@@ -67,7 +67,7 @@ console.log("SERVER_BOOT_MARKER", new Date().toISOString());
 // Hard-block RPC paths with dots (middleware guard, runs before other handlers)
 // This prevents Request mutation issues and provides clear error messages
 const DOT_IN_RPC_PATH = /^\/rpc\/.*\..*$/;
-app.use("/*", (c, next) => {
+app.use("/*", async (c, next) => {
   const path = new URL(c.req.url).pathname;
   if (DOT_IN_RPC_PATH.test(path)) {
     const expectedPath = path.replace(/\./g, "/");
@@ -84,7 +84,7 @@ app.use("/*", (c, next) => {
       400
     );
   }
-  return next();
+  await next();
 });
 
 app.use(
