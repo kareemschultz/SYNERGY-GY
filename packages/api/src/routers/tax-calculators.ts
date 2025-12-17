@@ -366,7 +366,10 @@ function calculateFullSalary(input: SalaryInput): SalaryBreakdown {
   // Calculate progressive tax (2025 brackets)
   const firstBracketThreshold = TAX_RATES.PAYE.FIRST_BRACKET_THRESHOLD;
   const firstBracketIncome = Math.min(taxableIncome, firstBracketThreshold);
-  const secondBracketIncome = Math.max(0, taxableIncome - firstBracketThreshold);
+  const secondBracketIncome = Math.max(
+    0,
+    taxableIncome - firstBracketThreshold
+  );
 
   const firstBracketTax =
     firstBracketIncome * TAX_RATES.PAYE.FIRST_BRACKET_RATE;
@@ -401,13 +404,18 @@ function calculateFullSalary(input: SalaryInput): SalaryBreakdown {
 
   // Calculate employer costs
   const totalMonthlyCost =
-    grossMonthly + employerNisMonthly + (input.includeGratuity ? gratuityMonthly : 0);
+    grossMonthly +
+    employerNisMonthly +
+    (input.includeGratuity ? gratuityMonthly : 0);
 
   // Calculate effective rates
-  const effectiveTaxRate = grossAnnual > 0 ? (totalAnnualTax / grossAnnual) * 100 : 0;
-  const effectiveNisRate = grossMonthly > 0 ? (employeeNisMonthly / grossMonthly) * 100 : 0;
+  const effectiveTaxRate =
+    grossAnnual > 0 ? (totalAnnualTax / grossAnnual) * 100 : 0;
+  const effectiveNisRate =
+    grossMonthly > 0 ? (employeeNisMonthly / grossMonthly) * 100 : 0;
   const totalMonthlyDeductions = monthlyTax + employeeNisMonthly;
-  const totalDeductionRate = grossMonthly > 0 ? (totalMonthlyDeductions / grossMonthly) * 100 : 0;
+  const totalDeductionRate =
+    grossMonthly > 0 ? (totalMonthlyDeductions / grossMonthly) * 100 : 0;
 
   return {
     grossMonthly,
@@ -512,11 +520,24 @@ export const taxCalculatorsRouter = {
     .input(
       z.object({
         grossSalary: z.number().min(0),
-        frequency: z.enum(["daily", "weekly", "fortnightly", "monthly", "yearly"]),
+        frequency: z.enum([
+          "daily",
+          "weekly",
+          "fortnightly",
+          "monthly",
+          "yearly",
+        ]),
         includeGratuity: z.boolean(),
         month: z.number().min(1).max(12).optional(),
         qualificationLevel: z
-          .enum(["NONE", "CERTIFICATE", "DIPLOMA", "BACHELORS", "MASTERS", "DOCTORATE"])
+          .enum([
+            "NONE",
+            "CERTIFICATE",
+            "DIPLOMA",
+            "BACHELORS",
+            "MASTERS",
+            "DOCTORATE",
+          ])
           .optional(),
         numberOfChildren: z.number().min(0).max(10).optional(),
         otherDeductions: z.number().min(0).optional(),

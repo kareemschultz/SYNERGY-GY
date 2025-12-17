@@ -1,5 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Briefcase, Calculator, DollarSign, Receipt, Users } from "lucide-react";
+import {
+  Briefcase,
+  Calculator,
+  DollarSign,
+  Receipt,
+  Users,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,

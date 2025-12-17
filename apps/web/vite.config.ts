@@ -27,6 +27,8 @@ export default defineConfig({
         clientsClaim: true,
         // Clean up old caches on new version
         cleanupOutdatedCaches: true,
+        // Allow larger JS bundles to be precached (default is 2MB)
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // Exclude API routes from service worker interception
         // This ensures credentials are properly passed to the server
         navigateFallbackDenylist: [/^\/api/, /^\/rpc/],

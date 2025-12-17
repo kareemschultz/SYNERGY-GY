@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Camera, Loader2, Upload, User as UserIcon, X } from "lucide-react";
+import { Camera, Loader2, Upload, User as UserIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -102,20 +102,21 @@ export function ProfileSettings() {
       toast.success("Avatar updated successfully");
     } catch {
       setAvatarPreview(null);
-      toast.error("Failed to upload avatar. This feature may require additional server configuration.");
+      toast.error(
+        "Failed to upload avatar. This feature may require additional server configuration."
+      );
     } finally {
       setIsUploadingAvatar(false);
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
+  const getInitials = (name: string) =>
+    name
       .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };
 
   // Initialize name when profile loads
   if (profile && !isEditing && name !== profile.name) {
@@ -150,13 +151,20 @@ export function ProfileSettings() {
           {/* Profile Picture with Upload */}
           <div className="flex items-center gap-4">
             <div className="group relative">
-              <Avatar className="h-20 w-20 cursor-pointer" onClick={handleAvatarClick}>
+              <Avatar
+                className="h-20 w-20 cursor-pointer"
+                onClick={handleAvatarClick}
+              >
                 <AvatarImage
                   alt={profile?.name || "Profile"}
                   src={avatarPreview || profile?.image || undefined}
                 />
                 <AvatarFallback className="bg-primary/10 text-primary text-xl">
-                  {profile?.name ? getInitials(profile.name) : <UserIcon className="h-10 w-10" />}
+                  {profile?.name ? (
+                    getInitials(profile.name)
+                  ) : (
+                    <UserIcon className="h-10 w-10" />
+                  )}
                 </AvatarFallback>
               </Avatar>
               <button
@@ -182,7 +190,8 @@ export function ProfileSettings() {
             <div className="flex-1">
               <p className="font-medium text-sm">Profile Picture</p>
               <p className="text-muted-foreground text-xs">
-                Click the camera icon to upload a new avatar. Max file size: 5MB.
+                Click the camera icon to upload a new avatar. Max file size:
+                5MB.
               </p>
               <Button
                 className="mt-2 h-7 text-xs"

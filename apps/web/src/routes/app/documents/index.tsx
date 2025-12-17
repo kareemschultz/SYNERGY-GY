@@ -45,13 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useSelection } from "@/hooks/use-selection";
-import { cn } from "@/lib/utils";
 import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/documents/")({
@@ -109,29 +103,30 @@ const categoryValues = [
   "OTHER",
 ] as const;
 
-const fileTypeLabels: Record<string, { label: string; extensions: string[] }> = {
-  all: { label: "All Types", extensions: [] },
-  pdf: { label: "PDF Documents", extensions: ["application/pdf"] },
-  image: {
-    label: "Images",
-    extensions: ["image/jpeg", "image/png", "image/gif", "image/webp"],
-  },
-  document: {
-    label: "Word Documents",
-    extensions: [
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ],
-  },
-  spreadsheet: {
-    label: "Spreadsheets",
-    extensions: [
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ],
-  },
-  other: { label: "Other", extensions: [] },
-};
+const fileTypeLabels: Record<string, { label: string; extensions: string[] }> =
+  {
+    all: { label: "All Types", extensions: [] },
+    pdf: { label: "PDF Documents", extensions: ["application/pdf"] },
+    image: {
+      label: "Images",
+      extensions: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+    },
+    document: {
+      label: "Word Documents",
+      extensions: [
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ],
+    },
+    spreadsheet: {
+      label: "Spreadsheets",
+      extensions: [
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ],
+    },
+    other: { label: "Other", extensions: [] },
+  };
 
 const statusValues = ["ACTIVE", "ARCHIVED", "ALL"] as const;
 
@@ -179,7 +174,15 @@ function DocumentsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: [
       "documents",
-      { search, category: categoryFilter, fileType: fileTypeFilter, status: statusFilter, dateFrom, dateTo, page },
+      {
+        search,
+        category: categoryFilter,
+        fileType: fileTypeFilter,
+        status: statusFilter,
+        dateFrom,
+        dateTo,
+        page,
+      },
     ],
     queryFn: () =>
       client.documents.list({
@@ -190,7 +193,10 @@ function DocumentsPage() {
           categoryFilter === "all"
             ? undefined
             : (categoryFilter as (typeof categoryValues)[number]),
-        status: statusFilter === "ALL" ? undefined : (statusFilter as "ACTIVE" | "ARCHIVED"),
+        status:
+          statusFilter === "ALL"
+            ? undefined
+            : (statusFilter as "ACTIVE" | "ARCHIVED"),
       }),
   });
 
@@ -254,7 +260,16 @@ function DocumentsPage() {
   // Clear selection when filters/search/page changes
   useEffect(() => {
     clearSelection();
-  }, [search, categoryFilter, fileTypeFilter, statusFilter, dateFrom, dateTo, page, clearSelection]);
+  }, [
+    search,
+    categoryFilter,
+    fileTypeFilter,
+    statusFilter,
+    dateFrom,
+    dateTo,
+    page,
+    clearSelection,
+  ]);
 
   const handleDownload = async (docId: string) => {
     try {
@@ -446,7 +461,9 @@ function DocumentsPage() {
             <Button
               onClick={() => setShowFilters(!showFilters)}
               size="sm"
-              variant={showFilters || activeFilterCount > 0 ? "secondary" : "outline"}
+              variant={
+                showFilters || activeFilterCount > 0 ? "secondary" : "outline"
+              }
             >
               <Filter className="mr-2 h-4 w-4" />
               Filters
@@ -470,7 +487,9 @@ function DocumentsPage() {
             <div className="flex flex-wrap items-end gap-4 rounded-lg border bg-muted/30 p-4">
               {/* File Type Filter */}
               <div className="space-y-2">
-                <label className="text-muted-foreground text-sm">File Type</label>
+                <label className="text-muted-foreground text-sm">
+                  File Type
+                </label>
                 <Select
                   onValueChange={(value) => {
                     setFileTypeFilter(value);
@@ -514,7 +533,9 @@ function DocumentsPage() {
 
               {/* Date From */}
               <div className="space-y-2">
-                <label className="text-muted-foreground text-sm">From Date</label>
+                <label className="text-muted-foreground text-sm">
+                  From Date
+                </label>
                 <div className="relative">
                   <Calendar className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                   <Input

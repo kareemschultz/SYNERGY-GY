@@ -383,7 +383,7 @@ function SalaryCalculator() {
             {/* Gratuity Toggle */}
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
-                <Label htmlFor="gratuity" className="text-base">
+                <Label className="text-base" htmlFor="gratuity">
                   Include Gratuity
                 </Label>
                 <p className="text-muted-foreground text-sm">
@@ -400,7 +400,7 @@ function SalaryCalculator() {
             {/* Month selector for gratuity */}
             {includeGratuity && (
               <div className="space-y-2">
-                <Label htmlFor="month" className="flex items-center gap-2">
+                <Label className="flex items-center gap-2" htmlFor="month">
                   Current Month
                   <TooltipProvider>
                     <Tooltip>
@@ -424,7 +424,10 @@ function SalaryCalculator() {
                   </SelectTrigger>
                   <SelectContent>
                     {months.map((monthName, index) => (
-                      <SelectItem key={monthName} value={(index + 1).toString()}>
+                      <SelectItem
+                        key={monthName}
+                        value={(index + 1).toString()}
+                      >
                         {monthName}
                         {(index + 1 === 6 || index + 1 === 12) && " (Special)"}
                       </SelectItem>
@@ -484,10 +487,7 @@ function SalaryCalculator() {
 
                 {/* Number of Children */}
                 <div className="space-y-2">
-                  <Label
-                    className="flex items-center gap-2"
-                    htmlFor="children"
-                  >
+                  <Label className="flex items-center gap-2" htmlFor="children">
                     <Users className="h-4 w-4" />
                     Number of Children
                   </Label>
@@ -554,7 +554,9 @@ function SalaryCalculator() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-center">
-                  <p className="text-muted-foreground text-sm">Monthly Net Pay</p>
+                  <p className="text-muted-foreground text-sm">
+                    Monthly Net Pay
+                  </p>
                   <p className="font-bold text-3xl text-green-600 dark:text-green-400">
                     {formatCurrency(result.netPay.monthly)}
                   </p>
@@ -589,7 +591,9 @@ function SalaryCalculator() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Monthly PAYE Tax:</span>
+                  <span className="text-muted-foreground">
+                    Monthly PAYE Tax:
+                  </span>
                   <span className="font-medium text-red-600">
                     -{formatCurrency(result.tax.monthlyTax)}
                   </span>
@@ -639,7 +643,8 @@ function SalaryCalculator() {
                       Qualification Allowance:
                     </span>
                     <span className="font-medium text-green-600">
-                      -{formatCurrency(result.deductions.qualificationAllowance)}
+                      -
+                      {formatCurrency(result.deductions.qualificationAllowance)}
                     </span>
                   </div>
                 )}
@@ -718,7 +723,9 @@ function SalaryCalculator() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Gratuity:</span>
                     <span className="font-medium">
-                      {formatCurrency(result.employerCosts.gratuityContribution)}
+                      {formatCurrency(
+                        result.employerCosts.gratuityContribution
+                      )}
                     </span>
                   </div>
                 )}
