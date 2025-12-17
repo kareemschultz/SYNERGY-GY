@@ -105,9 +105,16 @@ const TAX_RATES = {
       MASTERS: 200_000,
       DOCTORATE: 250_000,
     } as const,
-    // Child deduction per child per year
-    CHILD_DEDUCTION: 10_000,
+    // Child deduction per child per year (2025: $10,000/month = $120,000/year)
+    CHILD_DEDUCTION: 120_000,
     MAX_CHILD_DEDUCTIONS: 4,
+    // Medical/Life Insurance deduction (2025: 10% of gross or $600,000, whichever is less)
+    MEDICAL_INSURANCE_CAP: 600_000,
+    MEDICAL_INSURANCE_RATE: 0.1, // 10%
+    // Overtime exemption (2025: first $50,000/month tax-free)
+    OVERTIME_EXEMPTION_MONTHLY: 50_000,
+    // Second job exemption (2025: first $50,000/month tax-free)
+    SECOND_JOB_EXEMPTION_MONTHLY: 50_000,
   },
 };
 
@@ -573,6 +580,10 @@ export const taxCalculatorsRouter = {
       qualificationAllowances: TAX_RATES.SALARY.QUALIFICATION_ALLOWANCES,
       childDeduction: TAX_RATES.SALARY.CHILD_DEDUCTION,
       maxChildDeductions: TAX_RATES.SALARY.MAX_CHILD_DEDUCTIONS,
+      medicalInsuranceCap: TAX_RATES.SALARY.MEDICAL_INSURANCE_CAP,
+      medicalInsuranceRate: TAX_RATES.SALARY.MEDICAL_INSURANCE_RATE * 100,
+      overtimeExemptionMonthly: TAX_RATES.SALARY.OVERTIME_EXEMPTION_MONTHLY,
+      secondJobExemptionMonthly: TAX_RATES.SALARY.SECOND_JOB_EXEMPTION_MONTHLY,
     },
     vat: {
       rate: TAX_RATES.VAT.RATE * 100,
