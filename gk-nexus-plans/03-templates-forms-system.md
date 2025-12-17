@@ -1,8 +1,58 @@
 # Plan 03: Document Templates and Form Generation System
 
 > **Priority:** P2 - Medium
-> **Estimated Effort:** 2-3 weeks
-> **Status:** 🔴 Not Started
+> **Estimated Effort:** 2-3 weeks (reduced - system exists!)
+> **Status:** 🟢 System Exists - Needs Content Only
+> **Last Updated:** December 17, 2024
+
+---
+
+## 🎉 CRITICAL DISCOVERY: Template System Already Implemented!
+
+### Existing Infrastructure (Found Dec 17, 2024)
+
+**Database Schema:** `packages/db/src/schema/documents.ts`
+- `documentTemplate` table with full placeholder support
+- Categories: LETTER, AGREEMENT, CERTIFICATE, FORM, REPORT, INVOICE, OTHER
+- Business filtering (GCMC, KAJ, or both)
+
+**API Endpoints:** `packages/api/src/routers/documents.ts` (lines 368-726)
+- `templates.list` - List templates with filters
+- `templates.getById` - Get single template
+- `templates.create` - Create template (admin only)
+- `templates.update` - Update template (admin only)
+- `templates.delete` - Soft delete template
+- `templates.preview` - Preview with data substitution
+- `templates.generate` - Generate document from template
+
+**UI Pages:** `apps/web/src/routes/app/documents/templates/`
+- `/templates` - List all templates
+- `/templates/new` - Create new template
+- `/templates/$template-id` - Edit template
+
+**Placeholder System:**
+```typescript
+type TemplatePlaceholder = {
+  key: string;           // e.g., "client.displayName"
+  label: string;         // e.g., "Client Name"
+  type: "text" | "date" | "number" | "currency";
+  source: "client" | "matter" | "staff" | "business" | "date" | "custom";
+  sourceField?: string;
+};
+```
+
+**Available Data Sources:**
+- `client.*` - All client fields (displayName, tinNumber, nisNumber, etc.)
+- `matter.*` - All matter fields (referenceNumber, title, etc.)
+- `staff.*` - Current staff profile
+- `business.GCMC.*` / `business.KAJ.*` - Business info
+- `date.today` / `date.todayFormatted` - Current date
+- `custom.*` - Custom values passed at generation
+
+### What's Actually Needed
+1. **Content creation only** - Just add GRA/NIS/Legal form content
+2. **No code changes required** - Use existing admin UI at `/app/documents/templates/new`
+3. **Business filtering works** - Can target GCMC, KAJ, or both
 
 ---
 
