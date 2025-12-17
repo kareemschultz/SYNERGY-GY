@@ -5,17 +5,17 @@ import {
   Calendar,
   CheckCircle2,
   Circle,
-  Download,
   DollarSign,
+  Download,
   FileText,
   Loader2,
   Plus,
   User,
 } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageHeader } from "@/components/layout/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { client } from "@/utils/orpc";
 import { unwrapOrpc } from "@/utils/orpc-response";
@@ -222,31 +222,47 @@ function OverviewTab({ matter }: { matter: MatterData }) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="mb-1 font-medium text-muted-foreground text-sm">Status</p>
-              <Badge className={statusStyles[matter.status] || ""} variant="outline">
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Status
+              </p>
+              <Badge
+                className={statusStyles[matter.status] || ""}
+                variant="outline"
+              >
                 {matter.status.replace(/_/g, " ")}
               </Badge>
             </div>
             <div>
-              <p className="mb-1 font-medium text-muted-foreground text-sm">Priority</p>
-              <Badge className={priorityStyles[matter.priority] || ""} variant="outline">
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Priority
+              </p>
+              <Badge
+                className={priorityStyles[matter.priority] || ""}
+                variant="outline"
+              >
                 {matter.priority}
               </Badge>
             </div>
           </div>
           {matter.description && (
             <div>
-              <p className="mb-1 font-medium text-muted-foreground text-sm">Description</p>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Description
+              </p>
               <p className="text-sm">{matter.description}</p>
             </div>
           )}
           <div>
-            <p className="mb-1 font-medium text-muted-foreground text-sm">Business</p>
+            <p className="mb-1 font-medium text-muted-foreground text-sm">
+              Business
+            </p>
             <p className="text-sm">{matter.business}</p>
           </div>
           {matter.serviceType && (
             <div>
-              <p className="mb-1 font-medium text-muted-foreground text-sm">Service Type</p>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Service Type
+              </p>
               <p className="text-sm">{matter.serviceType.name}</p>
             </div>
           )}
@@ -263,19 +279,29 @@ function OverviewTab({ matter }: { matter: MatterData }) {
         <CardContent className="space-y-4">
           {matter.startDate && (
             <div>
-              <p className="mb-1 font-medium text-muted-foreground text-sm">Start Date</p>
-              <p className="text-sm">{new Date(matter.startDate).toLocaleDateString()}</p>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Start Date
+              </p>
+              <p className="text-sm">
+                {new Date(matter.startDate).toLocaleDateString()}
+              </p>
             </div>
           )}
           {matter.dueDate && (
             <div>
-              <p className="mb-1 font-medium text-muted-foreground text-sm">Due Date</p>
-              <p className="text-sm">{new Date(matter.dueDate).toLocaleDateString()}</p>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Due Date
+              </p>
+              <p className="text-sm">
+                {new Date(matter.dueDate).toLocaleDateString()}
+              </p>
             </div>
           )}
           {matter.estimatedFee && (
             <div>
-              <p className="mb-1 font-medium text-muted-foreground text-sm">Estimated Fee</p>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Estimated Fee
+              </p>
               <p className="flex items-center gap-1 text-sm">
                 <DollarSign className="h-4 w-4" />
                 {Number(matter.estimatedFee).toLocaleString()}
@@ -284,7 +310,9 @@ function OverviewTab({ matter }: { matter: MatterData }) {
           )}
           {matter.actualFee && (
             <div>
-              <p className="mb-1 font-medium text-muted-foreground text-sm">Actual Fee</p>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Actual Fee
+              </p>
               <p className="flex items-center gap-1 text-sm">
                 <DollarSign className="h-4 w-4" />
                 {Number(matter.actualFee).toLocaleString()}
@@ -292,7 +320,9 @@ function OverviewTab({ matter }: { matter: MatterData }) {
             </div>
           )}
           <div>
-            <p className="mb-1 font-medium text-muted-foreground text-sm">Payment Status</p>
+            <p className="mb-1 font-medium text-muted-foreground text-sm">
+              Payment Status
+            </p>
             <Badge variant={matter.isPaid ? "default" : "secondary"}>
               {matter.isPaid ? "Paid" : "Unpaid"}
             </Badge>
@@ -310,18 +340,24 @@ function OverviewTab({ matter }: { matter: MatterData }) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="mb-1 font-medium text-muted-foreground text-sm">Name</p>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Name
+              </p>
               <p className="text-sm">{matter.client.displayName}</p>
             </div>
             {matter.client.email && (
               <div>
-                <p className="mb-1 font-medium text-muted-foreground text-sm">Email</p>
+                <p className="mb-1 font-medium text-muted-foreground text-sm">
+                  Email
+                </p>
                 <p className="text-sm">{matter.client.email}</p>
               </div>
             )}
             {matter.client.phone && (
               <div>
-                <p className="mb-1 font-medium text-muted-foreground text-sm">Phone</p>
+                <p className="mb-1 font-medium text-muted-foreground text-sm">
+                  Phone
+                </p>
                 <p className="text-sm">{matter.client.phone}</p>
               </div>
             )}
@@ -347,7 +383,9 @@ function OverviewTab({ matter }: { matter: MatterData }) {
 }
 
 function ChecklistTab({ matter }: { matter: MatterData }) {
-  const completedCount = matter.checklist.filter((item) => item.isCompleted).length;
+  const completedCount = matter.checklist.filter(
+    (item) => item.isCompleted
+  ).length;
   const totalCount = matter.checklist.length;
 
   return (
