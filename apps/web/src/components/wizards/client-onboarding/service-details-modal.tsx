@@ -55,11 +55,11 @@ export function ServiceDetailsModal({
 
         <div className="space-y-6">
           {/* Description */}
-          {service.longDescription || service.shortDescription ? (
+          {service.description || service.shortDescription ? (
             <div>
               <h3 className="mb-2 font-semibold text-sm">Description</h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                {service.longDescription || service.shortDescription}
+                {service.description || service.shortDescription}
               </p>
             </div>
           ) : null}

@@ -31,7 +31,7 @@ export type ServiceCatalogItem = {
   name: string;
   displayName: string;
   shortDescription: string | null;
-  longDescription: string | null;
+  description: string | null; // Maps to "description" in database schema
   business: "GCMC" | "KAJ";
   categoryId: string;
   categoryName?: string;

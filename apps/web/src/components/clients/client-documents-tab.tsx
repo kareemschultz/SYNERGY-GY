@@ -8,6 +8,7 @@ import {
   Clock,
   Download,
   FileText,
+  Loader2,
   Sparkles,
   Upload,
 } from "lucide-react";
