@@ -38,14 +38,17 @@ type TemplateGeneratorDialogProps = {
   trigger?: React.ReactNode;
 };
 
-// API supports: INVOICE, LETTER, OTHER, AGREEMENT, CERTIFICATE, FORM, REPORT
 const categoryLabels: Record<string, string> = {
-  INVOICE: "Invoices",
   LETTER: "Letters",
   AGREEMENT: "Agreements",
-  CERTIFICATE: "Certificates",
-  FORM: "Forms",
-  REPORT: "Reports",
+  AFFIDAVIT: "Affidavits",
+  WILL: "Wills",
+  TAX_FORM: "Tax Forms",
+  CORPORATE: "Corporate Documents",
+  IMMIGRATION: "Immigration",
+  PROPOSAL: "Proposals",
+  INVOICE: "Invoices",
+  RECEIPT: "Receipts",
   OTHER: "Other",
 };
 
@@ -61,30 +64,36 @@ export function TemplateGeneratorDialog({
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("select");
 
-  // Fetch available templates - API supports: INVOICE, LETTER, OTHER, AGREEMENT, CERTIFICATE, FORM, REPORT
-  type ApiTemplateCategory =
-    | "INVOICE"
-    | "LETTER"
-    | "OTHER"
-    | "AGREEMENT"
-    | "CERTIFICATE"
-    | "FORM"
-    | "REPORT";
-
-  const templateInput: {
-    includeInactive?: boolean;
-    category?: ApiTemplateCategory;
-  } = {
-    includeInactive: false,
-    category:
-      categoryFilter === "all"
-        ? undefined
-        : (categoryFilter as ApiTemplateCategory),
-  };
-
+  // Fetch available templates - using useQuery with client for nested router pattern
   const { data: templates, isLoading: loadingTemplates } = useQuery({
-    queryKey: ["documents", "templates", "list", templateInput],
-    queryFn: () => client.documents.templates.list(templateInput),
+    queryKey: [
+      "documents",
+      "templates",
+      "list",
+      {
+        isActive: true,
+        category: categoryFilter === "all" ? undefined : categoryFilter,
+      },
+    ],
+    queryFn: () =>
+      client.documents.templates.list({
+        isActive: true,
+        category:
+          categoryFilter === "all"
+            ? undefined
+            : (categoryFilter as
+                | "LETTER"
+                | "AGREEMENT"
+                | "AFFIDAVIT"
+                | "WILL"
+                | "TAX_FORM"
+                | "CORPORATE"
+                | "IMMIGRATION"
+                | "PROPOSAL"
+                | "INVOICE"
+                | "RECEIPT"
+                | "OTHER"),
+      }),
     enabled: open,
   });
 
@@ -125,9 +134,9 @@ export function TemplateGeneratorDialog({
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       setOpen(false);
       resetState();
-      // Optionally show file info
-      if (data.fileName) {
-        toast.info(`Document saved as: ${data.fileName}`);
+      // Optionally download the file
+      if (data.generatedFileName) {
+        toast.info(`Document saved as: ${data.generatedFileName}`);
       }
     },
     onError: (error) => {

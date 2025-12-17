@@ -8,10 +8,11 @@
 import { account, db, passwordSetupToken, staff, user } from "@SYNERGY-GY/db";
 import { randomUUID } from "node:crypto";
 import { ORPCError } from "@orpc/server";
+import { hashPassword } from "better-auth/crypto";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure } from "../index";
-import { hashPassword, validatePasswordStrength } from "../utils/password";
+import { validatePasswordStrength } from "../utils/password";
 
 // Schema for verifying a setup token
 const verifyTokenSchema = z.object({

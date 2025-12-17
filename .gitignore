@@ -81,3 +81,4 @@ google-chrome-stable_current_amd64.deb
 
 # Backup files
 backups/
+test-server.bundled.js

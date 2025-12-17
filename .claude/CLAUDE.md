@@ -161,6 +161,140 @@ Most formatting and common issues are automatically fixed by Biome. Run `npx ult
 
 ---
 
+## 🚀 Production Status & Development Workflow
+
+> **CONTEXT FOR ALL AGENTS** - App is deployed to production. Use `develop` branch for new work.
+
+### Current Status
+**Status:** ✅ **DEPLOYED TO PRODUCTION** - App is live, staff adding data
+**GHCR Image:** `ghcr.io/kareemschultz/gk-nexus:latest`
+
+### Branch Workflow (IMPORTANT)
+
+```
+master (production)     ← What's deployed, image on GHCR
+  └── develop           ← Active development (work here!)
+```
+
+**Daily workflow:**
+1. Work on `develop` branch
+2. Test locally with `docker compose -f docker-compose.local.yml up --build`
+3. When ready, merge to `master` (triggers GHCR publish + production update)
+
+### Updating Production
+
+**After merging to master, on production server:**
+```bash
+# Pull and restart (preserves data volumes)
+docker compose pull && docker compose up -d
+
+# Verify health
+curl http://localhost:3000/health
+```
+
+**If schema changes, run migrations first:**
+```bash
+DATABASE_URL="postgresql://..." bun run db:push
+```
+
+---
+
+## oRPC + TanStack Query Patterns
+
+> **CRITICAL KNOWLEDGE** - This project uses oRPC with TanStack Query. These patterns are essential.
+
+### The Problem: 3-Level Nested oRPC Paths
+
+`createTanstackQueryUtils` from oRPC **does NOT support** 3-level nested paths. This causes "useQuery is not a function" errors.
+
+**Broken Pattern (DO NOT USE):**
+```typescript
+// ❌ This fails with "useQuery is not a function"
+orpc.clientServices.getFulfillmentProgress.useQuery({ clientId })
+orpc.knowledgeBase.delete.useMutation({ ... })
+```
+
+**Working Pattern (USE THIS):**
+```typescript
+// ✅ Use useQuery/useMutation from @tanstack/react-query directly
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { client } from "@/utils/orpc";
+
+// For queries:
+const { data } = useQuery({
+  queryKey: ["clientServices", "getFulfillmentProgress", clientId],
+  queryFn: () => client.clientServices.getFulfillmentProgress({ clientId }),
+});
+
+// For mutations:
+const mutation = useMutation({
+  mutationFn: (input: { id: string }) => client.knowledgeBase.delete(input),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
+  },
+});
+```
+
+### When Each Pattern Works
+
+| Pattern | Levels | Example | Works? |
+|---------|--------|---------|--------|
+| `orpc.clients.list.useQuery()` | 2 | `clients.list` | ✅ Yes |
+| `orpc.clientServices.getByClient.useQuery()` | 3 | `clientServices.getByClient` | ❌ No |
+| `orpc.documents.templates.list.useQuery()` | 3 | `documents.templates.list` | ❌ No |
+
+### Quick Reference
+
+```typescript
+// Import from @tanstack/react-query
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+// Import client (NOT orpc) from utils
+import { client, queryClient } from "@/utils/orpc";
+
+// Use client.xxx.yyy() for API calls
+// Use queryClient.invalidateQueries() for cache invalidation
+```
+
+### Development Guidelines
+
+#### oRPC + TanStack Query Patterns:
+1. **For queries (reading data)**: Use `orpc.xxx.useQuery()`
+   ```typescript
+   const { data } = orpc.clients.list.useQuery({ limit: 10 });
+   ```
+
+2. **For mutations (creating/updating)**: Use `useMutation` from @tanstack/react-query with `client`
+   ```typescript
+   import { useMutation } from "@tanstack/react-query";
+   import { client } from "@/utils/orpc";
+
+   const mutation = useMutation({
+     mutationFn: (input) => client.clients.create(input),
+   });
+   ```
+
+3. **For nested routers**: NEVER use `orpc.nested.sub.useMutation()` - it doesn't work with nested objects
+   ```typescript
+   // ❌ WRONG - won't work with nested routers
+   const mutation = orpc.portal.impersonation.start.useMutation();
+
+   // ✅ CORRECT - use useMutation with client directly
+   const mutation = useMutation({
+     mutationFn: (input) => client.portal.impersonation.start(input),
+   });
+   ```
+
+4. **Unwrap responses**: oRPC v1.12+ wraps responses in `{ json: T }` envelope
+   ```typescript
+   import { unwrapOrpc } from "@/utils/orpc-response";
+
+   const { data: dataRaw } = useQuery({ ... });
+   const data = unwrapOrpc<MyType>(dataRaw);
+   ```
+
+---
+
 ## API & Backend Patterns
 
 ### oRPC Error Handling
@@ -278,54 +412,6 @@ Use `/app` as the authenticated layout root, not `/dashboard`:
 ```typescript
 navigate({ to: "/app" });  // Correct
 navigate({ to: "/dashboard" });  // Wrong
-```
-
-### oRPC TanStack Query Integration
-
-The @orpc/tanstack-query package provides `.queryOptions()` and `.mutationOptions()` helpers, NOT hooks directly.
-
-**Correct patterns:**
-```typescript
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { orpc } from "@/utils/orpc";
-
-// Simple query - no input
-const { data } = useQuery(orpc.healthCheck.queryOptions());
-
-// Query with input
-const { data } = useQuery(
-  orpc.knowledgeBase.list.queryOptions({
-    input: { search: "foo", limit: 20 },
-  })
-);
-
-// Query with enabled condition
-const { data } = useQuery({
-  ...orpc.knowledgeBase.getById.queryOptions({
-    input: { id: itemId! },
-  }),
-  enabled: !!itemId,
-});
-
-// Mutation with callbacks
-const mutation = useMutation({
-  ...orpc.knowledgeBase.download.mutationOptions(),
-  onSuccess: () => {
-    toast.success("Download started");
-  },
-  onError: (error: Error) => {
-    toast.error(error.message);
-  },
-});
-```
-
-**Incorrect patterns (DO NOT USE):**
-```typescript
-// WRONG - .useQuery() doesn't exist on orpc utils
-orpc.knowledgeBase.list.useQuery({ search: "foo" });
-
-// WRONG - .useMutation() doesn't exist on orpc utils
-orpc.knowledgeBase.download.useMutation({ onSuccess: ... });
 ```
 
 ### Client vs orpc Imports
@@ -603,3 +689,4 @@ disabled={!itemDetails?.id}
 | `client.xxx.query({...})` | `client.xxx({...})` (no .query()) |
 | `WizardStep icon={...}` | Remove icon prop |
 | `{value && <div>...}` for unknown | `{value ? <div>... : null}` |
+| `orpc.nested.sub.useMutation()` | `useMutation({ mutationFn: () => client.nested.sub() })` |

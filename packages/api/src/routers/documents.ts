@@ -825,4 +825,81 @@ export const documentsRouter = {
       totalDocuments: stats.reduce((sum, { count }) => sum + count, 0),
     };
   }),
+
+  // Bulk operations
+  bulk: {
+    // Bulk archive documents
+    archive: staffProcedure
+      .input(z.object({ ids: z.array(z.string()).min(1) }))
+      .handler(async ({ input }) => {
+        await db
+          .update(document)
+          .set({
+            status: "ARCHIVED",
+            archivedAt: new Date(),
+          })
+          .where(
+            sql`${document.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
+          );
+
+        return { success: true, count: input.ids.length };
+      }),
+
+    // Bulk update category
+    updateCategory: staffProcedure
+      .input(
+        z.object({
+          ids: z.array(z.string()).min(1),
+          category: z.enum(documentCategoryValues),
+        })
+      )
+      .handler(async ({ input }) => {
+        await db
+          .update(document)
+          .set({ category: input.category })
+          .where(
+            sql`${document.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
+          );
+
+        return { success: true, count: input.ids.length };
+      }),
+
+    // Bulk assign to client
+    assignToClient: staffProcedure
+      .input(
+        z.object({
+          ids: z.array(z.string()).min(1),
+          clientId: z.string().nullable(),
+        })
+      )
+      .handler(async ({ input }) => {
+        await db
+          .update(document)
+          .set({ clientId: input.clientId })
+          .where(
+            sql`${document.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
+          );
+
+        return { success: true, count: input.ids.length };
+      }),
+
+    // Bulk assign to matter
+    assignToMatter: staffProcedure
+      .input(
+        z.object({
+          ids: z.array(z.string()).min(1),
+          matterId: z.string().nullable(),
+        })
+      )
+      .handler(async ({ input }) => {
+        await db
+          .update(document)
+          .set({ matterId: input.matterId })
+          .where(
+            sql`${document.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
+          );
+
+        return { success: true, count: input.ids.length };
+      }),
+  },
 };

@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 type PortalPreviewPanelProps = {
   clientId: string;
@@ -25,9 +25,10 @@ export function PortalPreviewPanel({
   const [url, setUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const startImpersonationMutation = useMutation(
-    orpc.portal.impersonation.start.mutationOptions()
-  );
+  const startImpersonationMutation = useMutation({
+    mutationFn: (input: { clientId: string; reason: string }) =>
+      client.portal.impersonation.start(input),
+  });
 
   const handleOpen = async () => {
     if (!open) {

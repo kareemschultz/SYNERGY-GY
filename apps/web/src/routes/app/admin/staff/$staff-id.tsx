@@ -1,7 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AlertCircle, Edit, Loader2, Save, X } from "lucide-react";
+import {
+  AlertCircle,
+  Edit,
+  Key,
+  Loader2,
+  Mail,
+  RotateCcw,
+  Save,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { type ControllerRenderProps, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -29,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app/admin/staff/$staff-id")({
   component: StaffDetailPage,
@@ -111,13 +121,26 @@ function StaffDetailPage() {
   const [isEditing, setIsEditing] = useState(edit);
 
   const {
-    data: staff,
+    data: staffRaw,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["admin", "staff", staffId],
     queryFn: () => client.admin.staff.getById({ id: staffId }),
   });
+
+  // Unwrap oRPC response envelope (v1.12+ wraps in { json: T })
+  const staff = unwrapOrpc<{
+    id: string;
+    role: string;
+    businesses: string[];
+    phone: string | null;
+    jobTitle: string | null;
+    canViewFinancials: boolean;
+    isActive: boolean;
+    user: { id: string; name: string; email: string };
+    createdAt: string;
+  }>(staffRaw);
 
   const form = useForm<UpdateStaffFormValues>({
     resolver: zodResolver(updateStaffSchema),
@@ -206,6 +229,51 @@ function StaffDetailPage() {
           err instanceof Error
             ? err.message
             : "Failed to update staff status. Please try again.",
+      });
+    },
+  });
+
+  // Password status query
+  const { data: passwordStatus, refetch: refetchPasswordStatus } = useQuery({
+    queryKey: ["admin", "staff", staffId, "passwordStatus"],
+    queryFn: () => client.admin.staff.checkPasswordStatus({ staffId }),
+    enabled: !!staffId,
+  });
+
+  // Resend setup link mutation
+  const resendSetupMutation = useMutation({
+    mutationFn: () => client.admin.staff.resendSetupLink({ staffId }),
+    onSuccess: (data) => {
+      refetchPasswordStatus();
+      toast({
+        title: "Setup link sent",
+        description: `Password setup email sent to ${data.email}`,
+      });
+    },
+    onError: (err) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to send setup link",
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    },
+  });
+
+  // Reset password mutation
+  const resetPasswordMutation = useMutation({
+    mutationFn: () => client.admin.staff.resetPassword({ staffId }),
+    onSuccess: (data) => {
+      refetchPasswordStatus();
+      toast({
+        title: "Password reset",
+        description: `Password reset email sent to ${data.email}`,
+      });
+    },
+    onError: (err) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to reset password",
+        description: err instanceof Error ? err.message : "Please try again.",
       });
     },
   });
@@ -308,6 +376,80 @@ function StaffDetailPage() {
               >
                 {staff.isActive ? "Active" : "Inactive"}
               </Badge>
+            </CardContent>
+          </Card>
+
+          {/* Password Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="h-5 w-5" />
+                Password Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-sm">Password Status</p>
+                  <p className="text-muted-foreground text-sm">
+                    {passwordStatus?.hasPassword
+                      ? "Password has been set up"
+                      : passwordStatus?.hasPendingSetup
+                        ? `Setup link sent (expires ${passwordStatus.pendingSetupExpires ? new Date(passwordStatus.pendingSetupExpires).toLocaleDateString() : "soon"})`
+                        : "No password set up yet"}
+                  </p>
+                </div>
+                <Badge
+                  className={
+                    passwordStatus?.hasPassword
+                      ? "border-green-200 bg-green-500/10 text-green-600"
+                      : passwordStatus?.hasPendingSetup
+                        ? "border-yellow-200 bg-yellow-500/10 text-yellow-600"
+                        : "border-red-200 bg-red-500/10 text-red-600"
+                  }
+                  variant="outline"
+                >
+                  {passwordStatus?.hasPassword
+                    ? "Active"
+                    : passwordStatus?.hasPendingSetup
+                      ? "Pending"
+                      : "Not Set"}
+                </Badge>
+              </div>
+              <div className="flex gap-2">
+                {!passwordStatus?.hasPassword && (
+                  <Button
+                    disabled={resendSetupMutation.isPending}
+                    onClick={() => resendSetupMutation.mutate()}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {resendSetupMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Mail className="mr-2 h-4 w-4" />
+                    )}
+                    {passwordStatus?.hasPendingSetup
+                      ? "Resend Setup Link"
+                      : "Send Setup Link"}
+                  </Button>
+                )}
+                {passwordStatus?.hasPassword && (
+                  <Button
+                    disabled={resetPasswordMutation.isPending}
+                    onClick={() => resetPasswordMutation.mutate()}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {resetPasswordMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                    )}
+                    Reset Password
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
 

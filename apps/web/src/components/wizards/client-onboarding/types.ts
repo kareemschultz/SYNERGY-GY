@@ -114,31 +114,55 @@ export const GCMC_SERVICES = [
     value: "TRAINING",
     label: "Training Services",
     description: "HR, Customer Relations, Supervisory Management",
+    documentRequirements: [],
   },
   {
     value: "CONSULTING",
     label: "Consulting",
     description: "Business Development, Management Consulting",
+    documentRequirements: [],
   },
   {
     value: "PARALEGAL",
     label: "Paralegal Services",
     description: "Affidavits, Agreements, Wills, Power of Attorney",
+    documentRequirements: [
+      "National ID or Passport",
+      "Proof of Address",
+      "Relevant Supporting Documents",
+    ],
   },
   {
     value: "IMMIGRATION",
     label: "Immigration",
     description: "Work Permits, Citizenship, Business Visas",
+    documentRequirements: [
+      "Valid Passport (6+ months validity)",
+      "Passport Photos (4 copies)",
+      "Police Clearance Certificate",
+      "Medical Certificate",
+      "Employment Contract/Letter",
+    ],
   },
   {
     value: "BUSINESS_REGISTRATION",
     label: "Business Registration",
     description: "Incorporation, Business Name, Partnerships",
+    documentRequirements: [
+      "National ID of Directors/Owners",
+      "Proof of Address",
+      "Draft Articles of Association",
+    ],
   },
   {
     value: "BUSINESS_PROPOSAL",
     label: "Business Proposals",
     description: "Land Applications, Investment Proposals",
+    documentRequirements: [
+      "Business Plan",
+      "Financial Projections",
+      "Company Profile",
+    ],
   },
 ] as const;
 
@@ -147,36 +171,73 @@ export const KAJ_SERVICES = [
     value: "TAX_RETURN",
     label: "Tax Returns",
     description: "Individual, Corporate, Self-Employed",
+    documentRequirements: [
+      "TIN Certificate",
+      "Previous Year Tax Return (if any)",
+      "Income Documentation (Pay Slips, Contracts)",
+      "Bank Statements",
+    ],
   },
   {
     value: "COMPLIANCE",
     label: "Compliance Certificates",
     description: "Tender, Work Permit, Land Transfer",
+    documentRequirements: [
+      "TIN Certificate",
+      "NIS Compliance",
+      "Latest Tax Return",
+    ],
   },
   {
     value: "PAYE",
     label: "PAYE Services",
     description: "PAYE Returns",
+    documentRequirements: [
+      "Employee List with TINs",
+      "Payroll Records",
+      "Previous PAYE Returns",
+    ],
   },
   {
     value: "FINANCIAL_STATEMENT",
     label: "Financial Statements",
     description: "Income/Expenditure, Balance Sheets",
+    documentRequirements: [
+      "Bank Statements (12 months)",
+      "Invoices and Receipts",
+      "Previous Financial Statements",
+    ],
   },
   {
     value: "NIS_SERVICES",
     label: "NIS Services",
     description: "Registration, Contributions, Pension",
+    documentRequirements: [
+      "National ID",
+      "Birth Certificate",
+      "Proof of Employment",
+    ],
   },
   {
     value: "BOOKKEEPING",
     label: "Bookkeeping",
     description: "Monthly Bookkeeping, Payroll",
+    documentRequirements: [
+      "Bank Statements",
+      "Invoices and Receipts",
+      "Expense Records",
+    ],
   },
   {
     value: "AUDIT",
     label: "Audit Services",
     description: "NGO & Co-operative Audits",
+    documentRequirements: [
+      "Financial Statements",
+      "Bank Statements",
+      "Minutes of Meetings",
+      "Membership Register",
+    ],
   },
 ] as const;
 
@@ -484,23 +545,30 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: "beneficial-owners",
     title: "Beneficial Ownership",
-    description: "Disclose beneficial owners (25%+ ownership)",
-    isOptional: false,
+    description: "Disclose beneficial owners (25%+ ownership) - optional",
+    isOptional: true,
     validate: (data: ClientOnboardingData) => {
-      // Only required for business types
+      // Skip validation if not a business type
       if (!isBusinessType(data.clientType)) {
         return null;
       }
 
-      const errors: Record<string, string> = {};
+      // Skip validation if no owners provided (user chose to skip)
+      if (!data.beneficialOwners || data.beneficialOwners.length === 0) {
+        return null;
+      }
 
-      // Corporations must have at least one beneficial owner
-      if (
-        data.clientType === "CORPORATION" &&
-        (!data.beneficialOwners || data.beneficialOwners.length === 0)
-      ) {
-        errors.beneficialOwners =
-          "At least one beneficial owner (25%+ ownership) must be disclosed for corporations";
+      // Validate provided owners
+      const errors: Record<string, string> = {};
+      for (const [index, owner] of data.beneficialOwners.entries()) {
+        if (!owner.fullName) {
+          errors[`owner_${index}_name`] =
+            `Owner ${index + 1}: Name is required`;
+        }
+        if (owner.ownershipPercentage < 0 || owner.ownershipPercentage > 100) {
+          errors[`owner_${index}_percentage`] =
+            `Owner ${index + 1}: Ownership must be 0-100%`;
+        }
       }
 
       return Object.keys(errors).length > 0 ? errors : null;
@@ -509,18 +577,15 @@ export const onboardingSteps: OnboardingStep[] = [
   {
     id: "aml-compliance",
     title: "AML/KYC Compliance",
-    description: "Anti-Money Laundering compliance",
-    isOptional: false,
+    description: "Anti-Money Laundering compliance (optional)",
+    isOptional: true,
     validate: (data: ClientOnboardingData) => {
-      const errors: Record<string, string> = {};
-
-      // Source of funds required for all clients
-      if (
-        !data.amlCompliance?.sourceOfFunds ||
-        data.amlCompliance.sourceOfFunds.length === 0
-      ) {
-        errors.sourceOfFunds = "Please select at least one source of funds";
+      // Skip validation if no AML data provided (user skipped)
+      if (!data.amlCompliance?.sourceOfFunds) {
+        return null;
       }
+
+      const errors: Record<string, string> = {};
 
       // If OTHER is selected, details are required
       if (
@@ -544,8 +609,11 @@ export const onboardingSteps: OnboardingStep[] = [
         }
       }
 
-      // Sanctions screening consent required
-      if (!data.amlCompliance?.sanctionsScreeningConsent) {
+      // Only require consent if user started filling out AML data
+      if (
+        data.amlCompliance?.sourceOfFunds &&
+        !data.amlCompliance?.sanctionsScreeningConsent
+      ) {
         errors.sanctionsScreeningConsent =
           "You must consent to sanctions screening to proceed";
       }

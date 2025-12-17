@@ -24,11 +24,28 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { client, queryClient } from "@/utils/orpc";
 
+type ServiceData = {
+  id: string;
+  categoryId: string;
+  name: string;
+  displayName: string;
+  description: string | null;
+  shortDescription: string | null;
+  pricingType: "FIXED" | "RANGE" | "TIERED" | "CUSTOM";
+  basePrice: string | null;
+  maxPrice: string | null;
+  typicalDuration: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  isFeatured: boolean;
+};
+
 type ServiceFormDialogProps = {
   business: "GCMC" | "KAJ";
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  service?: ServiceData | null;
 };
 
 const pricingTypes = [
@@ -43,7 +60,9 @@ export function ServiceFormDialog({
   open,
   onOpenChange,
   onSuccess,
+  service,
 }: ServiceFormDialogProps) {
+  const isEditMode = !!service;
   const [categoryId, setCategoryId] = useState("");
   const [name, setName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -58,6 +77,26 @@ export function ServiceFormDialog({
   const [sortOrder, setSortOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
+
+  // Populate form when editing
+  useEffect(() => {
+    if (service && open) {
+      setCategoryId(service.categoryId);
+      setName(service.name);
+      setDisplayName(service.displayName);
+      setDescription(service.description || "");
+      setShortDescription(service.shortDescription || "");
+      setPricingType(service.pricingType);
+      setBasePrice(service.basePrice || "");
+      setMaxPrice(service.maxPrice || "");
+      setTypicalDuration(service.typicalDuration || "");
+      setSortOrder(service.sortOrder);
+      setIsActive(service.isActive);
+      setIsFeatured(service.isFeatured);
+    } else if (!open) {
+      resetForm();
+    }
+  }, [service, open]);
 
   // Fetch categories for this business
   const { data: categoriesData } = useQuery({
@@ -103,6 +142,38 @@ export function ServiceFormDialog({
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      client.serviceCatalog.services.update({
+        id: service?.id || "",
+        categoryId,
+        business,
+        name: name.toUpperCase().replace(/\s+/g, "_"),
+        displayName,
+        description: description || undefined,
+        shortDescription: shortDescription || undefined,
+        pricingType,
+        basePrice: basePrice || undefined,
+        maxPrice: maxPrice || undefined,
+        typicalDuration: typicalDuration || undefined,
+        sortOrder,
+        isActive,
+        isFeatured,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-services"] });
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-service-categories"] });
+      toast.success("Service updated successfully");
+      resetForm();
+      onOpenChange(false);
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update service");
+    },
+  });
+
   const resetForm = () => {
     setCategoryId("");
     setName("");
@@ -128,16 +199,26 @@ export function ServiceFormDialog({
       toast.error("Display name is required");
       return;
     }
-    createMutation.mutate();
+    if (isEditMode) {
+      updateMutation.mutate();
+    } else {
+      createMutation.mutate();
+    }
   };
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Create Service</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? "Edit Service" : "Create Service"}
+          </DialogTitle>
           <DialogDescription>
-            Add a new service to the {business} catalog
+            {isEditMode
+              ? `Update ${service?.displayName}`
+              : `Add a new service to the ${business} catalog`}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -327,13 +408,13 @@ export function ServiceFormDialog({
               Cancel
             </Button>
             <Button
-              disabled={createMutation.isPending || categories.length === 0}
+              disabled={isPending || categories.length === 0}
               type="submit"
             >
-              {createMutation.isPending ? (
+              {isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              Create Service
+              {isEditMode ? "Save Changes" : "Create Service"}
             </Button>
           </DialogFooter>
         </form>

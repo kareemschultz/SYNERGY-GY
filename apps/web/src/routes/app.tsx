@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { Menu } from "lucide-react";
+import { Loader2, Menu } from "lucide-react";
 import { useState } from "react";
 import { MobileSidebar, Sidebar } from "@/components/layout/sidebar";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -15,6 +15,7 @@ import UserMenu from "@/components/user-menu";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { authClient } from "@/lib/auth-client";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -28,19 +29,44 @@ export const Route = createFileRoute("/app")({
     }
     return { session: session.data };
   },
+  pendingComponent: LoadingApp,
 });
+
+function LoadingApp() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">Verifying access...</p>
+      </div>
+    </div>
+  );
+}
 
 function AppLayout() {
   const { session } = Route.useRouteContext();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 640px)");
 
-  // Check if user has staff profile
-  const { data: staffStatus, isLoading: staffLoading } = useQuery({
-    queryKey: ["staffStatus"],
+  // Check if user has staff profile using useQuery with client
+  const { data: staffStatusRaw, isLoading: staffLoading } = useQuery({
+    queryKey: ["settings", "getStaffStatus"],
     queryFn: () => client.settings.getStaffStatus(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Unwrap oRPC response envelope (v1.12+ wraps in { json: T })
+  const staffStatus = unwrapOrpc<{
+    hasStaffProfile: boolean;
+    isActive: boolean;
+    staff: {
+      id: string;
+      role: string;
+      businesses: string[];
+      jobTitle: string | null;
+      canViewFinancials: boolean;
+    } | null;
+  }>(staffStatusRaw);
 
   // Show loading state while checking staff status
   if (staffLoading) {

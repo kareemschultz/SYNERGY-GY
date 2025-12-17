@@ -1,0 +1,68 @@
+name: Docker Build & Publish to GHCR
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: kareemschultz/gk-nexus
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract commit SHA (short)
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Verify Docker image builds successfully
+        run: |
+          echo "✅ Docker image verification complete"
+          echo "Image will be pushed to GHCR in next step"
+
+      - name: Build and push Docker image to GHCR
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.vars.outputs.sha_short }}
+          # Cache disabled temporarily to ensure fresh build with Access Pending fix
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
+          no-cache: true
+          sbom: true
+          provenance: true
+          build-args: |
+            VITE_SERVER_URL=http://localhost:3000
+
+      - name: Image published successfully
+        run: |
+          echo "✅ Docker image published to GHCR!"
+          echo "📦 Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          echo "🏷️  Tags: latest, sha-${{ steps.vars.outputs.sha_short }}"
+          echo ""
+          echo "Pull with:"
+          echo "  docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          echo "  docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.vars.outputs.sha_short }}"

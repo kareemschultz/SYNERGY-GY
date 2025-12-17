@@ -11,6 +11,7 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useState } from "react";
 import Header from "@/components/header";
+import { NotFound } from "@/components/shared/not-found";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { link, type orpc } from "@/utils/orpc";
@@ -23,6 +24,7 @@ export type RouterAppContext = {
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
+  notFoundComponent: NotFound,
   head: () => ({
     meta: [
       {

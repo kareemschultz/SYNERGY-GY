@@ -3,6 +3,7 @@ import { protectedProcedure, publicProcedure } from "../index";
 import { activityRouter } from "./activity";
 import { adminRouter } from "./admin";
 import { amlComplianceRouter } from "./aml-compliance";
+import { analyticsRouter } from "./analytics";
 import { appointmentsRouter } from "./appointments";
 import { backupRouter } from "./backup";
 import { beneficialOwnersRouter } from "./beneficial-owners";
@@ -31,6 +32,7 @@ export const appRouter = {
   })),
   activity: activityRouter,
   admin: adminRouter,
+  analytics: analyticsRouter,
   amlCompliance: amlComplianceRouter,
   appointments: appointmentsRouter,
   backup: backupRouter,

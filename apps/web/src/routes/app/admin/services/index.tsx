@@ -46,12 +46,49 @@ export const Route = createFileRoute("/app/admin/services/")({
   component: AdminServicesPage,
 });
 
+type ServiceType = {
+  id: string;
+  categoryId: string;
+  name: string;
+  displayName: string;
+  description: string | null;
+  shortDescription: string | null;
+  pricingType: "FIXED" | "RANGE" | "TIERED" | "CUSTOM";
+  basePrice: string | null;
+  maxPrice: string | null;
+  typicalDuration: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  currency: string;
+  category?: { displayName: string } | null;
+};
+
+type CategoryType = {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string | null;
+  icon: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  serviceCount?: number;
+};
+
 function AdminServicesPage() {
   const [selectedBusiness, setSelectedBusiness] = useState<"GCMC" | "KAJ">(
     "GCMC"
   );
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [editingService, setEditingService] = useState<ServiceType | null>(
+    null
+  );
+  const [editingCategory, setEditingCategory] = useState<CategoryType | null>(
+    null
+  );
+  const [deleteServiceId, setDeleteServiceId] = useState<string | null>(null);
+  const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
 
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
@@ -77,6 +114,60 @@ function AdminServicesPage() {
 
   const categories = categoriesData?.categories || [];
   const services = servicesData?.services || [];
+
+  // Delete service mutation
+  const deleteServiceMutation = useMutation({
+    mutationFn: (id: string) => client.serviceCatalog.services.delete({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-services"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-service-categories"] });
+      toast.success("Service deleted successfully");
+      setDeleteServiceId(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to delete service");
+    },
+  });
+
+  // Delete category mutation
+  const deleteCategoryMutation = useMutation({
+    mutationFn: (id: string) => client.serviceCatalog.categories.delete({ id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-service-categories"] });
+      toast.success("Category deleted successfully");
+      setDeleteCategoryId(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to delete category");
+    },
+  });
+
+  const handleEditService = (service: ServiceType) => {
+    setEditingService(service);
+    setServiceDialogOpen(true);
+  };
+
+  const handleEditCategory = (category: CategoryType) => {
+    setEditingCategory(category);
+    setCategoryDialogOpen(true);
+  };
+
+  const handleServiceDialogClose = (open: boolean) => {
+    setServiceDialogOpen(open);
+    if (!open) {
+      setEditingService(null);
+    }
+  };
+
+  const handleCategoryDialogClose = (open: boolean) => {
+    setCategoryDialogOpen(open);
+    if (!open) {
+      setEditingCategory(null);
+    }
+  };
+
+  const serviceToDelete = services.find((s) => s.id === deleteServiceId);
+  const categoryToDelete = categories.find((c) => c.id === deleteCategoryId);
 
   return (
     <div className="flex flex-col">
@@ -206,13 +297,23 @@ function AdminServicesPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button disabled size="sm" variant="ghost">
-                                <Eye className="h-4 w-4" />
+                              <Button asChild size="sm" variant="ghost">
+                                <Link to={`/app/admin/services/${service.id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Link>
                               </Button>
-                              <Button disabled size="sm" variant="ghost">
+                              <Button
+                                onClick={() => handleEditService(service)}
+                                size="sm"
+                                variant="ghost"
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button disabled size="sm" variant="ghost">
+                              <Button
+                                onClick={() => setDeleteServiceId(service.id)}
+                                size="sm"
+                                variant="ghost"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -302,10 +403,18 @@ function AdminServicesPage() {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button disabled size="sm" variant="ghost">
+                              <Button
+                                onClick={() => handleEditCategory(category)}
+                                size="sm"
+                                variant="ghost"
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button disabled size="sm" variant="ghost">
+                              <Button
+                                onClick={() => setDeleteCategoryId(category.id)}
+                                size="sm"
+                                variant="ghost"
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -350,17 +459,84 @@ function AdminServicesPage() {
         </Card>
       </div>
 
-      {/* Dialogs */}
+      {/* Form Dialogs */}
       <CategoryFormDialog
         business={selectedBusiness}
-        onOpenChange={setCategoryDialogOpen}
+        category={editingCategory}
+        onOpenChange={handleCategoryDialogClose}
         open={categoryDialogOpen}
       />
       <ServiceFormDialog
         business={selectedBusiness}
-        onOpenChange={setServiceDialogOpen}
+        onOpenChange={handleServiceDialogClose}
         open={serviceDialogOpen}
+        service={editingService}
       />
+
+      {/* Delete Service Confirmation */}
+      <AlertDialog
+        onOpenChange={(open) => !open && setDeleteServiceId(null)}
+        open={!!deleteServiceId}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Service</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;
+              {serviceToDelete?.displayName}
+              &quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteServiceMutation.isPending}
+              onClick={() =>
+                deleteServiceId && deleteServiceMutation.mutate(deleteServiceId)
+              }
+            >
+              {deleteServiceMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Category Confirmation */}
+      <AlertDialog
+        onOpenChange={(open) => !open && setDeleteCategoryId(null)}
+        open={!!deleteCategoryId}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;
+              {categoryToDelete?.displayName}&quot;? This action cannot be
+              undone. Note: Categories with existing services cannot be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteCategoryMutation.isPending}
+              onClick={() =>
+                deleteCategoryId &&
+                deleteCategoryMutation.mutate(deleteCategoryId)
+              }
+            >
+              {deleteCategoryMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

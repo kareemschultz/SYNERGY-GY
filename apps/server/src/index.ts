@@ -16,8 +16,8 @@ import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 import { stream } from "hono/streaming";
 
 // Run initial setup to create first owner account (if needed)
@@ -56,7 +56,31 @@ if (!CORS_ORIGIN && process.env.NODE_ENV === "production") {
 
 const app = new Hono();
 
-app.use(logger());
+console.log("SERVER_BOOT_MARKER", new Date().toISOString());
+
+// Hard-block RPC paths with dots (middleware guard, runs before other handlers)
+// This prevents Request mutation issues and provides clear error messages
+const DOT_IN_RPC_PATH = /^\/rpc\/.*\..*$/;
+app.use("/*", async (c, next) => {
+  const path = new URL(c.req.url).pathname;
+  if (DOT_IN_RPC_PATH.test(path)) {
+    const expectedPath = path.replace(/\./g, "/");
+    console.log(
+      `[DOT_PATH_BLOCKED] receivedPath: ${path}, expectedPath: ${expectedPath}`
+    );
+    return c.json(
+      {
+        error: "Invalid RPC path format",
+        message: "Use forward slashes instead of dots.",
+        receivedPath: path,
+        expectedPath,
+      },
+      400
+    );
+  }
+  return next();
+});
+
 app.use(
   "/*",
   cors({
@@ -297,6 +321,60 @@ app.get("/health", async (c) => {
   }
 });
 
-app.get("/", (c) => c.text("OK"));
+// Serve static files from the frontend build
+const FRONTEND_DIST = process.env.FRONTEND_DIST || "/app/apps/web/dist";
+
+// Only serve static files for non-API routes
+// This prevents serveStatic from intercepting /rpc/* and /api/* requests
+app.use("/*", async (c, next) => {
+  const path = new URL(c.req.url).pathname;
+
+  // Skip static file serving for API routes
+  if (
+    path.startsWith("/rpc/") ||
+    path.startsWith("/api/") ||
+    path.startsWith("/api-reference/")
+  ) {
+    return next();
+  }
+
+  // Set cache headers based on file type
+  // Hashed assets (Vite bundles) can be cached long-term
+  // Non-hashed assets should have shorter cache times
+  const isHashedAsset = /\.[a-zA-Z0-9]{8,}\.(js|css)$/.test(path);
+  const isStaticAsset =
+    /\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)$/.test(path);
+
+  if (isHashedAsset) {
+    // Hashed assets are immutable - cache for 1 year
+    c.header("Cache-Control", "public, max-age=31536000, immutable");
+  } else if (isStaticAsset) {
+    // Non-hashed assets - cache for 1 hour, must revalidate
+    c.header("Cache-Control", "public, max-age=3600, must-revalidate");
+  }
+
+  // Serve static files for everything else
+  return serveStatic({
+    root: FRONTEND_DIST,
+    onNotFound: (path, c) => {
+      // For client-side routing, serve index.html for all non-API routes
+      return c.redirect("/index.html", 302);
+    },
+  })(c, next);
+});
+
+// Fallback for SPA routing - serve index.html for any unmatched routes
+app.get("*", async (c) => {
+  const indexPath = join(FRONTEND_DIST, "index.html");
+  if (existsSync(indexPath)) {
+    const content = Bun.file(indexPath);
+    // Prevent caching of index.html to ensure users get latest version
+    c.header("Cache-Control", "no-cache, no-store, must-revalidate");
+    c.header("Pragma", "no-cache");
+    c.header("Expires", "0");
+    return c.html(await content.text());
+  }
+  return c.text("Frontend not found", 404);
+});
 
 export default app;

@@ -1,15 +1,79 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Download, FileText, Loader2, Plus } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Circle,
+  DollarSign,
+  Download,
+  FileText,
+  Loader2,
+  Plus,
+  User,
+} from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { client, orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app/matters/$matter-id")({
   component: MatterDetailPage,
 });
+
+// Matter type for unwrapping
+type MatterData = {
+  id: string;
+  referenceNumber: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  business: string;
+  startDate: string | null;
+  dueDate: string | null;
+  completedDate: string | null;
+  estimatedFee: string | null;
+  actualFee: string | null;
+  isPaid: boolean;
+  taxYear: number | null;
+  createdAt: Date;
+  client: {
+    id: string;
+    displayName: string;
+    email: string | null;
+    phone: string | null;
+  } | null;
+  serviceType: {
+    id: string;
+    name: string;
+    category: string | null;
+  } | null;
+  assignedStaff: {
+    user: {
+      id: string;
+      name: string;
+    };
+  } | null;
+  checklist: Array<{
+    id: string;
+    item: string;
+    isCompleted: boolean;
+    completedAt: Date | null;
+    completedBy: { name: string } | null;
+    sortOrder: number;
+  }>;
+  notes: Array<{
+    id: string;
+    content: string;
+    isInternal: boolean;
+    createdAt: Date;
+    createdBy: { name: string } | null;
+  }>;
+};
 
 const _statusOptions = [
   { value: "NEW", label: "New" },
@@ -40,13 +104,16 @@ function MatterDetailPage() {
   const { "matter-id": matterId } = Route.useParams();
 
   const {
-    data: matter,
+    data: matterRaw,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["matter", matterId],
     queryFn: () => client.matters.getById({ id: matterId }),
   });
+
+  // Unwrap oRPC response envelope (v1.12+ wraps in { json: T })
+  const matter = unwrapOrpc<MatterData>(matterRaw);
 
   if (isLoading) {
     return (
@@ -126,118 +193,247 @@ function MatterDetailPage() {
   );
 }
 
-// ... MatterData type ... (keep existing)
-type MatterData = {
-  id: string;
-  referenceNumber: string;
-  title: string;
-  description: string | null;
-  status: string;
-  priority: string;
-  business: string;
-  startDate: string | null;
-  dueDate: string | null;
-  completedDate: string | null;
-  estimatedFee: string | null;
-  actualFee: string | null;
-  isPaid: boolean;
-  taxYear: number | null;
-  createdAt: Date;
-  client: {
-    id: string;
-    displayName: string;
-    email: string | null;
-    phone: string | null;
-  } | null;
-  serviceType: {
-    id: string;
-    name: string;
-    category: string | null;
-  } | null;
-  assignedStaff: {
-    user: {
-      id: string;
-      name: string;
-    };
-  } | null;
-  checklist: Array<{
-    id: string;
-    item: string;
-    isCompleted: boolean;
-    completedAt: Date | null;
-    completedBy: { name: string } | null;
-    sortOrder: number;
-  }>;
-  notes: Array<{
-    id: string;
-    content: string;
-    isInternal: boolean;
-    createdAt: Date;
-    createdBy: { name: string } | null;
-  }>;
+const statusStyles: Record<string, string> = {
+  NEW: "bg-blue-500/10 text-blue-600 border-blue-200",
+  IN_PROGRESS: "bg-yellow-500/10 text-yellow-600 border-yellow-200",
+  PENDING_CLIENT: "bg-orange-500/10 text-orange-600 border-orange-200",
+  SUBMITTED: "bg-purple-500/10 text-purple-600 border-purple-200",
+  COMPLETE: "bg-green-500/10 text-green-600 border-green-200",
+  CANCELLED: "bg-gray-500/10 text-gray-600 border-gray-200",
+};
+
+const priorityStyles: Record<string, string> = {
+  LOW: "bg-gray-500/10 text-gray-600",
+  NORMAL: "bg-blue-500/10 text-blue-600",
+  HIGH: "bg-orange-500/10 text-orange-600",
+  URGENT: "bg-red-500/10 text-red-600",
 };
 
 function OverviewTab({ matter }: { matter: MatterData }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Overview</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <p className="text-muted-foreground text-sm">Description</p>
-            <p>{matter.description || "No description"}</p>
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Matter Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Status
+              </p>
+              <Badge
+                className={statusStyles[matter.status] || ""}
+                variant="outline"
+              >
+                {matter.status.replace(/_/g, " ")}
+              </Badge>
+            </div>
+            <div>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Priority
+              </p>
+              <Badge
+                className={priorityStyles[matter.priority] || ""}
+                variant="outline"
+              >
+                {matter.priority}
+              </Badge>
+            </div>
           </div>
+          {matter.description && (
+            <div>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Description
+              </p>
+              <p className="text-sm">{matter.description}</p>
+            </div>
+          )}
           <div>
-            <p className="text-muted-foreground text-sm">Service Type</p>
-            <p>{matter.serviceType?.name || "N/A"}</p>
+            <p className="mb-1 font-medium text-muted-foreground text-sm">
+              Business
+            </p>
+            <p className="text-sm">{matter.business}</p>
           </div>
+          {matter.serviceType && (
+            <div>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Service Type
+              </p>
+              <p className="text-sm">{matter.serviceType.name}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Dates & Fees
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {matter.startDate && (
+            <div>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Start Date
+              </p>
+              <p className="text-sm">
+                {new Date(matter.startDate).toLocaleDateString()}
+              </p>
+            </div>
+          )}
+          {matter.dueDate && (
+            <div>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Due Date
+              </p>
+              <p className="text-sm">
+                {new Date(matter.dueDate).toLocaleDateString()}
+              </p>
+            </div>
+          )}
+          {matter.estimatedFee && (
+            <div>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Estimated Fee
+              </p>
+              <p className="flex items-center gap-1 text-sm">
+                <DollarSign className="h-4 w-4" />
+                {Number(matter.estimatedFee).toLocaleString()}
+              </p>
+            </div>
+          )}
+          {matter.actualFee && (
+            <div>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Actual Fee
+              </p>
+              <p className="flex items-center gap-1 text-sm">
+                <DollarSign className="h-4 w-4" />
+                {Number(matter.actualFee).toLocaleString()}
+              </p>
+            </div>
+          )}
           <div>
-            <p className="text-muted-foreground text-sm">Assigned Staff</p>
-            <p>{matter.assignedStaff?.user.name || "Unassigned"}</p>
+            <p className="mb-1 font-medium text-muted-foreground text-sm">
+              Payment Status
+            </p>
+            <Badge variant={matter.isPaid ? "default" : "secondary"}>
+              {matter.isPaid ? "Paid" : "Unpaid"}
+            </Badge>
           </div>
-          <div>
-            <p className="text-muted-foreground text-sm">Estimated Fee</p>
-            <p>{matter.estimatedFee ? `GYD ${matter.estimatedFee}` : "N/A"}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {matter.client && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Client Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="mb-1 font-medium text-muted-foreground text-sm">
+                Name
+              </p>
+              <p className="text-sm">{matter.client.displayName}</p>
+            </div>
+            {matter.client.email && (
+              <div>
+                <p className="mb-1 font-medium text-muted-foreground text-sm">
+                  Email
+                </p>
+                <p className="text-sm">{matter.client.email}</p>
+              </div>
+            )}
+            {matter.client.phone && (
+              <div>
+                <p className="mb-1 font-medium text-muted-foreground text-sm">
+                  Phone
+                </p>
+                <p className="text-sm">{matter.client.phone}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {matter.assignedStaff && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Assigned Staff
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">{matter.assignedStaff.user.name}</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 
 function ChecklistTab({ matter }: { matter: MatterData }) {
+  const completedCount = matter.checklist.filter(
+    (item) => item.isCompleted
+  ).length;
+  const totalCount = matter.checklist.length;
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Checklist</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Checklist</CardTitle>
+          <p className="mt-1 text-muted-foreground text-sm">
+            {completedCount} of {totalCount} items completed
+          </p>
+        </div>
       </CardHeader>
       <CardContent>
         {matter.checklist.length === 0 ? (
-          <p className="text-center text-muted-foreground">
-            No checklist items
+          <p className="py-8 text-center text-muted-foreground">
+            No checklist items for this matter.
           </p>
         ) : (
-          <ul className="space-y-2">
-            {matter.checklist.map((item) => (
-              <li className="flex items-center gap-2" key={item.id}>
-                <input
-                  checked={item.isCompleted}
-                  disabled
-                  readOnly
-                  type="checkbox"
-                />
-                <span
-                  className={
-                    item.isCompleted ? "text-muted-foreground line-through" : ""
-                  }
+          <div className="space-y-3">
+            {matter.checklist
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map((item) => (
+                <div
+                  className="flex items-center gap-3 rounded-lg border p-3"
+                  key={item.id}
                 >
-                  {item.item}
-                </span>
-              </li>
-            ))}
-          </ul>
+                  {item.isCompleted ? (
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <Circle className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <div className="flex-1">
+                    <p
+                      className={`text-sm ${item.isCompleted ? "text-muted-foreground line-through" : ""}`}
+                    >
+                      {item.item}
+                    </p>
+                    {item.isCompleted && item.completedBy && (
+                      <p className="text-muted-foreground text-xs">
+                        Completed by {item.completedBy.name}
+                        {item.completedAt &&
+                          ` on ${new Date(item.completedAt).toLocaleDateString()}`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+          </div>
         )}
       </CardContent>
     </Card>
@@ -247,28 +443,36 @@ function ChecklistTab({ matter }: { matter: MatterData }) {
 function NotesTab({ matter }: { matter: MatterData }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Notes</CardTitle>
+        <Button size="sm">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Note
+        </Button>
       </CardHeader>
       <CardContent>
         {matter.notes.length === 0 ? (
-          <p className="text-center text-muted-foreground">No notes</p>
+          <p className="py-8 text-center text-muted-foreground">
+            No notes for this matter.
+          </p>
         ) : (
           <div className="space-y-4">
             {matter.notes.map((note) => (
               <div className="rounded-lg border p-4" key={note.id}>
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
-                    {note.createdBy?.name || "System"} •{" "}
-                    {new Date(note.createdAt).toLocaleDateString()}
-                  </span>
-                  {note.isInternal && (
-                    <span className="rounded bg-yellow-100 px-2 py-1 text-xs text-yellow-800">
-                      Internal
+                  <p className="font-medium text-sm">
+                    {note.createdBy?.name || "Unknown"}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {note.isInternal && (
+                      <Badge variant="secondary">Internal</Badge>
+                    )}
+                    <span className="text-muted-foreground text-xs">
+                      {new Date(note.createdAt).toLocaleDateString()}
                     </span>
-                  )}
+                  </div>
                 </div>
-                <p>{note.content}</p>
+                <p className="whitespace-pre-wrap text-sm">{note.content}</p>
               </div>
             ))}
           </div>
@@ -279,11 +483,9 @@ function NotesTab({ matter }: { matter: MatterData }) {
 }
 
 function DocumentsTab({ matterId }: { matterId: string }) {
-  const { data: documents, isLoading } = useQuery(
-    orpc.documents.getByMatter.queryOptions({
-      input: { matterId },
-    })
-  );
+  const { data: documents, isLoading } = client.documents.getByMatter.useQuery({
+    matterId,
+  });
 
   if (isLoading) {
     return (
@@ -345,10 +547,6 @@ function DocumentsTab({ matterId }: { matterId: string }) {
     </Card>
   );
 }
-
-// ... OverviewTab ... (keep existing)
-// ... ChecklistTab ... (keep existing)
-// ... NotesTab ... (keep existing)
 
 function _InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (

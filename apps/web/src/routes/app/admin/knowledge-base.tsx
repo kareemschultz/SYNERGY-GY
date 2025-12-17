@@ -39,7 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { orpc, queryClient } from "@/utils/orpc";
+import { client, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/admin/knowledge-base")({
   component: AdminKnowledgeBasePage,
@@ -47,17 +47,16 @@ export const Route = createFileRoute("/app/admin/knowledge-base")({
 
 function AdminKnowledgeBasePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [editingItem, setEditingItem] = useState<unknown | null>(null);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = useQuery(
-    orpc.knowledgeBase.list.queryOptions({
-      input: { search: search || undefined },
-    })
-  );
+  const { data, isLoading } = useQuery({
+    queryKey: ["knowledgeBase", "list", search || undefined],
+    queryFn: () => client.knowledgeBase.list({ search: search || undefined }),
+  });
 
   const deleteMutation = useMutation({
-    ...orpc.knowledgeBase.delete.mutationOptions(),
+    mutationFn: (input: { id: string }) => client.knowledgeBase.delete(input),
     onSuccess: () => {
       toast.success("Item deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
@@ -71,7 +70,7 @@ function AdminKnowledgeBasePage() {
     }
   };
 
-  const handleEdit = (item: any) => {
+  const handleEdit = (item: unknown) => {
     setEditingItem(item);
     setIsDialogOpen(true);
   };
@@ -216,6 +215,16 @@ function AdminKnowledgeBasePage() {
   );
 }
 
+type KBItemData = {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  category: string;
+  business: string | null;
+  isStaffOnly: boolean;
+};
+
 function KBItemDialog({
   open,
   onOpenChange,
@@ -223,9 +232,10 @@ function KBItemDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialData?: any;
+  initialData?: unknown;
 }) {
-  const isEditing = !!initialData;
+  const typedInitialData = initialData as KBItemData | undefined;
+  const isEditing = !!typedInitialData;
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -239,7 +249,7 @@ function KBItemDialog({
 
   // Load initial data when opening for edit
   // Note: simplified logic, ideally use useEffect or key on Dialog to reset
-  if (isEditing && initialData && formData.title === "") {
+  if (isEditing && typedInitialData && formData.title === "") {
     // Prevent infinite loop or stale data - this is quick hack, better to use useEffect
   }
 
@@ -247,42 +257,22 @@ function KBItemDialog({
   // Move logic to wrapper or useEffect
 
   const createMutation = useMutation({
-    ...orpc.knowledgeBase.create.mutationOptions(),
-    onSuccess: async (_newItem) => {
+    mutationFn: (input: {
+      title: string;
+      description: string;
+      type: string;
+      category: string;
+      business: string | null;
+      isStaffOnly: boolean;
+      isFeatured: boolean;
+      supportsAutoFill: boolean;
+      relatedServices: string[];
+      requiredFor: string[];
+      content?: string;
+    }) => client.knowledgeBase.create(input),
+    onSuccess: async () => {
       if (formData.file) {
-        // Upload file if selected
-        try {
-          // We first need to prepare upload, but create mutation doesn't return upload url directly
-          // Wait, create mutation creates the item record directly.
-          // Does it support file upload?
-          // The schema has fileName, storagePath etc. but no file upload logic in create endpoint
-
-          // Usually for KB, we might want to upload file first then create record, OR create record then upload
-          // But KB create endpoint assumes metadata is passed.
-
-          // Let's assume we use the document system to upload? No, KB has its own storagePath.
-          // The prompt says "File upload for forms (PDFs)".
-
-          // Let's look at `orpc.documents.prepareUpload`. That creates a document record.
-          // KB item is different from Document record.
-
-          // Maybe I should use `orpc.documents` to upload and then link?
-          // Or maybe KB items don't have file uploads implemented in API yet?
-          // KB Item schema has `fileName`, `storagePath`.
-
-          // I'll skip file upload implementation detail for now and just show toast,
-          // as API support for KB file upload specifically seems missing or implicit.
-          // Or I can use the generic upload endpoint if I can get a URL.
-
-          // Actually, I should use `orpc.documents.prepareUpload` to get a document,
-          // and then maybe I can't link it to KB Item easily as KB item table has storagePath directly.
-
-          toast.success(
-            "Resource created (File upload pending backend support)"
-          );
-        } catch (_e) {
-          toast.error("Failed to upload file");
-        }
+        toast.success("Resource created (File upload pending backend support)");
       } else {
         toast.success("Resource created successfully");
       }
@@ -293,7 +283,20 @@ function KBItemDialog({
   });
 
   const updateMutation = useMutation({
-    ...orpc.knowledgeBase.update.mutationOptions(),
+    mutationFn: (input: {
+      id: string;
+      title: string;
+      description: string;
+      type: string;
+      category: string;
+      business: string | null;
+      isStaffOnly: boolean;
+      isFeatured: boolean;
+      supportsAutoFill: boolean;
+      relatedServices: string[];
+      requiredFor: string[];
+      content?: string;
+    }) => client.knowledgeBase.update(input),
     onSuccess: () => {
       toast.success("Resource updated successfully");
       queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
@@ -308,19 +311,19 @@ function KBItemDialog({
     const data = {
       title: formData.title,
       description: formData.description,
-      type: formData.type as any,
-      category: formData.category as any,
-      business: formData.business === "ALL" ? null : (formData.business as any),
+      type: formData.type,
+      category: formData.category,
+      business: formData.business === "ALL" ? null : formData.business,
       isStaffOnly: formData.isStaffOnly,
       isFeatured: false,
       supportsAutoFill: false,
-      relatedServices: [],
-      requiredFor: [],
+      relatedServices: [] as string[],
+      requiredFor: [] as string[],
       content: formData.content || undefined,
     };
 
-    if (isEditing) {
-      updateMutation.mutate({ id: initialData.id, ...data });
+    if (isEditing && typedInitialData) {
+      updateMutation.mutate({ id: typedInitialData.id, ...data });
     } else {
       createMutation.mutate(data);
     }

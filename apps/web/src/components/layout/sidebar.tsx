@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
+  BarChart3,
   BookOpen,
   Building2,
   Calculator,
@@ -75,6 +76,11 @@ const mainNavItems: NavItem[] = [
     title: "Calculators",
     href: "/app/calculators",
     icon: Calculator,
+  },
+  {
+    title: "Analytics",
+    href: "/app/analytics",
+    icon: BarChart3,
   },
 ];
 

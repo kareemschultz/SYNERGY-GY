@@ -1,47 +1,58 @@
-# --- Dependencies (CRITICAL: Fixes the build crash) ---
-node_modules
-apps/*/node_modules
-packages/*/node_modules
-
-# --- Build Artifacts & Caching ---
-dist
-out
-build
-.turbo
-.cache
-*.tsbuildinfo
-
-# --- Environment & Secrets ---
-# Don't bake secrets into the image. 
-# We inject .env.production at runtime via Docker Compose.
-.env
-.env.production
-.env.local
-.env.development
-.env.test
-
-# --- Version Control ---
+# Git
 .git
 .gitignore
-.github
-.husky
+.gitattributes
 
-# --- IDEs & Editor Configs ---
+# Dependencies
+node_modules
+**/node_modules
+**/.turbo
+
+# Build outputs
+**/dist
+**/build
+**/.next
+**/.cache
+**/.vinxi
+
+# Development
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+bun.lockb
+.DS_Store
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README*.md
+CHANGELOG.md
+docs
+specs
+*.md
+
+# CI/CD
+.github
+
+# IDE
 .vscode
 .idea
-.cursor
-.claude
-.gemini
-.ruler
 *.swp
+*.swo
+*~
 
-# --- Logs & System ---
-*.log
-npm-debug.log
-yarn-error.log
-.DS_Store
-Thumbs.db
+# Backups (don't include in build context)
+backups
+data/uploads
 
-# --- Documentation (Optional: Ignore if not building docs container) ---
-apps/docs
-specs
+# E2E tests
+**/e2e
+**/*.spec.ts
+**/*.test.ts
+playwright-report
+test-results

@@ -461,4 +461,198 @@ export const mattersRouter = {
       {} as Record<string, number>
     );
   }),
+
+  // Bulk operations
+  bulk: {
+    // Bulk update matter status
+    updateStatus: staffProcedure
+      .input(
+        z.object({
+          ids: z.array(z.string()).min(1),
+          status: z.enum(matterStatusValues),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Verify access to all matters
+        const mattersToUpdate = await db.query.matter.findMany({
+          where: sql`${matter.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`,
+        });
+
+        for (const m of mattersToUpdate) {
+          if (!accessibleBusinesses.includes(m.business)) {
+            throw new ORPCError("FORBIDDEN", {
+              message: `You don't have access to matter ${m.referenceNumber}`,
+            });
+          }
+        }
+
+        // If status is COMPLETE, set completedDate
+        const additionalUpdates: Record<string, unknown> = {};
+        if (input.status === "COMPLETE") {
+          additionalUpdates.completedDate = new Date()
+            .toISOString()
+            .split("T")[0];
+        }
+
+        await db
+          .update(matter)
+          .set({ status: input.status, ...additionalUpdates })
+          .where(
+            sql`${matter.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
+          );
+
+        return { success: true, count: input.ids.length };
+      }),
+
+    // Bulk export matters to CSV
+    export: staffProcedure
+      .input(z.object({ ids: z.array(z.string()).min(1) }))
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        const matters = await db.query.matter.findMany({
+          where: sql`${matter.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`,
+          with: {
+            client: {
+              columns: { id: true, displayName: true },
+            },
+            serviceType: {
+              columns: { id: true, name: true },
+            },
+            assignedStaff: {
+              with: {
+                user: {
+                  columns: { name: true },
+                },
+              },
+            },
+          },
+        });
+
+        // Filter by access
+        const accessibleMatters = matters.filter((m) =>
+          accessibleBusinesses.includes(m.business)
+        );
+
+        // Generate CSV content
+        const headers = [
+          "Reference Number",
+          "Title",
+          "Business",
+          "Client",
+          "Service",
+          "Status",
+          "Priority",
+          "Assigned To",
+          "Start Date",
+          "Due Date",
+          "Estimated Fee",
+          "Actual Fee",
+          "Is Paid",
+          "Created At",
+        ];
+
+        const rows = accessibleMatters.map((m) => [
+          m.referenceNumber,
+          m.title,
+          m.business,
+          m.client?.displayName || "",
+          m.serviceType?.name || "",
+          m.status,
+          m.priority,
+          m.assignedStaff?.user?.name || "",
+          m.startDate || "",
+          m.dueDate || "",
+          m.estimatedFee || "",
+          m.actualFee || "",
+          m.isPaid ? "Yes" : "No",
+          m.createdAt ? new Date(m.createdAt).toISOString() : "",
+        ]);
+
+        const csvContent = [
+          headers.join(","),
+          ...rows.map((row) =>
+            row
+              .map((cell) =>
+                typeof cell === "string" && cell.includes(",")
+                  ? `"${cell.replace(/"/g, '""')}"`
+                  : cell
+              )
+              .join(",")
+          ),
+        ].join("\n");
+
+        return { csv: csvContent, count: accessibleMatters.length };
+      }),
+
+    // Bulk assign staff to matters
+    assignStaff: staffProcedure
+      .input(
+        z.object({
+          ids: z.array(z.string()).min(1),
+          assignedStaffId: z.string().nullable(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Verify access to all matters
+        const mattersToUpdate = await db.query.matter.findMany({
+          where: sql`${matter.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`,
+        });
+
+        for (const m of mattersToUpdate) {
+          if (!accessibleBusinesses.includes(m.business)) {
+            throw new ORPCError("FORBIDDEN", {
+              message: `You don't have access to matter ${m.referenceNumber}`,
+            });
+          }
+        }
+
+        await db
+          .update(matter)
+          .set({ assignedStaffId: input.assignedStaffId })
+          .where(
+            sql`${matter.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
+          );
+
+        return { success: true, count: input.ids.length };
+      }),
+
+    // Bulk update priority
+    updatePriority: staffProcedure
+      .input(
+        z.object({
+          ids: z.array(z.string()).min(1),
+          priority: z.enum(matterPriorityValues),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Verify access to all matters
+        const mattersToUpdate = await db.query.matter.findMany({
+          where: sql`${matter.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`,
+        });
+
+        for (const m of mattersToUpdate) {
+          if (!accessibleBusinesses.includes(m.business)) {
+            throw new ORPCError("FORBIDDEN", {
+              message: `You don't have access to matter ${m.referenceNumber}`,
+            });
+          }
+        }
+
+        await db
+          .update(matter)
+          .set({ priority: input.priority })
+          .where(
+            sql`${matter.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
+          );
+
+        return { success: true, count: input.ids.length };
+      }),
+  },
 };

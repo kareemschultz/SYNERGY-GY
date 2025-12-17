@@ -404,6 +404,7 @@ function NewInvoicePage() {
               <form.Field name="lineItems">
                 {(field) => (
                   <LineItemEditor
+                    business={form.state.values.business || undefined}
                     items={field.state.value}
                     onChange={(items) => field.handleChange(items)}
                   />

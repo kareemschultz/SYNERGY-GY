@@ -36,11 +36,17 @@
     "db:watch": "turbo -F @SYNERGY-GY/db db:watch",
     "db:stop": "turbo -F @SYNERGY-GY/db db:stop",
     "db:down": "turbo -F @SYNERGY-GY/db db:down",
+    "db:seed-catalog": "turbo -F @SYNERGY-GY/db db:seed-catalog",
     "test": "turbo -F web test:run",
     "test:watch": "turbo -F web test",
     "test:coverage": "turbo -F web test:coverage"
   },
   "dependencies": {
+    "@orpc/client": "^1.12.3",
+    "@orpc/openapi": "^1.12.3",
+    "@orpc/server": "^1.12.3",
+    "@orpc/tanstack-query": "^1.12.3",
+    "@orpc/zod": "^1.12.3",
     "dotenv": "^17.2.2",
     "drizzle-zod": "^0.8.3",
     "pg": "^8.16.3",

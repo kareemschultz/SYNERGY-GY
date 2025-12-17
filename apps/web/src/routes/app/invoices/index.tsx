@@ -1,20 +1,25 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Calendar,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Download,
   FileText,
   Loader2,
   MoreHorizontal,
   Plus,
   Search,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { BulkActionsToolbar } from "@/components/bulk-actions/bulk-actions-toolbar";
 import { AgingReport } from "@/components/invoices/aging-report";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useSelection } from "@/hooks/use-selection";
 import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/invoices/")({
@@ -88,6 +94,8 @@ function InvoicesPage() {
     "GCMC" | "KAJ" | undefined
   >(undefined);
 
+  const queryClient = useQueryClient();
+
   const { data, isLoading, error } = useQuery({
     queryKey: [
       "invoices",
@@ -113,6 +121,69 @@ function InvoicesPage() {
             : (businessFilter as "GCMC" | "KAJ"),
       }),
   });
+
+  const invoices = data?.invoices || [];
+  const {
+    selectedIds,
+    selectedIdsArray,
+    selectedCount,
+    isAllSelected,
+    isPartiallySelected,
+    isSelected,
+    toggleSelection,
+    toggleSelectAll,
+    clearSelection,
+  } = useSelection(invoices);
+
+  // Clear selection when filters/search/page changes
+  useEffect(() => {
+    clearSelection();
+  }, [search, statusFilter, businessFilter, page, clearSelection]);
+
+  // Bulk export mutation
+  const exportMutation = useMutation({
+    mutationFn: (ids: string[]) => client.invoices.bulk.export({ ids }),
+    onSuccess: (result) => {
+      // Download CSV file
+      const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = result.filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+
+      toast.success(`Exported ${result.exportedCount} invoice(s) to CSV`);
+      clearSelection();
+    },
+    onError: () => {
+      toast.error("Failed to export invoices");
+    },
+  });
+
+  // Bulk mark as paid mutation
+  const markAsPaidMutation = useMutation({
+    mutationFn: (ids: string[]) => client.invoices.bulk.markAsPaid({ ids }),
+    onSuccess: (result) => {
+      toast.success(`Marked ${result.updatedCount} invoice(s) as paid`);
+      clearSelection();
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    },
+    onError: () => {
+      toast.error("Failed to mark invoices as paid");
+    },
+  });
+
+  const handleExport = () => {
+    if (selectedIdsArray.length > 0) {
+      exportMutation.mutate(selectedIdsArray);
+    }
+  };
+
+  const handleMarkAsPaid = () => {
+    if (selectedIdsArray.length > 0) {
+      markAsPaidMutation.mutate(selectedIdsArray);
+    }
+  };
 
   return (
     <div className="flex flex-col">
@@ -230,6 +301,15 @@ function InvoicesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    aria-label="Select all invoices"
+                    checked={
+                      isAllSelected || (isPartiallySelected && "indeterminate")
+                    }
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Invoice #</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>Business</TableHead>
@@ -243,7 +323,7 @@ function InvoicesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell className="text-center" colSpan={8}>
+                  <TableCell className="text-center" colSpan={9}>
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="mr-2 h-6 w-6 animate-spin" />
                       <span className="text-muted-foreground">
@@ -253,9 +333,9 @@ function InvoicesPage() {
                   </TableCell>
                 </TableRow>
                 // biome-ignore lint/style/noNestedTernary: Auto-fix
-              ) : data?.invoices.length === 0 ? (
+              ) : invoices.length === 0 ? (
                 <TableRow>
-                  <TableCell className="text-center" colSpan={8}>
+                  <TableCell className="text-center" colSpan={9}>
                     <div className="flex flex-col items-center justify-center py-12">
                       <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
                       <h3 className="mb-2 font-semibold text-lg">
@@ -282,10 +362,22 @@ function InvoicesPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.invoices.map((invoice) => {
+                invoices.map((invoice) => {
                   const statusConfig = statusLabels[invoice.status];
                   return (
-                    <TableRow key={invoice.id}>
+                    <TableRow
+                      className={
+                        isSelected(invoice.id) ? "bg-muted/50" : undefined
+                      }
+                      key={invoice.id}
+                    >
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`Select ${invoice.invoiceNumber}`}
+                          checked={isSelected(invoice.id)}
+                          onCheckedChange={() => toggleSelection(invoice.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         <Link
                           className="hover:underline"
@@ -382,7 +474,7 @@ function InvoicesPage() {
         {!!data && (data.totalPages ?? 1) > 1 && (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
-              Showing {data.invoices.length} of {data.total} invoices
+              Showing {invoices.length} of {data.total} invoices
             </p>
             <div className="flex gap-2">
               <Button
@@ -407,6 +499,32 @@ function InvoicesPage() {
             </div>
           </div>
         )}
+
+        {/* Bulk Actions Toolbar */}
+        <BulkActionsToolbar
+          entityName="invoices"
+          onClearSelection={clearSelection}
+          selectedCount={selectedCount}
+        >
+          <Button
+            disabled={exportMutation.isPending}
+            onClick={handleExport}
+            size="sm"
+            variant="outline"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {exportMutation.isPending ? "Exporting..." : "Export CSV"}
+          </Button>
+          <Button
+            disabled={markAsPaidMutation.isPending}
+            onClick={handleMarkAsPaid}
+            size="sm"
+            variant="default"
+          >
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            {markAsPaidMutation.isPending ? "Updating..." : "Mark as Paid"}
+          </Button>
+        </BulkActionsToolbar>
       </div>
     </div>
   );

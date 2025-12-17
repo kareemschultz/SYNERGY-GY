@@ -65,14 +65,12 @@ function AdminDashboardPage() {
               description="Configure roles and permissions"
               href="/app/admin/roles"
               icon={Shield}
-              isDisabled
               title="Roles & Permissions"
             />
             <QuickActionCard
               description="System settings and configuration"
               href="/app/admin/settings"
               icon={UserCog}
-              isDisabled
               title="System Settings"
             />
           </div>

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute(
   "/app/clients/$client-id/documents/collect"
@@ -23,16 +23,14 @@ export const Route = createFileRoute(
 function ClientDocumentCollectionPage() {
   const { "client-id": clientId } = Route.useParams();
 
-  const { data: services, refetch: refetchServices } = useQuery(
-    orpc.clientServices.getByClient.queryOptions({
-      input: { clientId },
-    })
-  );
-  const { data: progress, refetch: refetchProgress } = useQuery(
-    orpc.clientServices.getFulfillmentProgress.queryOptions({
-      input: { clientId },
-    })
-  );
+  const { data: services, refetch: refetchServices } = useQuery({
+    queryKey: ["clientServices", "getByClient", clientId],
+    queryFn: () => client.clientServices.getByClient({ clientId }),
+  });
+  const { data: progress, refetch: refetchProgress } = useQuery({
+    queryKey: ["clientServices", "getFulfillmentProgress", clientId],
+    queryFn: () => client.clientServices.getFulfillmentProgress({ clientId }),
+  });
 
   const refetch = () => {
     refetchServices();

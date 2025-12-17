@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,11 +17,22 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { client, queryClient } from "@/utils/orpc";
 
+type CategoryData = {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string | null;
+  icon: string | null;
+  sortOrder: number;
+  isActive: boolean;
+};
+
 type CategoryFormDialogProps = {
   business: "GCMC" | "KAJ";
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  category?: CategoryData | null;
 };
 
 export function CategoryFormDialog({
@@ -29,13 +40,29 @@ export function CategoryFormDialog({
   open,
   onOpenChange,
   onSuccess,
+  category,
 }: CategoryFormDialogProps) {
+  const isEditMode = !!category;
   const [name, setName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
+
+  // Populate form when editing
+  useEffect(() => {
+    if (category && open) {
+      setName(category.name);
+      setDisplayName(category.displayName);
+      setDescription(category.description || "");
+      setIcon(category.icon || "");
+      setSortOrder(category.sortOrder);
+      setIsActive(category.isActive);
+    } else if (!open) {
+      resetForm();
+    }
+  }, [category, open]);
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -61,6 +88,30 @@ export function CategoryFormDialog({
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      client.serviceCatalog.categories.update({
+        id: category?.id || "",
+        name: name.toUpperCase().replace(/\s+/g, "_"),
+        displayName,
+        description: description || undefined,
+        icon: icon || undefined,
+        sortOrder,
+        isActive,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-service-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["service-categories"] });
+      toast.success("Category updated successfully");
+      resetForm();
+      onOpenChange(false);
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update category");
+    },
+  });
+
   const resetForm = () => {
     setName("");
     setDisplayName("");
@@ -76,16 +127,26 @@ export function CategoryFormDialog({
       toast.error("Display name is required");
       return;
     }
-    createMutation.mutate();
+    if (isEditMode) {
+      updateMutation.mutate();
+    } else {
+      createMutation.mutate();
+    }
   };
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Service Category</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? "Edit Service Category" : "Create Service Category"}
+          </DialogTitle>
           <DialogDescription>
-            Add a new service category for {business}
+            {isEditMode
+              ? `Update the ${category?.displayName} category`
+              : `Add a new service category for ${business}`}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -169,11 +230,11 @@ export function CategoryFormDialog({
             >
               Cancel
             </Button>
-            <Button disabled={createMutation.isPending} type="submit">
-              {createMutation.isPending ? (
+            <Button disabled={isPending} type="submit">
+              {isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              Create Category
+              {isEditMode ? "Save Changes" : "Create Category"}
             </Button>
           </DialogFooter>
         </form>
