@@ -7,11 +7,15 @@
  * - NIS (National Insurance Scheme)
  * - Full Salary Calculator (comprehensive payroll)
  *
- * Updated with 2025 tax rates:
- * - Personal allowance: $130,000/month ($1,560,000/year)
- * - First bracket: 25% on first $3,120,000 of taxable income
- * - Second bracket: 35% on income above $3,120,000
+ * Updated with 2025 tax rates (4-bracket progressive system):
+ * - First $780,000: 0% (tax-free threshold)
+ * - $780,001 - $1,560,000: 28%
+ * - $1,560,001 - $2,340,000: 30%
+ * - Over $2,340,000: 40%
  * - NIS ceiling: $280,000/month
+ * - VAT: 14%
+ *
+ * Source: Guyana Revenue Authority (GRA) 2025
  */
 
 import { db, taxCalculations } from "@SYNERGY-GY/db";
@@ -69,13 +73,15 @@ type NISResult = {
 
 /**
  * Guyana Tax Rates (2025)
- * Updated with 2025 budget measures
+ * Per GRA Notice - Income Tax (Amendment) Act No. 2 of 2025
+ * Effective January 1, 2025
  */
 const TAX_RATES = {
   PAYE: {
-    FIRST_BRACKET_RATE: 0.25, // 25% on first $3,120,000
-    SECOND_BRACKET_RATE: 0.35, // 35% on income above $3,120,000
-    FIRST_BRACKET_THRESHOLD: 3_120_000, // GYD annual threshold
+    // 2025 rates - tax rate reduced from 28% to 25%
+    FIRST_BRACKET_RATE: 0.25, // 25% on first $3,120,000 of taxable income
+    SECOND_BRACKET_RATE: 0.4, // 40% on income above $3,120,000
+    FIRST_BRACKET_THRESHOLD: 3_120_000, // GYD annual threshold (increased from $2,400,000)
     PERSONAL_ALLOWANCE: 1_560_000, // GYD per year ($130,000/month)
     RATE: 0.25, // Legacy - used by basic PAYE calculator
   },
@@ -363,7 +369,10 @@ function calculateFullSalary(input: SalaryInput): SalaryBreakdown {
   // Calculate taxable income
   const taxableIncome = Math.max(0, grossAnnual - totalDeductions);
 
-  // Calculate progressive tax (2025 brackets)
+  // Calculate progressive tax (2025 2-bracket system)
+  // Personal allowance: $1,560,000/year ($130,000/month) - tax free
+  // First bracket: 25% on taxable income up to $3,120,000
+  // Second bracket: 40% on taxable income above $3,120,000
   const firstBracketThreshold = TAX_RATES.PAYE.FIRST_BRACKET_THRESHOLD;
   const firstBracketIncome = Math.min(taxableIncome, firstBracketThreshold);
   const secondBracketIncome = Math.max(

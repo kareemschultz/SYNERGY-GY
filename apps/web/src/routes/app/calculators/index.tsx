@@ -93,7 +93,7 @@ function CalculatorsIndex() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Second bracket:</span>
-                <span className="font-medium">35% above $3.12M</span>
+                <span className="font-medium">40% above $3.12M</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
@@ -165,7 +165,7 @@ function CalculatorsIndex() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Monthly ceiling:</span>
-                <span className="font-medium">$1,386,600</span>
+                <span className="font-medium">$280,000</span>
               </div>
             </div>
             <Link to="/app/calculators/nis">
@@ -188,9 +188,9 @@ function CalculatorsIndex() {
             <p className="text-muted-foreground text-sm">
               PAYE is the income tax system in Guyana. Tax is calculated on
               annual income after deducting the personal allowance
-              ($1,560,000/year) and other eligible deductions. The progressive
-              rate system applies 25% on the first $3.12M GYD and 35% on income
-              above that threshold.
+              ($1,560,000/year or $130,000/month) and other eligible deductions.
+              The progressive rate system applies 25% on the first $3.12M GYD
+              and 40% on income above that threshold.
             </p>
           </div>
           <div>
@@ -209,7 +209,7 @@ function CalculatorsIndex() {
               NIS contributions fund social security benefits including pensions
               and unemployment benefits. Both employees and employers
               contribute, with contributions capped at a monthly income ceiling
-              of $1,386,600 GYD.
+              of $280,000 GYD.
             </p>
           </div>
         </CardContent>
