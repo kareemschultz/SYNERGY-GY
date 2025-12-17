@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileText, Search, Sparkles } from "lucide-react";
 import { useState } from "react";
@@ -30,7 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/knowledge-base/")({
@@ -48,8 +48,24 @@ function KnowledgeBasePage() {
     orpc.knowledgeBase.list.queryOptions({
       input: {
         search: search || undefined,
-        type: type !== "ALL" ? (type as "AGENCY_FORM" | "LETTER_TEMPLATE" | "GUIDE" | "CHECKLIST") : undefined,
-        category: category !== "ALL" ? (category as "GRA" | "NIS" | "IMMIGRATION" | "DCRA" | "GENERAL" | "INTERNAL") : undefined,
+        type:
+          type !== "ALL"
+            ? (type as
+                | "AGENCY_FORM"
+                | "LETTER_TEMPLATE"
+                | "GUIDE"
+                | "CHECKLIST")
+            : undefined,
+        category:
+          category !== "ALL"
+            ? (category as
+                | "GRA"
+                | "NIS"
+                | "IMMIGRATION"
+                | "DCRA"
+                | "GENERAL"
+                | "INTERNAL")
+            : undefined,
         business: business !== "ALL" ? (business as "GCMC" | "KAJ") : undefined,
       },
     })
@@ -322,7 +338,10 @@ function KnowledgeBasePage() {
             ) : (
               <Button
                 className="w-full sm:w-auto"
-                onClick={() => handleDownload(itemDetails?.id)}
+                disabled={!itemDetails?.id}
+                onClick={() =>
+                  itemDetails?.id && handleDownload(itemDetails.id)
+                }
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download

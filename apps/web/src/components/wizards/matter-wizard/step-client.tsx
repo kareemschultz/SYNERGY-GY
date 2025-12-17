@@ -1,4 +1,3 @@
-import { Users } from "lucide-react";
 import { ClientSelector } from "@/components/clients/client-selector";
 import { Label } from "@/components/ui/label";
 import { WizardStep, WizardStepSection } from "../wizard-step";
@@ -14,7 +13,6 @@ export function StepClient({ data, errors, onUpdate }: StepClientProps) {
   return (
     <WizardStep
       description="Choose the client this matter is for. You can search by name or browse by business affiliation."
-      icon={<Users className="h-6 w-6" />}
       title="Select Client"
     >
       <WizardStepSection>

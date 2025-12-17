@@ -465,6 +465,127 @@ result?.count ?? 0
 
 ---
 
+## Frontend Type Patterns
+
+### Client Onboarding Wizard Types
+
+The `ClientOnboardingData` type uses a **flat structure** (not nested). Fields are at the top level:
+
+```typescript
+// CORRECT - flat structure
+data.firstName
+data.lastName
+data.email
+data.phone
+data.address
+data.city
+
+// WRONG - nested structure doesn't exist
+data.basicInfo.firstName
+data.contactInfo.email
+data.contactInfo.address.street
+```
+
+**Optional nested objects** (like `employment`, `amlCompliance`, `emergencyContact`) have all fields optional to allow partial updates:
+
+```typescript
+// Type definition pattern
+employment?: {
+  status?: "EMPLOYED" | "SELF_EMPLOYED" | "UNEMPLOYED" | "RETIRED" | "STUDENT" | "";
+  employerName?: string;
+  // ... all fields optional
+};
+
+amlCompliance?: {
+  sourceOfFunds?: string[];  // Optional, not required
+  isPep?: boolean;           // Optional, not required
+  // ...
+};
+```
+
+### Type Safety for Partial Updates
+
+When updating nested state objects, spread the existing value safely:
+
+```typescript
+// Safe pattern for partial updates
+onChange={(value) =>
+  onUpdate({
+    employment: {
+      ...data.employment,
+      status: value,
+    },
+  })
+}
+
+// For conditional rendering with unknown types, use ternary
+{log.metadata ? (
+  <div>{JSON.stringify(log.metadata as Record<string, unknown>)}</div>
+) : null}
+
+// NOT: {log.metadata && (...)} - unknown type causes error
+```
+
+### DocumentCategory Enum Values
+
+**Valid values:**
+- `IDENTITY` - ID documents (passport, national ID)
+- `TAX` - Tax-related documents
+- `FINANCIAL` - Bank statements, financial records
+- `LEGAL` - Agreements, contracts, affidavits
+- `IMMIGRATION` - Visas, work permits
+- `BUSINESS` - Business registration, certificates
+- `CORRESPONDENCE` - Letters, communications
+- `TRAINING` - Training certificates
+- `OTHER` - Everything else
+
+**Invalid values (DO NOT USE):**
+- `IDENTIFICATION` - Use `IDENTITY`
+- `TAX_FILING` - Use `TAX`
+- `NIS` - Use `OTHER`
+- `CERTIFICATE` - Use `BUSINESS`
+- `AGREEMENT` - Use `LEGAL`
+
+### WizardStep Component
+
+**Accepted props:**
+```typescript
+type WizardStepProps = {
+  title: string;
+  description?: string;
+  children: ReactNode;
+  className?: string;
+  contentClassName?: string;
+};
+```
+
+**Props that DO NOT exist:**
+- `icon` - Removed, do not pass
+
+### oRPC Direct Calls vs Query Hooks
+
+```typescript
+// Direct API call - use client (no .query())
+await client.serviceCatalog.services.getById({ id })
+
+// NOT: client.serviceCatalog.services.getById.query({ id })
+
+// React Query hook - use orpc with queryOptions
+useQuery(orpc.serviceCatalog.services.list.queryOptions({ input: {...} }))
+```
+
+### Handling Undefined Values in JSX
+
+```typescript
+// Handle undefined before passing to functions
+onClick={() => itemDetails?.id && handleDownload(itemDetails.id)}
+
+// Add disabled state for safety
+disabled={!itemDetails?.id}
+```
+
+---
+
 ## Anti-Patterns to Avoid
 
 | Anti-Pattern | Correct Approach |
@@ -478,3 +599,7 @@ result?.count ?? 0
 | Devtools always rendered | Gate with `import.meta.env.DEV` |
 | No QueryClient defaults | Set `staleTime` and `gcTime` |
 | Unused variables | Prefix with `_` or remove |
+| `data.basicInfo.firstName` | `data.firstName` (flat structure) |
+| `client.xxx.query({...})` | `client.xxx({...})` (no .query()) |
+| `WizardStep icon={...}` | Remove icon prop |
+| `{value && <div>...}` for unknown | `{value ? <div>... : null}` |

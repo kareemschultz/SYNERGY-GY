@@ -183,40 +183,7 @@ export const KAJ_SERVICES = [
 export type GCMCService = (typeof GCMC_SERVICES)[number]["value"];
 export type KAJService = (typeof KAJ_SERVICES)[number]["value"];
 
-// Service catalog item from API
-export type PricingTier = {
-  name: string;
-  description?: string;
-  price?: number;
-  minPrice?: number;
-  maxPrice?: number;
-  conditions?: string;
-};
-
-export type ServiceCatalogItem = {
-  id: string;
-  displayName: string;
-  shortDescription?: string;
-  basePrice?: string | null;
-  maxPrice?: string | null;
-  pricingType: "FIXED" | "RANGE" | "TIERED" | "CUSTOM";
-  pricingTiers?: PricingTier[];
-  estimatedDays?: number | null;
-  typicalDuration?: string | null;
-  documentRequirements: string[];
-  documentCount: number;
-  isFeatured?: boolean;
-  // Full details for modal
-  description?: string | null;
-  targetAudience?: string | null;
-  topicsCovered?: string[] | null;
-  deliverables?: string[] | null;
-  workflow?: string | null;
-  pricingNotes?: string | null;
-  discountsAvailable?: string | null;
-  governmentFees?: string | null;
-  governmentAgencies?: string[] | null;
-};
+// Note: PricingTier and ServiceCatalogItem are already defined above (lines 18-56)
 
 export type ServicesByCategory = Record<string, ServiceCatalogItem[]>;
 
@@ -255,15 +222,15 @@ export type ClientOnboardingData = {
   preferredContactMethod: "EMAIL" | "PHONE" | "WHATSAPP" | "IN_PERSON";
   preferredLanguage: string;
   emergencyContact?: {
-    name: string;
-    relationship: string;
-    phone: string;
+    name?: string;
+    relationship?: string;
+    phone?: string;
     email?: string;
   };
   nextOfKin?: {
-    name: string;
-    relationship: string;
-    phone: string;
+    name?: string;
+    relationship?: string;
+    phone?: string;
     address?: string;
   };
 
@@ -275,7 +242,7 @@ export type ClientOnboardingData = {
 
   // Step 5: Employment & Income (for individuals)
   employment?: {
-    status:
+    status?:
       | "EMPLOYED"
       | "SELF_EMPLOYED"
       | "UNEMPLOYED"
@@ -308,24 +275,30 @@ export type ClientOnboardingData = {
     phone?: string;
     isPep: boolean;
     pepDetails?: string;
-    pepRelationship?: "SELF" | "FAMILY_MEMBER" | "CLOSE_ASSOCIATE";
+    pepRelationship?: string;
   }>;
 
   // Step 7: AML/Compliance
   amlCompliance?: {
-    sourceOfFunds:
-      | "EMPLOYMENT"
-      | "BUSINESS"
-      | "INHERITANCE"
-      | "INVESTMENTS"
-      | "OTHER"
-      | "";
+    sourceOfFunds?: string[]; // Array of: "EMPLOYMENT" | "BUSINESS" | "INHERITANCE" | "INVESTMENTS" | "OTHER" etc.
     sourceOfFundsDetails?: string;
-    isPep: boolean;
-    pepCategory?: "DOMESTIC" | "FOREIGN" | "INTERNATIONAL_ORG";
+    isPep?: boolean;
+    pepCategory?:
+      | "DOMESTIC"
+      | "FOREIGN"
+      | "INTERNATIONAL_ORG"
+      | "HEAD_OF_STATE"
+      | "GOVERNMENT_OFFICIAL"
+      | "JUDICIAL_OFFICIAL"
+      | "MILITARY_OFFICIAL"
+      | "STATE_OWNED_EXECUTIVE"
+      | "POLITICAL_PARTY_OFFICIAL"
+      | "INTERNATIONAL_ORGANIZATION"
+      | "FAMILY_MEMBER"
+      | "CLOSE_ASSOCIATE";
     pepPosition?: string;
     pepJurisdiction?: string;
-    sanctionsScreeningConsent: boolean;
+    sanctionsScreeningConsent?: boolean;
   };
 
   // Step 8: Business Assignment & Services
@@ -664,7 +637,7 @@ export function inferDocumentCategory(documentName: string): DocumentCategory {
     lower.includes("birth certificate") ||
     lower.includes("id card")
   ) {
-    return "IDENTIFICATION";
+    return "IDENTITY";
   }
 
   // Tax-related documents
@@ -675,12 +648,12 @@ export function inferDocumentCategory(documentName: string): DocumentCategory {
     lower.includes("paye") ||
     lower.includes("vat")
   ) {
-    return "TAX_FILING";
+    return "TAX";
   }
 
   // NIS documents
   if (lower.includes("nis") || lower.includes("national insurance")) {
-    return "NIS";
+    return "OTHER";
   }
 
   // Financial documents
@@ -710,7 +683,7 @@ export function inferDocumentCategory(documentName: string): DocumentCategory {
     lower.includes("diploma") ||
     lower.includes("license")
   ) {
-    return "CERTIFICATE";
+    return "TRAINING";
   }
 
   // Agreements/Contracts
@@ -720,7 +693,7 @@ export function inferDocumentCategory(documentName: string): DocumentCategory {
     lower.includes("will") ||
     lower.includes("affidavit")
   ) {
-    return "AGREEMENT";
+    return "LEGAL";
   }
 
   // Correspondence

@@ -1,4 +1,3 @@
-import { FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -29,7 +28,6 @@ export function StepDetails({ data, errors, onUpdate }: StepDetailsProps) {
   return (
     <WizardStep
       description="Enter the details about this matter."
-      icon={<FileText className="h-6 w-6" />}
       title="Matter Details"
     >
       <WizardStepSection>

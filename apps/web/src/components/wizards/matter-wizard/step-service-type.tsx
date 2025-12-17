@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Briefcase } from "lucide-react";
 import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import {
@@ -56,7 +55,6 @@ export function StepServiceType({
   return (
     <WizardStep
       description="Select the business unit and type of service for this matter."
-      icon={<Briefcase className="h-6 w-6" />}
       title="Business & Service"
     >
       <WizardStepSection>

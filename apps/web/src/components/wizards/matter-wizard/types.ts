@@ -1,5 +1,14 @@
-import type { DocumentCategory } from "@/utils/api";
-import type { WizardStepConfig } from "../hooks/use-wizard";
+// DocumentCategory matches the database enum
+type DocumentCategory =
+  | "IDENTITY"
+  | "TAX"
+  | "FINANCIAL"
+  | "LEGAL"
+  | "IMMIGRATION"
+  | "BUSINESS"
+  | "CORRESPONDENCE"
+  | "TRAINING"
+  | "OTHER";
 
 export type MatterDocumentUpload = {
   file: File;
@@ -7,6 +16,14 @@ export type MatterDocumentUpload = {
   description: string;
   linkedService: string;
   linkedRequirement: string;
+};
+
+type WizardStepConfig<T> = {
+  id: string;
+  title: string;
+  description: string;
+  isOptional?: boolean;
+  validate: (data: T) => Record<string, string>;
 };
 
 export type MatterWizardData = {

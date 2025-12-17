@@ -495,7 +495,10 @@ function ReportsPage() {
                       onValueChange={(value) =>
                         setFilters({
                           ...filters,
-                          business: value === "all" ? undefined : value,
+                          business:
+                            value === "all"
+                              ? undefined
+                              : (value as "GCMC" | "KAJ"),
                         })
                       }
                       value={filters.business || "all"}

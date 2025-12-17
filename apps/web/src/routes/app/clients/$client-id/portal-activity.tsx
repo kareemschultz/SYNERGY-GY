@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Activity, Clock, Download, LogIn, Shield, User } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -18,7 +19,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/clients/$client-id/portal-activity")(
@@ -143,11 +143,13 @@ function PortalActivityPage() {
                               {log.entityType}: {log.entityId?.slice(0, 8)}...
                             </span>
                           )}
-                          {log.metadata && (
+                          {log.metadata ? (
                             <div className="text-muted-foreground text-xs">
-                              {JSON.stringify(log.metadata)}
+                              {JSON.stringify(
+                                log.metadata as Record<string, unknown>
+                              )}
                             </div>
-                          )}
+                          ) : null}
                         </TableCell>
                         <TableCell className="font-mono text-muted-foreground text-xs">
                           {log.ipAddress || "Unknown"}

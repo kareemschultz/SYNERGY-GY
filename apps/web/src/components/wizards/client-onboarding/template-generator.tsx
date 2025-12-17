@@ -83,14 +83,13 @@ export function TemplateGenerator({
       // Build client data from wizard
       const clientData = {
         displayName:
-          `${data.basicInfo.firstName || ""} ${data.basicInfo.lastName || ""}`.trim() ||
-          "Client",
-        firstName: data.basicInfo.firstName || "",
-        lastName: data.basicInfo.lastName || "",
-        email: data.contactInfo.email || "",
-        phone: data.contactInfo.phone || "",
-        address: data.contactInfo.address?.street || "",
-        city: data.contactInfo.address?.city || "",
+          `${data.firstName || ""} ${data.lastName || ""}`.trim() || "Client",
+        firstName: data.firstName || "",
+        lastName: data.lastName || "",
+        email: data.email || "",
+        phone: data.phone || "",
+        address: data.address || "",
+        city: data.city || "",
       };
 
       return await client.documents.templates.preview({
@@ -121,14 +120,13 @@ export function TemplateGenerator({
     // Build client data from wizard
     const clientData = {
       displayName:
-        `${data.basicInfo.firstName || ""} ${data.basicInfo.lastName || ""}`.trim() ||
-        "Client",
-      firstName: data.basicInfo.firstName || "",
-      lastName: data.basicInfo.lastName || "",
-      email: data.contactInfo.email || "",
-      phone: data.contactInfo.phone || "",
-      address: data.contactInfo.address?.street || "",
-      city: data.contactInfo.address?.city || "",
+        `${data.firstName || ""} ${data.lastName || ""}`.trim() || "Client",
+      firstName: data.firstName || "",
+      lastName: data.lastName || "",
+      email: data.email || "",
+      phone: data.phone || "",
+      address: data.address || "",
+      city: data.city || "",
     };
 
     try {

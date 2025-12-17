@@ -1434,8 +1434,7 @@ export const portalRouter = {
             clientId: input.clientId,
             reason: input.reason,
             expiresAt,
-            ipAddress:
-              context.req?.header("x-forwarded-for") || "unknown",
+            ipAddress: context.req?.header("x-forwarded-for") || "unknown",
             userAgent: context.req?.header("user-agent") || "unknown",
           })
           .returning();

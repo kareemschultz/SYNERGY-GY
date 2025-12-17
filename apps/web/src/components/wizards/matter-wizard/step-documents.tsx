@@ -11,8 +11,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import type { DocumentCategory } from "@/utils/api";
 import { WizardStep } from "../wizard-step";
+
+// DocumentCategory matches the database enum
+type DocumentCategory =
+  | "IDENTITY"
+  | "TAX"
+  | "FINANCIAL"
+  | "LEGAL"
+  | "IMMIGRATION"
+  | "BUSINESS"
+  | "CORRESPONDENCE"
+  | "TRAINING"
+  | "OTHER";
+
 import type { MatterWizardData } from "./types";
 
 type StepDocumentsProps = {
@@ -36,7 +48,7 @@ function inferDocumentCategory(documentName: string): DocumentCategory {
     lower.includes("driver") ||
     lower.includes("photo id")
   ) {
-    return "IDENTIFICATION";
+    return "IDENTITY";
   }
 
   // Tax-related documents
@@ -50,7 +62,7 @@ function inferDocumentCategory(documentName: string): DocumentCategory {
     lower.includes("gra") ||
     lower.includes("tax compliance")
   ) {
-    return "TAX_FILING";
+    return "TAX";
   }
 
   // NIS documents
@@ -59,7 +71,7 @@ function inferDocumentCategory(documentName: string): DocumentCategory {
     lower.includes("national insurance") ||
     lower.includes("social security")
   ) {
-    return "NIS";
+    return "OTHER";
   }
 
   // Financial documents
@@ -95,7 +107,7 @@ function inferDocumentCategory(documentName: string): DocumentCategory {
     lower.includes("incorporation") ||
     lower.includes("compliance")
   ) {
-    return "CERTIFICATE";
+    return "BUSINESS";
   }
 
   // Agreements
@@ -107,7 +119,7 @@ function inferDocumentCategory(documentName: string): DocumentCategory {
     lower.includes("will") ||
     lower.includes("power of attorney")
   ) {
-    return "AGREEMENT";
+    return "LEGAL";
   }
 
   // Correspondence

@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileText, Search } from "lucide-react";
 import { useState } from "react";
@@ -20,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/resources")({
@@ -46,8 +46,24 @@ function PortalResourcesPage() {
     orpc.knowledgeBase.list.queryOptions({
       input: {
         search: search || undefined,
-        category: category !== "ALL" ? (category as "GRA" | "NIS" | "IMMIGRATION" | "DCRA" | "GENERAL" | "INTERNAL") : undefined,
-        type: type !== "ALL" ? (type as "AGENCY_FORM" | "LETTER_TEMPLATE" | "GUIDE" | "CHECKLIST") : undefined,
+        category:
+          category !== "ALL"
+            ? (category as
+                | "GRA"
+                | "NIS"
+                | "IMMIGRATION"
+                | "DCRA"
+                | "GENERAL"
+                | "INTERNAL")
+            : undefined,
+        type:
+          type !== "ALL"
+            ? (type as
+                | "AGENCY_FORM"
+                | "LETTER_TEMPLATE"
+                | "GUIDE"
+                | "CHECKLIST")
+            : undefined,
         isStaffOnly: false,
       },
     })

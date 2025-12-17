@@ -1,8 +1,7 @@
 import { account, db, staff, user } from "@SYNERGY-GY/db";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { hashPassword } from "./password";
-import { validatePasswordStrength } from "./password";
+import { hashPassword, validatePasswordStrength } from "./password";
 
 /**
  * Run initial setup to create the first owner account from environment variables.

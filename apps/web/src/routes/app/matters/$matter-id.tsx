@@ -215,18 +215,24 @@ function ChecklistTab({ matter }: { matter: MatterData }) {
       </CardHeader>
       <CardContent>
         {matter.checklist.length === 0 ? (
-          <p className="text-center text-muted-foreground">No checklist items</p>
+          <p className="text-center text-muted-foreground">
+            No checklist items
+          </p>
         ) : (
           <ul className="space-y-2">
             {matter.checklist.map((item) => (
-              <li key={item.id} className="flex items-center gap-2">
+              <li className="flex items-center gap-2" key={item.id}>
                 <input
                   checked={item.isCompleted}
                   disabled
                   readOnly
                   type="checkbox"
                 />
-                <span className={item.isCompleted ? "line-through text-muted-foreground" : ""}>
+                <span
+                  className={
+                    item.isCompleted ? "text-muted-foreground line-through" : ""
+                  }
+                >
                   {item.item}
                 </span>
               </li>
@@ -250,7 +256,7 @@ function NotesTab({ matter }: { matter: MatterData }) {
         ) : (
           <div className="space-y-4">
             {matter.notes.map((note) => (
-              <div key={note.id} className="rounded-lg border p-4">
+              <div className="rounded-lg border p-4" key={note.id}>
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
                     {note.createdBy?.name || "System"} •{" "}

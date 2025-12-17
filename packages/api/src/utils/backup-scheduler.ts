@@ -204,7 +204,9 @@ async function executeBackup(
     .returning();
 
   if (!backup) {
-    console.error(`[BackupScheduler] Failed to create backup record for: ${backupName}`);
+    console.error(
+      `[BackupScheduler] Failed to create backup record for: ${backupName}`
+    );
     return;
   }
 

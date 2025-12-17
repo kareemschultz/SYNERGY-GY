@@ -50,7 +50,9 @@ export const knowledgeBaseRouter = {
         limit,
       } = input;
 
-      const conditions: ReturnType<typeof eq>[] = [eq(knowledgeBaseItem.isActive, true)];
+      const conditions: ReturnType<typeof eq>[] = [
+        eq(knowledgeBaseItem.isActive, true),
+      ];
 
       // If not staff, only return client-accessible items
       if (!context.session?.user) {
@@ -97,7 +99,10 @@ export const knowledgeBaseRouter = {
         where: and(...conditions),
         limit,
         offset,
-        orderBy: [desc(knowledgeBaseItem.isFeatured), desc(knowledgeBaseItem.createdAt)],
+        orderBy: [
+          desc(knowledgeBaseItem.isFeatured),
+          desc(knowledgeBaseItem.createdAt),
+        ],
         with: {
           createdBy: {
             columns: {

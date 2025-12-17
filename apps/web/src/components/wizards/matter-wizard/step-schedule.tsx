@@ -1,4 +1,3 @@
-import { Calendar, DollarSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { WizardStep, WizardStepSection } from "../wizard-step";
@@ -14,7 +13,6 @@ export function StepSchedule({ data, errors, onUpdate }: StepScheduleProps) {
   return (
     <WizardStep
       description="Set the timeline and estimated fees for this matter. This step is optional."
-      icon={<Calendar className="h-6 w-6" />}
       title="Schedule & Fees"
     >
       <WizardStepSection title="Timeline">
@@ -49,10 +47,7 @@ export function StepSchedule({ data, errors, onUpdate }: StepScheduleProps) {
         </div>
       </WizardStepSection>
 
-      <WizardStepSection
-        icon={<DollarSign className="h-4 w-4" />}
-        title="Estimated Fee"
-      >
+      <WizardStepSection title="Estimated Fee">
         <div className="md:w-1/2">
           <div className="space-y-2">
             <Label htmlFor="estimatedFee">Estimated Fee (GYD)</Label>

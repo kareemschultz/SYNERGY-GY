@@ -1,4 +1,3 @@
-import { CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { WizardStep, WizardStepSection } from "../wizard-step";
@@ -35,7 +34,6 @@ export function StepReview({ data }: StepReviewProps) {
   return (
     <WizardStep
       description="Review the matter details before creating."
-      icon={<CheckCircle className="h-6 w-6" />}
       title="Review & Confirm"
     >
       <WizardStepSection>

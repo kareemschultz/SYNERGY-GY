@@ -52,7 +52,7 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
       try {
         // Fetch all service details (use allSettled to handle individual failures)
         const servicePromises = data.selectedServiceIds.map((id) =>
-          client.serviceCatalog.services.getById.query({ id })
+          client.serviceCatalog.services.getById({ id })
         );
         const results = await Promise.allSettled(servicePromises);
 
@@ -304,7 +304,7 @@ function ServiceDocumentGroup({
 }: {
   serviceName: string;
   requiredDocs: string[];
-  uploads: ClientOnboardingData["documents"]["uploads"];
+  uploads: NonNullable<ClientOnboardingData["documents"]>["uploads"];
   onUpload: (
     file: File,
     category: string,

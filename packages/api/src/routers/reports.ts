@@ -1164,7 +1164,9 @@ export const reportsRouter = {
       }
 
       // Convert to base64 for transmission
-      const base64Content = Buffer.from(fileContent as string | Buffer | Uint8Array).toString("base64");
+      const base64Content = Buffer.from(
+        fileContent as string | Buffer | Uint8Array
+      ).toString("base64");
 
       // Save execution record
       const [execution] = await db
