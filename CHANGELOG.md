@@ -7,7 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Payroll Calculator** - December 17, 2024
+  - Comprehensive salary calculator with 2025 Guyana tax rules
+  - Progressive PAYE brackets: 25% on first $3.12M, 35% above
+  - NIS calculations: 5.6% employee, 8.4% employer, $280K ceiling
+  - Gratuity support at 22.5% with Month 6/12 special calculations
+  - Multi-frequency support: daily, weekly, fortnightly, monthly, yearly
+  - Qualification allowances: Certificate ($50K) to Doctorate ($250K)
+  - Child deductions: $10K/child (up to 4)
+  - Employer cost breakdown with total annual cost
+  - Effective tax rate visualization
+  - **Files**: `packages/api/src/routers/tax-calculators.ts`, `apps/web/src/routes/app/calculators/salary.tsx`, `apps/web/src/routes/app/calculators/index.tsx`
+
+- **Document Filtering Enhancements** - December 17, 2024
+  - Added file type filter (PDF, Images, Word, Spreadsheets, Other)
+  - Added document status filter (Active, Archived, All)
+  - Added date range filter with from/to date pickers
+  - Collapsible "Filters" panel with active filter count badge
+  - "Clear all" button to reset all filters at once
+  - **File**: `apps/web/src/routes/app/documents/index.tsx`
+
+- **User Settings Enhancements** - December 17, 2024
+  - **Profile Settings**: Avatar upload with preview, camera icon overlay, max 5MB validation
+  - **Security Settings**: Two-Factor Authentication section (Coming Soon)
+    - Authenticator App option (disabled - coming soon)
+    - SMS Verification option (disabled - coming soon)
+    - Security info banner explaining 2FA benefits
+  - **Files**: `apps/web/src/components/settings/profile-settings.tsx`, `apps/web/src/components/settings/security-settings.tsx`
+
 ### Fixed
+
+- **Backup Script Path Resolution** - December 16, 2024
+  - Fixed critical bug where scheduled backups failed due to incorrect path resolution
+  - `packages/api/src/routers/backup.ts` - Changed relative paths to absolute using `fileURLToPath(import.meta.url)`
+  - `packages/api/src/utils/backup-scheduler.ts` - Same fix applied
+  - Root cause: `./scripts` and `./backups` resolved incorrectly when server ran from different working directory
+  - Solution: Use `import.meta.url` to get module's absolute path and resolve PROJECT_ROOT from there
 
 - **Analytics & Audit Page oRPC Fixes** - December 16, 2024 (#PROD-007)
   - Fixed `app.tsx` - Changed `staleTime` from procedure input to query config option
@@ -22,7 +59,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Root cause: `createTanstackQueryUtils` from oRPC doesn't support 3-level nested paths like `orpc.clientServices.getFulfillmentProgress.useQuery`
   - Solution: Use `useQuery`/`useMutation` directly from `@tanstack/react-query` with `client.xxx.yyy()` pattern
 
+### Changed
+
+- **Tax Calculator Rates Updated to 2025** - December 16, 2024
+  - Updated PAYE tax brackets: 28%/40% → 25%/35%
+  - Updated income threshold: $1.8M → $3.12M GYD
+  - Updated personal allowance: $780,000/year → $1,560,000/year ($130,000/month)
+  - **File**: `apps/web/src/routes/app/calculators/index.tsx`
+
 ### Added
+
+- **Disaster Recovery Documentation** - December 16, 2024
+  - Created comprehensive DR plan with RTO/RPO targets (4 hours / 24 hours)
+  - Documented recovery procedures for 4 disaster scenarios
+  - Added monthly/quarterly/annual testing schedule
+  - Includes roles, responsibilities, and contact templates
+  - **File**: `docs/DISASTER_RECOVERY.md`
+
+- **Services Catalog Full CRUD** - December 16, 2024
+  - Enabled Edit functionality for services and categories with form dialogs
+  - Enabled Delete functionality with confirmation dialogs
+  - Added View button linking to service detail page
+  - Updated `CategoryFormDialog` and `ServiceFormDialog` to support edit mode
+  - **Files**: `apps/web/src/routes/app/admin/services/index.tsx`, `apps/web/src/components/admin/service-form-dialog.tsx`, `apps/web/src/components/admin/category-form-dialog.tsx`
+
+- **Service Detail Page** - December 16, 2024
+  - Created comprehensive service detail view at `/app/admin/services/$serviceId`
+  - Displays all service fields: description, pricing, timeline, requirements
+  - Pricing tiers visualization with conditions
+  - Document requirements list
+  - Deliverables and topics covered lists
+  - Government fees and agencies info
+  - Edit button opens pre-filled form dialog
+  - **File**: `apps/web/src/routes/app/admin/services/$serviceId.tsx`
+
+- **Service-to-Invoice Integration** - December 16, 2024
+  - Created `ServicePicker` dialog for selecting services from catalog when creating invoices
+  - Added "Add from Catalog" button in LineItemEditor
+  - Auto-fills description, unit price, and calculates amount from selected service
+  - Links service ID to line item for tracking
+  - **Files**: `apps/web/src/components/invoices/service-picker.tsx`, `apps/web/src/components/invoices/line-item-editor.tsx`, `apps/web/src/routes/app/invoices/new.tsx`
 
 - **Admin Panel Features Completed** - December 16, 2024 (#PROD-007)
   - **Roles & Permissions Page** (`/app/admin/roles`)

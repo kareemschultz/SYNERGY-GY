@@ -2,9 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   Calendar,
+  KeyRound,
   Loader2,
   Lock,
   Monitor,
+  Shield,
+  ShieldCheck,
   Smartphone,
   Trash2,
 } from "lucide-react";
@@ -20,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,6 +34,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { authClient } from "@/lib/auth-client";
 import { client } from "@/utils/orpc";
 
@@ -210,6 +215,69 @@ export function SecuritySettings() {
               )}
               Change Password
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Two-Factor Authentication Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-muted-foreground" />
+            Two-Factor Authentication
+            <Badge className="ml-2" variant="outline">
+              Coming Soon
+            </Badge>
+          </CardTitle>
+          <CardDescription>
+            Add an extra layer of security to your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded bg-muted p-2">
+                <KeyRound className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">Authenticator App</p>
+                <p className="text-muted-foreground text-xs">
+                  Use an authenticator app like Google Authenticator or Authy
+                </p>
+              </div>
+            </div>
+            <Switch disabled />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded bg-muted p-2">
+                <Smartphone className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium text-sm">SMS Verification</p>
+                <p className="text-muted-foreground text-xs">
+                  Receive a code via SMS when signing in
+                </p>
+              </div>
+            </div>
+            <Switch disabled />
+          </div>
+
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30">
+            <div className="flex gap-2">
+              <ShieldCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div>
+                <p className="font-medium text-blue-900 text-sm dark:text-blue-200">
+                  Enhanced Security
+                </p>
+                <p className="text-blue-800 text-xs dark:text-blue-300">
+                  Two-factor authentication adds an extra layer of security by
+                  requiring a second form of verification when signing in. This
+                  feature will be available in a future update.
+                </p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

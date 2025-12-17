@@ -2,16 +2,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Archive,
+  Calendar,
   Download,
   Eye,
   File,
   FileText,
+  Filter,
   FolderOpen,
   Image,
   Loader2,
   MoreHorizontal,
   Search,
   Upload,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -42,7 +45,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useSelection } from "@/hooks/use-selection";
+import { cn } from "@/lib/utils";
 import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/documents/")({
@@ -100,6 +109,32 @@ const categoryValues = [
   "OTHER",
 ] as const;
 
+const fileTypeLabels: Record<string, { label: string; extensions: string[] }> = {
+  all: { label: "All Types", extensions: [] },
+  pdf: { label: "PDF Documents", extensions: ["application/pdf"] },
+  image: {
+    label: "Images",
+    extensions: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+  },
+  document: {
+    label: "Word Documents",
+    extensions: [
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ],
+  },
+  spreadsheet: {
+    label: "Spreadsheets",
+    extensions: [
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ],
+  },
+  other: { label: "Other", extensions: [] },
+};
+
+const statusValues = ["ACTIVE", "ARCHIVED", "ALL"] as const;
+
 function getFileIcon(mimeType: string) {
   if (mimeType.startsWith("image/")) {
     return <Image className="h-4 w-4" />;
@@ -123,12 +158,29 @@ function formatFileSize(bytes: number): string {
 function DocumentsPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [fileTypeFilter, setFileTypeFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("ACTIVE");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
 
   const queryClient = useQueryClient();
 
+  // Count active filters
+  const activeFilterCount = [
+    categoryFilter !== "all",
+    fileTypeFilter !== "all",
+    statusFilter !== "ACTIVE",
+    dateFrom,
+    dateTo,
+  ].filter(Boolean).length;
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["documents", { search, category: categoryFilter, page }],
+    queryKey: [
+      "documents",
+      { search, category: categoryFilter, fileType: fileTypeFilter, status: statusFilter, dateFrom, dateTo, page },
+    ],
     queryFn: () =>
       client.documents.list({
         page,
@@ -138,16 +190,56 @@ function DocumentsPage() {
           categoryFilter === "all"
             ? undefined
             : (categoryFilter as (typeof categoryValues)[number]),
-        status: "ACTIVE",
+        status: statusFilter === "ALL" ? undefined : (statusFilter as "ACTIVE" | "ARCHIVED"),
       }),
   });
+
+  // Filter by file type client-side (since backend may not support it)
+  const filteredByFileType = data?.documents?.filter((doc) => {
+    if (fileTypeFilter === "all") return true;
+    const fileType = fileTypeLabels[fileTypeFilter];
+    if (!fileType) return true;
+    if (fileTypeFilter === "other") {
+      // Check if not in any defined type
+      const allExtensions = Object.values(fileTypeLabels)
+        .flatMap((t) => t.extensions)
+        .filter(Boolean);
+      return !allExtensions.includes(doc.mimeType);
+    }
+    return fileType.extensions.includes(doc.mimeType);
+  });
+
+  // Filter by date range client-side
+  const filteredDocuments = filteredByFileType?.filter((doc) => {
+    if (dateFrom) {
+      const docDate = new Date(doc.createdAt);
+      const fromDate = new Date(dateFrom);
+      if (docDate < fromDate) return false;
+    }
+    if (dateTo) {
+      const docDate = new Date(doc.createdAt);
+      const toDate = new Date(dateTo);
+      toDate.setHours(23, 59, 59, 999);
+      if (docDate > toDate) return false;
+    }
+    return true;
+  });
+
+  const clearAllFilters = () => {
+    setCategoryFilter("all");
+    setFileTypeFilter("all");
+    setStatusFilter("ACTIVE");
+    setDateFrom("");
+    setDateTo("");
+    setPage(1);
+  };
 
   const { data: stats } = useQuery({
     queryKey: ["documentStats"],
     queryFn: () => client.documents.getStats(),
   });
 
-  const documents = data?.documents || [];
+  const documents = filteredDocuments || [];
   const {
     selectedIdsArray,
     selectedCount,
@@ -162,7 +254,7 @@ function DocumentsPage() {
   // Clear selection when filters/search/page changes
   useEffect(() => {
     clearSelection();
-  }, [search, categoryFilter, page, clearSelection]);
+  }, [search, categoryFilter, fileTypeFilter, statusFilter, dateFrom, dateTo, page, clearSelection]);
 
   const handleDownload = async (docId: string) => {
     try {
@@ -312,43 +404,149 @@ function DocumentsPage() {
         )}
 
         {/* Filters */}
-        <div className="mb-6 flex flex-wrap items-center gap-4">
-          <div className="relative min-w-64 flex-1">
-            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-10"
-              onChange={(e) => {
-                setSearch(e.target.value);
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative min-w-64 flex-1">
+              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-10"
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search documents by name..."
+                value={search}
+              />
+            </div>
+
+            <Select
+              onValueChange={(value) => {
+                setCategoryFilter(value);
                 setPage(1);
               }}
-              placeholder="Search documents by name..."
-              value={search}
-            />
+              value={categoryFilter}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="IDENTITY">Identity</SelectItem>
+                <SelectItem value="TAX">Tax</SelectItem>
+                <SelectItem value="FINANCIAL">Financial</SelectItem>
+                <SelectItem value="LEGAL">Legal</SelectItem>
+                <SelectItem value="IMMIGRATION">Immigration</SelectItem>
+                <SelectItem value="BUSINESS">Business</SelectItem>
+                <SelectItem value="CORRESPONDENCE">Correspondence</SelectItem>
+                <SelectItem value="TRAINING">Training</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={() => setShowFilters(!showFilters)}
+              size="sm"
+              variant={showFilters || activeFilterCount > 0 ? "secondary" : "outline"}
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              Filters
+              {activeFilterCount > 0 && (
+                <Badge className="ml-2" variant="secondary">
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+
+            {activeFilterCount > 0 && (
+              <Button onClick={clearAllFilters} size="sm" variant="ghost">
+                <X className="mr-2 h-4 w-4" />
+                Clear all
+              </Button>
+            )}
           </div>
 
-          <Select
-            onValueChange={(value) => {
-              setCategoryFilter(value);
-              setPage(1);
-            }}
-            value={categoryFilter}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="IDENTITY">Identity</SelectItem>
-              <SelectItem value="TAX">Tax</SelectItem>
-              <SelectItem value="FINANCIAL">Financial</SelectItem>
-              <SelectItem value="LEGAL">Legal</SelectItem>
-              <SelectItem value="IMMIGRATION">Immigration</SelectItem>
-              <SelectItem value="BUSINESS">Business</SelectItem>
-              <SelectItem value="CORRESPONDENCE">Correspondence</SelectItem>
-              <SelectItem value="TRAINING">Training</SelectItem>
-              <SelectItem value="OTHER">Other</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Extended Filters */}
+          {showFilters && (
+            <div className="flex flex-wrap items-end gap-4 rounded-lg border bg-muted/30 p-4">
+              {/* File Type Filter */}
+              <div className="space-y-2">
+                <label className="text-muted-foreground text-sm">File Type</label>
+                <Select
+                  onValueChange={(value) => {
+                    setFileTypeFilter(value);
+                    setPage(1);
+                  }}
+                  value={fileTypeFilter}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="File type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(fileTypeLabels).map(([key, { label }]) => (
+                      <SelectItem key={key} value={key}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Status Filter */}
+              <div className="space-y-2">
+                <label className="text-muted-foreground text-sm">Status</label>
+                <Select
+                  onValueChange={(value) => {
+                    setStatusFilter(value);
+                    setPage(1);
+                  }}
+                  value={statusFilter}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ACTIVE">Active</SelectItem>
+                    <SelectItem value="ARCHIVED">Archived</SelectItem>
+                    <SelectItem value="ALL">All</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date From */}
+              <div className="space-y-2">
+                <label className="text-muted-foreground text-sm">From Date</label>
+                <div className="relative">
+                  <Calendar className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    className="w-40 pl-10"
+                    onChange={(e) => {
+                      setDateFrom(e.target.value);
+                      setPage(1);
+                    }}
+                    type="date"
+                    value={dateFrom}
+                  />
+                </div>
+              </div>
+
+              {/* Date To */}
+              <div className="space-y-2">
+                <label className="text-muted-foreground text-sm">To Date</label>
+                <div className="relative">
+                  <Calendar className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    className="w-40 pl-10"
+                    onChange={(e) => {
+                      setDateTo(e.target.value);
+                      setPage(1);
+                    }}
+                    type="date"
+                    value={dateTo}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Error state */}

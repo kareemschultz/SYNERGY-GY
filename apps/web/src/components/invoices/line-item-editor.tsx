@@ -1,4 +1,5 @@
 import { Trash2 } from "lucide-react";
+import { ServicePicker } from "@/components/invoices/service-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,12 +17,14 @@ type LineItemEditorProps = {
   items: LineItem[];
   onChange: (items: LineItem[]) => void;
   disabled?: boolean;
+  business?: "GCMC" | "KAJ";
 };
 
 export function LineItemEditor({
   items,
   onChange,
   disabled = false,
+  business,
 }: LineItemEditorProps) {
   const handleItemChange = (
     index: number,
@@ -68,19 +71,52 @@ export function LineItemEditor({
     onChange(reordered);
   };
 
+  const handleServiceSelect = (service: {
+    id: string;
+    name: string;
+    displayName: string;
+    description: string;
+    basePrice: string;
+    pricingType: string;
+  }) => {
+    const unitPrice = service.basePrice || "0";
+    const amount = Number.parseFloat(unitPrice).toFixed(2);
+
+    onChange([
+      ...items,
+      {
+        description: service.description,
+        quantity: "1",
+        unitPrice,
+        amount,
+        serviceTypeId: service.id,
+        sortOrder: items.length,
+      },
+    ]);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label>Line Items *</Label>
-        <Button
-          disabled={disabled}
-          onClick={handleAddItem}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          Add Item
-        </Button>
+        <div className="flex gap-2">
+          {business ? (
+            <ServicePicker
+              business={business}
+              disabled={disabled}
+              onSelect={handleServiceSelect}
+            />
+          ) : null}
+          <Button
+            disabled={disabled}
+            onClick={handleAddItem}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Add Item
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3">

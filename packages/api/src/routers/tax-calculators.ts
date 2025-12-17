@@ -5,10 +5,13 @@
  * - PAYE (Pay As You Earn) income tax
  * - VAT (Value Added Tax)
  * - NIS (National Insurance Scheme)
+ * - Full Salary Calculator (comprehensive payroll)
  *
  * Updated with 2025 tax rates:
  * - Personal allowance: $130,000/month ($1,560,000/year)
- * - Tax rate: 25% (reduced from 28%)
+ * - First bracket: 25% on first $3,120,000 of taxable income
+ * - Second bracket: 35% on income above $3,120,000
+ * - NIS ceiling: $280,000/month
  */
 
 import { db, taxCalculations } from "@SYNERGY-GY/db";
@@ -70,8 +73,11 @@ type NISResult = {
  */
 const TAX_RATES = {
   PAYE: {
-    RATE: 0.25, // Reduced from 28% to 25%
+    FIRST_BRACKET_RATE: 0.25, // 25% on first $3,120,000
+    SECOND_BRACKET_RATE: 0.35, // 35% on income above $3,120,000
+    FIRST_BRACKET_THRESHOLD: 3_120_000, // GYD annual threshold
     PERSONAL_ALLOWANCE: 1_560_000, // GYD per year ($130,000/month)
+    RATE: 0.25, // Legacy - used by basic PAYE calculator
   },
   VAT: {
     RATE: 0.14, // 14%
@@ -79,7 +85,23 @@ const TAX_RATES = {
   NIS: {
     EMPLOYEE_RATE: 0.056, // 5.6%
     EMPLOYER_RATE: 0.084, // 8.4%
-    MONTHLY_CEILING: 1_386_600, // GYD per month
+    MONTHLY_CEILING: 280_000, // GYD per month (2025 rate)
+  },
+  SALARY: {
+    // Gratuity rates
+    GRATUITY_RATE: 0.225, // 22.5%
+    // Qualification allowances (annual)
+    QUALIFICATION_ALLOWANCES: {
+      NONE: 0,
+      CERTIFICATE: 50_000,
+      DIPLOMA: 100_000,
+      BACHELORS: 150_000,
+      MASTERS: 200_000,
+      DOCTORATE: 250_000,
+    } as const,
+    // Child deduction per child per year
+    CHILD_DEDUCTION: 10_000,
+    MAX_CHILD_DEDUCTIONS: 4,
   },
 };
 
@@ -176,6 +198,282 @@ function calculateNIS(input: NISInput): NISResult {
   };
 }
 
+// ============================================================
+// FULL SALARY CALCULATOR (2025 Guyana Tax Rules)
+// ============================================================
+
+type PayFrequency = "daily" | "weekly" | "fortnightly" | "monthly" | "yearly";
+type QualificationLevel =
+  | "NONE"
+  | "CERTIFICATE"
+  | "DIPLOMA"
+  | "BACHELORS"
+  | "MASTERS"
+  | "DOCTORATE";
+
+type SalaryInput = {
+  grossSalary: number;
+  frequency: PayFrequency;
+  includeGratuity: boolean;
+  month?: number; // 1-12 for gratuity calculations (month 6 and 12 are special)
+  qualificationLevel?: QualificationLevel;
+  numberOfChildren?: number;
+  otherDeductions?: number;
+  pensionContribution?: number; // Custom pension contribution
+};
+
+type SalaryBreakdown = {
+  // Input values (normalized to monthly)
+  grossMonthly: number;
+  grossAnnual: number;
+  frequency: PayFrequency;
+
+  // Deductions
+  deductions: {
+    personalAllowance: number;
+    qualificationAllowance: number;
+    childDeduction: number;
+    otherDeductions: number;
+    totalDeductions: number;
+  };
+
+  // Taxable income
+  taxableIncome: number;
+
+  // Tax breakdown (progressive)
+  tax: {
+    firstBracketIncome: number;
+    firstBracketTax: number;
+    secondBracketIncome: number;
+    secondBracketTax: number;
+    totalAnnualTax: number;
+    monthlyTax: number;
+  };
+
+  // NIS contributions
+  nis: {
+    employeeMonthly: number;
+    employerMonthly: number;
+    employeeAnnual: number;
+    employerAnnual: number;
+    cappedIncome: number;
+    ceiling: number;
+  };
+
+  // Gratuity (if applicable)
+  gratuity: {
+    included: boolean;
+    rate: number;
+    monthlyAmount: number;
+    isSpecialMonth: boolean; // Month 6 or 12
+    specialMonthBonus: number;
+  };
+
+  // Net pay
+  netPay: {
+    monthly: number;
+    annual: number;
+    // Breakdown by frequency
+    daily: number;
+    weekly: number;
+    fortnightly: number;
+  };
+
+  // Employer costs
+  employerCosts: {
+    grossSalary: number;
+    nisContribution: number;
+    gratuityContribution: number;
+    totalMonthlyCost: number;
+    totalAnnualCost: number;
+  };
+
+  // Effective rates
+  effectiveRates: {
+    taxRate: number;
+    nisRate: number;
+    totalDeductionRate: number;
+  };
+};
+
+/**
+ * Convert salary to monthly based on frequency
+ */
+function toMonthly(amount: number, frequency: PayFrequency): number {
+  switch (frequency) {
+    case "daily":
+      return amount * 22; // Assuming 22 working days per month
+    case "weekly":
+      return amount * 4.33; // 52 weeks / 12 months
+    case "fortnightly":
+      return amount * 2.17; // 26 fortnights / 12 months
+    case "monthly":
+      return amount;
+    case "yearly":
+      return amount / 12;
+  }
+}
+
+/**
+ * Convert monthly amount to specified frequency
+ */
+function fromMonthly(amount: number, frequency: PayFrequency): number {
+  switch (frequency) {
+    case "daily":
+      return amount / 22;
+    case "weekly":
+      return amount / 4.33;
+    case "fortnightly":
+      return amount / 2.17;
+    case "monthly":
+      return amount;
+    case "yearly":
+      return amount * 12;
+  }
+}
+
+/**
+ * Calculate Full Salary with all deductions
+ * Implements 2025 Guyana tax rules with progressive brackets
+ */
+function calculateFullSalary(input: SalaryInput): SalaryBreakdown {
+  // Normalize to monthly
+  const grossMonthly = toMonthly(input.grossSalary, input.frequency);
+  const grossAnnual = grossMonthly * 12;
+
+  // Calculate deductions
+  const personalAllowance = TAX_RATES.PAYE.PERSONAL_ALLOWANCE;
+  const qualificationAllowance =
+    TAX_RATES.SALARY.QUALIFICATION_ALLOWANCES[
+      input.qualificationLevel || "NONE"
+    ];
+  const numChildren = Math.min(
+    input.numberOfChildren || 0,
+    TAX_RATES.SALARY.MAX_CHILD_DEDUCTIONS
+  );
+  const childDeduction = numChildren * TAX_RATES.SALARY.CHILD_DEDUCTION;
+  const otherDeductions = (input.otherDeductions || 0) * 12; // Assume monthly input, convert to annual
+
+  const totalDeductions =
+    personalAllowance +
+    qualificationAllowance +
+    childDeduction +
+    otherDeductions;
+
+  // Calculate taxable income
+  const taxableIncome = Math.max(0, grossAnnual - totalDeductions);
+
+  // Calculate progressive tax (2025 brackets)
+  const firstBracketThreshold = TAX_RATES.PAYE.FIRST_BRACKET_THRESHOLD;
+  const firstBracketIncome = Math.min(taxableIncome, firstBracketThreshold);
+  const secondBracketIncome = Math.max(0, taxableIncome - firstBracketThreshold);
+
+  const firstBracketTax =
+    firstBracketIncome * TAX_RATES.PAYE.FIRST_BRACKET_RATE;
+  const secondBracketTax =
+    secondBracketIncome * TAX_RATES.PAYE.SECOND_BRACKET_RATE;
+
+  const totalAnnualTax = firstBracketTax + secondBracketTax;
+  const monthlyTax = totalAnnualTax / 12;
+
+  // Calculate NIS
+  const nisCeiling = TAX_RATES.NIS.MONTHLY_CEILING;
+  const cappedIncome = Math.min(grossMonthly, nisCeiling);
+  const employeeNisMonthly = cappedIncome * TAX_RATES.NIS.EMPLOYEE_RATE;
+  const employerNisMonthly = cappedIncome * TAX_RATES.NIS.EMPLOYER_RATE;
+
+  // Calculate gratuity
+  const gratuityRate = TAX_RATES.SALARY.GRATUITY_RATE;
+  const gratuityMonthly = input.includeGratuity
+    ? grossMonthly * gratuityRate
+    : 0;
+
+  // Month 6 and 12 have special gratuity calculations (double payment)
+  const currentMonth = input.month || new Date().getMonth() + 1;
+  const isSpecialMonth = currentMonth === 6 || currentMonth === 12;
+  const specialMonthBonus =
+    input.includeGratuity && isSpecialMonth ? gratuityMonthly : 0;
+
+  // Calculate net pay
+  const monthlyNetPay =
+    grossMonthly - monthlyTax - employeeNisMonthly + gratuityMonthly;
+  const annualNetPay = monthlyNetPay * 12;
+
+  // Calculate employer costs
+  const totalMonthlyCost =
+    grossMonthly + employerNisMonthly + (input.includeGratuity ? gratuityMonthly : 0);
+
+  // Calculate effective rates
+  const effectiveTaxRate = grossAnnual > 0 ? (totalAnnualTax / grossAnnual) * 100 : 0;
+  const effectiveNisRate = grossMonthly > 0 ? (employeeNisMonthly / grossMonthly) * 100 : 0;
+  const totalMonthlyDeductions = monthlyTax + employeeNisMonthly;
+  const totalDeductionRate = grossMonthly > 0 ? (totalMonthlyDeductions / grossMonthly) * 100 : 0;
+
+  return {
+    grossMonthly,
+    grossAnnual,
+    frequency: input.frequency,
+
+    deductions: {
+      personalAllowance,
+      qualificationAllowance,
+      childDeduction,
+      otherDeductions,
+      totalDeductions,
+    },
+
+    taxableIncome,
+
+    tax: {
+      firstBracketIncome,
+      firstBracketTax,
+      secondBracketIncome,
+      secondBracketTax,
+      totalAnnualTax,
+      monthlyTax,
+    },
+
+    nis: {
+      employeeMonthly: employeeNisMonthly,
+      employerMonthly: employerNisMonthly,
+      employeeAnnual: employeeNisMonthly * 12,
+      employerAnnual: employerNisMonthly * 12,
+      cappedIncome,
+      ceiling: nisCeiling,
+    },
+
+    gratuity: {
+      included: input.includeGratuity,
+      rate: gratuityRate * 100,
+      monthlyAmount: gratuityMonthly,
+      isSpecialMonth,
+      specialMonthBonus,
+    },
+
+    netPay: {
+      monthly: monthlyNetPay,
+      annual: annualNetPay,
+      daily: fromMonthly(monthlyNetPay, "daily"),
+      weekly: fromMonthly(monthlyNetPay, "weekly"),
+      fortnightly: fromMonthly(monthlyNetPay, "fortnightly"),
+    },
+
+    employerCosts: {
+      grossSalary: grossMonthly,
+      nisContribution: employerNisMonthly,
+      gratuityContribution: gratuityMonthly,
+      totalMonthlyCost,
+      totalAnnualCost: totalMonthlyCost * 12,
+    },
+
+    effectiveRates: {
+      taxRate: effectiveTaxRate,
+      nisRate: effectiveNisRate,
+      totalDeductionRate,
+    },
+  };
+}
+
 // Tax Calculators Router (oRPC pattern - plain object with .handler())
 export const taxCalculatorsRouter = {
   // Calculate PAYE tax
@@ -209,11 +507,53 @@ export const taxCalculatorsRouter = {
     )
     .handler(({ input }) => calculateNIS(input)),
 
+  // Calculate Full Salary (comprehensive payroll calculator)
+  calculateSalary: protectedProcedure
+    .input(
+      z.object({
+        grossSalary: z.number().min(0),
+        frequency: z.enum(["daily", "weekly", "fortnightly", "monthly", "yearly"]),
+        includeGratuity: z.boolean(),
+        month: z.number().min(1).max(12).optional(),
+        qualificationLevel: z
+          .enum(["NONE", "CERTIFICATE", "DIPLOMA", "BACHELORS", "MASTERS", "DOCTORATE"])
+          .optional(),
+        numberOfChildren: z.number().min(0).max(10).optional(),
+        otherDeductions: z.number().min(0).optional(),
+        pensionContribution: z.number().min(0).optional(),
+      })
+    )
+    .handler(({ input }) => calculateFullSalary(input)),
+
+  // Get tax rates for display
+  getTaxRates: protectedProcedure.handler(() => ({
+    paye: {
+      firstBracketRate: TAX_RATES.PAYE.FIRST_BRACKET_RATE * 100,
+      secondBracketRate: TAX_RATES.PAYE.SECOND_BRACKET_RATE * 100,
+      firstBracketThreshold: TAX_RATES.PAYE.FIRST_BRACKET_THRESHOLD,
+      personalAllowance: TAX_RATES.PAYE.PERSONAL_ALLOWANCE,
+    },
+    nis: {
+      employeeRate: TAX_RATES.NIS.EMPLOYEE_RATE * 100,
+      employerRate: TAX_RATES.NIS.EMPLOYER_RATE * 100,
+      monthlyCeiling: TAX_RATES.NIS.MONTHLY_CEILING,
+    },
+    salary: {
+      gratuityRate: TAX_RATES.SALARY.GRATUITY_RATE * 100,
+      qualificationAllowances: TAX_RATES.SALARY.QUALIFICATION_ALLOWANCES,
+      childDeduction: TAX_RATES.SALARY.CHILD_DEDUCTION,
+      maxChildDeductions: TAX_RATES.SALARY.MAX_CHILD_DEDUCTIONS,
+    },
+    vat: {
+      rate: TAX_RATES.VAT.RATE * 100,
+    },
+  })),
+
   // List saved calculations for the current user
   listHistory: protectedProcedure
     .input(
       z.object({
-        calculationType: z.enum(["PAYE", "VAT", "NIS"]).optional(),
+        calculationType: z.enum(["PAYE", "VAT", "NIS", "SALARY"]).optional(),
         limit: z.number().min(1).max(100).optional().default(20),
       })
     )
@@ -244,7 +584,7 @@ export const taxCalculatorsRouter = {
   saveCalculation: protectedProcedure
     .input(
       z.object({
-        calculationType: z.enum(["PAYE", "VAT", "NIS"]),
+        calculationType: z.enum(["PAYE", "VAT", "NIS", "SALARY"]),
         inputData: z.record(z.string(), z.unknown()),
         result: z.record(z.string(), z.unknown()),
       })

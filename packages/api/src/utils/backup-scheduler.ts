@@ -9,14 +9,21 @@ import { backupSchedule, db, systemBackup } from "@SYNERGY-GY/db";
 import { exec } from "node:child_process";
 import { existsSync } from "node:fs";
 import { stat, unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { and, eq, lte } from "drizzle-orm";
 
 const execAsync = promisify(exec);
 
-const BACKUP_DIR = process.env.BACKUP_DIR || "./backups";
-const SCRIPTS_DIR = process.env.SCRIPTS_DIR || "./scripts";
+// Get absolute path to project root (from packages/api/src/utils/)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PROJECT_ROOT = resolve(__dirname, "../../../../..");
+
+// Configuration - use absolute paths to avoid working directory issues
+const BACKUP_DIR = process.env.BACKUP_DIR || join(PROJECT_ROOT, "backups");
+const SCRIPTS_DIR = process.env.SCRIPTS_DIR || join(PROJECT_ROOT, "scripts");
 const CHECK_INTERVAL_MS = 60_000; // Check every minute
 
 // Simple cron parser - supports basic patterns

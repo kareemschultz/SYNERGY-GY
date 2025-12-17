@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, User as UserIcon } from "lucide-react";
-import { useState } from "react";
+import { Camera, Loader2, Upload, User as UserIcon, X } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,6 +19,9 @@ export function ProfileSettings() {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile"],
@@ -51,6 +55,68 @@ export function ProfileSettings() {
     setIsEditing(false);
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be smaller than 5MB");
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to server
+    setIsUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const response = await fetch("/api/upload/avatar", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload avatar");
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("Avatar updated successfully");
+    } catch {
+      setAvatarPreview(null);
+      toast.error("Failed to upload avatar. This feature may require additional server configuration.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   // Initialize name when profile loads
   if (profile && !isEditing && name !== profile.name) {
     setName(profile.name);
@@ -81,25 +147,52 @@ export function ProfileSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Profile Picture Placeholder */}
+          {/* Profile Picture with Upload */}
           <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-              {profile?.image ? (
-                // biome-ignore lint/correctness/useImageSize: Auto-fix
-                <img
-                  alt={profile.name}
-                  className="h-full w-full rounded-full object-cover"
-                  src={profile.image}
+            <div className="group relative">
+              <Avatar className="h-20 w-20 cursor-pointer" onClick={handleAvatarClick}>
+                <AvatarImage
+                  alt={profile?.name || "Profile"}
+                  src={avatarPreview || profile?.image || undefined}
                 />
-              ) : (
-                <UserIcon className="h-10 w-10 text-primary" />
-              )}
+                <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                  {profile?.name ? getInitials(profile.name) : <UserIcon className="h-10 w-10" />}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                className="absolute right-0 bottom-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-110 disabled:opacity-50"
+                disabled={isUploadingAvatar}
+                onClick={handleAvatarClick}
+                type="button"
+              >
+                {isUploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
+              </button>
+              <input
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+                ref={fileInputRef}
+                type="file"
+              />
             </div>
             <div className="flex-1">
               <p className="font-medium text-sm">Profile Picture</p>
               <p className="text-muted-foreground text-xs">
-                Avatar images are managed through your authentication provider
+                Click the camera icon to upload a new avatar. Max file size: 5MB.
               </p>
+              <Button
+                className="mt-2 h-7 text-xs"
+                onClick={handleAvatarClick}
+                size="sm"
+                variant="outline"
+              >
+                <Upload className="mr-1 h-3 w-3" />
+                Upload Photo
+              </Button>
             </div>
           </div>
 

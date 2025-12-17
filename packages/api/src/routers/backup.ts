@@ -2,7 +2,8 @@ import { backupSchedule, db, systemBackup } from "@SYNERGY-GY/db";
 import { exec } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readdir, stat, unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { ORPCError } from "@orpc/server";
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
@@ -11,9 +12,14 @@ import { adminProcedure } from "../index";
 
 const execAsync = promisify(exec);
 
-// Configuration
-const BACKUP_DIR = process.env.BACKUP_DIR || "./backups";
-const SCRIPTS_DIR = process.env.SCRIPTS_DIR || "./scripts";
+// Get absolute path to project root (from packages/api/src/routers/)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PROJECT_ROOT = resolve(__dirname, "../../../../..");
+
+// Configuration - use absolute paths to avoid working directory issues
+const BACKUP_DIR = process.env.BACKUP_DIR || join(PROJECT_ROOT, "backups");
+const SCRIPTS_DIR = process.env.SCRIPTS_DIR || join(PROJECT_ROOT, "scripts");
 
 // Zod schemas
 const createBackupSchema = z.object({

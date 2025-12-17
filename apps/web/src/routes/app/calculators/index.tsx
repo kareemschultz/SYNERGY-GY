@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Calculator, DollarSign, Receipt, Users } from "lucide-react";
+import { Briefcase, Calculator, DollarSign, Receipt, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,8 +19,7 @@ function CalculatorsIndex() {
       <div className="flex flex-col gap-2">
         <h1 className="font-bold text-3xl tracking-tight">Tax Calculators</h1>
         <p className="text-muted-foreground">
-          Calculate PAYE, VAT, and NIS contributions based on Guyana tax rates
-          (2024)
+          Calculate PAYE, VAT, NIS, and payroll based on Guyana tax rates (2025)
         </p>
       </div>
 
@@ -32,7 +31,43 @@ function CalculatorsIndex() {
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Payroll Calculator - Primary */}
+        <Card className="flex flex-col border-2 border-primary/20 bg-primary/5">
+          <CardHeader>
+            <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-primary/20">
+              <Briefcase className="size-6 text-primary" />
+            </div>
+            <CardTitle>Payroll Calculator</CardTitle>
+            <CardDescription>
+              Comprehensive net pay calculator with PAYE, NIS, gratuity, and
+              deductions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-auto">
+            <div className="mb-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Includes:</span>
+                <span className="font-medium">PAYE + NIS</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Gratuity:</span>
+                <span className="font-medium">22.5% optional</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Frequencies:</span>
+                <span className="font-medium">All supported</span>
+              </div>
+            </div>
+            <Link to="/app/calculators/salary">
+              <Button className="w-full">
+                <Calculator className="mr-2 size-4" />
+                Calculate Payroll
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         <Card className="flex flex-col">
           <CardHeader>
             <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
@@ -48,21 +83,21 @@ function CalculatorsIndex() {
             <div className="mb-4 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">First bracket:</span>
-                <span className="font-medium">28% on first $1.8M</span>
+                <span className="font-medium">25% on first $3.12M</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Second bracket:</span>
-                <span className="font-medium">40% above $1.8M</span>
+                <span className="font-medium">35% above $3.12M</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   Personal allowance:
                 </span>
-                <span className="font-medium">$780,000/year</span>
+                <span className="font-medium">$1,560,000/year</span>
               </div>
             </div>
             <Link to="/app/calculators/paye">
-              <Button className="w-full">
+              <Button className="w-full" variant="outline">
                 <Calculator className="mr-2 size-4" />
                 Calculate PAYE
               </Button>
@@ -146,10 +181,10 @@ function CalculatorsIndex() {
             <h3 className="mb-2 font-semibold">PAYE (Pay As You Earn)</h3>
             <p className="text-muted-foreground text-sm">
               PAYE is the income tax system in Guyana. Tax is calculated on
-              annual income after deducting the personal allowance and other
-              eligible deductions. The progressive rate system means higher
-              earners pay a higher percentage on income above $1.8M GYD per
-              year.
+              annual income after deducting the personal allowance
+              ($1,560,000/year) and other eligible deductions. The progressive
+              rate system applies 25% on the first $3.12M GYD and 35% on income
+              above that threshold.
             </p>
           </div>
           <div>
