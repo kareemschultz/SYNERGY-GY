@@ -1,13 +1,14 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
   BarChart3,
-  BookOpen,
   Building2,
   Calculator,
   Calendar,
   FileText,
   FolderOpen,
+  GraduationCap,
   Home,
+  Library,
   Package,
   Receipt,
   Settings,
@@ -53,6 +54,11 @@ const mainNavItems: NavItem[] = [
     icon: FileText,
   },
   {
+    title: "Knowledge Base",
+    href: "/app/knowledge-base",
+    icon: Library,
+  },
+  {
     title: "Calendar",
     href: "/app/calendar",
     icon: Calendar,
@@ -70,7 +76,7 @@ const mainNavItems: NavItem[] = [
   {
     title: "Training",
     href: "/app/training",
-    icon: BookOpen,
+    icon: GraduationCap,
   },
   {
     title: "Calculators",

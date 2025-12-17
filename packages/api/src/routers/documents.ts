@@ -130,13 +130,15 @@ export const documentsRouter = {
     // Status filter
     conditions.push(eq(document.status, input.status));
 
-    // Search filter
+    // Search filter (includes filename, description, and tags)
     if (input.search) {
       const searchTerm = `%${input.search}%`;
       conditions.push(
         or(
           ilike(document.originalName, searchTerm),
-          ilike(document.description, searchTerm)
+          ilike(document.description, searchTerm),
+          // Search within tags array - check if any tag contains the search term
+          sql`EXISTS (SELECT 1 FROM unnest(${document.tags}) AS tag WHERE tag ILIKE ${searchTerm})`
         )
       );
     }

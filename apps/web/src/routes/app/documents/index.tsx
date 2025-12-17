@@ -159,6 +159,7 @@ type DocumentType = {
   fileSize: number;
   category: string;
   description?: string | null;
+  tags?: string[] | null;
   status: string;
   createdAt: string;
   expirationDate?: string | null;
@@ -643,6 +644,7 @@ function DocumentsPage() {
                     </TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Tags</TableHead>
                     <TableHead>Client</TableHead>
                     <TableHead>Matter</TableHead>
                     <TableHead>Size</TableHead>
@@ -653,7 +655,7 @@ function DocumentsPage() {
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell className="h-32 text-center" colSpan={8}>
+                      <TableCell className="h-32 text-center" colSpan={9}>
                         <div className="flex items-center justify-center gap-2 text-muted-foreground">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           Loading documents...
@@ -686,6 +688,31 @@ function DocumentsPage() {
                         </TableCell>
                         <TableCell>
                           <CategoryBadge category={doc.category} />
+                        </TableCell>
+                        <TableCell>
+                          {doc.tags && doc.tags.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {doc.tags.slice(0, 3).map((tag) => (
+                                <Badge
+                                  className="bg-slate-100 text-slate-700 text-xs dark:bg-slate-800 dark:text-slate-300"
+                                  key={tag}
+                                  variant="secondary"
+                                >
+                                  {tag}
+                                </Badge>
+                              ))}
+                              {doc.tags.length > 3 && (
+                                <Badge
+                                  className="bg-slate-100 text-slate-500 text-xs"
+                                  variant="secondary"
+                                >
+                                  +{doc.tags.length - 3}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {doc.client ? (
@@ -755,7 +782,7 @@ function DocumentsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell className="h-32 text-center" colSpan={8}>
+                      <TableCell className="h-32 text-center" colSpan={9}>
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <FolderOpen className="h-8 w-8" />
                           <p>No documents found</p>

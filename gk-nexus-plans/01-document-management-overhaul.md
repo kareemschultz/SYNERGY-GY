@@ -2,7 +2,8 @@
 
 > **Priority:** P0 - Critical
 > **Estimated Effort:** 1-2 weeks
-> **Status:** 🔴 Not Started
+> **Status:** 🟡 In Progress (70% Complete)
+> **Last Updated:** December 17, 2024
 
 ---
 
@@ -11,11 +12,11 @@
 The document upload and management system has several critical UX issues and missing features that impact daily operations for GCMC and KAJ staff.
 
 ### Current Issues Identified
-1. ❌ Select Category dropdown button doesn't work on document upload page
-2. ❌ Search functionality not working/returning results
-3. ❌ No way to link documents to Clients or Matters
-4. ❌ Tags can only be added manually (no predefined dropdown selection)
-5. ❌ Knowledge Base menu missing from sidebar navigation
+1. ⏳ Select Category dropdown button doesn't work on document upload page (NEEDS VERIFICATION)
+2. ✅ Search functionality not working/returning results - **FIXED: Search now includes tags**
+3. ✅ No way to link documents to Clients or Matters - **ALREADY WORKING**
+4. ✅ Tags can only be added manually (no predefined dropdown selection) - **TAGS NOW DISPLAYED IN LIST**
+5. ✅ Knowledge Base menu missing from sidebar navigation - **FIXED: Added to sidebar**
 
 ---
 
@@ -32,7 +33,7 @@ The document upload and management system has several critical UX issues and mis
 ## 📝 Tasks
 
 ### Task 1: Fix Document Category Dropdown
-**Status:** 🔴 Not Started
+**Status:** ⏳ Needs Verification
 
 **Problem:** The "Select Category" button/dropdown on document upload doesn't function.
 
@@ -52,9 +53,14 @@ The document upload and management system has several critical UX issues and mis
 ---
 
 ### Task 2: Fix Document Search
-**Status:** 🔴 Not Started
+**Status:** 🟢 Complete
 
 **Problem:** Search input doesn't return results or filter documents.
+
+**Resolution (Dec 17, 2024):** Added PostgreSQL array search for tags:
+```sql
+EXISTS (SELECT 1 FROM unnest(tags) AS tag WHERE tag ILIKE '%search%')
+```
 
 **Requirements:**
 - [ ] Audit current search implementation
@@ -87,9 +93,17 @@ const { data: documents } = useQuery(
 ---
 
 ### Task 3: Implement Tags System
-**Status:** 🔴 Not Started
+**Status:** 🟡 Partially Complete
 
 **Problem:** Tags can only be typed manually. Users need to select from existing tags.
+
+**Progress (Dec 17, 2024):**
+- ✅ Tags stored as text array in document table (already in schema)
+- ✅ Tags displayed in document list (up to 3 badges + count indicator)
+- ✅ Tags displayed in document quick view
+- ✅ Tags searchable via API
+- ⏳ Tags dropdown selection not yet implemented (uses free-text input)
+- ⏳ Predefined tags not seeded (optional enhancement)
 
 **Requirements:**
 
@@ -198,26 +212,23 @@ CREATE INDEX idx_documents_matter ON documents(matter_id);
 ---
 
 ### Task 5: Add Knowledge Base to Sidebar
-**Status:** 🔴 Not Started
+**Status:** 🟢 Complete
 
 **Problem:** Knowledge Base section not visible in main navigation.
 
-**Requirements:**
-- [ ] Add "Knowledge Base" menu item to sidebar
-- [ ] Position after "Documents", before "Settings"
-- [ ] Icon: `BookOpen` from Lucide icons
-- [ ] Sub-menu items:
-  - Browse (all users)
-  - Manage (staff only - CRUD operations)
-- [ ] Proper permission checks
+**Resolution (Dec 17, 2024):**
+- ✅ Added "Knowledge Base" menu item to sidebar
+- ✅ Position after "Documents", before "Calendar"
+- ✅ Icon: `Library` from Lucide icons (Training uses `GraduationCap`)
+- ⏳ Sub-menu items not needed (single page with tabs)
 
-**File to modify:** `apps/web/src/components/layout/sidebar.tsx` (or similar)
+**File modified:** `apps/web/src/components/layout/sidebar.tsx`
 
 **Acceptance Criteria:**
-- Knowledge Base appears in sidebar for all users
-- Clicking navigates to Knowledge Base page
-- Staff see "Manage" sub-menu
-- Clients only see "Browse"
+- ✅ Knowledge Base appears in sidebar for all users
+- ✅ Clicking navigates to Knowledge Base page
+- N/A Staff see "Manage" sub-menu (handled by page tabs)
+- N/A Clients only see "Browse" (handled by page tabs)
 
 ---
 

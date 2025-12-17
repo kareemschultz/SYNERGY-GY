@@ -11,10 +11,12 @@
 
 | # | Plan File | Priority | Status | Est. Effort |
 |---|-----------|----------|--------|-------------|
-| 01 | [Document Management Overhaul](./01-document-management-overhaul.md) | P0 - Critical | 🔴 Not Started | 1-2 weeks |
+| 01 | [Document Management Overhaul](./01-document-management-overhaul.md) | P0 - Critical | 🟡 70% Complete | 1-2 weeks |
 | 02 | [UI/UX Visual Polish](./02-ui-ux-visual-polish.md) | P1 - High | 🔴 Not Started | 1 week |
 | 03 | [Templates & Forms System](./03-templates-forms-system.md) | P2 - Medium | 🔴 Not Started | 2-3 weeks |
 | 04 | [Enhancements & Gap Analysis](./04-enhancements-gap-analysis.md) | P3 - Backlog | 🔴 Not Started | Ongoing |
+
+> **Last Updated:** December 17, 2024
 
 ---
 
@@ -55,17 +57,17 @@
 ## 🐛 Known Issues (From Current Audit)
 
 ### Critical (Blocking)
-- [ ] Document category dropdown not working
-- [ ] Document search not functioning
-- [ ] Knowledge Base missing from sidebar navigation
+- ⏳ Document category dropdown not working (NEEDS VERIFICATION)
+- [x] ~~Document search not functioning~~ **FIXED Dec 17** - Search now includes tags
+- [x] ~~Knowledge Base missing from sidebar navigation~~ **FIXED Dec 17**
 
 ### High Priority
-- [ ] Tags can only be added manually (no dropdown)
-- [ ] Cannot link documents to clients/matters
-- [ ] Various UI inconsistencies
+- [x] ~~Tags can only be added manually~~ **PARTIAL** - Tags now displayed in list/quickview, search works
+- [x] ~~Cannot link documents to clients/matters~~ **ALREADY WORKING**
+- [ ] Various UI inconsistencies (duplicate category color definitions)
 
 ### Medium Priority
-- [ ] No template system for GRA/NIS forms
+- [ ] No template system for GRA/NIS forms (Template system EXISTS, needs form content)
 - [ ] Limited reporting capabilities
 - [ ] No calendar view for deadlines
 

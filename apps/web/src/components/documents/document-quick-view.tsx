@@ -96,6 +96,7 @@ type Document = {
   fileSize: number;
   category: string;
   description?: string | null;
+  tags?: string[] | null;
   status: string;
   createdAt: string;
   expirationDate?: string | null;
@@ -202,6 +203,27 @@ export function DocumentQuickView({
               </Badge>
             )}
           </div>
+
+          {/* Tags */}
+          {document.tags && document.tags.length > 0 && (
+            <div className="flex items-start gap-3">
+              <Tag className="mt-0.5 h-4 w-4 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="mb-1 text-muted-foreground text-xs">Tags</p>
+                <div className="flex flex-wrap gap-1">
+                  {document.tags.map((tag) => (
+                    <Badge
+                      className="bg-slate-100 text-slate-700 text-xs dark:bg-slate-800 dark:text-slate-300"
+                      key={tag}
+                      variant="secondary"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           {document.description && (
