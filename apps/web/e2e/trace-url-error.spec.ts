@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("trace URL construction error", async ({ page }) => {
   const EMAIL = "kareemschultz46@gmail.com";
   const PASSWORD = "oxAiA5tUnAHYFJN2Qa8mQEoFVXDgZCg0";
@@ -11,25 +14,20 @@ test("trace URL construction error", async ({ page }) => {
     const type = msg.type();
     const text = msg.text();
     // Log everything for debugging
-    console.log("[CONSOLE " + type + "] " + text);
+    console.log(`[CONSOLE ${type}] ${text}`);
 
     // Get location for errors
     if (type === "error") {
       const location = msg.location();
       console.log(
-        "  Location: " +
-          location.url +
-          ":" +
-          location.lineNumber +
-          ":" +
-          location.columnNumber
+        `  Location: ${location.url}:${location.lineNumber}:${location.columnNumber}`
       );
     }
   });
 
   page.on("pageerror", (error) => {
-    console.log("[PAGE ERROR] " + error.message);
-    console.log("[STACK] " + (error.stack || "no stack"));
+    console.log(`[PAGE ERROR] ${error.message}`);
+    console.log(`[STACK] ${error.stack || "no stack"}`);
   });
 
   // Login
@@ -39,13 +37,13 @@ test("trace URL construction error", async ({ page }) => {
 
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   try {
     await page.waitForURL("**/app**", { timeout: 15_000 });
-    console.log("Step 2: Navigated to " + page.url());
+    console.log(`Step 2: Navigated to ${page.url()}`);
   } catch {
-    console.log("Step 2: Still at " + page.url());
+    console.log(`Step 2: Still at ${page.url()}`);
   }
 
   // Step 3: Inject code to test URL construction
@@ -66,13 +64,9 @@ test("trace URL construction error", async ({ page }) => {
     for (const t of tests) {
       try {
         const u = new URL(t.url, t.base);
-        results.push(
-          "OK: URL(" + t.url + ", " + t.base + ") = " + u.toString()
-        );
+        results.push(`OK: URL(${t.url}, ${t.base}) = ${u.toString()}`);
       } catch (e) {
-        results.push(
-          "ERROR: URL(" + t.url + ", " + t.base + ") - " + String(e)
-        );
+        results.push(`ERROR: URL(${t.url}, ${t.base}) - ${String(e)}`);
       }
     }
 
@@ -80,7 +74,7 @@ test("trace URL construction error", async ({ page }) => {
   });
 
   for (const r of urlTest) {
-    console.log("  " + r);
+    console.log(`  ${r}`);
   }
 
   // Step 4: Check what oRPC is trying to do
@@ -99,22 +93,22 @@ test("trace URL construction error", async ({ page }) => {
       try {
         // Test the path transformation
         const base = "/rpc";
-        const fullPath = base + "/" + path;
+        const fullPath = `${base}/${path}`;
         if (fullPath.includes(".")) {
           const transformed = fullPath.replace(/\./g, "/");
-          results.push("Path: " + path + " -> " + transformed);
+          results.push(`Path: ${path} -> ${transformed}`);
         } else {
-          results.push("Path: " + path + " (no dots)");
+          results.push(`Path: ${path} (no dots)`);
         }
       } catch (e) {
-        results.push("Error processing " + path + ": " + String(e));
+        results.push(`Error processing ${path}: ${String(e)}`);
       }
     }
     return results;
   });
 
   for (const r of queryOptionsTest) {
-    console.log("  " + r);
+    console.log(`  ${r}`);
   }
 
   // Wait to see if any errors appear

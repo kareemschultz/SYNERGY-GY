@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("debug login and cookie setting", async ({ page }) => {
   // Log Set-Cookie headers from responses
   page.on("response", async (res) => {
@@ -24,9 +27,9 @@ test("debug login and cookie setting", async ({ page }) => {
   // Check cookies before login
   const cookiesBefore = await page.context().cookies();
   console.log(`\n[COOKIES BEFORE LOGIN] Count: ${cookiesBefore.length}`);
-  cookiesBefore.forEach((c) =>
-    console.log(`  ${c.name}: ${c.value.slice(0, 30)}...`)
-  );
+  for (const c of cookiesBefore) {
+    console.log(`  ${c.name}: ${c.value.slice(0, 30)}...`);
+  }
 
   // Step 2: Enter credentials and login
   console.log("\n=== Attempting login ===");
@@ -34,7 +37,7 @@ test("debug login and cookie setting", async ({ page }) => {
   await page.getByLabel("Password").fill("TestPassword123!"); // Replace with actual password if needed
 
   // Click login
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   // Wait for response
   await page.waitForTimeout(3000);
@@ -43,9 +46,11 @@ test("debug login and cookie setting", async ({ page }) => {
   // Check cookies after login attempt
   const cookiesAfter = await page.context().cookies();
   console.log(`\n[COOKIES AFTER LOGIN] Count: ${cookiesAfter.length}`);
-  cookiesAfter.forEach((c) =>
-    console.log(`  ${c.name}: ${c.value.slice(0, 30)}... (domain: ${c.domain})`)
-  );
+  for (const c of cookiesAfter) {
+    console.log(
+      `  ${c.name}: ${c.value.slice(0, 30)}... (domain: ${c.domain})`
+    );
+  }
 
   // Check URL
   console.log(`\n[FINAL URL] ${page.url()}`);

@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("trace frontend RPC requests", async ({ page }) => {
   const EMAIL = "kareemschultz46@gmail.com";
   const PASSWORD = "oxAiA5tUnAHYFJN2Qa8mQEoFVXDgZCg0";
@@ -7,13 +10,13 @@ test("trace frontend RPC requests", async ({ page }) => {
   console.log("\n=== TRACE: Frontend RPC Requests ===\n");
 
   // Track ALL requests
-  page.on("request", async (req) => {
+  page.on("request", (req) => {
     const url = req.url();
     const headers = req.headers();
     if (url.includes("/rpc/")) {
       console.log(`\n[RPC REQ] ${req.method()} ${url}`);
       console.log(
-        `  Cookie header: ${headers.cookie ? headers.cookie.slice(0, 80) + "..." : "NONE"}`
+        `  Cookie header: ${headers.cookie ? `${headers.cookie.slice(0, 80)}...` : "NONE"}`
       );
     }
   });
@@ -43,7 +46,7 @@ test("trace frontend RPC requests", async ({ page }) => {
 
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   // Wait for navigation
   await page.waitForURL("**/app**", { timeout: 10_000 });

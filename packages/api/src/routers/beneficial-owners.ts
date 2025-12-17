@@ -232,7 +232,7 @@ export const beneficialOwnersRouter = {
         riskNotes: updates.riskNotes,
       };
       // Remove fields that don't exist in schema
-      delete (updateData as Record<string, unknown>).clientId;
+      (updateData as Record<string, unknown>).clientId = undefined;
 
       const [updated] = await db
         .update(clientBeneficialOwner)

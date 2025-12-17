@@ -695,7 +695,9 @@ export const serviceCatalogRouter = {
         > = {};
 
         for (const service of services) {
-          if (!service.category) continue;
+          if (!service.category) {
+            continue;
+          }
 
           const categoryKey = service.category.name;
 

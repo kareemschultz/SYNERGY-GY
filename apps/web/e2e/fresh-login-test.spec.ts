@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("fresh login with clean browser context", async ({ browser }) => {
   const EMAIL = "kareemschultz46@gmail.com";
   const PASSWORD = "oxAiA5tUnAHYFJN2Qa8mQEoFVXDgZCg0";
@@ -64,7 +67,7 @@ test("fresh login with clean browser context", async ({ browser }) => {
 
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   // Wait for navigation
   await page.waitForURL("**/app**", { timeout: 15_000 }).catch(() => {

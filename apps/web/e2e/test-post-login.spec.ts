@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("test post-login data loading", async ({ page }) => {
   const EMAIL = "kareemschultz46@gmail.com";
   const PASSWORD = "oxAiA5tUnAHYFJN2Qa8mQEoFVXDgZCg0";
@@ -7,7 +10,7 @@ test("test post-login data loading", async ({ page }) => {
   console.log("\n=== TEST: Post-Login Data Loading ===\n");
 
   // Track all RPC requests
-  page.on("request", async (req) => {
+  page.on("request", (req) => {
     if (req.url().includes("/rpc/")) {
       const headers = req.headers();
       console.log(`\n[RPC REQUEST] ${req.method()} ${req.url()}`);
@@ -31,7 +34,7 @@ test("test post-login data loading", async ({ page }) => {
 
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   // Wait for navigation
   await page.waitForURL("**/app**", { timeout: 10_000 });

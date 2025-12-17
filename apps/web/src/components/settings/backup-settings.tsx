@@ -369,19 +369,17 @@ export function BackupSettings() {
                         <div className="flex items-center justify-end gap-1">
                           {backup.status === "completed" &&
                             backup.fileExists && (
-                              <>
-                                <Button
-                                  onClick={() => {
-                                    setSelectedBackup(backup);
-                                    setRestoreDialogOpen(true);
-                                  }}
-                                  size="sm"
-                                  title="Restore"
-                                  variant="ghost"
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                              </>
+                              <Button
+                                onClick={() => {
+                                  setSelectedBackup(backup);
+                                  setRestoreDialogOpen(true);
+                                }}
+                                size="sm"
+                                title="Restore"
+                                variant="ghost"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
                             )}
                           <Button
                             onClick={() => {

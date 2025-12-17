@@ -66,7 +66,9 @@ const categoryLabels: Record<string, { label: string; className: string }> = {
 };
 
 function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 B";
+  if (bytes === 0) {
+    return "0 B";
+  }
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -134,7 +136,9 @@ export function DocumentQuickView({
   });
 
   const handleDownload = async () => {
-    if (!document) return;
+    if (!document) {
+      return;
+    }
     try {
       const { downloadUrl } = await client.documents.getDownloadUrl({
         id: document.id,
@@ -151,7 +155,9 @@ export function DocumentQuickView({
     }
   };
 
-  if (!document) return null;
+  if (!document) {
+    return null;
+  }
 
   const categoryInfo =
     categoryLabels[document.category] || categoryLabels.OTHER;

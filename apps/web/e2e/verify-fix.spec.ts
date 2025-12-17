@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("verify oRPC fix - check console and network", async ({ page }) => {
   const EMAIL = "kareemschultz46@gmail.com";
   const PASSWORD = "oxAiA5tUnAHYFJN2Qa8mQEoFVXDgZCg0";
@@ -8,18 +11,18 @@ test("verify oRPC fix - check console and network", async ({ page }) => {
 
   // Capture ALL console messages
   page.on("console", (msg) => {
-    console.log("[CONSOLE " + msg.type() + "] " + msg.text());
+    console.log(`[CONSOLE ${msg.type()}] ${msg.text()}`);
   });
 
   page.on("pageerror", (error) => {
-    console.log("[PAGE ERROR] " + error.message);
+    console.log(`[PAGE ERROR] ${error.message}`);
   });
 
   // Track all network
   page.on("request", (req) => {
     const url = req.url();
     if (url.includes("/rpc/") || url.includes("getStaff")) {
-      console.log("[REQ] " + req.method() + " " + url);
+      console.log(`[REQ] ${req.method()} ${url}`);
     }
   });
 
@@ -27,8 +30,8 @@ test("verify oRPC fix - check console and network", async ({ page }) => {
     const url = res.url();
     if (url.includes("/rpc/")) {
       const body = await res.text().catch(() => "");
-      console.log("[RPC RES] " + res.status() + " " + url);
-      console.log("  Body: " + body.slice(0, 200));
+      console.log(`[RPC RES] ${res.status()} ${url}`);
+      console.log(`  Body: ${body.slice(0, 200)}`);
     }
   });
 
@@ -39,14 +42,14 @@ test("verify oRPC fix - check console and network", async ({ page }) => {
 
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   // Wait for navigation
   try {
     await page.waitForURL("**/app**", { timeout: 15_000 });
-    console.log("  Navigated to: " + page.url());
+    console.log(`  Navigated to: ${page.url()}`);
   } catch {
-    console.log("  Still on: " + page.url());
+    console.log(`  Still on: ${page.url()}`);
   }
 
   // Step 2: Wait longer for queries
@@ -68,9 +71,9 @@ test("verify oRPC fix - check console and network", async ({ page }) => {
     .catch(() => false);
 
   console.log("\nStep 3: Page state");
-  console.log("  Access Pending: " + hasAccessPending);
-  console.log("  Loading: " + hasLoading);
-  console.log("  Welcome: " + hasWelcome);
+  console.log(`  Access Pending: ${hasAccessPending}`);
+  console.log(`  Loading: ${hasLoading}`);
+  console.log(`  Welcome: ${hasWelcome}`);
 
   // Step 4: Check React state
   console.log("\nStep 4: Check React Query state");
@@ -86,7 +89,7 @@ test("verify oRPC fix - check console and network", async ({ page }) => {
       },
     };
   });
-  console.log("  Debug: " + JSON.stringify(debugInfo, null, 2));
+  console.log(`  Debug: ${JSON.stringify(debugInfo, null, 2)}`);
 
   await page.screenshot({ path: "verify-fix.png", fullPage: true });
 });

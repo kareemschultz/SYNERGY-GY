@@ -1,5 +1,8 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "javascript": {
+    "globals": ["Bun"]
+  },
   "files": {
     "ignoreUnknown": false,
     "includes": [
@@ -27,17 +30,47 @@
   "linter": {
     "rules": {
       "nursery": {
-        "noLeakedRender": "warn"
+        "noLeakedRender": "warn",
+        "noIncrementDecrement": "warn",
+        "noDuplicateDependencies": "warn",
+        "noShadow": "warn",
+        "useMaxParams": "warn"
       },
       "performance": {
         "noBarrelFile": "warn",
-        "useTopLevelRegex": "warn"
+        "useTopLevelRegex": "warn",
+        "noNamespaceImport": "warn"
       },
       "complexity": {
-        "noExcessiveCognitiveComplexity": "warn"
+        "noExcessiveCognitiveComplexity": "warn",
+        "noVoid": "warn"
       },
       "style": {
-        "noNestedTernary": "warn"
+        "noNestedTernary": "warn",
+        "noNonNullAssertion": "warn",
+        "useDefaultSwitchClause": "warn",
+        "useFilenamingConvention": "warn",
+        "useCollapsedIf": "warn"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "warn",
+        "noExplicitAny": "warn",
+        "useAwait": "warn",
+        "noEmptyBlockStatements": "warn",
+        "noEvolvingTypes": "warn",
+        "noAssignInExpressions": "warn",
+        "noAlert": "warn"
+      },
+      "correctness": {
+        "noUndeclaredVariables": "warn",
+        "noUnusedVariables": "warn",
+        "noUnusedFunctionParameters": "warn",
+        "useExhaustiveDependencies": "warn",
+        "noInvalidUseBeforeDeclaration": "warn"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "warn",
+        "noSvgWithoutTitle": "warn"
       }
     }
   }

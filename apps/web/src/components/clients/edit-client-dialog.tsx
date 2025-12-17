@@ -158,7 +158,7 @@ export function EditClientDialog({
     if (open) {
       form.reset();
     }
-  }, [open, clientData]);
+  }, [open, form.reset]);
 
   const isIndividual =
     form.state.values.type === "INDIVIDUAL" ||

@@ -78,7 +78,9 @@ export function TemplateGenerator({
   const { data: preview, isLoading: isLoadingPreview } = useQuery({
     queryKey: ["template-preview", selectedTemplate, data],
     queryFn: async () => {
-      if (!selectedTemplate) return null;
+      if (!selectedTemplate) {
+        return null;
+      }
 
       // Build client data from wizard
       const clientData = {
@@ -115,7 +117,9 @@ export function TemplateGenerator({
   };
 
   const handleGenerate = async () => {
-    if (!(selectedTemplate && preview)) return;
+    if (!(selectedTemplate && preview)) {
+      return;
+    }
 
     // Build client data from wizard
     const clientData = {

@@ -1,3 +1,4 @@
+/// <reference types="bun-types" />
 import "dotenv/config";
 import { createContext } from "@SYNERGY-GY/api/context";
 import { appRouter } from "@SYNERGY-GY/api/routers/index";
@@ -54,6 +55,11 @@ if (!CORS_ORIGIN && process.env.NODE_ENV === "production") {
   throw new Error("CORS_ORIGIN must be set in production environment");
 }
 
+// Top-level regex patterns for static asset matching
+const HASHED_ASSET_REGEX = /\.[a-zA-Z0-9]{8,}\.(js|css)$/;
+const STATIC_ASSET_REGEX =
+  /\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)$/;
+
 const app = new Hono();
 
 console.log("SERVER_BOOT_MARKER", new Date().toISOString());
@@ -61,7 +67,7 @@ console.log("SERVER_BOOT_MARKER", new Date().toISOString());
 // Hard-block RPC paths with dots (middleware guard, runs before other handlers)
 // This prevents Request mutation issues and provides clear error messages
 const DOT_IN_RPC_PATH = /^\/rpc\/.*\..*$/;
-app.use("/*", async (c, next) => {
+app.use("/*", (c, next) => {
   const path = new URL(c.req.url).pathname;
   if (DOT_IN_RPC_PATH.test(path)) {
     const expectedPath = path.replace(/\./g, "/");
@@ -326,7 +332,7 @@ const FRONTEND_DIST = process.env.FRONTEND_DIST || "/app/apps/web/dist";
 
 // Only serve static files for non-API routes
 // This prevents serveStatic from intercepting /rpc/* and /api/* requests
-app.use("/*", async (c, next) => {
+app.use("/*", (c, next) => {
   const path = new URL(c.req.url).pathname;
 
   // Skip static file serving for API routes
@@ -341,9 +347,8 @@ app.use("/*", async (c, next) => {
   // Set cache headers based on file type
   // Hashed assets (Vite bundles) can be cached long-term
   // Non-hashed assets should have shorter cache times
-  const isHashedAsset = /\.[a-zA-Z0-9]{8,}\.(js|css)$/.test(path);
-  const isStaticAsset =
-    /\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)$/.test(path);
+  const isHashedAsset = HASHED_ASSET_REGEX.test(path);
+  const isStaticAsset = STATIC_ASSET_REGEX.test(path);
 
   if (isHashedAsset) {
     // Hashed assets are immutable - cache for 1 year
@@ -356,9 +361,9 @@ app.use("/*", async (c, next) => {
   // Serve static files for everything else
   return serveStatic({
     root: FRONTEND_DIST,
-    onNotFound: (path, c) => {
+    onNotFound: (_path, ctx) => {
       // For client-side routing, serve index.html for all non-API routes
-      return c.redirect("/index.html", 302);
+      ctx.redirect("/index.html", 302);
     },
   })(c, next);
 });

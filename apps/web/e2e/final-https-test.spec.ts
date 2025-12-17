@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("final HTTPS test with full diagnostics", async ({ page }) => {
   const EMAIL = "kareemschultz46@gmail.com";
   const PASSWORD = "oxAiA5tUnAHYFJN2Qa8mQEoFVXDgZCg0";
@@ -14,7 +17,7 @@ test("final HTTPS test with full diagnostics", async ({ page }) => {
       console.log(`[REQ] ${req.method()} ${url}`);
       if (url.includes("/rpc/")) {
         console.log(
-          `  Cookie: ${headers.cookie ? "present (" + headers.cookie.length + " chars)" : "NONE"}`
+          `  Cookie: ${headers.cookie ? `present (${headers.cookie.length} chars)` : "NONE"}`
         );
       }
     }
@@ -44,7 +47,7 @@ test("final HTTPS test with full diagnostics", async ({ page }) => {
 
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   // Wait for navigation
   try {

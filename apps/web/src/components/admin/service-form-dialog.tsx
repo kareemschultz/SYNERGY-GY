@@ -96,7 +96,7 @@ export function ServiceFormDialog({
     } else if (!open) {
       resetForm();
     }
-  }, [service, open]);
+  }, [service, open, resetForm]);
 
   // Fetch categories for this business
   const { data: categoriesData } = useQuery({

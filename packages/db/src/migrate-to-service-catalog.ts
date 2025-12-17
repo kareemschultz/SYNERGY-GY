@@ -119,7 +119,7 @@ async function migrateServiceCatalog() {
     const countResult = await pool.query(
       "SELECT COUNT(*) FROM service_type WHERE is_active = true"
     );
-    const serviceCount = Number.parseInt(countResult.rows[0].count);
+    const serviceCount = Number.parseInt(countResult.rows[0].count, 10);
     console.log(
       `📊 Found ${serviceCount} active services in service_type table`
     );

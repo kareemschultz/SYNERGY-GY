@@ -322,7 +322,9 @@ export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
                     <p className="mt-1 font-bold text-2xl text-amber-700">
                       {
                         clientExpiringDocs.filter((d) => {
-                          if (!d.expirationDate) return false;
+                          if (!d.expirationDate) {
+                            return false;
+                          }
                           const days = getDaysUntilExpiration(d.expirationDate);
                           return days > 0 && days <= 7;
                         }).length
@@ -342,7 +344,9 @@ export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
                     <p className="mt-1 font-bold text-2xl text-blue-700">
                       {
                         clientExpiringDocs.filter((d) => {
-                          if (!d.expirationDate) return false;
+                          if (!d.expirationDate) {
+                            return false;
+                          }
                           const days = getDaysUntilExpiration(d.expirationDate);
                           return days > 7 && days <= 30;
                         }).length

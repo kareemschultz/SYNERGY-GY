@@ -16,7 +16,7 @@ import { and, eq, lte } from "drizzle-orm";
 const execAsync = promisify(exec);
 
 // @ts-expect-error Reserved for future use - will be used for backup file path resolution
-const BACKUP_DIR = process.env.BACKUP_DIR || "./backups";
+const _BACKUP_DIR = process.env.BACKUP_DIR || "./backups";
 const SCRIPTS_DIR = process.env.SCRIPTS_DIR || "./scripts";
 const CHECK_INTERVAL_MS = 60_000; // Check every minute
 
@@ -28,13 +28,13 @@ const CHECK_INTERVAL_MS = 60_000; // Check every minute
 // - "30 3 * * 1-5" = weekdays at 3:30 AM
 // - "0 */6 * * *" = every 6 hours
 
-interface CronFields {
+type CronFields = {
   minute: number[];
   hour: number[];
   dayOfMonth: number[];
   month: number[];
   dayOfWeek: number[];
-}
+};
 
 function parseCronField(field: string, min: number, max: number): number[] {
   const values: number[] = [];
@@ -49,7 +49,9 @@ function parseCronField(field: string, min: number, max: number): number[] {
   // Handle step values (*/n or start-end/n)
   if (field.includes("/")) {
     const [range, stepStr] = field.split("/");
-    if (!stepStr) return values;
+    if (!stepStr) {
+      return values;
+    }
     const step = Number.parseInt(stepStr, 10);
 
     let start = min;
@@ -175,10 +177,15 @@ function getNextRunTime(cron: CronFields, from: Date): Date {
 }
 
 function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024)
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  if (bytes < 1024 * 1024 * 1024) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 

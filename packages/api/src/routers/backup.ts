@@ -77,14 +77,20 @@ const toggleScheduleSchema = z.object({
 
 // Helper: Format file size
 function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024)
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  if (bytes < 1024 * 1024 * 1024) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 // Helper: Parse manifest file (reserved for future use)
+// @ts-expect-error Reserved for future use - will be implemented when backup restore is added
 async function _parseManifest(
   _backupPath: string
 ): Promise<Record<string, unknown> | null> {

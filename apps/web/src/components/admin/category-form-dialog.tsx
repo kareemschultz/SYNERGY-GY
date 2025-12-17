@@ -62,7 +62,7 @@ export function CategoryFormDialog({
     } else if (!open) {
       resetForm();
     }
-  }, [category, open]);
+  }, [category, open, resetForm]);
 
   const createMutation = useMutation({
     mutationFn: () =>

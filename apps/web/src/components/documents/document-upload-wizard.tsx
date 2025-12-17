@@ -121,7 +121,9 @@ type FormValues = {
 };
 
 function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 B";
+  if (bytes === 0) {
+    return "0 B";
+  }
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -441,108 +443,104 @@ export function DocumentUploadWizard({
 
           {/* Step 2: Categorization */}
           {currentStep === 2 && (
-            <>
-              <div className="space-y-4">
-                <div>
-                  <Label className="mb-3 block">Select Category</Label>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {categoryOptions.map((cat) => (
-                      <button
-                        className={cn(
-                          "flex flex-col items-start rounded-lg border p-4 text-left transition-all hover:border-primary/50",
-                          form.state.values.category === cat.value &&
-                            "border-primary bg-primary/5 ring-1 ring-primary"
-                        )}
-                        key={cat.value}
-                        onClick={() =>
-                          form.setFieldValue("category", cat.value)
-                        }
-                        type="button"
+            <div className="space-y-4">
+              <div>
+                <Label className="mb-3 block">Select Category</Label>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {categoryOptions.map((cat) => (
+                    <button
+                      className={cn(
+                        "flex flex-col items-start rounded-lg border p-4 text-left transition-all hover:border-primary/50",
+                        form.state.values.category === cat.value &&
+                          "border-primary bg-primary/5 ring-1 ring-primary"
+                      )}
+                      key={cat.value}
+                      onClick={() => form.setFieldValue("category", cat.value)}
+                      type="button"
+                    >
+                      <Badge className={cat.color} variant="secondary">
+                        {cat.label}
+                      </Badge>
+                      <p className="mt-2 text-muted-foreground text-xs">
+                        {cat.description}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <form.Field name="description">
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>Description (Optional)</Label>
+                    <Textarea
+                      id={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="Add a brief description of these documents..."
+                      rows={3}
+                      value={field.state.value}
+                    />
+                  </div>
+                )}
+              </form.Field>
+
+              <div className="space-y-2">
+                <Label>Tags (Optional)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
+                    placeholder="Add tags..."
+                    value={tagInput}
+                  />
+                  <Button onClick={addTag} type="button" variant="outline">
+                    Add
+                  </Button>
+                </div>
+                {form.state.values.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {form.state.values.tags.map((tag) => (
+                      <Badge
+                        className="cursor-pointer"
+                        key={tag}
+                        onClick={() => removeTag(tag)}
+                        variant="secondary"
                       >
-                        <Badge className={cat.color} variant="secondary">
-                          {cat.label}
-                        </Badge>
-                        <p className="mt-2 text-muted-foreground text-xs">
-                          {cat.description}
-                        </p>
-                      </button>
+                        {tag}
+                        <X className="ml-1 h-3 w-3" />
+                      </Badge>
                     ))}
                   </div>
-                </div>
-
-                <form.Field name="description">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>Description (Optional)</Label>
-                      <Textarea
-                        id={field.name}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        placeholder="Add a brief description of these documents..."
-                        rows={3}
-                        value={field.state.value}
-                      />
-                    </div>
-                  )}
-                </form.Field>
-
-                <div className="space-y-2">
-                  <Label>Tags (Optional)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addTag();
-                        }
-                      }}
-                      placeholder="Add tags..."
-                      value={tagInput}
-                    />
-                    <Button onClick={addTag} type="button" variant="outline">
-                      Add
-                    </Button>
-                  </div>
-                  {form.state.values.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {form.state.values.tags.map((tag) => (
-                        <Badge
-                          className="cursor-pointer"
-                          key={tag}
-                          onClick={() => removeTag(tag)}
-                          variant="secondary"
-                        >
-                          {tag}
-                          <X className="ml-1 h-3 w-3" />
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <form.Field name="expirationDate">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>
-                        Expiration Date (Optional)
-                      </Label>
-                      <Input
-                        className="w-48"
-                        id={field.name}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        type="date"
-                        value={field.state.value}
-                      />
-                      <p className="text-muted-foreground text-xs">
-                        Set if this document expires (e.g., passport, license)
-                      </p>
-                    </div>
-                  )}
-                </form.Field>
+                )}
               </div>
-            </>
+
+              <form.Field name="expirationDate">
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label htmlFor={field.name}>
+                      Expiration Date (Optional)
+                    </Label>
+                    <Input
+                      className="w-48"
+                      id={field.name}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      type="date"
+                      value={field.state.value}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Set if this document expires (e.g., passport, license)
+                    </p>
+                  </div>
+                )}
+              </form.Field>
+            </div>
           )}
 
           {/* Step 3: Link to Client */}

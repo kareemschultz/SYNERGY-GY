@@ -19,6 +19,10 @@ import { expect, test } from "@playwright/test";
 // Regex patterns at top level for performance
 const LOGIN_TITLE_REGEX = /Login/;
 const APP_URL_REGEX = /\/app/;
+const CLIENTS_URL_REGEX = /\/app\/clients/;
+const CLIENT_DETAIL_URL_REGEX = /\/app\/clients\//;
+const WELCOME_BACK_REGEX = /Welcome back/;
+const UPPERCASE_START_REGEX = /^[A-Z]/;
 const ACCESS_PENDING_TEXT = "Access Pending";
 const ACCOUNT_DEACTIVATED_TEXT = "Account Deactivated";
 const DASHBOARD_INDICATOR = "Overview of your business operations";
@@ -54,7 +58,7 @@ test.describe("Authentication & Staff Access", () => {
     });
 
     // Verify welcome message with user name
-    await expect(page.getByText(/Welcome back/)).toBeVisible();
+    await expect(page.getByText(WELCOME_BACK_REGEX)).toBeVisible();
 
     // Verify navigation menu is accessible (indicates full staff access)
     await expect(page.getByRole("link", { name: "Clients" })).toBeVisible();
@@ -102,10 +106,12 @@ test.describe("Authentication & Staff Access", () => {
 
     // Navigate to Clients page
     await page.getByRole("link", { name: "Clients" }).click();
-    await expect(page).toHaveURL(/\/app\/clients/);
+    await expect(page).toHaveURL(CLIENTS_URL_REGEX);
 
     // If there are clients, check one (this tests the $client-id.tsx fix)
-    const clientLinks = page.getByRole("link").filter({ hasText: /^[A-Z]/ });
+    const clientLinks = page
+      .getByRole("link")
+      .filter({ hasText: UPPERCASE_START_REGEX });
     const count = await clientLinks.count();
 
     if (count > 0) {
@@ -116,7 +122,7 @@ test.describe("Authentication & Staff Access", () => {
       await page.waitForLoadState("networkidle");
 
       // Verify we're on client detail page (not stuck at Access Pending)
-      await expect(page).toHaveURL(/\/app\/clients\//);
+      await expect(page).toHaveURL(CLIENT_DETAIL_URL_REGEX);
 
       // Verify page content loads (staff status with financial access was checked)
       // Owner should have canViewFinancials=true, so financial tabs should be visible

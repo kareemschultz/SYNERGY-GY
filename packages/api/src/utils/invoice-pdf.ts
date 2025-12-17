@@ -223,8 +223,8 @@ export async function generateInvoicePdf(
 
   y -= 20;
 
-  // Line items table header - save position for future reference
-  const _tableTop = y;
+  // Line items table header
+  // Position saved for future reference when implementing multi-page support
 
   // Draw header background
   page.drawRectangle({

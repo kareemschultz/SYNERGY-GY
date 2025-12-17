@@ -1,5 +1,9 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+const ERROR_REGEX = /error|invalid|incorrect/i;
+
 test("test complete auth flow with env credentials", async ({ page }) => {
   // Credentials from .env
   const EMAIL = "kareemschultz46@gmail.com";
@@ -48,7 +52,7 @@ test("test complete auth flow with env credentials", async ({ page }) => {
 
   // Step 3: Submit login
   console.log("\nStep 3: Submit login");
-  const loginButton = page.getByRole("button", { name: /sign in/i });
+  const loginButton = page.getByRole("button", { name: SIGN_IN_REGEX });
   await loginButton.click();
 
   // Wait for navigation or response
@@ -84,7 +88,7 @@ test("test complete auth flow with env credentials", async ({ page }) => {
     .isVisible()
     .catch(() => false);
   const hasError = await page
-    .getByText(/error|invalid|incorrect/i)
+    .getByText(ERROR_REGEX)
     .isVisible()
     .catch(() => false);
 

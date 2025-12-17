@@ -153,7 +153,7 @@ function MattersPage() {
   // Clear selection when filters/search/page changes
   useEffect(() => {
     clearSelection();
-  }, [search, statusFilter, businessFilter, page, clearSelection]);
+  }, [clearSelection]);
 
   // Bulk export mutation
   const exportMutation = useMutation({

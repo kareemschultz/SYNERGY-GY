@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("debug QueryClient state", async ({ page }) => {
   const EMAIL = "kareemschultz46@gmail.com";
   const PASSWORD = "oxAiA5tUnAHYFJN2Qa8mQEoFVXDgZCg0";
@@ -10,18 +13,18 @@ test("debug QueryClient state", async ({ page }) => {
   let rpcCallsMade = 0;
   page.on("request", (req) => {
     if (req.url().includes("/rpc/")) {
-      rpcCallsMade++;
-      console.log("[RPC] " + req.method() + " " + req.url());
+      rpcCallsMade += 1;
+      console.log(`[RPC] ${req.method()} ${req.url()}`);
     }
   });
 
   page.on("console", (msg) => {
-    console.log("[CONSOLE " + msg.type() + "] " + msg.text().slice(0, 200));
+    console.log(`[CONSOLE ${msg.type()}] ${msg.text().slice(0, 200)}`);
   });
 
   page.on("pageerror", (error) => {
-    console.log("[PAGE ERROR] " + error.message);
-    console.log("[STACK] " + (error.stack?.slice(0, 300) || ""));
+    console.log(`[PAGE ERROR] ${error.message}`);
+    console.log(`[STACK] ${error.stack?.slice(0, 300) || ""}`);
   });
 
   // Login
@@ -31,13 +34,13 @@ test("debug QueryClient state", async ({ page }) => {
 
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   try {
     await page.waitForURL("**/app**", { timeout: 15_000 });
-    console.log("Step 2: Navigated to " + page.url());
+    console.log(`Step 2: Navigated to ${page.url()}`);
   } catch {
-    console.log("Step 2: Still at " + page.url());
+    console.log(`Step 2: Still at ${page.url()}`);
   }
 
   // Wait briefly
@@ -57,15 +60,15 @@ test("debug QueryClient state", async ({ page }) => {
         credentials: "include",
       });
       const text = await res.text();
-      results.push("Direct fetch: " + res.status + " - " + text.slice(0, 100));
+      results.push(`Direct fetch: ${res.status} - ${text.slice(0, 100)}`);
     } catch (e) {
-      results.push("Direct fetch error: " + String(e));
+      results.push(`Direct fetch error: ${String(e)}`);
     }
 
     // Try with full URL
     try {
-      const fullUrl = window.location.origin + "/rpc/settings/getStaffStatus";
-      results.push("Full URL would be: " + fullUrl);
+      const fullUrl = `${window.location.origin}/rpc/settings/getStaffStatus`;
+      results.push(`Full URL would be: ${fullUrl}`);
       const res2 = await fetch(fullUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,25 +76,23 @@ test("debug QueryClient state", async ({ page }) => {
         credentials: "include",
       });
       const text2 = await res2.text();
-      results.push(
-        "Full URL fetch: " + res2.status + " - " + text2.slice(0, 100)
-      );
+      results.push(`Full URL fetch: ${res2.status} - ${text2.slice(0, 100)}`);
     } catch (e) {
-      results.push("Full URL fetch error: " + String(e));
+      results.push(`Full URL fetch error: ${String(e)}`);
     }
 
     return results;
   });
 
   for (const r of clientTest) {
-    console.log("  " + r);
+    console.log(`  ${r}`);
   }
 
   // Step 4: Check for any React Query devtools or state
   console.log("\nStep 4: Wait and check final state...");
   await page.waitForTimeout(5000);
 
-  console.log("\nRPC calls made during test: " + rpcCallsMade);
+  console.log(`\nRPC calls made during test: ${rpcCallsMade}`);
 
   const state = await page.evaluate(() => ({
     body: document.body.innerText.slice(0, 300),
@@ -99,7 +100,7 @@ test("debug QueryClient state", async ({ page }) => {
     hasWelcome: document.body.innerHTML.includes("Welcome back"),
     hasLoading: document.body.innerHTML.includes("Loading..."),
   }));
-  console.log("Final state: " + JSON.stringify(state, null, 2));
+  console.log(`Final state: ${JSON.stringify(state, null, 2)}`);
 
   await page.screenshot({ path: "debug-query-client.png", fullPage: true });
 });

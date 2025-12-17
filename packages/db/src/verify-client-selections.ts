@@ -24,7 +24,7 @@ async function verifyClientSelections() {
     const totalResult = await pool.query(
       "SELECT COUNT(*) FROM client_service_selection"
     );
-    const totalCount = Number.parseInt(totalResult.rows[0].count);
+    const totalCount = Number.parseInt(totalResult.rows[0].count, 10);
     console.log(`📊 Total service selections: ${totalCount}`);
 
     if (totalCount === 0) {

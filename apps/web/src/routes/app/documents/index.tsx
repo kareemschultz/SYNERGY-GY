@@ -130,7 +130,7 @@ const fileTypeLabels: Record<string, { label: string; extensions: string[] }> =
     other: { label: "Other", extensions: [] },
   };
 
-const statusValues = ["ACTIVE", "ARCHIVED", "ALL"] as const;
+const _statusValues = ["ACTIVE", "ARCHIVED", "ALL"] as const;
 
 function getFileIcon(mimeType: string) {
   if (mimeType.startsWith("image/")) {
@@ -224,9 +224,13 @@ function DocumentsPage() {
 
   // Filter by file type client-side (since backend may not support it)
   const filteredByFileType = data?.documents?.filter((doc) => {
-    if (fileTypeFilter === "all") return true;
+    if (fileTypeFilter === "all") {
+      return true;
+    }
     const fileType = fileTypeLabels[fileTypeFilter];
-    if (!fileType) return true;
+    if (!fileType) {
+      return true;
+    }
     if (fileTypeFilter === "other") {
       // Check if not in any defined type
       const allExtensions = Object.values(fileTypeLabels)
@@ -242,13 +246,17 @@ function DocumentsPage() {
     if (dateFrom) {
       const docDate = new Date(doc.createdAt);
       const fromDate = new Date(dateFrom);
-      if (docDate < fromDate) return false;
+      if (docDate < fromDate) {
+        return false;
+      }
     }
     if (dateTo) {
       const docDate = new Date(doc.createdAt);
       const toDate = new Date(dateTo);
       toDate.setHours(23, 59, 59, 999);
-      if (docDate > toDate) return false;
+      if (docDate > toDate) {
+        return false;
+      }
     }
     return true;
   });
@@ -282,16 +290,7 @@ function DocumentsPage() {
   // Clear selection when filters/search/page changes
   useEffect(() => {
     clearSelection();
-  }, [
-    search,
-    categoryFilter,
-    fileTypeFilter,
-    statusFilter,
-    dateFrom,
-    dateTo,
-    page,
-    clearSelection,
-  ]);
+  }, [clearSelection]);
 
   const handleDownload = async (docId: string) => {
     try {

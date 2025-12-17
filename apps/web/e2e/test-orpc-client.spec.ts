@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("test oRPC client directly", async ({ page }) => {
   const EMAIL = "kareemschultz46@gmail.com";
   const PASSWORD = "oxAiA5tUnAHYFJN2Qa8mQEoFVXDgZCg0";
@@ -8,25 +11,25 @@ test("test oRPC client directly", async ({ page }) => {
 
   page.on("request", (req) => {
     if (req.url().includes("/rpc/")) {
-      console.log("[REQ] " + req.method() + " " + req.url());
+      console.log(`[REQ] ${req.method()} ${req.url()}`);
     }
   });
 
   page.on("response", async (res) => {
     if (res.url().includes("/rpc/")) {
       const body = await res.text().catch(() => "");
-      console.log("[RES] " + res.status() + " " + res.url());
-      console.log("  Body: " + body.slice(0, 150));
+      console.log(`[RES] ${res.status()} ${res.url()}`);
+      console.log(`  Body: ${body.slice(0, 150)}`);
     }
   });
 
   page.on("console", (msg) => {
-    console.log("[CONSOLE " + msg.type() + "] " + msg.text());
+    console.log(`[CONSOLE ${msg.type()}] ${msg.text()}`);
   });
 
   page.on("pageerror", (error) => {
-    console.log("[PAGE ERROR] " + error.message);
-    console.log("  Stack: " + (error.stack?.slice(0, 400) || ""));
+    console.log(`[PAGE ERROR] ${error.message}`);
+    console.log(`  Stack: ${error.stack?.slice(0, 400) || ""}`);
   });
 
   // Login
@@ -36,13 +39,13 @@ test("test oRPC client directly", async ({ page }) => {
 
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   try {
     await page.waitForURL("**/app**", { timeout: 15_000 });
-    console.log("\nStep 2: Navigated to " + page.url());
+    console.log(`\nStep 2: Navigated to ${page.url()}`);
   } catch {
-    console.log("\nStep 2: Still at " + page.url());
+    console.log(`\nStep 2: Still at ${page.url()}`);
   }
 
   await page.waitForTimeout(2000);
@@ -83,23 +86,26 @@ test("test oRPC client directly", async ({ page }) => {
   });
 
   const testResult = await page.evaluate(
-    async () => await (window as any).testOrpcClient()
+    async () =>
+      await (
+        window as unknown as { testOrpcClient: () => Promise<string[]> }
+      ).testOrpcClient()
   );
 
   console.log("Client test results:");
   for (const log of testResult || []) {
-    console.log("  " + log);
+    console.log(`  ${log}`);
   }
 
   // Step 4: Check what URL the oRPC link would generate
   console.log("\nStep 4: Check URL construction");
   const urlTest = await page.evaluate(() => {
     const origin = window.location.origin;
-    const base = origin + "/rpc";
+    const base = `${origin}/rpc`;
     const path = "settings.getStaffStatus";
 
     // Test URL construction like oRPC does
-    const constructed = base + "/" + path;
+    const constructed = `${base}/${path}`;
 
     return {
       origin,
@@ -109,14 +115,14 @@ test("test oRPC client directly", async ({ page }) => {
       normalized: constructed.replace(/\./g, "/"),
     };
   });
-  console.log("  URL construction: " + JSON.stringify(urlTest, null, 2));
+  console.log(`  URL construction: ${JSON.stringify(urlTest, null, 2)}`);
 
   // Step 5: Check final state
   await page.waitForTimeout(3000);
   const state = await page.evaluate(() =>
     document.body.innerText.slice(0, 200)
   );
-  console.log("\nFinal state: " + state);
+  console.log(`\nFinal state: ${state}`);
 
   await page.screenshot({ path: "test-orpc-client.png", fullPage: true });
 });

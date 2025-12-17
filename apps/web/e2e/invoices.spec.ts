@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const INVOICE_DETAIL_URL_REGEX = /\/app\/invoices\//;
+
 test.describe("Invoice Management", () => {
   test.beforeEach(async ({ page }) => {
     // Login
@@ -47,6 +50,6 @@ test.describe("Invoice Management", () => {
 
     // Expect redirection to Detail
     await expect(page.getByText("Invoice created successfully")).toBeVisible();
-    await expect(page).toHaveURL(/\/app\/invoices\//);
+    await expect(page).toHaveURL(INVOICE_DETAIL_URL_REGEX);
   });
 });

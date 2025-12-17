@@ -268,7 +268,9 @@ export function ClientServicesTab({ clientId }: ClientServicesTabProps) {
       </Card>
       <AlertDialog
         onOpenChange={(open) => {
-          if (!open) setServiceToDelete(null);
+          if (!open) {
+            setServiceToDelete(null);
+          }
         }}
         open={Boolean(serviceToDelete)}
       >
@@ -285,7 +287,9 @@ export function ClientServicesTab({ clientId }: ClientServicesTabProps) {
             <AlertDialogAction
               disabled={deleteMutation.isPending}
               onClick={() => {
-                if (serviceToDelete) deleteMutation.mutate(serviceToDelete);
+                if (serviceToDelete) {
+                  deleteMutation.mutate(serviceToDelete);
+                }
               }}
             >
               {Boolean(deleteMutation.isPending) && (

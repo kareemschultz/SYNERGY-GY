@@ -22,7 +22,9 @@ export function ServiceDetailsModal({
   isOpen,
   onClose,
 }: ServiceDetailsModalProps) {
-  if (!service) return null;
+  if (!service) {
+    return null;
+  }
 
   const documentCount = service.documentRequirements?.length || 0;
   const agencyCount = service.governmentAgencies?.length || 0;

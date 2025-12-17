@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
 });
 
 function RootRedirect() {
-  const [isChecking, setIsChecking] = useState(true);
+  const [_isChecking, _setIsChecking] = useState(true);
 
   useEffect(() => {
     async function checkAuth() {

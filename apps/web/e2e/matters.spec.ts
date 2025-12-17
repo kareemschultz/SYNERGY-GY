@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const MATTER_DETAIL_URL_REGEX = /\/app\/matters\//;
+
 test.describe("Matter Management", () => {
   test.beforeEach(async ({ page }) => {
     // Login
@@ -41,7 +44,7 @@ test.describe("Matter Management", () => {
 
     // Expect redirection to Detail
     await expect(page.getByText("Matter created successfully")).toBeVisible();
-    await expect(page).toHaveURL(/\/app\/matters\//);
+    await expect(page).toHaveURL(MATTER_DETAIL_URL_REGEX);
 
     // Check for Invoices Tab
     await expect(page.getByRole("tab", { name: "Invoices" })).toBeVisible();

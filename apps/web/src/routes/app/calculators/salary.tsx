@@ -206,7 +206,9 @@ function SalaryCalculator() {
   };
 
   const handleSave = async () => {
-    if (!result) return;
+    if (!result) {
+      return;
+    }
 
     saveMutation.mutate({
       calculationType: "SALARY",

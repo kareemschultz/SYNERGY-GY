@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("debug TanStack Query state", async ({ page }) => {
   const EMAIL = "kareemschultz46@gmail.com";
   const PASSWORD = "oxAiA5tUnAHYFJN2Qa8mQEoFVXDgZCg0";
@@ -29,7 +32,7 @@ test("debug TanStack Query state", async ({ page }) => {
 
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   await page.waitForURL("**/app**", { timeout: 10_000 }).catch(() => {});
   console.log(`  URL: ${page.url()}`);
@@ -43,7 +46,9 @@ test("debug TanStack Query state", async ({ page }) => {
   const queryState = await page.evaluate(() => {
     // Try to find QueryClient in React tree
     const app = document.getElementById("app");
-    if (!app) return { error: "No app element" };
+    if (!app) {
+      return { error: "No app element" };
+    }
 
     // Try to access React internals
     const reactRoot = (app as any)._reactRootContainer?._internalRoot?.current;
@@ -52,7 +57,9 @@ test("debug TanStack Query state", async ({ page }) => {
       const reactFiber = Object.keys(app).find((key) =>
         key.startsWith("__reactFiber")
       );
-      if (!reactFiber) return { error: "No React fiber found" };
+      if (!reactFiber) {
+        return { error: "No React fiber found" };
+      }
     }
 
     // Try to find window globals

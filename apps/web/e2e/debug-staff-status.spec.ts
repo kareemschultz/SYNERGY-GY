@@ -1,5 +1,8 @@
 import { test } from "@playwright/test";
 
+// Regex patterns at top level for performance
+const SIGN_IN_REGEX = /sign in/i;
+
 test("debug staff status API", async ({ page }) => {
   // Capture all network requests
   const requests: Array<{ url: string; method: string }> = [];
@@ -30,7 +33,7 @@ test("debug staff status API", async ({ page }) => {
   await page.getByLabel("Password").fill("Karetech232628!!");
 
   // Click sign in
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
   // Wait for navigation
   await page.waitForTimeout(5000);

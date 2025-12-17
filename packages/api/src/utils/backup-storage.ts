@@ -124,14 +124,14 @@ export async function uploadToCloud(
     };
   }
 
-  const stats = statSync(localPath);
+  const _stats = statSync(localPath);
   const fileName = basename(localPath);
   const key = cloudPath || `backups/${fileName}`;
 
   try {
     // Create signed request for S3-compatible API
-    const url = `${config.endpoint}/${config.bucket}/${key}`;
-    const date = new Date().toUTCString();
+    const _url = `${config.endpoint}/${config.bucket}/${key}`;
+    const _date = new Date().toUTCString();
 
     // Read file as buffer
     const fileStream = createReadStream(localPath);
@@ -448,7 +448,7 @@ async function uploadWithSignature(
   data: Buffer,
   contentType: string
 ): Promise<{ success: boolean; error?: string }> {
-  const endpointUrl = new URL(config.endpoint);
+  const _endpointUrl = new URL(config.endpoint);
   const url = `${config.endpoint}/${config.bucket}/${key}`;
 
   const headers = signRequest(

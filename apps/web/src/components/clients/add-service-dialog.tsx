@@ -104,7 +104,9 @@ export function AddServiceDialog({
   };
 
   const filterServices = (data: ServicesGroupedByCategory | undefined) => {
-    if (!(data && searchQuery)) return data;
+    if (!(data && searchQuery)) {
+      return data;
+    }
     const lowerQuery = searchQuery.toLowerCase();
     const filtered: ServicesGroupedByCategory = {};
 
@@ -113,7 +115,7 @@ export function AddServiceDialog({
         (s) =>
           s.displayName.toLowerCase().includes(lowerQuery) ||
           s.shortDescription?.toLowerCase().includes(lowerQuery) ||
-          (s.description && s.description.toLowerCase().includes(lowerQuery))
+          s.description?.toLowerCase().includes(lowerQuery)
       );
 
       if (matchingServices.length > 0) {
