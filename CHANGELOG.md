@@ -24,6 +24,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin Panel Features Completed** - December 16, 2024 (#PROD-007)
+  - **Roles & Permissions Page** (`/app/admin/roles`)
+    - Displays all 7 staff roles with their permissions and business access requirements
+    - Role statistics showing staff distribution by role
+    - Permission matrix table for quick reference
+    - Business access rules documentation (GCMC, KAJ requirements)
+  - **System Settings Page** (`/app/admin/settings`)
+    - Application info display (version, build date, environment)
+    - Backup system status with statistics and latest backup info
+    - Staff overview with business distribution
+    - Business entities information (GCMC, KAJ)
+    - Quick action links to related admin pages
+  - **Document Expiration Tracking UI** (Client Documents tab)
+    - Expiring documents tab with real-time expiration data
+    - Visual urgency indicators (Expired, Critical 7d, Warning 30d, Upcoming 90d)
+    - Summary cards showing counts by urgency level
+    - Integrated with existing `documents.getExpiring` API endpoint
+  - Removed "Coming Soon" badges from Roles & Permissions and System Settings links
+
 - **Bulk Actions for All List Pages** - December 16, 2024
   - Created reusable `useSelection` hook for managing row selection state
   - Created `BulkActionsToolbar` component for consistent bulk action UI across all lists
