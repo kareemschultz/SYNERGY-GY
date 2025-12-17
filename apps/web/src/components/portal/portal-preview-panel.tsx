@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -8,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { client } from "@/utils/orpc";
+import { orpc } from "@/utils/orpc";
 
 type PortalPreviewPanelProps = {
   clientId: string;
@@ -24,8 +25,9 @@ export function PortalPreviewPanel({
   const [url, setUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const startImpersonationMutation =
-    client.portal.impersonation.start.useMutation();
+  const startImpersonationMutation = useMutation(
+    orpc.portal.impersonation.start.mutationOptions()
+  );
 
   const handleOpen = async () => {
     if (!open) {

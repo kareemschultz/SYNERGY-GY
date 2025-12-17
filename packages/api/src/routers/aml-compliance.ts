@@ -11,33 +11,16 @@ import {
 
 // Enum values
 const riskRatingValues = ["LOW", "MEDIUM", "HIGH", "PROHIBITED"] as const;
-const pepCategoryValues = [
-  "HEAD_OF_STATE",
-  "GOVERNMENT_OFFICIAL",
-  "JUDICIAL_OFFICIAL",
-  "MILITARY_OFFICIAL",
-  "STATE_OWNED_EXECUTIVE",
-  "POLITICAL_PARTY_OFFICIAL",
-  "INTERNATIONAL_ORGANIZATION",
-  "FAMILY_MEMBER",
-  "CLOSE_ASSOCIATE",
-] as const;
+const pepCategoryValues = ["DOMESTIC", "FOREIGN", "INTERNATIONAL_ORG"] as const;
 const sourceOfFundsValues = [
   "EMPLOYMENT",
   "BUSINESS",
-  "INVESTMENTS",
   "INHERITANCE",
-  "SAVINGS",
-  "GIFT",
-  "LOAN",
+  "INVESTMENTS",
   "OTHER",
 ] as const;
-const _assessmentStatusValues = [
-  "PENDING",
-  "APPROVED",
-  "REJECTED",
-  "UNDER_REVIEW",
-] as const;
+// Assessment status values (used in database enum):
+// "PENDING" | "APPROVED" | "REJECTED" | "UNDER_REVIEW"
 
 // Zod schemas
 const calculateRiskScoreSchema = z.object({
@@ -77,11 +60,9 @@ const createAssessmentSchema = z.object({
   sanctionsScreened: z.boolean().default(false),
   sanctionsScreenedAt: z.string().optional(), // ISO date
   sanctionsMatch: z.boolean().default(false),
-  sourceOfFunds: z.array(z.enum(sourceOfFundsValues)),
+  sourceOfFunds: z.enum(sourceOfFundsValues).optional(),
   sourceOfFundsDetails: z.string().optional(),
   sourceOfWealth: z.string().optional(),
-  expectedTransactionVolume: z.string().optional(),
-  businessPurpose: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -138,20 +119,25 @@ export const amlComplianceRouter = {
       });
 
       if (!clientExists) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Client not found",
         });
       }
 
-      // Get staff profile
+      // Get staff profile - use context.session?.user?.id for auth context
+      const userId = context.session?.user?.id;
+      if (!userId) {
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "User not authenticated",
+        });
+      }
+
       const staffProfile = await db.query.staff.findFirst({
-        where: eq(staff.userId, context.user.id),
+        where: eq(staff.userId, userId),
       });
 
       if (!staffProfile) {
-        throw new ORPCError({
-          code: "FORBIDDEN",
+        throw new ORPCError("FORBIDDEN", {
           message: "Staff profile not found",
         });
       }
@@ -171,7 +157,7 @@ export const amlComplianceRouter = {
         .values({
           clientId: input.clientId,
           assessedById: staffProfile.id,
-          assessmentDate: new Date(),
+          assessmentDate: new Date().toISOString().split("T")[0] ?? "",
           clientTypeRisk: input.clientTypeRisk,
           serviceRisk: input.serviceRisk,
           geographicRisk: input.geographicRisk,
@@ -192,19 +178,20 @@ export const amlComplianceRouter = {
           sourceOfFunds: input.sourceOfFunds,
           sourceOfFundsDetails: input.sourceOfFundsDetails,
           sourceOfWealth: input.sourceOfWealth,
-          expectedTransactionVolume: input.expectedTransactionVolume,
-          businessPurpose: input.businessPurpose,
           status,
-          nextReviewDate: nextReviewDate.toISOString().split("T")[0],
+          nextReviewDate: nextReviewDate.toISOString().split("T")[0] as string,
           notes: input.notes,
         })
         .returning();
 
       // Update client risk rating
+      // Note: client.amlRiskRating doesn't support "PROHIBITED", map to "HIGH"
+      const clientRiskRating =
+        input.riskRating === "PROHIBITED" ? "HIGH" : input.riskRating;
       await db
         .update(client)
         .set({
-          amlRiskRating: input.riskRating,
+          amlRiskRating: clientRiskRating,
           isPep: input.isPep,
           requiresEnhancedDueDiligence: input.requiresEdd,
         })
@@ -261,20 +248,25 @@ export const amlComplianceRouter = {
       });
 
       if (!existing) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "AML assessment not found",
         });
       }
 
       // Get staff profile
+      const userId = context.session?.user?.id;
+      if (!userId) {
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "User not authenticated",
+        });
+      }
+
       const staffProfile = await db.query.staff.findFirst({
-        where: eq(staff.userId, context.user.id),
+        where: eq(staff.userId, userId),
       });
 
       if (!staffProfile) {
-        throw new ORPCError({
-          code: "FORBIDDEN",
+        throw new ORPCError("FORBIDDEN", {
           message: "Staff profile not found",
         });
       }
@@ -285,7 +277,7 @@ export const amlComplianceRouter = {
           status: input.approved ? "APPROVED" : "REJECTED",
           approvedById: staffProfile.id,
           approvedAt: new Date(),
-          approvalNotes: input.approvalNotes,
+          rejectionReason: input.approved ? null : input.approvalNotes,
         })
         .where(eq(clientAmlAssessment.id, input.id))
         .returning();
@@ -308,7 +300,7 @@ export const amlComplianceRouter = {
           )
         : eq(clientAmlAssessment.status, "PENDING");
 
-      const [assessments, [{ count: totalCount }]] = await Promise.all([
+      const [assessments, countResult] = await Promise.all([
         db.query.clientAmlAssessment.findMany({
           where,
           orderBy: desc(clientAmlAssessment.assessmentDate),
@@ -325,13 +317,15 @@ export const amlComplianceRouter = {
           .where(where),
       ]);
 
+      const totalCount = countResult[0]?.count ?? 0;
+
       return {
         assessments,
         pagination: {
           page: input.page,
           limit: input.limit,
-          total: totalCount || 0,
-          totalPages: Math.ceil((totalCount || 0) / input.limit),
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / input.limit),
         },
       };
     }),
@@ -350,8 +344,8 @@ export const amlComplianceRouter = {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + input.daysAhead);
 
-      const todayStr = today.toISOString().split("T")[0];
-      const futureDateStr = futureDate.toISOString().split("T")[0];
+      const todayStr = today.toISOString().split("T")[0] as string;
+      const futureDateStr = futureDate.toISOString().split("T")[0] as string;
 
       const assessments = await db.query.clientAmlAssessment.findMany({
         where: and(
@@ -379,8 +373,7 @@ export const amlComplianceRouter = {
       });
 
       if (!clientRecord) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Client not found",
         });
       }

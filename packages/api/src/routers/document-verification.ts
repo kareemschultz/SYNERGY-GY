@@ -4,14 +4,14 @@ import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import { staffProcedure } from "../index";
 
-// Enum values
-const _verificationStatusValues = [
-  "PENDING",
-  "VERIFIED",
-  "REJECTED",
-  "EXPIRED",
-  "REQUIRES_RENEWAL",
-] as const;
+// Verification status type (used in database enum)
+// Exported for potential use in other modules
+export type VerificationStatus =
+  | "PENDING"
+  | "VERIFIED"
+  | "REJECTED"
+  | "EXPIRED"
+  | "REQUIRES_RENEWAL";
 
 // Zod schemas
 const createVerificationSchema = z.object({
@@ -60,8 +60,7 @@ export const documentVerificationRouter = {
       });
 
       if (!documentRecord) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Document not found",
         });
       }
@@ -72,8 +71,7 @@ export const documentVerificationRouter = {
       });
 
       if (existing) {
-        throw new ORPCError({
-          code: "CONFLICT",
+        throw new ORPCError("CONFLICT", {
           message: "Verification record already exists for this document",
         });
       }
@@ -84,16 +82,14 @@ export const documentVerificationRouter = {
         const expiry = new Date(input.expiryDate);
 
         if (issue >= expiry) {
-          throw new ORPCError({
-            code: "BAD_REQUEST",
+          throw new ORPCError("BAD_REQUEST", {
             message: "Issue date must be before expiry date",
           });
         }
 
         const today = new Date();
         if (expiry < today) {
-          throw new ORPCError({
-            code: "BAD_REQUEST",
+          throw new ORPCError("BAD_REQUEST", {
             message: "Expiry date must be in the future",
           });
         }
@@ -131,8 +127,7 @@ export const documentVerificationRouter = {
       });
 
       if (!verification) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Verification record not found",
         });
       }
@@ -151,20 +146,25 @@ export const documentVerificationRouter = {
       });
 
       if (!existing) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Verification record not found",
         });
       }
 
       // Get staff profile
+      const userId = context.session?.user?.id;
+      if (!userId) {
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "User not authenticated",
+        });
+      }
+
       const staffProfile = await db.query.staff.findFirst({
-        where: eq(staff.userId, context.user.id),
+        where: eq(staff.userId, userId),
       });
 
       if (!staffProfile) {
-        throw new ORPCError({
-          code: "FORBIDDEN",
+        throw new ORPCError("FORBIDDEN", {
           message: "Staff profile not found",
         });
       }
@@ -199,8 +199,7 @@ export const documentVerificationRouter = {
       });
 
       if (!existing) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Verification record not found",
         });
       }
@@ -211,8 +210,7 @@ export const documentVerificationRouter = {
         const expiry = new Date(updates.expiryDate);
 
         if (issue >= expiry) {
-          throw new ORPCError({
-            code: "BAD_REQUEST",
+          throw new ORPCError("BAD_REQUEST", {
             message: "Issue date must be before expiry date",
           });
         }
@@ -237,8 +235,8 @@ export const documentVerificationRouter = {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + input.daysAhead);
 
-      const todayStr = today.toISOString().split("T")[0];
-      const futureDateStr = futureDate.toISOString().split("T")[0];
+      const todayStr = today.toISOString().split("T")[0] ?? "";
+      const futureDateStr = futureDate.toISOString().split("T")[0] ?? "";
 
       const where = input.includeNotified
         ? and(
@@ -277,8 +275,7 @@ export const documentVerificationRouter = {
       });
 
       if (!existing) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Verification record not found",
         });
       }
@@ -300,7 +297,7 @@ export const documentVerificationRouter = {
    * This would typically run as a background job
    */
   checkExpiredDocuments: staffProcedure.handler(async () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0] ?? "";
 
     const expiredVerifications = await db.query.documentVerification.findMany({
       where: and(

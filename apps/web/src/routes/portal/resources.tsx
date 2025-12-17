@@ -20,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { client } from "@/utils/orpc";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/resources")({
   component: PortalResourcesPage,
@@ -31,7 +32,7 @@ function PortalResourcesPage() {
   const [category, setCategory] = useState<string>("ALL");
   const [type, setType] = useState<string>("ALL");
 
-  const { data: me } = client.portal.me.useQuery();
+  const { data: me } = useQuery(orpc.portal.me.queryOptions());
 
   // Logic to determine which businesses to show
   // But for now, we can just let client see everything public or filter by their business
@@ -41,19 +42,23 @@ function PortalResourcesPage() {
   // Ideally, the API would handle this context-aware filtering.
   // For now, let's just show everything available to clients.
 
-  const { data, isLoading } = client.knowledgeBase.list.useQuery({
-    search: search || undefined,
-    category: category !== "ALL" ? (category as any) : undefined,
-    type: type !== "ALL" ? (type as any) : undefined,
-    isStaffOnly: false,
-  });
+  const { data, isLoading } = useQuery(
+    orpc.knowledgeBase.list.queryOptions({
+      input: {
+        search: search || undefined,
+        category: category !== "ALL" ? (category as "GRA" | "NIS" | "IMMIGRATION" | "DCRA" | "GENERAL" | "INTERNAL") : undefined,
+        type: type !== "ALL" ? (type as "AGENCY_FORM" | "LETTER_TEMPLATE" | "GUIDE" | "CHECKLIST") : undefined,
+        isStaffOnly: false,
+      },
+    })
+  );
 
-  const downloadMutation = client.knowledgeBase.download.useMutation({
-    onSuccess: (_data) => {
+  const downloadMutation = useMutation({
+    ...orpc.knowledgeBase.download.mutationOptions(),
+    onSuccess: () => {
       toast.success("Download started");
-      // Handle download URL
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });

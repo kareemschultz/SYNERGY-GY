@@ -15,6 +15,7 @@ import { and, eq, lte } from "drizzle-orm";
 
 const execAsync = promisify(exec);
 
+// @ts-expect-error Reserved for future use - will be used for backup file path resolution
 const BACKUP_DIR = process.env.BACKUP_DIR || "./backups";
 const SCRIPTS_DIR = process.env.SCRIPTS_DIR || "./scripts";
 const CHECK_INTERVAL_MS = 60_000; // Check every minute
@@ -48,16 +49,21 @@ function parseCronField(field: string, min: number, max: number): number[] {
   // Handle step values (*/n or start-end/n)
   if (field.includes("/")) {
     const [range, stepStr] = field.split("/");
+    if (!stepStr) return values;
     const step = Number.parseInt(stepStr, 10);
 
     let start = min;
     let end = max;
 
-    if (range !== "*") {
+    if (range && range !== "*") {
       if (range.includes("-")) {
-        const [s, e] = range.split("-");
-        start = Number.parseInt(s, 10);
-        end = Number.parseInt(e, 10);
+        const parts = range.split("-");
+        const s = parts[0];
+        const e = parts[1];
+        if (s && e) {
+          start = Number.parseInt(s, 10);
+          end = Number.parseInt(e, 10);
+        }
       } else {
         start = Number.parseInt(range, 10);
       }
@@ -71,21 +77,29 @@ function parseCronField(field: string, min: number, max: number): number[] {
 
   // Handle ranges (a-b)
   if (field.includes("-") && !field.includes(",")) {
-    const [start, end] = field.split("-").map((n) => Number.parseInt(n, 10));
-    for (let i = start; i <= end; i++) {
-      values.push(i);
+    const parts = field.split("-").map((n) => Number.parseInt(n, 10));
+    const start = parts[0];
+    const end = parts[1];
+    if (start !== undefined && end !== undefined) {
+      for (let i = start; i <= end; i++) {
+        values.push(i);
+      }
     }
     return values;
   }
 
   // Handle lists (a,b,c)
   if (field.includes(",")) {
-    const parts = field.split(",");
-    for (const part of parts) {
+    const listParts = field.split(",");
+    for (const part of listParts) {
       if (part.includes("-")) {
-        const [start, end] = part.split("-").map((n) => Number.parseInt(n, 10));
-        for (let i = start; i <= end; i++) {
-          values.push(i);
+        const rangeParts = part.split("-").map((n) => Number.parseInt(n, 10));
+        const start = rangeParts[0];
+        const end = rangeParts[1];
+        if (start !== undefined && end !== undefined) {
+          for (let i = start; i <= end; i++) {
+            values.push(i);
+          }
         }
       } else {
         values.push(Number.parseInt(part, 10));
@@ -188,6 +202,11 @@ async function executeBackup(
       createdById: schedule.createdById,
     })
     .returning();
+
+  if (!backup) {
+    console.error(`[BackupScheduler] Failed to create backup record for: ${backupName}`);
+    return;
+  }
 
   try {
     // Execute backup script

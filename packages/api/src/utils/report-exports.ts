@@ -305,6 +305,7 @@ export async function generateReportPdf(
   const pages = pdfDoc.getPages();
   for (let i = 0; i < pages.length; i++) {
     const p = pages[i];
+    if (!p) continue;
     p.drawText(`Page ${i + 1} of ${pages.length}`, {
       x: pageWidth - margin - 60,
       y: 20,

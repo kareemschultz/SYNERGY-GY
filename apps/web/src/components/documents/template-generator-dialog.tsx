@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Download,
   Eye,
@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { client, queryClient } from "@/utils/orpc";
+import { client, orpc, queryClient } from "@/utils/orpc";
 
 type TemplateGeneratorDialogProps = {
   clientId?: string;
@@ -38,17 +38,14 @@ type TemplateGeneratorDialogProps = {
   trigger?: React.ReactNode;
 };
 
+// API supports: INVOICE, LETTER, OTHER, AGREEMENT, CERTIFICATE, FORM, REPORT
 const categoryLabels: Record<string, string> = {
+  INVOICE: "Invoices",
   LETTER: "Letters",
   AGREEMENT: "Agreements",
-  AFFIDAVIT: "Affidavits",
-  WILL: "Wills",
-  TAX_FORM: "Tax Forms",
-  CORPORATE: "Corporate Documents",
-  IMMIGRATION: "Immigration",
-  PROPOSAL: "Proposals",
-  INVOICE: "Invoices",
-  RECEIPT: "Receipts",
+  CERTIFICATE: "Certificates",
+  FORM: "Forms",
+  REPORT: "Reports",
   OTHER: "Other",
 };
 
@@ -64,29 +61,32 @@ export function TemplateGeneratorDialog({
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("select");
 
-  // Fetch available templates
-  const { data: templates, isLoading: loadingTemplates } =
-    client.documents.templates.list.useQuery(
-      {
-        isActive: true,
-        category:
-          categoryFilter === "all"
-            ? undefined
-            : (categoryFilter as
-                | "LETTER"
-                | "AGREEMENT"
-                | "AFFIDAVIT"
-                | "WILL"
-                | "TAX_FORM"
-                | "CORPORATE"
-                | "IMMIGRATION"
-                | "PROPOSAL"
-                | "INVOICE"
-                | "RECEIPT"
-                | "OTHER"),
-      },
-      { enabled: open }
-    );
+  // Fetch available templates - API supports: INVOICE, LETTER, OTHER, AGREEMENT, CERTIFICATE, FORM, REPORT
+  type ApiTemplateCategory =
+    | "INVOICE"
+    | "LETTER"
+    | "OTHER"
+    | "AGREEMENT"
+    | "CERTIFICATE"
+    | "FORM"
+    | "REPORT";
+
+  const templateInput: {
+    includeInactive?: boolean;
+    category?: ApiTemplateCategory;
+  } = {
+    includeInactive: false,
+    category:
+      categoryFilter === "all"
+        ? undefined
+        : (categoryFilter as ApiTemplateCategory),
+  };
+
+  const { data: templates, isLoading: loadingTemplates } = useQuery({
+    queryKey: ["documents", "templates", "list", templateInput],
+    queryFn: () => client.documents.templates.list(templateInput),
+    enabled: open,
+  });
 
   // Preview mutation
   const previewMutation = useMutation({
@@ -125,9 +125,9 @@ export function TemplateGeneratorDialog({
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       setOpen(false);
       resetState();
-      // Optionally download the file
-      if (data.generatedFileName) {
-        toast.info(`Document saved as: ${data.generatedFileName}`);
+      // Optionally show file info
+      if (data.fileName) {
+        toast.info(`Document saved as: ${data.fileName}`);
       }
     },
     onError: (error) => {

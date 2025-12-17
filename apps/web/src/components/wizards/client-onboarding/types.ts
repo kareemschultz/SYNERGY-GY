@@ -1,13 +1,13 @@
-// Temporary: Define DocumentCategory locally until API types are generated
+// DocumentCategory matches the database enum
 type DocumentCategory =
-  | "IDENTIFICATION"
-  | "TAX_FILING"
-  | "NIS"
+  | "IDENTITY"
+  | "TAX"
   | "FINANCIAL"
+  | "LEGAL"
   | "IMMIGRATION"
-  | "CERTIFICATE"
-  | "AGREEMENT"
+  | "BUSINESS"
   | "CORRESPONDENCE"
+  | "TRAINING"
   | "OTHER";
 
 // Service Catalog Types for Enhanced Selection

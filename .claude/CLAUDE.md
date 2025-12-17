@@ -158,3 +158,323 @@ Most formatting and common issues are automatically fixed by Biome. Run `npx ult
 - Always provide user-friendly error messages
 - Explain WHY something failed
 - Suggest next steps for user
+
+---
+
+## API & Backend Patterns
+
+### oRPC Error Handling
+
+**Correct pattern:**
+```typescript
+throw new ORPCError("NOT_FOUND", {
+  message: "Resource not found",
+});
+```
+
+**Incorrect pattern (DO NOT USE):**
+```typescript
+// WRONG - code should be first argument, not in object
+throw new ORPCError({
+  code: "NOT_FOUND",
+  message: "Resource not found",
+});
+```
+
+**Standard error codes:**
+- `NOT_FOUND` - Resource doesn't exist (404)
+- `UNAUTHORIZED` - User not authenticated (401)
+- `FORBIDDEN` - User lacks permission (403)
+- `BAD_REQUEST` - Invalid input/validation error (400)
+- `CONFLICT` - Resource already exists (409)
+
+### Context Access in Handlers
+
+**Correct pattern:**
+```typescript
+.handler(async ({ input, context }) => {
+  const userId = context.session?.user?.id;
+  if (!userId) {
+    throw new ORPCError("UNAUTHORIZED", {
+      message: "User not authenticated",
+    });
+  }
+  // Use userId...
+});
+```
+
+**Incorrect patterns (DO NOT USE):**
+```typescript
+// WRONG - context.user doesn't exist, use context.session?.user
+context.user.id
+
+// WRONG - ctx doesn't exist, use context
+context.ctx.session
+```
+
+### Schema Field Matching
+
+Always verify schema fields match before using in queries:
+- Check `packages/db/src/schema/*.ts` for actual column names
+- Common mistakes:
+  - `notes` vs `riskNotes` (use actual schema field)
+  - `business` vs `businesses` (use actual schema field)
+  - Missing fields like `city`, `country` that don't exist
+
+### Enum Values in Zod
+
+When using enums that map to database enums, use `z.enum()` with the exact values:
+
+```typescript
+// Define enum values matching database
+const pepRelationshipValues = ["FAMILY_MEMBER", "SELF", "CLOSE_ASSOCIATE"] as const;
+
+// Use in Zod schema
+pepRelationship: z.enum(pepRelationshipValues).optional()
+```
+
+**Avoid:** Using `z.string()` when the database expects specific enum values.
+
+---
+
+## Frontend Patterns
+
+### TanStack Query Configuration
+
+**Correct cache configuration:**
+```typescript
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000,        // 30 seconds - data fresh
+      gcTime: 5 * 60 * 1000,       // 5 minutes - garbage collection
+      refetchOnWindowFocus: true,  // Refetch on tab focus
+      retry: 1,                    // Retry failed requests once
+    },
+  },
+  // ... queryCache
+});
+```
+
+Without these defaults, users need to use incognito mode to see data changes.
+
+### Devtools in Production
+
+**Correct pattern:**
+```tsx
+{import.meta.env.DEV && (
+  <>
+    <TanStackRouterDevtools position="bottom-left" />
+    <ReactQueryDevtools buttonPosition="bottom-right" />
+  </>
+)}
+```
+
+**Never** render devtools unconditionally - they will appear in production.
+
+### Navigation After Auth
+
+Use `/app` as the authenticated layout root, not `/dashboard`:
+```typescript
+navigate({ to: "/app" });  // Correct
+navigate({ to: "/dashboard" });  // Wrong
+```
+
+### oRPC TanStack Query Integration
+
+The @orpc/tanstack-query package provides `.queryOptions()` and `.mutationOptions()` helpers, NOT hooks directly.
+
+**Correct patterns:**
+```typescript
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { orpc } from "@/utils/orpc";
+
+// Simple query - no input
+const { data } = useQuery(orpc.healthCheck.queryOptions());
+
+// Query with input
+const { data } = useQuery(
+  orpc.knowledgeBase.list.queryOptions({
+    input: { search: "foo", limit: 20 },
+  })
+);
+
+// Query with enabled condition
+const { data } = useQuery({
+  ...orpc.knowledgeBase.getById.queryOptions({
+    input: { id: itemId! },
+  }),
+  enabled: !!itemId,
+});
+
+// Mutation with callbacks
+const mutation = useMutation({
+  ...orpc.knowledgeBase.download.mutationOptions(),
+  onSuccess: () => {
+    toast.success("Download started");
+  },
+  onError: (error: Error) => {
+    toast.error(error.message);
+  },
+});
+```
+
+**Incorrect patterns (DO NOT USE):**
+```typescript
+// WRONG - .useQuery() doesn't exist on orpc utils
+orpc.knowledgeBase.list.useQuery({ search: "foo" });
+
+// WRONG - .useMutation() doesn't exist on orpc utils
+orpc.knowledgeBase.download.useMutation({ onSuccess: ... });
+```
+
+### Client vs orpc Imports
+
+- **`client`**: Raw oRPC client for direct async calls (await/async)
+- **`orpc`**: TanStack Query utilities for React hooks
+
+```typescript
+import { client, orpc } from "@/utils/orpc";
+
+// Use `client` for imperative calls (outside React hooks)
+const handleDownload = async (id: string) => {
+  const result = await client.documents.download({ id });
+};
+
+// Use `orpc` with React Query hooks
+const { data } = useQuery(orpc.documents.list.queryOptions());
+```
+
+### DocumentCategory Enum
+
+DocumentCategory must match database enum exactly:
+
+```typescript
+// Database enum (packages/db/src/schema/documents.ts):
+type DocumentCategory =
+  | "IDENTITY"
+  | "TAX"
+  | "FINANCIAL"
+  | "LEGAL"
+  | "IMMIGRATION"
+  | "BUSINESS"
+  | "CORRESPONDENCE"
+  | "TRAINING"
+  | "OTHER";
+
+// WRONG - These values don't exist in database
+// "IDENTIFICATION", "TAX_FILING", "NIS", "CERTIFICATE", "AGREEMENT"
+```
+
+### Error Handling in Mutations
+
+Always type error handlers properly:
+
+```typescript
+const mutation = useMutation({
+  ...orpc.xxx.mutationOptions(),
+  onSuccess: (data) => {
+    // data is typed from API response
+    toast.success("Success");
+  },
+  onError: (error: Error) => {
+    // Always type as Error
+    toast.error(error.message);
+  },
+});
+```
+
+For imperative async calls, use try-catch:
+```typescript
+try {
+  const result = await client.xxx({ input });
+} catch (e: unknown) {
+  const message = e instanceof Error ? e.message : "Unknown error";
+  toast.error(message);
+}
+```
+
+---
+
+## Server Configuration
+
+### CORS Configuration
+
+**Production-safe pattern:**
+```typescript
+const CORS_ORIGIN = process.env.CORS_ORIGIN;
+if (!CORS_ORIGIN && process.env.NODE_ENV === "production") {
+  throw new Error("CORS_ORIGIN must be set in production");
+}
+
+cors({
+  origin: (origin) => {
+    if (process.env.NODE_ENV !== "production") {
+      if (!origin || origin.startsWith("http://localhost")) return true;
+    }
+    const allowedOrigins = CORS_ORIGIN?.split(",").map((o) => o.trim()) || [];
+    return allowedOrigins.includes(origin || "");
+  },
+  credentials: true,
+});
+```
+
+**Never** use empty string as default CORS origin in production.
+
+### Hono Request Headers
+
+**Correct pattern:**
+```typescript
+// Use .header() method, not .headers property
+const authHeader = context.req.header("Authorization");
+```
+
+**Incorrect:**
+```typescript
+// WRONG - .headers doesn't exist on HonoRequest
+context.req.headers.get("Authorization");
+```
+
+---
+
+## Database Patterns
+
+### Drizzle ORM Date Comparisons
+
+When comparing dates, ensure type compatibility:
+```typescript
+// For date columns that return strings
+const todayStr = new Date().toISOString().split("T")[0];
+where: gte(table.dateColumn, todayStr)
+
+// For timestamp columns that return Date objects
+where: gte(table.timestampColumn, new Date())
+```
+
+### Optional Query Results
+
+Always handle potentially undefined results:
+```typescript
+// Check for undefined before accessing properties
+const [{ count: totalCount }] = await db.select(...);
+// Use: totalCount || 0
+
+// Or use optional chaining
+result?.count ?? 0
+```
+
+---
+
+## Anti-Patterns to Avoid
+
+| Anti-Pattern | Correct Approach |
+|-------------|------------------|
+| `throw new ORPCError({ code: "...", message: "..." })` | `throw new ORPCError("CODE", { message: "..." })` |
+| `context.user.id` | `context.session?.user?.id` |
+| `context.ctx.session` | `context.session` |
+| `req.headers.get()` | `req.header()` |
+| `notes` (when schema has `riskNotes`) | Check actual schema field name |
+| CORS origin: `""` in production | Require explicit `CORS_ORIGIN` env var |
+| Devtools always rendered | Gate with `import.meta.env.DEV` |
+| No QueryClient defaults | Set `staleTime` and `gcTime` |
+| Unused variables | Prefix with `_` or remove |

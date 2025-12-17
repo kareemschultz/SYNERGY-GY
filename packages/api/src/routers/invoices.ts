@@ -680,7 +680,7 @@ export const invoicesRouter = {
         clientName: inv.client.displayName,
         clientEmail: inv.client.email,
         clientAddress: inv.client.address || null,
-        clientTin: inv.client.tin || null,
+        clientTin: inv.client.tinNumber || null,
         lineItems: inv.lineItems.map((item) => ({
           description: item.description,
           quantity: item.quantity,

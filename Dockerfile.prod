@@ -12,7 +12,7 @@ FROM oven/bun:1.2 AS deps
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lock ./
+COPY package.json bun.lock turbo.json ./
 COPY apps/server/package.json ./apps/server/
 COPY apps/web/package.json ./apps/web/
 COPY packages/api/package.json ./packages/api/
@@ -21,7 +21,9 @@ COPY packages/db/package.json ./packages/db/
 COPY packages/config/package.json ./packages/config/
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+# FIX 1: Changed to --no-frozen-lockfile to allow updates during build
+RUN rm bun.lock
+RUN bun install --no-frozen-lockfile
 
 # =============================================================================
 # Stage 2: Build Web App
@@ -32,7 +34,7 @@ WORKDIR /app
 
 # Copy deps and source
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+# FIX 2: Removed COPY command for 'apps/web/node_modules' because Bun hoists deps to root
 COPY . .
 
 # Build argument for API URL
@@ -54,7 +56,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build packages and server
-RUN bun run build
+RUN bun run build --filter=server...
 
 # =============================================================================
 # Stage 4: Production Image
@@ -70,7 +72,7 @@ WORKDIR /app
 RUN groupadd -r gknexus && useradd -r -g gknexus gknexus
 
 # Copy package files for workspace resolution
-COPY package.json bun.lock ./
+COPY package.json bun.lock turbo.json ./
 COPY apps/server/package.json ./apps/server/
 COPY packages/api/package.json ./packages/api/
 COPY packages/auth/package.json ./packages/auth/

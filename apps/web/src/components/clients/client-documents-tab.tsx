@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { client } from "@/utils/orpc";
+import { orpc } from "@/utils/orpc";
 
 type ClientDocumentsTabProps = {
   clientId: string;
@@ -29,14 +30,21 @@ type ClientDocumentsTabProps = {
 export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
   const [view, setView] = useState("service");
 
-  const { data: progress } =
-    client.clientServices.getFulfillmentProgress.useQuery({ clientId });
-  const { data: services } = client.clientServices.getByClient.useQuery({
-    clientId,
-  });
-  const { data: allDocuments } = client.documents.getByClient.useQuery({
-    clientId,
-  });
+  const { data: progress } = useQuery(
+    orpc.clientServices.getFulfillmentProgress.queryOptions({
+      input: { clientId },
+    })
+  );
+  const { data: services } = useQuery(
+    orpc.clientServices.getByClient.queryOptions({
+      input: { clientId },
+    })
+  );
+  const { data: allDocuments } = useQuery(
+    orpc.documents.getByClient.queryOptions({
+      input: { clientId },
+    })
+  );
 
   return (
     <div className="space-y-6">

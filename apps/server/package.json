@@ -16,6 +16,7 @@
     "@orpc/zod": "catalog:",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
+    "drizzle-orm": "^0.45.0",
     "zod": "catalog:",
     "@SYNERGY-GY/api": "workspace:*",
     "@SYNERGY-GY/auth": "workspace:*",

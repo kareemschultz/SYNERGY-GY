@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { client as api } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/matters/$matter-id")({
   component: PortalMatterDetail,
@@ -60,8 +60,8 @@ function PortalMatterDetail() {
 
       try {
         const [matterData, documentsData] = await Promise.all([
-          api.portal.matters.get({ matterId }),
-          api.portal.documents.list({ matterId, page: 1, limit: 50 }),
+          client.portal.matters.get({ matterId }),
+          client.portal.documents.list({ matterId, page: 1, limit: 50 }),
         ]);
 
         setMatter(matterData);
@@ -80,10 +80,11 @@ function PortalMatterDetail() {
 
   const handleDownload = async (documentId: string) => {
     try {
-      await api.portal.documents.download.mutate({ documentId });
+      await client.portal.documents.download({ documentId });
       toast.success("Download started");
-    } catch (e: any) {
-      toast.error(`Download failed: ${e.message}`);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      toast.error(`Download failed: ${message}`);
     }
   };
 

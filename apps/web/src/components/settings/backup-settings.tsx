@@ -56,8 +56,8 @@ type Backup = {
   fileSize: number | null;
   fileSizeFormatted: string | null;
   fileExists: boolean;
-  createdAt: string;
-  completedAt: string | null;
+  createdAt: Date;
+  completedAt: Date | null;
   tableCount: number | null;
   recordCount: number | null;
   uploadedFilesCount: number | null;
@@ -170,8 +170,8 @@ export function BackupSettings() {
     }
   };
 
-  const formatDate = (dateStr: string) =>
-    new Date(dateStr).toLocaleString("en-US", {
+  const formatDate = (dateInput: Date | string) =>
+    new Date(dateInput).toLocaleString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",

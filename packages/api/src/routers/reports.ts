@@ -146,10 +146,7 @@ export const reportsRouter = {
     // Group by category
     const grouped = filteredReports.reduce(
       (acc, report) => {
-        if (!acc[report.category]) {
-          acc[report.category] = [];
-        }
-        acc[report.category].push(report);
+        (acc[report.category] ??= []).push(report);
         return acc;
       },
       {} as Record<string, typeof filteredReports>
@@ -510,8 +507,11 @@ export const reportsRouter = {
               if (!acc[inv.status]) {
                 acc[inv.status] = { count: 0, total: 0 };
               }
-              acc[inv.status].count += 1;
-              acc[inv.status].total += Number.parseFloat(inv.totalAmount);
+              const statusEntry = acc[inv.status];
+              if (statusEntry) {
+                statusEntry.count += 1;
+                statusEntry.total += Number.parseFloat(inv.totalAmount);
+              }
               return acc;
             },
             {} as Record<string, { count: number; total: number }>
@@ -532,12 +532,12 @@ export const reportsRouter = {
 
           if (input.filters?.fromDate) {
             deadlineConditions.push(
-              gte(deadline.dueDate, input.filters.fromDate)
+              gte(deadline.dueDate, new Date(input.filters.fromDate))
             );
           }
           if (input.filters?.toDate) {
             deadlineConditions.push(
-              lte(deadline.dueDate, input.filters.toDate)
+              lte(deadline.dueDate, new Date(input.filters.toDate))
             );
           }
 
@@ -555,7 +555,6 @@ export const reportsRouter = {
             .orderBy(deadline.dueDate);
 
           // Compute status from isCompleted and dueDate
-          const _today = new Date();
           const deadlinesWithStatus = deadlinesData.map((d) => ({
             ...d,
             status: getDeadlineStatus(d.isCompleted, d.dueDate),
@@ -775,31 +774,31 @@ export const reportsRouter = {
           const clientsData = await db
             .select({
               type: client.type,
-              business: client.business,
+              businesses: client.businesses,
               count: count(),
             })
             .from(client)
             .where(
-              sql`${client.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
+              sql`${client.businesses} && ARRAY[${sql.join(businessFilter, sql`, `)}]::text[]`
             )
-            .groupBy(client.type, client.business);
+            .groupBy(client.type, client.businesses);
 
           const totalClients = await db
             .select({ total: count() })
             .from(client)
             .where(
-              sql`${client.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
+              sql`${client.businesses} && ARRAY[${sql.join(businessFilter, sql`, `)}]::text[]`
             );
 
           columns = [
             { key: "type", label: "Client Type" },
-            { key: "business", label: "Business" },
+            { key: "businesses", label: "Businesses" },
             { key: "count", label: "Count", type: "number" },
           ];
 
           data = clientsData as Record<string, unknown>[];
           summary = {
-            totalClients: totalClients[0]?.total || 0,
+            totalClients: totalClients[0]?.total ?? 0,
           };
           break;
         }
@@ -1015,12 +1014,12 @@ export const reportsRouter = {
 
           if (input.filters?.fromDate) {
             deadlineConditions.push(
-              gte(deadline.dueDate, input.filters.fromDate)
+              gte(deadline.dueDate, new Date(input.filters.fromDate))
             );
           }
           if (input.filters?.toDate) {
             deadlineConditions.push(
-              lte(deadline.dueDate, input.filters.toDate)
+              lte(deadline.dueDate, new Date(input.filters.toDate))
             );
           }
 
@@ -1030,12 +1029,18 @@ export const reportsRouter = {
               business: deadline.business,
               dueDate: deadline.dueDate,
               priority: deadline.priority,
-              status: deadline.status,
+              isCompleted: deadline.isCompleted,
               type: deadline.type,
             })
             .from(deadline)
             .where(and(...deadlineConditions))
             .orderBy(deadline.dueDate);
+
+          // Compute status from isCompleted and dueDate
+          const deadlinesWithStatus = deadlinesData.map((d) => ({
+            ...d,
+            status: getDeadlineStatus(d.isCompleted, d.dueDate),
+          }));
 
           columns = [
             { key: "title", label: "Title" },
@@ -1046,9 +1051,9 @@ export const reportsRouter = {
             { key: "type", label: "Type" },
           ];
 
-          data = deadlinesData as Record<string, unknown>[];
+          data = deadlinesWithStatus as Record<string, unknown>[];
           summary = {
-            totalDeadlines: deadlinesData.length,
+            totalDeadlines: deadlinesWithStatus.length,
           };
           break;
         }
@@ -1067,19 +1072,19 @@ export const reportsRouter = {
 
           const matterCounts = await db
             .select({
-              assignedToId: matter.assignedToId,
+              assignedStaffId: matter.assignedStaffId,
               count: count(),
             })
             .from(matter)
             .where(
               sql`${matter.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
             )
-            .groupBy(matter.assignedToId);
+            .groupBy(matter.assignedStaffId);
 
           const countMap = matterCounts.reduce(
             (acc, row) => {
-              if (row.assignedToId) {
-                acc[row.assignedToId] = row.count;
+              if (row.assignedStaffId) {
+                acc[row.assignedStaffId] = row.count;
               }
               return acc;
             },
@@ -1159,14 +1164,7 @@ export const reportsRouter = {
       }
 
       // Convert to base64 for transmission
-      let base64Content: string;
-      if (typeof fileContent === "string") {
-        base64Content = Buffer.from(fileContent).toString("base64");
-      } else if (fileContent instanceof Uint8Array) {
-        base64Content = Buffer.from(fileContent).toString("base64");
-      } else {
-        base64Content = fileContent.toString("base64");
-      }
+      const base64Content = Buffer.from(fileContent as string | Buffer | Uint8Array).toString("base64");
 
       // Save execution record
       const [execution] = await db
@@ -1202,7 +1200,7 @@ export const reportsRouter = {
   /**
    * List custom reports
    */
-  listCustomReports: staffProcedure.handler(async ({ context }) => {
+  listCustomReports: staffProcedure.handler(async () => {
     const { reportDefinition } = await import("@SYNERGY-GY/db");
 
     const reports = await db.query.reportDefinition.findMany({
@@ -1246,7 +1244,7 @@ export const reportsRouter = {
             })
           )
           .optional(),
-        defaultFilters: z.record(z.unknown()).optional(),
+        defaultFilters: z.record(z.string(), z.unknown()).optional(),
       })
     )
     .handler(async ({ input, context }) => {
@@ -1301,11 +1299,11 @@ export const reportsRouter = {
             })
           )
           .optional(),
-        defaultFilters: z.record(z.unknown()).optional(),
+        defaultFilters: z.record(z.string(), z.unknown()).optional(),
         isActive: z.boolean().optional(),
       })
     )
-    .handler(async ({ input, context }) => {
+    .handler(async ({ input }) => {
       const { reportDefinition } = await import("@SYNERGY-GY/db");
 
       // Verify ownership or admin access
@@ -1367,8 +1365,13 @@ export const reportsRouter = {
   /**
    * List scheduled reports
    */
-  listSchedules: staffProcedure.handler(async ({ context }) => {
-    const { scheduledReport } = await import("@SYNERGY-GY/db");
+  listSchedules: staffProcedure.handler(async () => {
+    const { scheduledReport: scheduledReportTable } = await import(
+      "@SYNERGY-GY/db"
+    );
+
+    // Use scheduledReportTable variable to avoid unused variable warning
+    void scheduledReportTable;
 
     const schedules = await db.query.scheduledReport.findMany({
       orderBy: (sr, { asc }) => [asc(sr.nextRunAt)],
@@ -1393,7 +1396,7 @@ export const reportsRouter = {
       z.object({
         reportId: z.string(),
         name: z.string().min(1).max(100),
-        parameters: z.record(z.unknown()).optional(),
+        parameters: z.record(z.string(), z.unknown()).optional(),
         frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY"]),
         dayOfWeek: z.number().min(0).max(6).optional(),
         dayOfMonth: z.number().min(1).max(31).optional(),
@@ -1459,7 +1462,7 @@ export const reportsRouter = {
       z.object({
         id: z.string(),
         name: z.string().min(1).max(100).optional(),
-        parameters: z.record(z.unknown()).optional(),
+        parameters: z.record(z.string(), z.unknown()).optional(),
         frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).optional(),
         dayOfWeek: z.number().min(0).max(6).optional(),
         dayOfMonth: z.number().min(1).max(31).optional(),
@@ -1526,7 +1529,7 @@ export const reportsRouter = {
    */
   runScheduleNow: staffProcedure
     .input(z.object({ id: z.string() }))
-    .handler(async ({ input, context }) => {
+    .handler(async ({ input }) => {
       const { scheduledReport } = await import("@SYNERGY-GY/db");
 
       const schedule = await db.query.scheduledReport.findFirst({
@@ -1569,7 +1572,9 @@ function calculateNextRun(
   dayOfWeek?: number,
   dayOfMonth?: number
 ): Date {
-  const [hours, minutes] = time.split(":").map(Number);
+  const parts = time.split(":").map(Number);
+  const hours = parts[0] ?? 0;
+  const minutes = parts[1] ?? 0;
   const now = new Date();
   const next = new Date(now);
   next.setHours(hours, minutes, 0, 0);

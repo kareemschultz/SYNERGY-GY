@@ -38,7 +38,7 @@ export const knowledgeBaseRouter = {
         limit: z.number().default(50),
       })
     )
-    .handler(async ({ input, ctx }) => {
+    .handler(async ({ input, context }) => {
       const {
         type,
         category,
@@ -50,10 +50,10 @@ export const knowledgeBaseRouter = {
         limit,
       } = input;
 
-      const conditions = [eq(knowledgeBaseItem.isActive, true)];
+      const conditions: ReturnType<typeof eq>[] = [eq(knowledgeBaseItem.isActive, true)];
 
       // If not staff, only return client-accessible items
-      if (!ctx.user) {
+      if (!context.session?.user) {
         conditions.push(eq(knowledgeBaseItem.isStaffOnly, false));
       }
 
@@ -97,7 +97,7 @@ export const knowledgeBaseRouter = {
         where: and(...conditions),
         limit,
         offset,
-        orderBy: [(t) => desc(t.isFeatured), (t) => desc(t.createdAt)],
+        orderBy: [desc(knowledgeBaseItem.isFeatured), desc(knowledgeBaseItem.createdAt)],
         with: {
           createdBy: {
             columns: {
@@ -130,7 +130,7 @@ export const knowledgeBaseRouter = {
    */
   getById: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .handler(async ({ input, ctx }) => {
+    .handler(async ({ input, context }) => {
       const item = await db.query.knowledgeBaseItem.findFirst({
         where: and(
           eq(knowledgeBaseItem.id, input.id),
@@ -159,7 +159,7 @@ export const knowledgeBaseRouter = {
       }
 
       // Check staff-only access
-      if (item.isStaffOnly && !ctx.user) {
+      if (item.isStaffOnly && !context.session?.user) {
         throw new Error("This resource is only available to staff");
       }
 
@@ -176,7 +176,7 @@ export const knowledgeBaseRouter = {
         clientId: z.string().uuid().optional(), // For client downloads
       })
     )
-    .handler(async ({ input, ctx }) => {
+    .handler(async ({ input, context }) => {
       const item = await db.query.knowledgeBaseItem.findFirst({
         where: and(
           eq(knowledgeBaseItem.id, input.id),
@@ -188,21 +188,22 @@ export const knowledgeBaseRouter = {
         throw new Error("Knowledge base item not found");
       }
 
-      // Check staff-only access
-      if (item.isStaffOnly && !ctx.user) {
+      // Check staff-only access - use session user for staff check
+      const user = context.session?.user;
+      if (item.isStaffOnly && !user) {
         throw new Error("This resource is only available to staff");
       }
 
-      // Log download
-      const downloadedBy = ctx.user?.id || ctx.portalUser?.id;
-      const downloadedByType = ctx.user ? "STAFF" : "CLIENT";
+      // Log download - use session user ID if available
+      const downloadedBy = user?.id;
+      const downloadedByType = user ? "STAFF" : "CLIENT";
 
       if (downloadedBy) {
         await db.insert(knowledgeBaseDownload).values({
           knowledgeBaseItemId: item.id,
           downloadedById: downloadedBy,
           downloadedByType,
-          clientId: input.clientId || ctx.portalUser?.clientId,
+          clientId: input.clientId,
         });
       }
 
@@ -307,12 +308,17 @@ export const knowledgeBaseRouter = {
         isFeatured: z.boolean(),
       })
     )
-    .handler(async ({ input, ctx }) => {
+    .handler(async ({ input, context }) => {
+      const staffId = context.staff?.id;
+      if (!staffId) {
+        throw new Error("Staff profile not found");
+      }
+
       const [created] = await db
         .insert(knowledgeBaseItem)
         .values({
           ...input,
-          createdById: ctx.user.id,
+          createdById: staffId,
         })
         .returning();
 
@@ -360,14 +366,19 @@ export const knowledgeBaseRouter = {
         isActive: z.boolean().optional(),
       })
     )
-    .handler(async ({ input, ctx }) => {
+    .handler(async ({ input, context }) => {
       const { id, ...updateData } = input;
+
+      const staffId = context.staff?.id;
+      if (!staffId) {
+        throw new Error("Staff profile not found");
+      }
 
       const [updated] = await db
         .update(knowledgeBaseItem)
         .set({
           ...updateData,
-          lastUpdatedById: ctx.user.id,
+          lastUpdatedById: staffId,
           version: sql`${knowledgeBaseItem.version} + 1`,
         })
         .where(eq(knowledgeBaseItem.id, id))
@@ -433,7 +444,7 @@ export const knowledgeBaseRouter = {
     .handler(async ({ input }) => {
       const { limit: inputLimit, type } = input;
 
-      const conditions = [];
+      const conditions: ReturnType<typeof eq>[] = [];
       if (type) {
         conditions.push(eq(knowledgeBaseItem.type, type));
       }

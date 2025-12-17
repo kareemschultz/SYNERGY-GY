@@ -7,6 +7,11 @@ import { staffProcedure } from "../index";
 // Enum values
 const ownershipTypeValues = ["DIRECT", "INDIRECT", "BENEFICIAL"] as const;
 const riskLevelValues = ["LOW", "MEDIUM", "HIGH"] as const;
+const pepRelationshipValues = [
+  "FAMILY_MEMBER",
+  "SELF",
+  "CLOSE_ASSOCIATE",
+] as const;
 
 // Zod schemas
 const createBeneficialOwnerSchema = z.object({
@@ -24,14 +29,12 @@ const createBeneficialOwnerSchema = z.object({
   positionHeld: z.string().optional(),
   isPep: z.boolean().default(false),
   pepDetails: z.string().optional(),
-  pepRelationship: z.string().optional(),
+  pepRelationship: z.enum(pepRelationshipValues).optional(),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional(),
   address: z.string().optional(),
-  city: z.string().optional(),
-  country: z.string().optional(),
   riskLevel: z.enum(riskLevelValues).default("LOW"),
-  notes: z.string().optional(),
+  riskNotes: z.string().optional(),
 });
 
 const updateBeneficialOwnerSchema = createBeneficialOwnerSchema
@@ -43,7 +46,7 @@ const updateBeneficialOwnerSchema = createBeneficialOwnerSchema
 const verifyBeneficialOwnerSchema = z.object({
   id: z.string().uuid(),
   verificationDocumentId: z.string().uuid().optional(),
-  notes: z.string().optional(),
+  riskNotes: z.string().optional(),
 });
 
 const listByClientSchema = z.object({
@@ -75,14 +78,12 @@ export const beneficialOwnersRouter = {
         email: clientBeneficialOwner.email,
         phone: clientBeneficialOwner.phone,
         address: clientBeneficialOwner.address,
-        city: clientBeneficialOwner.city,
-        country: clientBeneficialOwner.country,
         riskLevel: clientBeneficialOwner.riskLevel,
+        riskNotes: clientBeneficialOwner.riskNotes,
         isVerified: clientBeneficialOwner.isVerified,
         verifiedAt: clientBeneficialOwner.verifiedAt,
         verifiedById: clientBeneficialOwner.verifiedById,
         verificationDocumentId: clientBeneficialOwner.verificationDocumentId,
-        notes: clientBeneficialOwner.notes,
         createdAt: clientBeneficialOwner.createdAt,
         updatedAt: clientBeneficialOwner.updatedAt,
       })
@@ -116,8 +117,7 @@ export const beneficialOwnersRouter = {
       });
 
       if (!owner) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Beneficial owner not found",
         });
       }
@@ -137,8 +137,7 @@ export const beneficialOwnersRouter = {
       });
 
       if (!clientExists) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Client not found",
         });
       }
@@ -156,8 +155,7 @@ export const beneficialOwnersRouter = {
           : age;
 
       if (actualAge < 18) {
-        throw new ORPCError({
-          code: "BAD_REQUEST",
+        throw new ORPCError("BAD_REQUEST", {
           message: "Beneficial owner must be at least 18 years old",
         });
       }
@@ -181,10 +179,8 @@ export const beneficialOwnersRouter = {
           email: input.email,
           phone: input.phone,
           address: input.address,
-          city: input.city,
-          country: input.country,
           riskLevel: input.riskLevel,
-          notes: input.notes,
+          riskNotes: input.riskNotes,
         })
         .returning();
 
@@ -205,8 +201,7 @@ export const beneficialOwnersRouter = {
       });
 
       if (!existing) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Beneficial owner not found",
         });
       }
@@ -225,16 +220,23 @@ export const beneficialOwnersRouter = {
             : age;
 
         if (actualAge < 18) {
-          throw new ORPCError({
-            code: "BAD_REQUEST",
+          throw new ORPCError("BAD_REQUEST", {
             message: "Beneficial owner must be at least 18 years old",
           });
         }
       }
 
+      // Map riskNotes to match schema if present
+      const updateData = {
+        ...updates,
+        riskNotes: updates.riskNotes,
+      };
+      // Remove fields that don't exist in schema
+      delete (updateData as Record<string, unknown>).clientId;
+
       const [updated] = await db
         .update(clientBeneficialOwner)
-        .set(updates)
+        .set(updateData)
         .where(eq(clientBeneficialOwner.id, id))
         .returning();
 
@@ -252,8 +254,7 @@ export const beneficialOwnersRouter = {
       });
 
       if (!existing) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Beneficial owner not found",
         });
       }
@@ -276,20 +277,25 @@ export const beneficialOwnersRouter = {
       });
 
       if (!existing) {
-        throw new ORPCError({
-          code: "NOT_FOUND",
+        throw new ORPCError("NOT_FOUND", {
           message: "Beneficial owner not found",
         });
       }
 
       // Verify staff profile exists
+      const userId = context.session?.user?.id;
+      if (!userId) {
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "User not authenticated",
+        });
+      }
+
       const staffProfile = await db.query.staff.findFirst({
-        where: eq(staff.userId, context.user.id),
+        where: eq(staff.userId, userId),
       });
 
       if (!staffProfile) {
-        throw new ORPCError({
-          code: "FORBIDDEN",
+        throw new ORPCError("FORBIDDEN", {
           message: "Staff profile not found",
         });
       }
@@ -301,7 +307,7 @@ export const beneficialOwnersRouter = {
           verifiedAt: new Date(),
           verifiedById: staffProfile.id,
           verificationDocumentId: input.verificationDocumentId,
-          notes: input.notes || existing.notes,
+          riskNotes: input.riskNotes || existing.riskNotes,
         })
         .where(eq(clientBeneficialOwner.id, input.id))
         .returning();

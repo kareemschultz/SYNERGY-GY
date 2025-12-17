@@ -48,13 +48,33 @@ const ALLOWED_MIME_TYPES = new Set([
   "text/csv",
 ]);
 
+// Validate CORS_ORIGIN in production
+const CORS_ORIGIN = process.env.CORS_ORIGIN;
+if (!CORS_ORIGIN && process.env.NODE_ENV === "production") {
+  throw new Error("CORS_ORIGIN must be set in production environment");
+}
+
 const app = new Hono();
 
 app.use(logger());
 app.use(
   "/*",
   cors({
-    origin: process.env.CORS_ORIGIN || "",
+    origin: (origin) => {
+      // Development: allow localhost origins
+      if (
+        process.env.NODE_ENV !== "production" &&
+        (!origin || origin.startsWith("http://localhost"))
+      ) {
+        return origin || "*";
+      }
+      // Production: check against configured origins
+      const allowedOrigins = CORS_ORIGIN?.split(",").map((o) => o.trim()) || [];
+      if (allowedOrigins.includes(origin || "")) {
+        return origin || null;
+      }
+      return null;
+    },
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,

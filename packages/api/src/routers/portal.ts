@@ -1435,8 +1435,8 @@ export const portalRouter = {
             reason: input.reason,
             expiresAt,
             ipAddress:
-              context.req?.headers?.get("x-forwarded-for") || "unknown",
-            userAgent: context.req?.headers?.get("user-agent") || "unknown",
+              context.req?.header("x-forwarded-for") || "unknown",
+            userAgent: context.req?.header("user-agent") || "unknown",
           })
           .returning();
 
@@ -1448,8 +1448,8 @@ export const portalRouter = {
           isImpersonated: true,
           impersonatedByUserId: context.session.user.id,
           metadata: { reason: input.reason },
-          ipAddress: context.req?.headers?.get("x-forwarded-for") || "unknown",
-          userAgent: context.req?.headers?.get("user-agent") || "unknown",
+          ipAddress: context.req?.header("x-forwarded-for") || "unknown",
+          userAgent: context.req?.header("user-agent") || "unknown",
         });
 
         return {
@@ -1612,14 +1612,15 @@ export const portalRouter = {
         let sessionCount = 0;
 
         for (let i = 0; i < activities.length - 1; i++) {
-          if (activities[i].action === "LOGIN") {
+          const activity = activities[i];
+          if (activity?.action === "LOGIN") {
             const nextLogout = activities
               .slice(i + 1)
               .find((a) => a.action === "LOGOUT");
             if (nextLogout) {
               const duration =
                 new Date(nextLogout.createdAt).getTime() -
-                new Date(activities[i].createdAt).getTime();
+                new Date(activity.createdAt).getTime();
               totalSessionDuration += duration;
               sessionCount++;
             }

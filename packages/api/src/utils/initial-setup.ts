@@ -1,7 +1,7 @@
 import { account, db, staff, user } from "@SYNERGY-GY/db";
 import { randomUUID } from "node:crypto";
-import { hashPassword } from "better-auth/crypto";
 import { eq } from "drizzle-orm";
+import { hashPassword } from "./password";
 import { validatePasswordStrength } from "./password";
 
 /**

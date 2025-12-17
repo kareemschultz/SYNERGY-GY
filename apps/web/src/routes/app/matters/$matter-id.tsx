@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { client } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/matters/$matter-id")({
   component: MatterDetailPage,
@@ -177,12 +177,107 @@ type MatterData = {
   }>;
 };
 
-// ... OverviewTab, ChecklistTab, NotesTab ... (keep existing)
+function OverviewTab({ matter }: { matter: MatterData }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Overview</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <p className="text-muted-foreground text-sm">Description</p>
+            <p>{matter.description || "No description"}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground text-sm">Service Type</p>
+            <p>{matter.serviceType?.name || "N/A"}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground text-sm">Assigned Staff</p>
+            <p>{matter.assignedStaff?.user.name || "Unassigned"}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground text-sm">Estimated Fee</p>
+            <p>{matter.estimatedFee ? `GYD ${matter.estimatedFee}` : "N/A"}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChecklistTab({ matter }: { matter: MatterData }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Checklist</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {matter.checklist.length === 0 ? (
+          <p className="text-center text-muted-foreground">No checklist items</p>
+        ) : (
+          <ul className="space-y-2">
+            {matter.checklist.map((item) => (
+              <li key={item.id} className="flex items-center gap-2">
+                <input
+                  checked={item.isCompleted}
+                  disabled
+                  readOnly
+                  type="checkbox"
+                />
+                <span className={item.isCompleted ? "line-through text-muted-foreground" : ""}>
+                  {item.item}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function NotesTab({ matter }: { matter: MatterData }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Notes</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {matter.notes.length === 0 ? (
+          <p className="text-center text-muted-foreground">No notes</p>
+        ) : (
+          <div className="space-y-4">
+            {matter.notes.map((note) => (
+              <div key={note.id} className="rounded-lg border p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm">
+                    {note.createdBy?.name || "System"} •{" "}
+                    {new Date(note.createdAt).toLocaleDateString()}
+                  </span>
+                  {note.isInternal && (
+                    <span className="rounded bg-yellow-100 px-2 py-1 text-xs text-yellow-800">
+                      Internal
+                    </span>
+                  )}
+                </div>
+                <p>{note.content}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function DocumentsTab({ matterId }: { matterId: string }) {
-  const { data: documents, isLoading } = client.documents.getByMatter.useQuery({
-    matterId,
-  });
+  const { data: documents, isLoading } = useQuery(
+    orpc.documents.getByMatter.queryOptions({
+      input: { matterId },
+    })
+  );
 
   if (isLoading) {
     return (

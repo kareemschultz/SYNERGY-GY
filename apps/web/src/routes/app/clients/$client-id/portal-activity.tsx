@@ -18,7 +18,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { client } from "@/utils/orpc";
+import { useQuery } from "@tanstack/react-query";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/clients/$client-id/portal-activity")(
   {
@@ -29,16 +30,21 @@ export const Route = createFileRoute("/app/clients/$client-id/portal-activity")(
 function PortalActivityPage() {
   const { "client-id": clientId } = Route.useParams();
 
-  const { data: stats } = client.portal.analytics.getActivityStats.useQuery({
-    clientId,
-  });
-  const { data: activityData } =
-    client.portal.analytics.getPortalActivity.useQuery({
-      clientId,
-      limit: 50,
-    });
-  const { data: impersonationHistory } =
-    client.portal.analytics.getImpersonationHistory.useQuery({ clientId });
+  const { data: stats } = useQuery(
+    orpc.portal.analytics.getActivityStats.queryOptions({
+      input: { clientId },
+    })
+  );
+  const { data: activityData } = useQuery(
+    orpc.portal.analytics.getPortalActivity.queryOptions({
+      input: { clientId, limit: 50 },
+    })
+  );
+  const { data: impersonationHistory } = useQuery(
+    orpc.portal.analytics.getImpersonationHistory.queryOptions({
+      input: { clientId },
+    })
+  );
 
   return (
     <div className="flex flex-col gap-6 p-6">

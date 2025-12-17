@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Edit, MoreVertical, Plus, Search, Trash } from "lucide-react";
 import { useState } from "react";
@@ -38,7 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { client, queryClient } from "@/utils/orpc";
+import { client, orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/admin/knowledge-base")({
   component: AdminKnowledgeBasePage,
@@ -49,16 +50,19 @@ function AdminKnowledgeBasePage() {
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = client.knowledgeBase.list.useQuery({
-    search: search || undefined,
-  });
+  const { data, isLoading } = useQuery(
+    orpc.knowledgeBase.list.queryOptions({
+      input: { search: search || undefined },
+    })
+  );
 
-  const deleteMutation = client.knowledgeBase.delete.useMutation({
+  const deleteMutation = useMutation({
+    ...orpc.knowledgeBase.delete.mutationOptions(),
     onSuccess: () => {
       toast.success("Item deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const handleDelete = (id: string) => {
@@ -242,7 +246,8 @@ function KBItemDialog({
   // Use a key to force re-render when initialData changes or dialog opens
   // Move logic to wrapper or useEffect
 
-  const createMutation = client.knowledgeBase.create.useMutation({
+  const createMutation = useMutation({
+    ...orpc.knowledgeBase.create.mutationOptions(),
     onSuccess: async (_newItem) => {
       if (formData.file) {
         // Upload file if selected
@@ -284,16 +289,17 @@ function KBItemDialog({
       queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
       onOpenChange(false);
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(error.message),
   });
 
-  const updateMutation = client.knowledgeBase.update.useMutation({
+  const updateMutation = useMutation({
+    ...orpc.knowledgeBase.update.mutationOptions(),
     onSuccess: () => {
       toast.success("Resource updated successfully");
       queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
       onOpenChange(false);
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const handleSubmit = async (e: React.FormEvent) => {

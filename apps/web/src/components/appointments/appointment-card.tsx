@@ -119,17 +119,17 @@ export function AppointmentCard({
                   View Details
                 </DropdownMenuItem>
               ) : null}
-              {Boolean(canConfirm) && Boolean(onConfirm) ? (
+              {Boolean(canConfirm) && onConfirm ? (
                 <DropdownMenuItem onClick={() => onConfirm(appointment.id)}>
                   Confirm
                 </DropdownMenuItem>
               ) : null}
-              {Boolean(canComplete) && Boolean(onComplete) ? (
+              {Boolean(canComplete) && onComplete ? (
                 <DropdownMenuItem onClick={() => onComplete(appointment.id)}>
                   Mark Complete
                 </DropdownMenuItem>
               ) : null}
-              {Boolean(canComplete) && Boolean(onNoShow) ? (
+              {Boolean(canComplete) && onNoShow ? (
                 <DropdownMenuItem onClick={() => onNoShow(appointment.id)}>
                   Mark No Show
                 </DropdownMenuItem>
@@ -139,7 +139,7 @@ export function AppointmentCard({
                   Reschedule
                 </DropdownMenuItem>
               ) : null}
-              {Boolean(canCancel) && Boolean(onCancel) ? (
+              {Boolean(canCancel) && onCancel ? (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

@@ -68,7 +68,7 @@ const categoryColors: Record<string, string> = {
 };
 
 type ReportFilters = {
-  business?: string;
+  business?: "GCMC" | "KAJ";
   fromDate?: string;
   toDate?: string;
 };

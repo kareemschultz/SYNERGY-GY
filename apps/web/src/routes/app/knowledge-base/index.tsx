@@ -30,7 +30,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { client } from "@/utils/orpc";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/knowledge-base/")({
   component: KnowledgeBasePage,
@@ -43,26 +44,30 @@ function KnowledgeBasePage() {
   const [business, setBusiness] = useState<string>("ALL");
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
 
-  const { data, isLoading } = client.knowledgeBase.list.useQuery({
-    search: search || undefined,
-    type: type !== "ALL" ? (type as any) : undefined,
-    category: category !== "ALL" ? (category as any) : undefined,
-    business: business !== "ALL" ? (business as any) : undefined,
-  });
-
-  const { data: itemDetails } = client.knowledgeBase.getById.useQuery(
-    { id: selectedItem! },
-    { enabled: !!selectedItem }
+  const { data, isLoading } = useQuery(
+    orpc.knowledgeBase.list.queryOptions({
+      input: {
+        search: search || undefined,
+        type: type !== "ALL" ? (type as "AGENCY_FORM" | "LETTER_TEMPLATE" | "GUIDE" | "CHECKLIST") : undefined,
+        category: category !== "ALL" ? (category as "GRA" | "NIS" | "IMMIGRATION" | "DCRA" | "GENERAL" | "INTERNAL") : undefined,
+        business: business !== "ALL" ? (business as "GCMC" | "KAJ") : undefined,
+      },
+    })
   );
 
-  const downloadMutation = client.knowledgeBase.download.useMutation({
-    onSuccess: (_data) => {
+  const { data: itemDetails } = useQuery({
+    ...orpc.knowledgeBase.getById.queryOptions({
+      input: { id: selectedItem! },
+    }),
+    enabled: !!selectedItem,
+  });
+
+  const downloadMutation = useMutation({
+    ...orpc.knowledgeBase.download.mutationOptions(),
+    onSuccess: () => {
       toast.success("Download started");
-      // In a real app, we would handle the download URL or Blob here
-      // For now, let's simulate a download link click if URL was provided
-      // or just show success message
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });

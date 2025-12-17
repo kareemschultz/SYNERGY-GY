@@ -1,0 +1,47 @@
+# --- Dependencies (CRITICAL: Fixes the build crash) ---
+node_modules
+apps/*/node_modules
+packages/*/node_modules
+
+# --- Build Artifacts & Caching ---
+dist
+out
+build
+.turbo
+.cache
+*.tsbuildinfo
+
+# --- Environment & Secrets ---
+# Don't bake secrets into the image. 
+# We inject .env.production at runtime via Docker Compose.
+.env
+.env.production
+.env.local
+.env.development
+.env.test
+
+# --- Version Control ---
+.git
+.gitignore
+.github
+.husky
+
+# --- IDEs & Editor Configs ---
+.vscode
+.idea
+.cursor
+.claude
+.gemini
+.ruler
+*.swp
+
+# --- Logs & System ---
+*.log
+npm-debug.log
+yarn-error.log
+.DS_Store
+Thumbs.db
+
+# --- Documentation (Optional: Ignore if not building docs container) ---
+apps/docs
+specs

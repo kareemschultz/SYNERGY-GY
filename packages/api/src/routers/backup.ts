@@ -167,7 +167,7 @@ export const backupRouter = {
       const backupName = input.name || `gk-nexus-backup-${timestamp}`;
 
       // Create backup record
-      const [backup] = await db
+      const backupResult = await db
         .insert(systemBackup)
         .values({
           name: backupName,
@@ -178,6 +178,13 @@ export const backupRouter = {
           createdById: context.session.user.id,
         })
         .returning();
+
+      const backup = backupResult[0];
+      if (!backup) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: "Failed to create backup record",
+        });
+      }
 
       try {
         // Execute backup script
@@ -301,10 +308,11 @@ export const backupRouter = {
       .offset(offset);
 
     // Get total count
-    const [{ total }] = await db
+    const totalResult = await db
       .select({ total: count() })
       .from(systemBackup)
       .where(whereClause);
+    const total = totalResult[0]?.total ?? 0;
 
     // Check file existence for each backup
     const backupsWithFileInfo = await Promise.all(
@@ -401,7 +409,7 @@ export const backupRouter = {
   // Restore from backup
   restore: adminProcedure
     .input(restoreBackupSchema)
-    .handler(async ({ input, context }) => {
+    .handler(async ({ input }) => {
       const backup = await db.query.systemBackup.findFirst({
         where: eq(systemBackup.id, input.id),
       });
@@ -428,7 +436,7 @@ export const backupRouter = {
         }
 
         const skipFlag = input.skipMigrations ? "--skip-migrations" : "";
-        const { stdout, stderr } = await execAsync(
+        const { stdout } = await execAsync(
           `bash "${scriptPath}" "${backup.filePath}" --force ${skipFlag}`,
           { cwd: process.cwd(), timeout: 600_000 } // 10 minute timeout
         );
@@ -467,12 +475,13 @@ export const backupRouter = {
       .limit(1);
 
     // Get total storage used
-    const [{ totalSize }] = await db
+    const sizeResult = await db
       .select({
         totalSize: sql<number>`COALESCE(SUM(${systemBackup.fileSize}), 0)`,
       })
       .from(systemBackup)
       .where(eq(systemBackup.status, "completed"));
+    const totalSize = sizeResult[0]?.totalSize ?? 0;
 
     // List files from disk
     const diskFiles = await listBackupFiles();

@@ -26,7 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { client as api } from "@/utils/orpc";
+import { useQuery } from "@tanstack/react-query";
+import { client, orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/documents")({
   component: PortalDocuments,
@@ -67,28 +68,28 @@ function PortalDocuments() {
   const [category, setCategory] = useState<string>("ALL");
   const [_status, _setStatus] = useState<string>("ALL");
 
-  const { data, isLoading, error } = api.portal.documents.list.useQuery({
-    page: 1,
-    limit: 50,
-    // Add filtering logic to API or filter locally if API doesn't support all
-    // API currently supports status and search indirectly?
-    // Checking previous implementation of router: it supports search, category, matterId
-  });
+  const { data, isLoading, error } = useQuery(
+    orpc.portal.documents.list.queryOptions({
+      input: { page: 1, limit: 50 },
+    })
+  );
 
-  const { data: matters } = api.portal.matters.list.useQuery({
-    page: 1,
-    limit: 100,
-  });
+  const { data: matters } = useQuery(
+    orpc.portal.matters.list.queryOptions({
+      input: { page: 1, limit: 100 },
+    })
+  );
 
   const handleDownload = async (documentId: string) => {
     try {
-      const result = await api.portal.documents.download.mutate({ documentId });
+      const result = await client.portal.documents.download({ documentId });
       // In a real app, this would be a signed URL
       // For now, let's assume we can navigate to download endpoint or simulate it
       toast.success(`Download started for ${result.fileName}`);
       // window.open(result.downloadUrl, '_blank');
-    } catch (e: any) {
-      toast.error(`Download failed: ${e.message}`);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      toast.error(`Download failed: ${message}`);
     }
   };
 
