@@ -24,56 +24,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { categoryConfig, formatFileSize } from "@/lib/document-utils";
 import { client } from "@/utils/orpc";
 
-const categoryLabels: Record<string, { label: string; className: string }> = {
-  IDENTITY: {
-    label: "Identity",
-    className: "bg-purple-500/10 text-purple-600 border-purple-200",
-  },
-  TAX: {
-    label: "Tax",
-    className: "bg-blue-500/10 text-blue-600 border-blue-200",
-  },
-  FINANCIAL: {
-    label: "Financial",
-    className: "bg-green-500/10 text-green-600 border-green-200",
-  },
-  LEGAL: {
-    label: "Legal",
-    className: "bg-amber-500/10 text-amber-600 border-amber-200",
-  },
-  IMMIGRATION: {
-    label: "Immigration",
-    className: "bg-cyan-500/10 text-cyan-600 border-cyan-200",
-  },
-  BUSINESS: {
-    label: "Business",
-    className: "bg-indigo-500/10 text-indigo-600 border-indigo-200",
-  },
-  CORRESPONDENCE: {
-    label: "Correspondence",
-    className: "bg-pink-500/10 text-pink-600 border-pink-200",
-  },
-  TRAINING: {
-    label: "Training",
-    className: "bg-orange-500/10 text-orange-600 border-orange-200",
-  },
-  OTHER: {
-    label: "Other",
-    className: "bg-gray-500/10 text-gray-600 border-gray-200",
-  },
-};
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) {
-    return "0 B";
-  }
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${Number.parseFloat((bytes / k ** i).toFixed(1))} ${sizes[i]}`;
-}
+// Use shared category config
+const categoryLabels = categoryConfig;
 
 function getFileIcon(mimeType: string) {
   if (mimeType.startsWith("image/")) {

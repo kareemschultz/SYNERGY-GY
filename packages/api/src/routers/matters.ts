@@ -258,9 +258,9 @@ export const mattersRouter = {
       // Generate reference number
       const referenceNumber = await generateReferenceNumber(input.business);
 
-      // Get default checklist items from service type
-      const svcType = await db.query.serviceType.findFirst({
-        where: eq(serviceType.id, input.serviceTypeId),
+      // Get default checklist items from service catalog
+      const svcType = await db.query.serviceCatalog.findFirst({
+        where: eq(serviceCatalog.id, input.serviceTypeId),
       });
 
       const matterResult = await db
@@ -281,10 +281,10 @@ export const mattersRouter = {
         });
       }
 
-      // Create default checklist items if service type has them
-      if (svcType?.defaultChecklistItems?.length) {
-        const checklistItems = svcType.defaultChecklistItems.map(
-          (item, index) => ({
+      // Create default checklist items from document requirements
+      if (svcType?.documentRequirements?.length) {
+        const checklistItems = svcType.documentRequirements.map(
+          (item: string, index: number) => ({
             matterId: newMatter.id,
             item,
             sortOrder: index,

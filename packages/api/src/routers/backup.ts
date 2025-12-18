@@ -90,7 +90,6 @@ function formatFileSize(bytes: number): string {
 }
 
 // Helper: Parse manifest file (reserved for future use)
-// @ts-expect-error Reserved for future use - will be implemented when backup restore is added
 async function _parseManifest(
   _backupPath: string
 ): Promise<Record<string, unknown> | null> {

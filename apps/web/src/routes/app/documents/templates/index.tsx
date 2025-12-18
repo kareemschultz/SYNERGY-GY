@@ -34,53 +34,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { businessConfig, templateCategoryConfig } from "@/lib/document-utils";
 import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/documents/templates/")({
   component: TemplatesPage,
 });
 
-const categoryLabels: Record<string, { label: string; className: string }> = {
-  LETTER: {
-    label: "Letter",
-    className: "bg-blue-500/10 text-blue-600 border-blue-200",
-  },
-  AGREEMENT: {
-    label: "Agreement",
-    className: "bg-purple-500/10 text-purple-600 border-purple-200",
-  },
-  CERTIFICATE: {
-    label: "Certificate",
-    className: "bg-green-500/10 text-green-600 border-green-200",
-  },
-  FORM: {
-    label: "Form",
-    className: "bg-amber-500/10 text-amber-600 border-amber-200",
-  },
-  REPORT: {
-    label: "Report",
-    className: "bg-cyan-500/10 text-cyan-600 border-cyan-200",
-  },
-  INVOICE: {
-    label: "Invoice",
-    className: "bg-indigo-500/10 text-indigo-600 border-indigo-200",
-  },
-  OTHER: {
-    label: "Other",
-    className: "bg-gray-500/10 text-gray-600 border-gray-200",
-  },
-};
-
-const businessLabels: Record<string, { label: string; className: string }> = {
-  GCMC: {
-    label: "GCMC",
-    className: "bg-emerald-500/10 text-emerald-600 border-emerald-200",
-  },
-  KAJ: {
-    label: "KAJ",
-    className: "bg-orange-500/10 text-orange-600 border-orange-200",
-  },
-};
+// Use shared configs
+const categoryLabels = templateCategoryConfig;
+const businessLabels = businessConfig;
 
 function TemplatesPage() {
   const [search, setSearch] = useState("");

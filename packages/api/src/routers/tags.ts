@@ -1,6 +1,6 @@
 import { DEFAULT_TAGS, db, tag } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
-import { asc, eq, ilike, or } from "drizzle-orm";
+import { asc, eq, ilike, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 import {
   adminProcedure,
@@ -32,14 +32,14 @@ export const tagsRouter = {
       // Filter by business - show tags that are null (both) or match accessible businesses
       if (input.business) {
         conditions.push(
-          or(eq(tag.business, input.business), eq(tag.business, null))
+          or(eq(tag.business, input.business), isNull(tag.business))
         );
       } else {
         // Show all accessible business tags + shared tags
         const businessConditions = accessibleBusinesses.map((b) =>
           eq(tag.business, b)
         );
-        conditions.push(or(eq(tag.business, null), ...businessConditions));
+        conditions.push(or(isNull(tag.business), ...businessConditions));
       }
 
       const tags = await db.query.tag.findMany({

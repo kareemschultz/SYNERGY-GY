@@ -30,6 +30,10 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  TEMPLATE_CATEGORIES,
+  templateCategoryConfig,
+} from "@/lib/document-utils";
 import { client, queryClient } from "@/utils/orpc";
 
 type TemplateGeneratorDialogProps = {
@@ -38,19 +42,13 @@ type TemplateGeneratorDialogProps = {
   trigger?: React.ReactNode;
 };
 
-const categoryLabels: Record<string, string> = {
-  LETTER: "Letters",
-  AGREEMENT: "Agreements",
-  AFFIDAVIT: "Affidavits",
-  WILL: "Wills",
-  TAX_FORM: "Tax Forms",
-  CORPORATE: "Corporate Documents",
-  IMMIGRATION: "Immigration",
-  PROPOSAL: "Proposals",
-  INVOICE: "Invoices",
-  RECEIPT: "Receipts",
-  OTHER: "Other",
-};
+// Use shared config - map to plural labels for dropdown
+const categoryLabels: Record<string, string> = Object.fromEntries(
+  TEMPLATE_CATEGORIES.map((cat) => [
+    cat,
+    cat === "OTHER" ? "Other" : `${templateCategoryConfig[cat]?.label || cat}s`,
+  ])
+);
 
 export function TemplateGeneratorDialog({
   clientId,
@@ -84,14 +82,10 @@ export function TemplateGeneratorDialog({
             : (categoryFilter as
                 | "LETTER"
                 | "AGREEMENT"
-                | "AFFIDAVIT"
-                | "WILL"
-                | "TAX_FORM"
-                | "CORPORATE"
-                | "IMMIGRATION"
-                | "PROPOSAL"
+                | "CERTIFICATE"
+                | "FORM"
+                | "REPORT"
                 | "INVOICE"
-                | "RECEIPT"
                 | "OTHER"),
       }),
     enabled: open,

@@ -48,62 +48,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useSelection } from "@/hooks/use-selection";
+import { categoryConfig, DOCUMENT_CATEGORIES } from "@/lib/document-utils";
 import { client } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/documents/")({
   component: DocumentsPage,
 });
 
-const categoryLabels: Record<string, { label: string; className: string }> = {
-  IDENTITY: {
-    label: "Identity",
-    className: "bg-purple-500/10 text-purple-600 border-purple-200",
-  },
-  TAX: {
-    label: "Tax",
-    className: "bg-blue-500/10 text-blue-600 border-blue-200",
-  },
-  FINANCIAL: {
-    label: "Financial",
-    className: "bg-green-500/10 text-green-600 border-green-200",
-  },
-  LEGAL: {
-    label: "Legal",
-    className: "bg-amber-500/10 text-amber-600 border-amber-200",
-  },
-  IMMIGRATION: {
-    label: "Immigration",
-    className: "bg-cyan-500/10 text-cyan-600 border-cyan-200",
-  },
-  BUSINESS: {
-    label: "Business",
-    className: "bg-indigo-500/10 text-indigo-600 border-indigo-200",
-  },
-  CORRESPONDENCE: {
-    label: "Correspondence",
-    className: "bg-pink-500/10 text-pink-600 border-pink-200",
-  },
-  TRAINING: {
-    label: "Training",
-    className: "bg-orange-500/10 text-orange-600 border-orange-200",
-  },
-  OTHER: {
-    label: "Other",
-    className: "bg-gray-500/10 text-gray-600 border-gray-200",
-  },
-};
-
-const categoryValues = [
-  "IDENTITY",
-  "TAX",
-  "FINANCIAL",
-  "LEGAL",
-  "IMMIGRATION",
-  "BUSINESS",
-  "CORRESPONDENCE",
-  "TRAINING",
-  "OTHER",
-] as const;
+// Use shared category config
+const categoryLabels = categoryConfig;
+const categoryValues = DOCUMENT_CATEGORIES;
 
 const fileTypeLabels: Record<string, { label: string; extensions: string[] }> =
   {
