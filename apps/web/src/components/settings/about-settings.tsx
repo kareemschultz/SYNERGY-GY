@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Book,
   ExternalLink,
-  Github,
   HelpCircle,
   Info,
   Loader2,
@@ -29,30 +28,23 @@ export function AboutSettings() {
   const supportLinks = [
     {
       icon: Book,
-      title: "Documentation",
-      description: "Learn how to use GK-Nexus",
-      href: "/docs",
+      title: "Knowledge Base",
+      description: "Access guides and resources",
+      href: "/app/knowledge-base",
       external: false,
     },
     {
       icon: HelpCircle,
-      title: "Help Center",
-      description: "Find answers to common questions",
-      href: "/help",
-      external: false,
-    },
-    {
-      icon: Mail,
-      title: "Contact Support",
-      description: "Get in touch with our support team",
-      href: "mailto:support@gk-nexus.com",
+      title: "GCMC Support",
+      description: "Tax, Immigration & Training inquiries",
+      href: "mailto:info@gcmc.gy",
       external: true,
     },
     {
-      icon: Github,
-      title: "GitHub",
-      description: "View the source code and report issues",
-      href: "https://github.com/gk-nexus",
+      icon: Mail,
+      title: "KAJ Support",
+      description: "Insurance & NIS inquiries",
+      href: "mailto:info@kajconsultants.gy",
       external: true,
     },
   ];
@@ -142,10 +134,11 @@ export function AboutSettings() {
                 <p className="font-medium text-sm">About This Application</p>
                 <p className="text-muted-foreground text-sm">
                   GK-Nexus is a comprehensive business management platform
-                  designed for Green Crescent Management Consultants (GCMC) and
-                  KAJ Financial Services. It provides tools for client
+                  serving Guyana Consultancy & Management Co. (GCMC) and KAJ
+                  Insurance Consultants. It provides tools for client
                   management, matter tracking, document organization, deadline
-                  monitoring, and team collaboration.
+                  monitoring, GRA/NIS compliance, tax calculations, and team
+                  collaboration across both businesses.
                 </p>
               </div>
 
@@ -251,8 +244,11 @@ export function AboutSettings() {
           &copy; {new Date().getFullYear()} GK-Nexus. All rights reserved.
         </p>
         <p className="mt-1 text-muted-foreground text-xs">
-          Built with care for Green Crescent Management Consultants and KAJ
-          Financial Services
+          Serving Guyana Consultancy & Management Co. (GCMC) and KAJ Insurance
+          Consultants
+        </p>
+        <p className="mt-1 text-muted-foreground text-xs">
+          Developed by Karetech Solutions
         </p>
       </div>
     </div>

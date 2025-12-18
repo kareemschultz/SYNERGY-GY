@@ -594,7 +594,7 @@ export const taxCalculatorsRouter = {
   listHistory: protectedProcedure
     .input(
       z.object({
-        calculationType: z.enum(["PAYE", "VAT", "NIS"]).optional(),
+        calculationType: z.enum(["PAYE", "VAT", "NIS", "SALARY"]).optional(),
         limit: z.number().min(1).max(100).optional().default(20),
       })
     )
@@ -625,7 +625,7 @@ export const taxCalculatorsRouter = {
   saveCalculation: protectedProcedure
     .input(
       z.object({
-        calculationType: z.enum(["PAYE", "VAT", "NIS"]),
+        calculationType: z.enum(["PAYE", "VAT", "NIS", "SALARY"]),
         inputData: z.record(z.string(), z.unknown()),
         result: z.record(z.string(), z.unknown()),
       })
