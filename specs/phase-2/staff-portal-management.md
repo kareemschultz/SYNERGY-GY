@@ -1,10 +1,10 @@
 # Staff Portal Management Specification
 
-**Status**: Sprint 1 Complete (Database & API) - UI Components Pending
+**Status**: Sprint 2 Complete (Invite Management) - UI Components Ongoing
 **Priority**: HIGH (CRITICAL SECURITY)
 **Phase**: Phase 2
 **Created**: 2025-12-12
-**Last Updated**: 2025-12-12
+**Last Updated**: 2025-12-17
 
 ## Implementation Status
 
@@ -15,6 +15,20 @@
 - Analytics API: 3 endpoints (getPortalActivity, getActivityStats, getImpersonationHistory)
 - Security features: 30-min expiry, required audit reason, token-based sessions
 - Activity tracking: 13 action types with impersonation flag
+
+### ✅ Sprint 2: Invite Management & Password Reset (COMPLETED - December 17, 2024)
+- **Invite Management APIs**:
+  - `portal.invite.list` - List all invites with pagination, status filters, search
+  - `portal.invite.revoke` - Revoke pending invites with reason tracking
+  - `portal.invite.resend` - Resend expired/revoked invites with new token
+- **Invite Management UI**: Admin page at `/app/admin/portal-invites`
+  - Status badges (Pending/Used/Expired/Revoked)
+  - Revoke dialog with reason input
+  - Resend functionality for expired invites
+- **Portal Password Reset UI**:
+  - `/portal/forgot-password` - Request password reset
+  - `/portal/reset-password?token=xxx` - Complete password reset
+  - Security: Generic messages, password strength validation
 
 ### ⏳ Sprint 5-6: UI Components (PENDING)
 - Impersonation hook (useImpersonation)

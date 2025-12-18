@@ -308,6 +308,284 @@ export const portalRouter = {
           clientName: invite.clientName,
         };
       }),
+
+    // List all portal invites (staff only)
+    list: staffProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(100).default(20),
+          status: z.enum(["PENDING", "USED", "EXPIRED", "REVOKED"]).optional(),
+          search: z.string().optional(),
+        })
+      )
+      .handler(async ({ input }) => {
+        const offset = (input.page - 1) * input.limit;
+        const now = new Date();
+
+        // Build conditions
+        const conditions = [];
+
+        if (input.status) {
+          if (input.status === "EXPIRED") {
+            // Expired means PENDING but past expiresAt
+            conditions.push(eq(portalInvite.status, "PENDING"));
+            conditions.push(lte(portalInvite.expiresAt, now));
+          } else if (input.status === "PENDING") {
+            // Only truly pending (not expired)
+            conditions.push(eq(portalInvite.status, "PENDING"));
+            conditions.push(gt(portalInvite.expiresAt, now));
+          } else {
+            conditions.push(eq(portalInvite.status, input.status));
+          }
+        }
+
+        if (input.search) {
+          const searchTerm = `%${input.search}%`;
+          conditions.push(
+            or(
+              sql`${portalInvite.email} ILIKE ${searchTerm}`,
+              sql`${client.displayName} ILIKE ${searchTerm}`
+            )
+          );
+        }
+
+        const whereClause =
+          conditions.length > 0 ? and(...conditions) : undefined;
+
+        const invites = await db
+          .select({
+            id: portalInvite.id,
+            clientId: portalInvite.clientId,
+            email: portalInvite.email,
+            status: portalInvite.status,
+            expiresAt: portalInvite.expiresAt,
+            createdAt: portalInvite.createdAt,
+            usedAt: portalInvite.usedAt,
+            revokedAt: portalInvite.revokedAt,
+            revocationReason: portalInvite.revocationReason,
+            clientName: client.displayName,
+            createdByName: sql<string>`(SELECT name FROM "user" WHERE id = ${portalInvite.createdById})`,
+            revokedByName: sql<string>`(SELECT name FROM "user" WHERE id = ${portalInvite.revokedById})`,
+          })
+          .from(portalInvite)
+          .leftJoin(client, eq(client.id, portalInvite.clientId))
+          .where(whereClause)
+          .orderBy(desc(portalInvite.createdAt))
+          .limit(input.limit)
+          .offset(offset);
+
+        // Compute actual status (PENDING vs EXPIRED)
+        const invitesWithStatus = invites.map((inv) => ({
+          ...inv,
+          computedStatus:
+            inv.status === "PENDING" && new Date(inv.expiresAt) <= now
+              ? "EXPIRED"
+              : inv.status,
+        }));
+
+        // Get total count
+        const countResult = await db
+          .select({ count: count() })
+          .from(portalInvite)
+          .leftJoin(client, eq(client.id, portalInvite.clientId))
+          .where(whereClause);
+
+        return {
+          invites: invitesWithStatus,
+          pagination: {
+            page: input.page,
+            limit: input.limit,
+            total: countResult[0]?.count ?? 0,
+            totalPages: Math.ceil((countResult[0]?.count ?? 0) / input.limit),
+          },
+        };
+      }),
+
+    // Revoke a pending portal invite
+    revoke: staffProcedure
+      .input(
+        z.object({
+          inviteId: z.string().uuid(),
+          reason: z.string().optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const [invite] = await db
+          .select()
+          .from(portalInvite)
+          .where(eq(portalInvite.id, input.inviteId))
+          .limit(1);
+
+        if (!invite) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Invite not found",
+          });
+        }
+
+        if (invite.status !== "PENDING") {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Only pending invites can be revoked",
+          });
+        }
+
+        await db
+          .update(portalInvite)
+          .set({
+            status: "REVOKED",
+            revokedAt: new Date(),
+            revokedById: context.session.user.id,
+            revocationReason: input.reason || "Revoked by staff",
+          })
+          .where(eq(portalInvite.id, input.inviteId));
+
+        // Log activity
+        await logActivity({
+          userId: context.session.user.id,
+          staffId: context.staff?.id,
+          action: "UPDATE",
+          entityType: "CLIENT",
+          entityId: invite.clientId,
+          description: `Revoked portal invite for ${invite.email}`,
+          metadata: { inviteId: invite.id, reason: input.reason },
+        });
+
+        return {
+          success: true,
+          message: "Invite revoked successfully",
+        };
+      }),
+
+    // Resend an expired or revoked portal invite
+    resend: staffProcedure
+      .input(
+        z.object({
+          inviteId: z.string().uuid(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const [invite] = await db
+          .select({
+            id: portalInvite.id,
+            clientId: portalInvite.clientId,
+            email: portalInvite.email,
+            status: portalInvite.status,
+            expiresAt: portalInvite.expiresAt,
+          })
+          .from(portalInvite)
+          .where(eq(portalInvite.id, input.inviteId))
+          .limit(1);
+
+        if (!invite) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Invite not found",
+          });
+        }
+
+        // Check if client already has portal account
+        const [existingPortalUser] = await db
+          .select()
+          .from(portalUser)
+          .where(eq(portalUser.clientId, invite.clientId))
+          .limit(1);
+
+        if (existingPortalUser) {
+          throw new ORPCError("CONFLICT", {
+            message: "Client already has a portal account",
+          });
+        }
+
+        // Only allow resending expired or revoked invites
+        const isExpired =
+          invite.status === "PENDING" &&
+          new Date(invite.expiresAt) <= new Date();
+        const isRevoked = invite.status === "REVOKED";
+
+        if (!(isExpired || isRevoked) && invite.status !== "PENDING") {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Only expired or revoked invites can be resent",
+          });
+        }
+
+        // Check for active pending invites
+        const [activePending] = await db
+          .select()
+          .from(portalInvite)
+          .where(
+            and(
+              eq(portalInvite.clientId, invite.clientId),
+              eq(portalInvite.status, "PENDING"),
+              gt(portalInvite.expiresAt, new Date())
+            )
+          )
+          .limit(1);
+
+        if (activePending && activePending.id !== invite.id) {
+          throw new ORPCError("CONFLICT", {
+            message: "An active invite already exists for this client",
+          });
+        }
+
+        // Get client info
+        const [clientRecord] = await db
+          .select()
+          .from(client)
+          .where(eq(client.id, invite.clientId))
+          .limit(1);
+
+        if (!clientRecord) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Client not found",
+          });
+        }
+
+        // Generate new token and update invite
+        const newToken = generateSecureToken();
+        const newExpiresAt = new Date();
+        newExpiresAt.setDate(newExpiresAt.getDate() + INVITE_EXPIRY_DAYS);
+
+        await db
+          .update(portalInvite)
+          .set({
+            token: newToken,
+            status: "PENDING",
+            expiresAt: newExpiresAt,
+            revokedAt: null,
+            revokedById: null,
+            revocationReason: null,
+          })
+          .where(eq(portalInvite.id, input.inviteId));
+
+        // Send email with new invite link
+        const appUrl = process.env.BETTER_AUTH_URL || "http://localhost:5173";
+        const inviteUrl = `${appUrl}/portal/register?token=${newToken}`;
+        const invitedByName = context.session.user.name || "GK-Nexus Team";
+
+        await sendPortalInvite({
+          clientName: clientRecord.displayName,
+          email: invite.email,
+          inviteUrl,
+          expiresInDays: INVITE_EXPIRY_DAYS,
+          invitedBy: invitedByName,
+        });
+
+        // Log activity
+        await logActivity({
+          userId: context.session.user.id,
+          staffId: context.staff?.id,
+          action: "UPDATE",
+          entityType: "CLIENT",
+          entityId: invite.clientId,
+          description: `Resent portal invite to ${invite.email}`,
+          metadata: { inviteId: invite.id },
+        });
+
+        return {
+          success: true,
+          expiresAt: newExpiresAt,
+          message: "Invite resent successfully",
+        };
+      }),
   },
 
   // Portal auth - register

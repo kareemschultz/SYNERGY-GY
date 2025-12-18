@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Portal Password Reset Pages** - December 17, 2024
+  - Forgot password page (`/portal/forgot-password`) - Email input to request reset
+  - Reset password page (`/portal/reset-password?token=xxx`) - Set new password with validation
+  - Password strength validation (8+ chars, uppercase, lowercase, numbers)
+  - Generic success messages for security (doesn't reveal if email exists)
+  - **Files**: `apps/web/src/routes/portal/forgot-password.tsx`, `apps/web/src/routes/portal/reset-password.tsx`
+
+- **Portal Invite Management** - December 17, 2024
+  - Admin page to view all portal invites (`/app/admin/portal-invites`)
+  - Status badges: Pending (yellow), Used (green), Expired (gray), Revoked (red)
+  - Filter by status and search by email/client name
+  - Revoke pending invites with optional reason
+  - Resend expired/revoked invites (generates new token, sends new email)
+  - New APIs: `portal.invite.list`, `portal.invite.revoke`, `portal.invite.resend`
+  - **Files**: `apps/web/src/routes/app/admin/portal-invites.tsx`, `packages/api/src/routers/portal.ts`
+
 - **Tags System with Predefined Dropdown** - December 17, 2024
   - New `tag` database table for storing reusable tags with colors
   - Tags API router (`packages/api/src/routers/tags.ts`) with CRUD + seed operations
