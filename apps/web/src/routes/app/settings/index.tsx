@@ -1,14 +1,31 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, Info, Shield, Sun, User } from "lucide-react";
+import { Archive, Bell, Calendar, Info, Shield, Sun, User } from "lucide-react";
 import { useState } from "react";
+import { z } from "zod";
 import { PageHeader } from "@/components/layout/page-header";
 import { AboutSettings } from "@/components/settings/about-settings";
 import { AppearanceSettings } from "@/components/settings/appearance-settings";
+import { AvailabilitySettings } from "@/components/settings/availability-settings";
+import { BackupSettings } from "@/components/settings/backup-settings";
 import { NotificationSettings } from "@/components/settings/notification-settings";
 import { ProfileSettings } from "@/components/settings/profile-settings";
 import { SecuritySettings } from "@/components/settings/security-settings";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+
+const _searchSchema = z.object({
+  tab: z
+    .enum([
+      "profile",
+      "appearance",
+      "notifications",
+      "security",
+      "availability",
+      "backup",
+      "about",
+    ])
+    .optional(),
+});
 
 export const Route = createFileRoute("/app/settings/")({
   component: SettingsPage,
@@ -19,6 +36,8 @@ type SettingsSection =
   | "appearance"
   | "notifications"
   | "security"
+  | "availability"
+  | "backup"
   | "about";
 
 type NavItem = {
@@ -32,6 +51,8 @@ const navItems: NavItem[] = [
   { id: "appearance", label: "Appearance", icon: Sun },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "security", label: "Security", icon: Shield },
+  { id: "availability", label: "Availability", icon: Calendar },
+  { id: "backup", label: "Backup", icon: Archive },
   { id: "about", label: "About", icon: Info },
 ];
 
@@ -49,6 +70,10 @@ function SettingsPage() {
         return <NotificationSettings />;
       case "security":
         return <SecuritySettings />;
+      case "availability":
+        return <AvailabilitySettings />;
+      case "backup":
+        return <BackupSettings />;
       case "about":
         return <AboutSettings />;
       default:

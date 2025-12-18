@@ -76,6 +76,13 @@ export const portalUser = pgTable(
     lastActivityAt: timestamp("last_activity_at"),
     loginAttempts: text("login_attempts").default("0").notNull(), // Track failed attempts
 
+    // Notification preferences
+    notificationPreferences: jsonb("notification_preferences").default({
+      emailOnMatterUpdate: true,
+      emailOnAppointment: true,
+      emailOnDocumentRequest: true,
+    }),
+
     // Invitation tracking
     invitedById: text("invited_by_id").references(() => user.id, {
       onDelete: "set null",

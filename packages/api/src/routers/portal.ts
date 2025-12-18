@@ -917,6 +917,161 @@ export const portalRouter = {
       }),
   },
 
+  // Portal user settings
+  user: {
+    // Change password (requires current password)
+    changePassword: portalProcedure
+      .input(
+        z.object({
+          currentPassword: z.string().min(1),
+          newPassword: z.string().min(8),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const portalUserId = context.portalUser.id;
+
+        // Get current user
+        const [user] = await db
+          .select()
+          .from(portalUser)
+          .where(eq(portalUser.id, portalUserId))
+          .limit(1);
+
+        if (!user) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "User not found",
+          });
+        }
+
+        // Verify current password
+        const isValid = await verifyPassword(
+          input.currentPassword,
+          user.passwordHash
+        );
+
+        if (!isValid) {
+          throw new ORPCError("UNAUTHORIZED", {
+            message: "Current password is incorrect",
+          });
+        }
+
+        // Validate new password
+        const passwordValidation = validatePasswordStrength(input.newPassword);
+        if (!passwordValidation.valid) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: passwordValidation.errors.join(", "),
+          });
+        }
+
+        // Hash and update password
+        const newPasswordHash = await hashPassword(input.newPassword);
+
+        await db
+          .update(portalUser)
+          .set({ passwordHash: newPasswordHash })
+          .where(eq(portalUser.id, portalUserId));
+
+        // Invalidate all other sessions for security
+        await db
+          .delete(portalSession)
+          .where(
+            and(
+              eq(portalSession.portalUserId, portalUserId),
+              sql`${portalSession.id} != ${context.session.id}`
+            )
+          );
+
+        // Log activity
+        await db.insert(portalActivityLog).values({
+          portalUserId,
+          clientId: context.portalUser.clientId,
+          action: "CHANGE_PASSWORD",
+          sessionId: context.session.id,
+        });
+
+        return {
+          success: true,
+          message: "Password changed successfully",
+        };
+      }),
+
+    // Get notification preferences
+    getNotificationPreferences: portalProcedure.handler(async ({ context }) => {
+      const portalUserId = context.portalUser.id;
+
+      const [user] = await db
+        .select({ notificationPreferences: portalUser.notificationPreferences })
+        .from(portalUser)
+        .where(eq(portalUser.id, portalUserId))
+        .limit(1);
+
+      const defaultPrefs = {
+        emailOnMatterUpdate: true,
+        emailOnAppointment: true,
+        emailOnDocumentRequest: true,
+      };
+
+      return (
+        (user?.notificationPreferences as typeof defaultPrefs) ?? defaultPrefs
+      );
+    }),
+
+    // Update notification preferences
+    updateNotificationPreferences: portalProcedure
+      .input(
+        z.object({
+          emailOnMatterUpdate: z.boolean().optional(),
+          emailOnAppointment: z.boolean().optional(),
+          emailOnDocumentRequest: z.boolean().optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const portalUserId = context.portalUser.id;
+
+        // Get current preferences
+        const [user] = await db
+          .select({
+            notificationPreferences: portalUser.notificationPreferences,
+          })
+          .from(portalUser)
+          .where(eq(portalUser.id, portalUserId))
+          .limit(1);
+
+        const currentPrefs = (user?.notificationPreferences as Record<
+          string,
+          boolean
+        >) ?? {
+          emailOnMatterUpdate: true,
+          emailOnAppointment: true,
+          emailOnDocumentRequest: true,
+        };
+
+        // Merge with updates
+        const updatedPrefs = {
+          ...currentPrefs,
+          ...(input.emailOnMatterUpdate !== undefined && {
+            emailOnMatterUpdate: input.emailOnMatterUpdate,
+          }),
+          ...(input.emailOnAppointment !== undefined && {
+            emailOnAppointment: input.emailOnAppointment,
+          }),
+          ...(input.emailOnDocumentRequest !== undefined && {
+            emailOnDocumentRequest: input.emailOnDocumentRequest,
+          }),
+        };
+
+        await db
+          .update(portalUser)
+          .set({ notificationPreferences: updatedPrefs })
+          .where(eq(portalUser.id, portalUserId));
+
+        return {
+          success: true,
+          preferences: updatedPrefs,
+        };
+      }),
+  },
+
   // Portal data access - matters
   matters: {
     list: portalProcedure

@@ -25,6 +25,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New APIs: `portal.invite.list`, `portal.invite.revoke`, `portal.invite.resend`
   - **Files**: `apps/web/src/routes/app/admin/portal-invites.tsx`, `packages/api/src/routers/portal.ts`
 
+- **Staff Availability Settings** - December 17, 2024
+  - Staff can set weekly availability schedule in Settings > Availability
+  - Configure available days and working hours per day
+  - Add date-specific overrides for vacations and custom hours
+  - View and delete upcoming overrides
+  - **Files**: `apps/web/src/components/settings/availability-settings.tsx`, `apps/web/src/routes/app/settings/index.tsx`
+
+- **Portal User Settings** - December 17, 2024
+  - Portal settings page (`/portal/settings`) for client portal users
+  - Change password with current password verification
+  - Email notification preferences (matter updates, appointments, document requests)
+  - New `notificationPreferences` column in portal schema
+  - New APIs: `portal.user.changePassword`, `portal.user.getNotificationPreferences`, `portal.user.updateNotificationPreferences`
+  - **Files**: `apps/web/src/routes/portal/settings.tsx`, `packages/db/src/schema/portal.ts`, `packages/api/src/routers/portal.ts`
+
 - **Tags System with Predefined Dropdown** - December 17, 2024
   - New `tag` database table for storing reusable tags with colors
   - Tags API router (`packages/api/src/routers/tags.ts`) with CRUD + seed operations
