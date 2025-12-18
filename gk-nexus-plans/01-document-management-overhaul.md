@@ -2,7 +2,7 @@
 
 > **Priority:** P0 - Critical
 > **Estimated Effort:** 1-2 weeks
-> **Status:** 🟡 In Progress (70% Complete)
+> **Status:** 🟢 Complete (95%)
 > **Last Updated:** December 17, 2024
 
 ---
@@ -33,9 +33,11 @@ The document upload and management system has several critical UX issues and mis
 ## 📝 Tasks
 
 ### Task 1: Fix Document Category Dropdown
-**Status:** ⏳ Needs Verification
+**Status:** 🟢 Complete (Working)
 
 **Problem:** The "Select Category" button/dropdown on document upload doesn't function.
+
+**Resolution (Dec 17, 2024):** Verified as WORKING - uses a card grid selector, not a dropdown. All 9 categories display correctly and selection persists.
 
 **Requirements:**
 - [ ] Investigate current implementation in `apps/web/src/routes/app/documents/`
@@ -93,7 +95,7 @@ const { data: documents } = useQuery(
 ---
 
 ### Task 3: Implement Tags System
-**Status:** 🟡 Partially Complete
+**Status:** 🟢 Complete
 
 **Problem:** Tags can only be typed manually. Users need to select from existing tags.
 
@@ -102,8 +104,10 @@ const { data: documents } = useQuery(
 - ✅ Tags displayed in document list (up to 3 badges + count indicator)
 - ✅ Tags displayed in document quick view
 - ✅ Tags searchable via API
-- ⏳ Tags dropdown selection not yet implemented (uses free-text input)
-- ⏳ Predefined tags not seeded (optional enhancement)
+- ✅ Tags dropdown selection implemented (TagSelector component)
+- ✅ 22 predefined tags with colors (GRA, NIS, VAT, PAYE, etc.)
+- ✅ Inline tag creation with color picker
+- ✅ Document upload wizard updated to use TagSelector
 
 **Requirements:**
 
@@ -172,9 +176,11 @@ const defaultTags = [
 ---
 
 ### Task 4: Document-Entity Linking
-**Status:** 🔴 Not Started
+**Status:** 🟢 Complete (Working)
 
 **Problem:** Documents cannot be associated with specific Clients or Matters.
+
+**Resolution (Dec 17, 2024):** Already implemented in document upload wizard - Step 3 allows linking to Client (via search) and Matter (dropdown filtered by client).
 
 **Requirements:**
 
@@ -233,9 +239,16 @@ CREATE INDEX idx_documents_matter ON documents(matter_id);
 ---
 
 ### Task 6: Advanced Search Filters
-**Status:** 🔴 Not Started
+**Status:** 🟢 Complete (Working)
 
 **Problem:** No way to filter documents by multiple criteria.
+
+**Resolution (Dec 17, 2024):** Already implemented with collapsible Filters panel including:
+- Category filter (dropdown)
+- File type filter (PDF, Images, Word, Spreadsheets, Other)
+- Status filter (Active, Archived, All)
+- Date range filter (from/to pickers)
+- Clear all button with active filter count badge
 
 **Requirements:**
 - [ ] Filter panel (collapsible)

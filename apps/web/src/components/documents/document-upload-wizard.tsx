@@ -15,6 +15,7 @@ import {
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
+import { TagSelector } from "@/components/documents/tag-selector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -148,7 +149,6 @@ export function DocumentUploadWizard({
     id: string;
     displayName: string;
   } | null>(null);
-  const [tagInput, setTagInput] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
 
   // Search clients
@@ -279,21 +279,6 @@ export function DocumentUploadWizard({
       return;
     }
     uploadMutation.mutate(form.state.values);
-  };
-
-  const addTag = () => {
-    const tag = tagInput.trim().toLowerCase();
-    if (tag && !form.state.values.tags.includes(tag)) {
-      form.setFieldValue("tags", [...form.state.values.tags, tag]);
-      setTagInput("");
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    form.setFieldValue(
-      "tags",
-      form.state.values.tags.filter((t) => t !== tag)
-    );
   };
 
   const canProceed = () => {
@@ -487,37 +472,11 @@ export function DocumentUploadWizard({
 
               <div className="space-y-2">
                 <Label>Tags (Optional)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addTag();
-                      }
-                    }}
-                    placeholder="Add tags..."
-                    value={tagInput}
-                  />
-                  <Button onClick={addTag} type="button" variant="outline">
-                    Add
-                  </Button>
-                </div>
-                {form.state.values.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    {form.state.values.tags.map((tag) => (
-                      <Badge
-                        className="cursor-pointer"
-                        key={tag}
-                        onClick={() => removeTag(tag)}
-                        variant="secondary"
-                      >
-                        {tag}
-                        <X className="ml-1 h-3 w-3" />
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                <TagSelector
+                  onTagsChange={(tags) => form.setFieldValue("tags", tags)}
+                  placeholder="Select or create tags..."
+                  selectedTags={form.state.values.tags}
+                />
               </div>
 
               <form.Field name="expirationDate">

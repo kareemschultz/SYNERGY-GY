@@ -3,7 +3,7 @@ import {
   matter,
   matterChecklist,
   matterNote,
-  serviceType,
+  serviceCatalog,
 } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
@@ -335,27 +335,41 @@ export const mattersRouter = {
       return updated;
     }),
 
-  // Get service types for dropdown
+  // Get service types for dropdown (uses serviceCatalog table)
   getServiceTypes: staffProcedure
     .input(z.object({ business: z.enum(businessValues).optional() }))
     .handler(async ({ input, context }) => {
       const accessibleBusinesses = getAccessibleBusinesses(context.staff);
       const businessFilter = input.business || accessibleBusinesses;
 
-      const types = await db
-        .select()
-        .from(serviceType)
-        .where(
-          and(
-            eq(serviceType.isActive, true),
-            Array.isArray(businessFilter)
-              ? sql`${serviceType.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
-              : eq(serviceType.business, businessFilter)
-          )
-        )
-        .orderBy(asc(serviceType.sortOrder), asc(serviceType.name));
+      const services = await db.query.serviceCatalog.findMany({
+        where: and(
+          eq(serviceCatalog.isActive, true),
+          Array.isArray(businessFilter)
+            ? sql`${serviceCatalog.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
+            : eq(serviceCatalog.business, businessFilter)
+        ),
+        orderBy: [
+          asc(serviceCatalog.sortOrder),
+          asc(serviceCatalog.displayName),
+        ],
+        with: {
+          category: true,
+        },
+      });
 
-      return types;
+      // Map to expected format for frontend compatibility
+      return services.map((s) => ({
+        id: s.id,
+        name: s.displayName,
+        category: s.category?.displayName || "Other",
+        business: s.business,
+        description: s.shortDescription || s.description,
+        estimatedDays: s.estimatedDays,
+        defaultFee: s.basePrice,
+        isActive: s.isActive,
+        sortOrder: s.sortOrder,
+      }));
     }),
 
   // Checklist operations

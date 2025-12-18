@@ -33,6 +33,8 @@ export * from "./service-catalog";
 export * from "./services";
 // System backup and restore
 export * from "./system";
+// Tags for documents
+export * from "./tags";
 // Tax calculations
 export * from "./tax-calculations";
 // Training management

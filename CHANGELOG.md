@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Tags System with Predefined Dropdown** - December 17, 2024
+  - New `tag` database table for storing reusable tags with colors
+  - Tags API router (`packages/api/src/routers/tags.ts`) with CRUD + seed operations
+  - TagSelector component (`apps/web/src/components/documents/tag-selector.tsx`)
+    - Multi-select combobox for selecting existing tags
+    - Inline tag creation with color picker
+    - Color-coded tag badges
+  - Updated document upload wizard to use TagSelector instead of free-text input
+  - 22 predefined tags for common use cases (GRA, NIS, VAT, PAYE, etc.)
+  - **Files**: `packages/db/src/schema/tags.ts`, `packages/api/src/routers/tags.ts`, `apps/web/src/components/documents/tag-selector.tsx`
+
 - **Payroll Calculator** - December 17, 2024
   - Comprehensive salary calculator with 2025 Guyana tax rules
   - Progressive PAYE brackets: 25% on first $3.12M, 35% above
@@ -38,6 +49,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Files**: `apps/web/src/components/settings/profile-settings.tsx`, `apps/web/src/components/settings/security-settings.tsx`
 
 ### Fixed
+
+- **Matter Service Selector Empty Bug** - December 17, 2024
+  - Fixed bug where "No service types available" was shown even when services exist
+  - Root cause: `matters.getServiceTypes()` was querying empty `serviceType` table instead of `serviceCatalog`
+  - Solution: Updated endpoint to use `serviceCatalog` table with proper category relation
+  - **File**: `packages/api/src/routers/matters.ts`
 
 - **Backup Script Path Resolution** - December 16, 2024
   - Fixed critical bug where scheduled backups failed due to incorrect path resolution

@@ -21,6 +21,7 @@ import { reportsRouter } from "./reports";
 import { serviceCatalogRouter } from "./service-catalog";
 import { settingsRouter } from "./settings";
 import { staffSetupRouter } from "./staff-setup";
+import { tagsRouter } from "./tags";
 import { taxCalculatorsRouter } from "./tax-calculators";
 import { trainingRouter } from "./training";
 
@@ -51,6 +52,7 @@ export const appRouter = {
   serviceCatalog: serviceCatalogRouter,
   settings: settingsRouter,
   staffSetup: staffSetupRouter,
+  tags: tagsRouter,
   taxCalculators: taxCalculatorsRouter,
   training: trainingRouter,
 };
