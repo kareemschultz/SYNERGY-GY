@@ -398,3 +398,143 @@ export const staffImpersonationSessionRelations = relations(
     }),
   })
 );
+
+// Portal messaging - client <-> staff communication
+export const portalMessage = pgTable(
+  "portal_message",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    // Client context
+    clientId: text("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+
+    // Sender can be portal user (client) or staff user
+    senderType: text("sender_type").notNull().$type<"PORTAL" | "STAFF">(),
+    senderPortalUserId: text("sender_portal_user_id").references(
+      () => portalUser.id,
+      { onDelete: "set null" }
+    ),
+    senderStaffUserId: text("sender_staff_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+
+    // Message content
+    subject: text("subject"),
+    content: text("content").notNull(),
+
+    // Read tracking
+    isRead: boolean("is_read").default(false).notNull(),
+    readAt: timestamp("read_at"),
+
+    // Threading support
+    parentMessageId: text("parent_message_id"),
+
+    // Timestamps
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("portal_message_client_id_idx").on(table.clientId),
+    index("portal_message_sender_portal_user_idx").on(table.senderPortalUserId),
+    index("portal_message_sender_staff_user_idx").on(table.senderStaffUserId),
+    index("portal_message_is_read_idx").on(table.isRead),
+    index("portal_message_created_at_idx").on(table.createdAt),
+    index("portal_message_parent_message_idx").on(table.parentMessageId),
+  ]
+);
+
+// Document upload status for portal uploads (staff review workflow)
+export const portalDocumentUploadStatusEnum = pgEnum(
+  "portal_document_upload_status",
+  ["PENDING_REVIEW", "APPROVED", "REJECTED"]
+);
+
+// Portal document uploads - tracks documents uploaded by portal users
+export const portalDocumentUpload = pgTable(
+  "portal_document_upload",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    // Document reference
+    documentId: text("document_id").notNull().unique(),
+
+    // Uploader
+    portalUserId: text("portal_user_id")
+      .notNull()
+      .references(() => portalUser.id, { onDelete: "cascade" }),
+
+    clientId: text("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+
+    // Review status
+    status: portalDocumentUploadStatusEnum("status")
+      .default("PENDING_REVIEW")
+      .notNull(),
+
+    // Review info
+    reviewedById: text("reviewed_by_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    reviewedAt: timestamp("reviewed_at"),
+    reviewNotes: text("review_notes"),
+
+    // Timestamps
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("portal_document_upload_document_id_idx").on(table.documentId),
+    index("portal_document_upload_portal_user_id_idx").on(table.portalUserId),
+    index("portal_document_upload_client_id_idx").on(table.clientId),
+    index("portal_document_upload_status_idx").on(table.status),
+  ]
+);
+
+// Portal message relations
+export const portalMessageRelations = relations(portalMessage, ({ one }) => ({
+  client: one(client, {
+    fields: [portalMessage.clientId],
+    references: [client.id],
+  }),
+  senderPortalUser: one(portalUser, {
+    fields: [portalMessage.senderPortalUserId],
+    references: [portalUser.id],
+  }),
+  senderStaffUser: one(user, {
+    fields: [portalMessage.senderStaffUserId],
+    references: [user.id],
+  }),
+  parentMessage: one(portalMessage, {
+    fields: [portalMessage.parentMessageId],
+    references: [portalMessage.id],
+    relationName: "messageReplies",
+  }),
+}));
+
+// Portal document upload relations
+export const portalDocumentUploadRelations = relations(
+  portalDocumentUpload,
+  ({ one }) => ({
+    portalUser: one(portalUser, {
+      fields: [portalDocumentUpload.portalUserId],
+      references: [portalUser.id],
+    }),
+    client: one(client, {
+      fields: [portalDocumentUpload.clientId],
+      references: [client.id],
+    }),
+    reviewedBy: one(user, {
+      fields: [portalDocumentUpload.reviewedById],
+      references: [user.id],
+    }),
+  })
+);

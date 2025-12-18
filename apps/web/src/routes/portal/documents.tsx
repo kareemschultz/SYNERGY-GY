@@ -3,11 +3,17 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowLeft,
+  Check,
+  Clock,
   Download,
   FileText,
+  Loader2,
   Search,
+  Upload,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +25,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -27,7 +42,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { client, orpc } from "@/utils/orpc";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { client, orpc, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/documents")({
   component: PortalDocuments,
@@ -62,11 +79,44 @@ const getCategoryColor = (category: string) => {
   }
 };
 
+const categoryOptions = [
+  { value: "IDENTITY", label: "Identity Documents" },
+  { value: "TAX", label: "Tax Documents" },
+  { value: "FINANCIAL", label: "Financial" },
+  { value: "LEGAL", label: "Legal" },
+  { value: "IMMIGRATION", label: "Immigration" },
+  { value: "BUSINESS", label: "Business" },
+  { value: "CORRESPONDENCE", label: "Correspondence" },
+  { value: "TRAINING", label: "Training" },
+  { value: "OTHER", label: "Other" },
+] as const;
+
+type DocumentCategory = (typeof categoryOptions)[number]["value"];
+
+const getUploadStatusColor = (status: string) => {
+  switch (status) {
+    case "APPROVED":
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+    case "REJECTED":
+      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+    case "PENDING_REVIEW":
+    default:
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+  }
+};
+
 function PortalDocuments() {
   const _navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("ALL");
   const [_status, _setStatus] = useState<string>("ALL");
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadCategory, setUploadCategory] =
+    useState<DocumentCategory>("OTHER");
+  const [uploadDescription, setUploadDescription] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState("library");
 
   const { data, isLoading, error } = useQuery(
     orpc.portal.documents.list.queryOptions({
@@ -80,13 +130,88 @@ function PortalDocuments() {
     })
   );
 
+  // Query for uploaded documents status
+  const { data: uploadsData, isLoading: uploadsLoading } = useQuery({
+    queryKey: ["portal", "documentUpload", "list"],
+    queryFn: () => client.portal.documentUpload.list({ page: 1, limit: 50 }),
+  });
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      setSelectedFile(acceptedFiles[0]);
+    }
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+      "application/pdf": [".pdf"],
+      "application/msword": [".doc"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        [".docx"],
+      "application/vnd.ms-excel": [".xls"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+        ".xlsx",
+      ],
+      "text/plain": [".txt"],
+    },
+    maxSize: 50 * 1024 * 1024,
+    multiple: false,
+  });
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      toast.error("Please select a file to upload");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      // Step 1: Prepare upload (create document record)
+      const { uploadUrl } = await client.portal.documentUpload.prepareUpload({
+        category: uploadCategory,
+        description: uploadDescription || undefined,
+      });
+
+      // Step 2: Upload file
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!uploadResponse.ok) {
+        const error = await uploadResponse.json();
+        throw new Error(error.error || "Failed to upload file");
+      }
+
+      toast.success(
+        "Document uploaded successfully. It will be reviewed by our team."
+      );
+      setUploadDialogOpen(false);
+      setSelectedFile(null);
+      setUploadDescription("");
+      setUploadCategory("OTHER");
+
+      // Refresh uploads list
+      queryClient.invalidateQueries({ queryKey: ["portal", "documentUpload"] });
+      queryClient.invalidateQueries({ queryKey: ["portal", "documents"] });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      toast.error(`Upload failed: ${message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleDownload = async (documentId: string) => {
     try {
       const result = await client.portal.documents.download({ documentId });
-      // In a real app, this would be a signed URL
-      // For now, let's assume we can navigate to download endpoint or simulate it
       toast.success(`Download started for ${result.fileName}`);
-      // window.open(result.downloadUrl, '_blank');
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Unknown error";
       toast.error(`Download failed: ${message}`);
@@ -143,122 +268,380 @@ function PortalDocuments() {
                 Your Documents
               </h1>
             </div>
+            <Button onClick={() => setUploadDialogOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Document
+            </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto max-w-6xl px-4 py-8">
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-              <div>
-                <CardTitle>Document Library</CardTitle>
+        <Tabs onValueChange={setActiveTab} value={activeTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="library">Document Library</TabsTrigger>
+            <TabsTrigger value="uploads">
+              My Uploads
+              {uploadsData?.uploads.filter((u) => u.status === "PENDING_REVIEW")
+                .length ? (
+                <Badge className="ml-2" variant="secondary">
+                  {
+                    uploadsData.uploads.filter(
+                      (u) => u.status === "PENDING_REVIEW"
+                    ).length
+                  }
+                </Badge>
+              ) : null}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="library">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                  <div>
+                    <CardTitle>Document Library</CardTitle>
+                    <CardDescription>
+                      All documents associated with your matters
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6 flex flex-col gap-4 md:flex-row">
+                  <div className="relative flex-1">
+                    <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      className="pl-9"
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search documents..."
+                      value={search}
+                    />
+                  </div>
+                  <Select onValueChange={setCategory} value={category}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All Categories</SelectItem>
+                      <SelectItem value="IDENTITY">Identity</SelectItem>
+                      <SelectItem value="TAX">Tax</SelectItem>
+                      <SelectItem value="FINANCIAL">Financial</SelectItem>
+                      <SelectItem value="LEGAL">Legal</SelectItem>
+                      <SelectItem value="IMMIGRATION">Immigration</SelectItem>
+                      <SelectItem value="BUSINESS">Business</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {!filteredDocuments || filteredDocuments.length === 0 ? (
+                  <div className="rounded-lg border-2 border-dashed bg-muted/10 py-12 text-center text-muted-foreground">
+                    <FileText className="mx-auto mb-4 h-16 w-16 opacity-50" />
+                    <p className="font-medium text-lg">No documents found</p>
+                    <p className="mt-2 text-sm">
+                      Try adjusting your filters or search terms
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredDocuments.map((doc) => (
+                      <div
+                        className="rounded-lg border bg-white p-4 transition-colors hover:bg-slate-50 dark:bg-transparent dark:hover:bg-slate-800"
+                        key={doc.id}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex flex-1 items-start gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                              <FileText className="h-6 w-6" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-1 flex flex-wrap items-center gap-2">
+                                <h3 className="truncate font-medium text-sm">
+                                  {doc.originalName}
+                                </h3>
+                                <Badge
+                                  className={getCategoryColor(doc.category)}
+                                  variant="outline"
+                                >
+                                  {doc.category}
+                                </Badge>
+                                {doc.matterId && (
+                                  <Badge
+                                    className="text-xs"
+                                    variant="secondary"
+                                  >
+                                    Matter Linked
+                                  </Badge>
+                                )}
+                              </div>
+                              {doc.description ? (
+                                <p className="mb-2 text-muted-foreground text-sm">
+                                  {doc.description}
+                                </p>
+                              ) : null}
+                              <div className="flex items-center gap-4 text-muted-foreground text-xs">
+                                <span>{formatFileSize(doc.fileSize)}</span>
+                                <span>-</span>
+                                <span>
+                                  Uploaded on{" "}
+                                  {new Date(doc.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => handleDownload(doc.id)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="uploads">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Uploads</CardTitle>
                 <CardDescription>
-                  All documents associated with your matters
+                  Track the status of documents you have uploaded
                 </CardDescription>
-              </div>
-              {/* <Button variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download All (ZIP)
-                </Button> */}
+              </CardHeader>
+              <CardContent>
+                {uploadsLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : uploadsData?.uploads.length ? (
+                  <div className="space-y-3">
+                    {uploadsData.uploads.map((upload) => (
+                      <div
+                        className="rounded-lg border bg-white p-4 dark:bg-transparent"
+                        key={upload.id}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex flex-1 items-start gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                              <FileText className="h-6 w-6" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-1 flex flex-wrap items-center gap-2">
+                                <h3 className="truncate font-medium text-sm">
+                                  {upload.originalName}
+                                </h3>
+                                <Badge
+                                  className={getUploadStatusColor(
+                                    upload.status
+                                  )}
+                                  variant="outline"
+                                >
+                                  {upload.status === "PENDING_REVIEW" && (
+                                    <Clock className="mr-1 h-3 w-3" />
+                                  )}
+                                  {upload.status === "APPROVED" && (
+                                    <Check className="mr-1 h-3 w-3" />
+                                  )}
+                                  {upload.status === "REJECTED" && (
+                                    <X className="mr-1 h-3 w-3" />
+                                  )}
+                                  {upload.status.replace("_", " ")}
+                                </Badge>
+                                <Badge
+                                  className={getCategoryColor(upload.category)}
+                                  variant="outline"
+                                >
+                                  {upload.category}
+                                </Badge>
+                              </div>
+                              {upload.reviewNotes ? (
+                                <p className="mb-2 text-muted-foreground text-sm">
+                                  <strong>Review notes:</strong>{" "}
+                                  {upload.reviewNotes}
+                                </p>
+                              ) : null}
+                              <div className="flex items-center gap-4 text-muted-foreground text-xs">
+                                <span>{formatFileSize(upload.fileSize)}</span>
+                                <span>-</span>
+                                <span>
+                                  Uploaded on{" "}
+                                  {new Date(
+                                    upload.createdAt
+                                  ).toLocaleDateString()}
+                                </span>
+                                {upload.reviewedAt ? (
+                                  <>
+                                    <span>-</span>
+                                    <span>
+                                      Reviewed on{" "}
+                                      {new Date(
+                                        upload.reviewedAt
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-lg border-2 border-dashed bg-muted/10 py-12 text-center text-muted-foreground">
+                    <Upload className="mx-auto mb-4 h-16 w-16 opacity-50" />
+                    <p className="font-medium text-lg">No uploads yet</p>
+                    <p className="mt-2 text-sm">
+                      Upload a document to get started
+                    </p>
+                    <Button
+                      className="mt-4"
+                      onClick={() => setUploadDialogOpen(true)}
+                      variant="outline"
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Document
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {/* Upload Dialog */}
+      <Dialog onOpenChange={setUploadDialogOpen} open={uploadDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Upload a document for review. Our team will process it within 1-2
+              business days.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Dropzone */}
+            <div
+              {...getRootProps()}
+              className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-all ${
+                isDragActive
+                  ? "scale-[1.02] border-primary bg-primary/5"
+                  : selectedFile
+                    ? "border-green-500 bg-green-50 dark:bg-green-900/10"
+                    : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
+              }`}
+            >
+              <input {...getInputProps()} />
+              {selectedFile ? (
+                <div className="flex flex-col items-center gap-2">
+                  <FileText className="h-12 w-12 text-green-600" />
+                  <p className="font-medium">{selectedFile.name}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {formatFileSize(selectedFile.size)}
+                  </p>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFile(null);
+                    }}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <X className="mr-1 h-4 w-4" />
+                    Remove
+                  </Button>
+                </div>
+              ) : isDragActive ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Upload className="h-12 w-12 text-primary" />
+                  <p className="font-medium text-primary">Drop file here...</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <Upload className="h-12 w-12 text-muted-foreground" />
+                  <p className="font-medium">Drag & drop a file here</p>
+                  <p className="text-muted-foreground text-sm">
+                    or click to browse
+                  </p>
+                  <p className="mt-2 text-muted-foreground text-xs">
+                    PDF, Word, Excel, Images (max 50MB)
+                  </p>
+                </div>
+              )}
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-6 flex flex-col gap-4 md:flex-row">
-              <div className="relative flex-1">
-                <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  className="pl-9"
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search documents..."
-                  value={search}
-                />
-              </div>
-              <Select onValueChange={setCategory} value={category}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Categories" />
+
+            {/* Category */}
+            <div className="space-y-2">
+              <Label>Document Category</Label>
+              <Select
+                onValueChange={(v) => setUploadCategory(v as DocumentCategory)}
+                value={uploadCategory}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All Categories</SelectItem>
-                  <SelectItem value="IDENTITY">Identity</SelectItem>
-                  <SelectItem value="TAX">Tax</SelectItem>
-                  <SelectItem value="FINANCIAL">Financial</SelectItem>
-                  <SelectItem value="LEGAL">Legal</SelectItem>
-                  <SelectItem value="IMMIGRATION">Immigration</SelectItem>
-                  <SelectItem value="BUSINESS">Business</SelectItem>
-                  <SelectItem value="OTHER">Other</SelectItem>
+                  {categoryOptions.map((cat) => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {!filteredDocuments || filteredDocuments.length === 0 ? (
-              <div className="rounded-lg border-2 border-dashed bg-muted/10 py-12 text-center text-muted-foreground">
-                <FileText className="mx-auto mb-4 h-16 w-16 opacity-50" />
-                <p className="font-medium text-lg">No documents found</p>
-                <p className="mt-2 text-sm">
-                  Try adjusting your filters or search terms
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredDocuments.map((doc) => (
-                  <div
-                    className="rounded-lg border bg-white p-4 transition-colors hover:bg-slate-50 dark:bg-transparent dark:hover:bg-slate-800"
-                    key={doc.id}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex flex-1 items-start gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                          <FileText className="h-6 w-6" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="mb-1 flex flex-wrap items-center gap-2">
-                            <h3 className="truncate font-medium text-sm">
-                              {doc.originalName}
-                            </h3>
-                            <Badge
-                              className={getCategoryColor(doc.category)}
-                              variant="outline"
-                            >
-                              {doc.category}
-                            </Badge>
-                            {doc.matterId && (
-                              <Badge className="text-xs" variant="secondary">
-                                Matter Linked
-                              </Badge>
-                            )}
-                          </div>
-                          {doc.description ? (
-                            <p className="mb-2 text-muted-foreground text-sm">
-                              {doc.description}
-                            </p>
-                          ) : null}
-                          <div className="flex items-center gap-4 text-muted-foreground text-xs">
-                            <span>{formatFileSize(doc.fileSize)}</span>
-                            <span>•</span>
-                            <span>
-                              Uploaded on{" "}
-                              {new Date(doc.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => handleDownload(doc.id)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </main>
+            {/* Description */}
+            <div className="space-y-2">
+              <Label>Description (Optional)</Label>
+              <Textarea
+                onChange={(e) => setUploadDescription(e.target.value)}
+                placeholder="Add a brief description of this document..."
+                rows={3}
+                value={uploadDescription}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              disabled={isUploading}
+              onClick={() => {
+                setUploadDialogOpen(false);
+                setSelectedFile(null);
+                setUploadDescription("");
+              }}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={!selectedFile || isUploading}
+              onClick={handleUpload}
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

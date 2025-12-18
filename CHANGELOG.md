@@ -9,6 +9,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Training Management System (GCMC)** - December 18, 2024
+  - Complete course catalog with categories (HR, Customer Relations, Business Dev, Compliance)
+  - Course scheduling with capacity limits and location management
+  - Enrollment tracking with status workflow (Registered → Confirmed → Attended → Completed)
+  - Certificate generation with auto-numbering (GCMC-CERT-YYYY-NNNN)
+  - Training calendar view with schedule visualization
+  - Course detail pages with enrollment management
+  - **Routes**: `/app/training`, `/app/training/new`, `/app/training/courses`, `/app/training/enrollments`, `/app/training/calendar`
+  - **Files**: `packages/api/src/routers/training.ts`, `packages/db/src/schema/services.ts`, `apps/web/src/routes/app/training/*`
+
+- **Appointments System** - December 18, 2024
+  - Full appointment booking with type management
+  - Status workflow (Requested → Confirmed → Completed/Cancelled/No-Show)
+  - Staff availability checking with weekly schedules
+  - Location types: In-Person, Phone, Video
+  - Calendar view with daily/weekly/monthly views
+  - Time slot picker component for booking
+  - Appointment detail pages with notes and history
+  - **Routes**: `/app/appointments`, `/app/appointments/new`, `/app/appointments/calendar`, `/app/appointments/$id`
+  - **Files**: `packages/api/src/routers/appointments.ts`, `apps/web/src/routes/app/appointments/*`, `apps/web/src/components/appointments/*`
+
+- **Portal Messaging System** - December 18, 2024
+  - Client-to-staff messaging within portal
+  - Message threads with timestamps
+  - Unread message indicators
+  - **Route**: `/portal/messages`
+  - **Files**: `apps/web/src/routes/portal/messages.tsx`, `packages/api/src/routers/portal.ts`
+
+- **Notifications System (Foundation)** - December 18, 2024
+  - Notifications database schema with preferences
+  - Notifications API router with CRUD operations
+  - Mark as read/unread functionality
+  - **Files**: `packages/db/src/schema/notifications.ts`, `packages/api/src/routers/notifications.ts`
+
+- **Time Tracking System (Foundation)** - December 18, 2024
+  - Time entries schema linked to matters and clients
+  - Time tracking API router
+  - Billable hours tracking support
+  - **Files**: `packages/db/src/schema/time-tracking.ts`, `packages/api/src/routers/time-tracking.ts`
+
+- **Aging Report** - December 18, 2024
+  - Invoice aging report with 30/60/90+ day buckets
+  - Client-wise outstanding amounts
+  - **Route**: `/app/reports/aging`
+  - **File**: `apps/web/src/routes/app/reports/aging.tsx`
+
 - **Portal Password Reset Pages** - December 17, 2024
   - Forgot password page (`/portal/forgot-password`) - Email input to request reset
   - Reset password page (`/portal/reset-password?token=xxx`) - Set new password with validation

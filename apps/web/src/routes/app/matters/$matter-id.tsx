@@ -5,6 +5,7 @@ import {
   Calendar,
   CheckCircle2,
   Circle,
+  Clock,
   DollarSign,
   Download,
   FileText,
@@ -13,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { TimeEntriesList } from "@/components/time-tracking/time-entries-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -169,6 +171,10 @@ function MatterDetailPage() {
                 Notes ({matter.notes?.length || 0})
               </TabsTrigger>
               <TabsTrigger value="documents">Documents</TabsTrigger>
+              <TabsTrigger value="time">
+                <Clock className="mr-1 h-4 w-4" />
+                Time
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent className="mt-6" value="overview">
@@ -185,6 +191,13 @@ function MatterDetailPage() {
 
             <TabsContent className="mt-6" value="documents">
               <DocumentsTab matterId={matter.id} />
+            </TabsContent>
+
+            <TabsContent className="mt-6" value="time">
+              <TimeEntriesList
+                matterId={matter.id}
+                matterReference={matter.referenceNumber}
+              />
             </TabsContent>
           </Tabs>
         </div>

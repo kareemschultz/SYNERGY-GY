@@ -54,6 +54,14 @@ export const matterLinkTypeEnum = pgEnum("matter_link_type", [
   "DEPENDENT",
 ]);
 
+// Recurrence pattern enum for services
+export const recurrencePatternEnum = pgEnum("recurrence_pattern", [
+  "MONTHLY",
+  "QUARTERLY",
+  "SEMI_ANNUALLY",
+  "ANNUALLY",
+]);
+
 // Service type definitions (the catalog of services offered)
 export const serviceType = pgTable(
   "service_type",
@@ -123,6 +131,16 @@ export const matter = pgTable(
     // Tax year (for tax-related matters)
     taxYear: integer("tax_year"),
 
+    // Recurring matter fields
+    isRecurring: boolean("is_recurring").default(false).notNull(),
+    recurrencePattern: recurrencePatternEnum("recurrence_pattern"),
+    nextRecurrenceDate: date("next_recurrence_date"),
+    parentMatterId: text("parent_matter_id").references(
+      (): typeof matter => matter.id,
+      { onDelete: "set null" }
+    ), // Link to original matter if this is a recurring instance
+    recurrenceCount: integer("recurrence_count").default(0), // How many times this has recurred
+
     // Timestamps
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -141,6 +159,9 @@ export const matter = pgTable(
     index("matter_assigned_staff_idx").on(table.assignedStaffId),
     index("matter_due_date_idx").on(table.dueDate),
     index("matter_reference_number_idx").on(table.referenceNumber),
+    index("matter_is_recurring_idx").on(table.isRecurring),
+    index("matter_next_recurrence_date_idx").on(table.nextRecurrenceDate),
+    index("matter_parent_matter_id_idx").on(table.parentMatterId),
   ]
 );
 
@@ -234,6 +255,13 @@ export const matterRelations = relations(matter, ({ one, many }) => ({
     fields: [matter.createdById],
     references: [user.id],
   }),
+  // Recurring matter relations
+  parentMatter: one(matter, {
+    fields: [matter.parentMatterId],
+    references: [matter.id],
+    relationName: "recurringInstances",
+  }),
+  recurringInstances: many(matter, { relationName: "recurringInstances" }),
   checklist: many(matterChecklist),
   notes: many(matterNote),
   links: many(matterLink, { relationName: "matterLinks" }),

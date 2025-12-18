@@ -5,7 +5,13 @@ import { appRouter } from "@SYNERGY-GY/api/routers/index";
 import { startBackupScheduler } from "@SYNERGY-GY/api/utils/backup-scheduler";
 import { runInitialSetup } from "@SYNERGY-GY/api/utils/initial-setup";
 import { auth } from "@SYNERGY-GY/auth";
-import { db, document as documentTable } from "@SYNERGY-GY/db";
+import {
+  db,
+  document as documentTable,
+  portalDocumentUpload,
+  portalSession,
+  portalUser,
+} from "@SYNERGY-GY/db";
 import { createReadStream, existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -15,7 +21,7 @@ import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { eq } from "drizzle-orm";
+import { and, eq, gte } from "drizzle-orm";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
@@ -169,6 +175,152 @@ app.post("/api/upload/:documentId", async (c) => {
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
   const fileName = `${documentId}_${sanitizedName}`;
   const relativePath = `${year}/${month}/${clientFolder}/${fileName}`;
+  const fullPath = join(UPLOAD_DIR, relativePath);
+
+  // Create directory if needed
+  await mkdir(dirname(fullPath), { recursive: true });
+
+  // Write file
+  const arrayBuffer = await file.arrayBuffer();
+  await writeFile(fullPath, Buffer.from(arrayBuffer));
+
+  // Update document record
+  const [updated] = await db
+    .update(documentTable)
+    .set({
+      fileName,
+      originalName: file.name,
+      mimeType: file.type,
+      fileSize: file.size,
+      storagePath: relativePath,
+      status: "ACTIVE",
+    })
+    .where(eq(documentTable.id, documentId))
+    .returning();
+
+  if (!updated) {
+    return c.json({ error: "Failed to update document record" }, 500);
+  }
+
+  return c.json({
+    success: true,
+    document: {
+      id: updated.id,
+      fileName: updated.fileName,
+      originalName: updated.originalName,
+      fileSize: updated.fileSize,
+      mimeType: updated.mimeType,
+    },
+  });
+});
+
+// Portal file upload handler (for portal users)
+app.post("/api/portal-upload/:documentId", async (c) => {
+  const documentId = c.req.param("documentId");
+
+  // Get portal session from cookie
+  const sessionToken = c.req.raw.headers
+    .get("cookie")
+    ?.match(/portal_session=([^;]+)/)?.[1];
+  if (!sessionToken) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  // Verify portal session
+  const [session] = await db
+    .select({
+      id: portalSession.id,
+      portalUserId: portalSession.portalUserId,
+      expiresAt: portalSession.expiresAt,
+    })
+    .from(portalSession)
+    .where(
+      and(
+        eq(portalSession.token, sessionToken),
+        gte(portalSession.expiresAt, new Date())
+      )
+    )
+    .limit(1);
+
+  if (!session) {
+    return c.json({ error: "Invalid or expired session" }, 401);
+  }
+
+  // Get portal user
+  const [pUser] = await db
+    .select({
+      id: portalUser.id,
+      clientId: portalUser.clientId,
+    })
+    .from(portalUser)
+    .where(eq(portalUser.id, session.portalUserId))
+    .limit(1);
+
+  if (!pUser) {
+    return c.json({ error: "Portal user not found" }, 401);
+  }
+
+  // Check document exists and is in PENDING status
+  const doc = await db.query.document.findFirst({
+    where: eq(documentTable.id, documentId),
+  });
+
+  if (!doc) {
+    return c.json({ error: "Document record not found" }, 404);
+  }
+
+  if (doc.status !== "PENDING") {
+    return c.json({ error: "Document already uploaded" }, 400);
+  }
+
+  // Verify document belongs to this client
+  if (doc.clientId !== pUser.clientId) {
+    return c.json({ error: "Unauthorized access to document" }, 403);
+  }
+
+  // Verify portal upload record exists
+  const [uploadRecord] = await db
+    .select()
+    .from(portalDocumentUpload)
+    .where(eq(portalDocumentUpload.documentId, documentId))
+    .limit(1);
+
+  if (!uploadRecord || uploadRecord.portalUserId !== pUser.id) {
+    return c.json({ error: "Upload not authorized" }, 403);
+  }
+
+  // Parse multipart form data
+  const formData = await c.req.formData();
+  const file = formData.get("file") as File | null;
+
+  if (!file) {
+    return c.json({ error: "No file provided" }, 400);
+  }
+
+  // Validate file size
+  if (file.size > MAX_FILE_SIZE) {
+    return c.json(
+      {
+        error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+      },
+      400
+    );
+  }
+
+  // Validate MIME type
+  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+    return c.json({ error: "File type not allowed" }, 400);
+  }
+
+  // Generate storage path: /data/uploads/portal/YYYY/MM/clientId/documentId_filename
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+
+  // Sanitize original filename
+  const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+  const fileName = `${documentId}_${sanitizedName}`;
+  const relativePath = `portal/${year}/${month}/${pUser.clientId}/${fileName}`;
   const fullPath = join(UPLOAD_DIR, relativePath);
 
   // Create directory if needed

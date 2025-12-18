@@ -1,5 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertCircle, FileText, FolderOpen, LogOut, User } from "lucide-react";
+import {
+  AlertCircle,
+  Calendar,
+  FileText,
+  FolderOpen,
+  LogOut,
+  MessageSquare,
+  Settings,
+  Upload,
+  User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +50,7 @@ function PortalDashboard() {
   const [clientName, setClientName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -54,14 +65,16 @@ function PortalDashboard() {
       try {
         setUser(JSON.parse(storedUser));
 
-        // Load user info and matters
-        const [meData, mattersData] = await Promise.all([
+        // Load user info, matters, and unread messages
+        const [meData, mattersData, messagesData] = await Promise.all([
           api.portal.me(),
           api.portal.matters.list({ page: 1, limit: 10 }),
+          api.portal.messages.getUnreadCount(),
         ]);
 
         setClientName(meData.client?.displayName || "Client");
         setMatters(mattersData.matters);
+        setUnreadMessages(messagesData.count);
       } catch (_err) {
         setError("Failed to load dashboard. Please try logging in again.");
         localStorage.removeItem("portal-session");
@@ -168,36 +181,38 @@ function PortalDashboard() {
       <main className="container mx-auto px-4 py-8">
         {/* Quick Navigation */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link to="/portal/profile">
+          <Link to="/portal/messages">
             <Card className="cursor-pointer transition-shadow hover:shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="font-medium text-sm">
-                  My Profile
+                <CardTitle className="flex items-center gap-2 font-medium text-sm">
+                  Messages
+                  {unreadMessages > 0 && (
+                    <Badge variant="destructive">{unreadMessages}</Badge>
+                  )}
                 </CardTitle>
-                <User className="h-4 w-4 text-muted-foreground" />
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground text-xs">
-                  View your account details
+                  Contact our team
                 </p>
               </CardContent>
             </Card>
           </Link>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="font-medium text-sm">
-                Active Matters
-              </CardTitle>
-              <FolderOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="font-bold text-2xl">{matters.length}</div>
-              <p className="text-muted-foreground text-xs">
-                Your current cases
-              </p>
-            </CardContent>
-          </Card>
+          <Link to="/portal/documents">
+            <Card className="cursor-pointer transition-shadow hover:shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="font-medium text-sm">Documents</CardTitle>
+                <Upload className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-xs">
+                  View and upload documents
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
 
           <Link to="/portal/financials">
             <Card className="cursor-pointer transition-shadow hover:shadow-md">
@@ -221,11 +236,58 @@ function PortalDashboard() {
                 <CardTitle className="font-medium text-sm">
                   Appointments
                 </CardTitle>
-                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground text-xs">
                   View scheduled meetings
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="font-medium text-sm">
+                Active Matters
+              </CardTitle>
+              <FolderOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="font-bold text-2xl">{matters.length}</div>
+              <p className="text-muted-foreground text-xs">
+                Your current cases
+              </p>
+            </CardContent>
+          </Card>
+
+          <Link to="/portal/profile">
+            <Card className="cursor-pointer transition-shadow hover:shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="font-medium text-sm">
+                  My Profile
+                </CardTitle>
+                <User className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-xs">
+                  View your account details
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link to="/portal/settings">
+            <Card className="cursor-pointer transition-shadow hover:shadow-md">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="font-medium text-sm">Settings</CardTitle>
+                <Settings className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-xs">
+                  Manage your preferences
                 </p>
               </CardContent>
             </Card>

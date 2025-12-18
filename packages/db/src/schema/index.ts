@@ -23,6 +23,8 @@ export * from "./documents";
 export * from "./invoices";
 // Knowledge base
 export * from "./knowledge-base";
+// Notifications
+export * from "./notifications";
 // Client portal
 export * from "./portal";
 // Reporting and analytics
@@ -37,6 +39,8 @@ export * from "./system";
 export * from "./tags";
 // Tax calculations
 export * from "./tax-calculations";
+// Time tracking
+export * from "./time-tracking";
 // Training management
 export * from "./training";
 // Document verification

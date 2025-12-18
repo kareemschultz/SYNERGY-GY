@@ -8,7 +8,9 @@ import {
   invoicePayment,
   matter,
   portalActivityLog,
+  portalDocumentUpload,
   portalInvite,
+  portalMessage,
   portalPasswordReset,
   portalSession,
   portalUser,
@@ -31,7 +33,11 @@ import {
 import { z } from "zod";
 import { adminProcedure, publicProcedure, staffProcedure } from "../index";
 import { logActivity } from "../utils/activity-logger";
-import { sendPasswordReset, sendPortalInvite } from "../utils/email";
+import {
+  sendMessageNotification,
+  sendPasswordReset,
+  sendPortalInvite,
+} from "../utils/email";
 import {
   generateSecureToken,
   hashPassword,
@@ -957,7 +963,7 @@ export const portalRouter = {
 
         // Validate new password
         const passwordValidation = validatePasswordStrength(input.newPassword);
-        if (!passwordValidation.valid) {
+        if (!passwordValidation.isValid) {
           throw new ORPCError("BAD_REQUEST", {
             message: passwordValidation.errors.join(", "),
           });
@@ -977,7 +983,7 @@ export const portalRouter = {
           .where(
             and(
               eq(portalSession.portalUserId, portalUserId),
-              sql`${portalSession.id} != ${context.session.id}`
+              sql`${portalSession.id} != ${context.portalSession.id}`
             )
           );
 
@@ -986,7 +992,7 @@ export const portalRouter = {
           portalUserId,
           clientId: context.portalUser.clientId,
           action: "CHANGE_PASSWORD",
-          sessionId: context.session.id,
+          sessionId: context.portalSession.id,
         });
 
         return {
@@ -2092,5 +2098,710 @@ export const portalRouter = {
 
         return impersonations;
       }),
+  },
+
+  // Document upload from portal
+  documentUpload: {
+    // Prepare upload - creates pending document record for portal user
+    prepareUpload: portalProcedure
+      .input(
+        z.object({
+          category: z.enum([
+            "IDENTITY",
+            "TAX",
+            "FINANCIAL",
+            "LEGAL",
+            "IMMIGRATION",
+            "BUSINESS",
+            "CORRESPONDENCE",
+            "TRAINING",
+            "OTHER",
+          ]),
+          description: z.string().optional(),
+          matterId: z.string().uuid().optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        // Create document record in PENDING status
+        const docResult = await db
+          .insert(document)
+          .values({
+            fileName: "pending",
+            originalName: "pending",
+            mimeType: "pending",
+            fileSize: 0,
+            storagePath: "pending",
+            category: input.category,
+            description: input.description,
+            clientId: context.portalUser.clientId,
+            matterId: input.matterId,
+            status: "PENDING",
+            uploadedById: null, // Portal users aren't in the user table
+          })
+          .returning();
+
+        const newDoc = docResult[0];
+        if (!newDoc) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to create document record",
+          });
+        }
+
+        // Create portal document upload record for review tracking
+        await db.insert(portalDocumentUpload).values({
+          documentId: newDoc.id,
+          portalUserId: context.portalUser.id,
+          clientId: context.portalUser.clientId,
+          status: "PENDING_REVIEW",
+        });
+
+        return {
+          documentId: newDoc.id,
+          uploadUrl: `/api/portal-upload/${newDoc.id}`,
+        };
+      }),
+
+    // List uploads by portal user
+    list: portalProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(50).default(20),
+          status: z.enum(["PENDING_REVIEW", "APPROVED", "REJECTED"]).optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const offset = (input.page - 1) * input.limit;
+
+        const conditions = [
+          eq(portalDocumentUpload.clientId, context.portalUser.clientId),
+        ];
+
+        if (input.status) {
+          conditions.push(eq(portalDocumentUpload.status, input.status));
+        }
+
+        const uploads = await db
+          .select({
+            id: portalDocumentUpload.id,
+            documentId: portalDocumentUpload.documentId,
+            status: portalDocumentUpload.status,
+            reviewNotes: portalDocumentUpload.reviewNotes,
+            reviewedAt: portalDocumentUpload.reviewedAt,
+            createdAt: portalDocumentUpload.createdAt,
+            originalName: document.originalName,
+            category: document.category,
+            fileSize: document.fileSize,
+          })
+          .from(portalDocumentUpload)
+          .innerJoin(document, eq(document.id, portalDocumentUpload.documentId))
+          .where(and(...conditions))
+          .orderBy(desc(portalDocumentUpload.createdAt))
+          .limit(input.limit)
+          .offset(offset);
+
+        const countResult = await db
+          .select({ count: count() })
+          .from(portalDocumentUpload)
+          .where(and(...conditions));
+
+        return {
+          uploads,
+          pagination: {
+            page: input.page,
+            limit: input.limit,
+            total: countResult[0]?.count ?? 0,
+            totalPages: Math.ceil((countResult[0]?.count ?? 0) / input.limit),
+          },
+        };
+      }),
+  },
+
+  // Messaging between portal users and staff
+  messages: {
+    // List messages for portal user
+    list: portalProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(50).default(20),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const offset = (input.page - 1) * input.limit;
+
+        const messages = await db.query.portalMessage.findMany({
+          where: eq(portalMessage.clientId, context.portalUser.clientId),
+          orderBy: [desc(portalMessage.createdAt)],
+          limit: input.limit,
+          offset,
+          with: {
+            senderPortalUser: {
+              columns: { id: true, email: true },
+            },
+            senderStaffUser: {
+              columns: { id: true, name: true },
+            },
+          },
+        });
+
+        const countResult = await db
+          .select({ count: count() })
+          .from(portalMessage)
+          .where(eq(portalMessage.clientId, context.portalUser.clientId));
+
+        // Get unread count
+        const unreadResult = await db
+          .select({ count: count() })
+          .from(portalMessage)
+          .where(
+            and(
+              eq(portalMessage.clientId, context.portalUser.clientId),
+              eq(portalMessage.isRead, false),
+              eq(portalMessage.senderType, "STAFF")
+            )
+          );
+
+        return {
+          messages: messages.map((m) => ({
+            id: m.id,
+            subject: m.subject,
+            content: m.content,
+            senderType: m.senderType,
+            senderName:
+              m.senderType === "STAFF"
+                ? m.senderStaffUser?.name || "Staff"
+                : "You",
+            isRead: m.isRead,
+            createdAt: m.createdAt,
+          })),
+          unreadCount: unreadResult[0]?.count ?? 0,
+          pagination: {
+            page: input.page,
+            limit: input.limit,
+            total: countResult[0]?.count ?? 0,
+            totalPages: Math.ceil((countResult[0]?.count ?? 0) / input.limit),
+          },
+        };
+      }),
+
+    // Send message from portal user
+    send: portalProcedure
+      .input(
+        z.object({
+          subject: z.string().max(255).optional(),
+          content: z.string().min(1).max(5000),
+          parentMessageId: z.string().uuid().optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const [newMessage] = await db
+          .insert(portalMessage)
+          .values({
+            clientId: context.portalUser.clientId,
+            senderType: "PORTAL",
+            senderPortalUserId: context.portalUser.id,
+            subject: input.subject,
+            content: input.content,
+            parentMessageId: input.parentMessageId,
+            isRead: false,
+          })
+          .returning();
+
+        if (!newMessage) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send message",
+          });
+        }
+
+        // Log activity
+        await db.insert(portalActivityLog).values({
+          portalUserId: context.portalUser.id,
+          clientId: context.portalUser.clientId,
+          action: "VIEW_DASHBOARD", // Using existing action
+          metadata: { messageId: newMessage.id, action: "SEND_MESSAGE" },
+        });
+
+        // Get client info for notification
+        const [clientInfo] = await db
+          .select({
+            displayName: client.displayName,
+            primaryStaffId: client.primaryStaffId,
+          })
+          .from(client)
+          .where(eq(client.id, context.portalUser.clientId))
+          .limit(1);
+
+        // Notify assigned staff (if any) via email
+        if (clientInfo?.primaryStaffId) {
+          // Get staff email
+          const staffUser = await db.query.staff.findFirst({
+            where: (staff, { eq: staffEq }) =>
+              staffEq(staff.id, clientInfo.primaryStaffId as string),
+            with: {
+              user: {
+                columns: { email: true, name: true },
+              },
+            },
+          });
+
+          if (staffUser?.user?.email) {
+            await sendMessageNotification({
+              recipientEmail: staffUser.user.email,
+              recipientName: staffUser.user.name || "Staff",
+              senderName: clientInfo.displayName,
+              subject: input.subject || "New message",
+              messagePreview:
+                input.content.length > 100
+                  ? `${input.content.slice(0, 100)}...`
+                  : input.content,
+              portalUrl: `${process.env.BETTER_AUTH_URL || "http://localhost:5173"}/app/clients/${context.portalUser.clientId}`,
+            });
+          }
+        }
+
+        return {
+          success: true,
+          messageId: newMessage.id,
+        };
+      }),
+
+    // Mark message as read
+    markRead: portalProcedure
+      .input(
+        z.object({
+          messageId: z.string().uuid(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        // Verify message belongs to this client
+        const [msg] = await db
+          .select()
+          .from(portalMessage)
+          .where(
+            and(
+              eq(portalMessage.id, input.messageId),
+              eq(portalMessage.clientId, context.portalUser.clientId)
+            )
+          )
+          .limit(1);
+
+        if (!msg) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Message not found",
+          });
+        }
+
+        if (!msg.isRead) {
+          await db
+            .update(portalMessage)
+            .set({
+              isRead: true,
+              readAt: new Date(),
+            })
+            .where(eq(portalMessage.id, input.messageId));
+        }
+
+        return { success: true };
+      }),
+
+    // Mark all messages as read
+    markAllRead: portalProcedure.handler(async ({ context }) => {
+      await db
+        .update(portalMessage)
+        .set({
+          isRead: true,
+          readAt: new Date(),
+        })
+        .where(
+          and(
+            eq(portalMessage.clientId, context.portalUser.clientId),
+            eq(portalMessage.isRead, false),
+            eq(portalMessage.senderType, "STAFF")
+          )
+        );
+
+      return { success: true };
+    }),
+
+    // Get unread count
+    getUnreadCount: portalProcedure.handler(async ({ context }) => {
+      const result = await db
+        .select({ count: count() })
+        .from(portalMessage)
+        .where(
+          and(
+            eq(portalMessage.clientId, context.portalUser.clientId),
+            eq(portalMessage.isRead, false),
+            eq(portalMessage.senderType, "STAFF")
+          )
+        );
+
+      return { count: result[0]?.count ?? 0 };
+    }),
+  },
+
+  // Staff messaging endpoints
+  staffMessages: {
+    // List messages for a client (staff view)
+    listByClient: staffProcedure
+      .input(
+        z.object({
+          clientId: z.string().uuid(),
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(50).default(20),
+        })
+      )
+      .handler(async ({ input }) => {
+        const offset = (input.page - 1) * input.limit;
+
+        const messages = await db.query.portalMessage.findMany({
+          where: eq(portalMessage.clientId, input.clientId),
+          orderBy: [desc(portalMessage.createdAt)],
+          limit: input.limit,
+          offset,
+          with: {
+            senderPortalUser: {
+              columns: { id: true, email: true },
+            },
+            senderStaffUser: {
+              columns: { id: true, name: true },
+            },
+          },
+        });
+
+        const countResult = await db
+          .select({ count: count() })
+          .from(portalMessage)
+          .where(eq(portalMessage.clientId, input.clientId));
+
+        return {
+          messages,
+          pagination: {
+            page: input.page,
+            limit: input.limit,
+            total: countResult[0]?.count ?? 0,
+            totalPages: Math.ceil((countResult[0]?.count ?? 0) / input.limit),
+          },
+        };
+      }),
+
+    // Send message to client (from staff)
+    send: staffProcedure
+      .input(
+        z.object({
+          clientId: z.string().uuid(),
+          subject: z.string().max(255).optional(),
+          content: z.string().min(1).max(5000),
+          parentMessageId: z.string().uuid().optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        // Verify client exists
+        const [clientInfo] = await db
+          .select()
+          .from(client)
+          .where(eq(client.id, input.clientId))
+          .limit(1);
+
+        if (!clientInfo) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Client not found",
+          });
+        }
+
+        const [newMessage] = await db
+          .insert(portalMessage)
+          .values({
+            clientId: input.clientId,
+            senderType: "STAFF",
+            senderStaffUserId: context.session.user.id,
+            subject: input.subject,
+            content: input.content,
+            parentMessageId: input.parentMessageId,
+            isRead: false,
+          })
+          .returning();
+
+        if (!newMessage) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send message",
+          });
+        }
+
+        // Get portal user for notification
+        const [portalUserData] = await db
+          .select()
+          .from(portalUser)
+          .where(eq(portalUser.clientId, input.clientId))
+          .limit(1);
+
+        if (portalUserData) {
+          // Check notification preferences
+          const prefs = (portalUserData.notificationPreferences as {
+            emailOnMatterUpdate?: boolean;
+          }) ?? { emailOnMatterUpdate: true };
+
+          if (prefs.emailOnMatterUpdate !== false) {
+            await sendMessageNotification({
+              recipientEmail: portalUserData.email,
+              recipientName: clientInfo.displayName,
+              senderName: context.session.user.name || "Staff",
+              subject: input.subject || "New message",
+              messagePreview:
+                input.content.length > 100
+                  ? `${input.content.slice(0, 100)}...`
+                  : input.content,
+              portalUrl: `${process.env.BETTER_AUTH_URL || "http://localhost:5173"}/portal`,
+            });
+          }
+        }
+
+        return {
+          success: true,
+          messageId: newMessage.id,
+        };
+      }),
+  },
+
+  // Document upload review (staff)
+  documentReview: {
+    // List pending document uploads
+    listPending: staffProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(50).default(20),
+          clientId: z.string().uuid().optional(),
+        })
+      )
+      .handler(async ({ input }) => {
+        const offset = (input.page - 1) * input.limit;
+
+        const conditions = [eq(portalDocumentUpload.status, "PENDING_REVIEW")];
+
+        if (input.clientId) {
+          conditions.push(eq(portalDocumentUpload.clientId, input.clientId));
+        }
+
+        const uploads = await db
+          .select({
+            id: portalDocumentUpload.id,
+            documentId: portalDocumentUpload.documentId,
+            status: portalDocumentUpload.status,
+            createdAt: portalDocumentUpload.createdAt,
+            originalName: document.originalName,
+            category: document.category,
+            fileSize: document.fileSize,
+            mimeType: document.mimeType,
+            clientId: client.id,
+            clientName: client.displayName,
+          })
+          .from(portalDocumentUpload)
+          .innerJoin(document, eq(document.id, portalDocumentUpload.documentId))
+          .innerJoin(client, eq(client.id, portalDocumentUpload.clientId))
+          .where(and(...conditions))
+          .orderBy(desc(portalDocumentUpload.createdAt))
+          .limit(input.limit)
+          .offset(offset);
+
+        const countResult = await db
+          .select({ count: count() })
+          .from(portalDocumentUpload)
+          .where(and(...conditions));
+
+        return {
+          uploads,
+          pagination: {
+            page: input.page,
+            limit: input.limit,
+            total: countResult[0]?.count ?? 0,
+            totalPages: Math.ceil((countResult[0]?.count ?? 0) / input.limit),
+          },
+        };
+      }),
+
+    // Approve document upload
+    approve: staffProcedure
+      .input(
+        z.object({
+          uploadId: z.string().uuid(),
+          notes: z.string().optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const [upload] = await db
+          .select()
+          .from(portalDocumentUpload)
+          .where(eq(portalDocumentUpload.id, input.uploadId))
+          .limit(1);
+
+        if (!upload) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Upload not found",
+          });
+        }
+
+        if (upload.status !== "PENDING_REVIEW") {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Upload has already been reviewed",
+          });
+        }
+
+        await db
+          .update(portalDocumentUpload)
+          .set({
+            status: "APPROVED",
+            reviewedById: context.session.user.id,
+            reviewedAt: new Date(),
+            reviewNotes: input.notes,
+          })
+          .where(eq(portalDocumentUpload.id, input.uploadId));
+
+        // Log activity
+        await logActivity({
+          userId: context.session.user.id,
+          staffId: context.staff?.id,
+          action: "UPDATE",
+          entityType: "DOCUMENT",
+          entityId: upload.documentId,
+          description: "Approved portal document upload",
+        });
+
+        return { success: true };
+      }),
+
+    // Reject document upload
+    reject: staffProcedure
+      .input(
+        z.object({
+          uploadId: z.string().uuid(),
+          reason: z.string().min(1),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const [upload] = await db
+          .select()
+          .from(portalDocumentUpload)
+          .where(eq(portalDocumentUpload.id, input.uploadId))
+          .limit(1);
+
+        if (!upload) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Upload not found",
+          });
+        }
+
+        if (upload.status !== "PENDING_REVIEW") {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Upload has already been reviewed",
+          });
+        }
+
+        await db
+          .update(portalDocumentUpload)
+          .set({
+            status: "REJECTED",
+            reviewedById: context.session.user.id,
+            reviewedAt: new Date(),
+            reviewNotes: input.reason,
+          })
+          .where(eq(portalDocumentUpload.id, input.uploadId));
+
+        // Archive the rejected document
+        await db
+          .update(document)
+          .set({
+            status: "ARCHIVED",
+            archivedAt: new Date(),
+          })
+          .where(eq(document.id, upload.documentId));
+
+        // Log activity
+        await logActivity({
+          userId: context.session.user.id,
+          staffId: context.staff?.id,
+          action: "UPDATE",
+          entityType: "DOCUMENT",
+          entityId: upload.documentId,
+          description: `Rejected portal document upload: ${input.reason}`,
+        });
+
+        return { success: true };
+      }),
+  },
+
+  // Contact info update for portal users
+  contactInfo: {
+    // Update contact information
+    update: portalProcedure
+      .input(
+        z.object({
+          phone: z.string().max(50).optional(),
+          alternatePhone: z.string().max(50).optional(),
+          address: z.string().max(500).optional(),
+          city: z.string().max(100).optional(),
+          preferredContactMethod: z
+            .enum(["EMAIL", "PHONE", "WHATSAPP", "IN_PERSON"])
+            .optional(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const updateData: Record<string, unknown> = {};
+
+        if (input.phone !== undefined) {
+          updateData.phone = input.phone || null;
+        }
+        if (input.alternatePhone !== undefined) {
+          updateData.alternatePhone = input.alternatePhone || null;
+        }
+        if (input.address !== undefined) {
+          updateData.address = input.address || null;
+        }
+        if (input.city !== undefined) {
+          updateData.city = input.city || null;
+        }
+        if (input.preferredContactMethod !== undefined) {
+          updateData.preferredContactMethod = input.preferredContactMethod;
+        }
+
+        if (Object.keys(updateData).length === 0) {
+          return { success: true, message: "No changes to update" };
+        }
+
+        await db
+          .update(client)
+          .set(updateData)
+          .where(eq(client.id, context.portalUser.clientId));
+
+        // Log activity
+        await db.insert(portalActivityLog).values({
+          portalUserId: context.portalUser.id,
+          clientId: context.portalUser.clientId,
+          action: "UPDATE_PROFILE",
+          metadata: { updatedFields: Object.keys(updateData) },
+        });
+
+        return { success: true, message: "Contact information updated" };
+      }),
+
+    // Get current contact info
+    get: portalProcedure.handler(async ({ context }) => {
+      const [clientInfo] = await db
+        .select({
+          phone: client.phone,
+          alternatePhone: client.alternatePhone,
+          address: client.address,
+          city: client.city,
+          country: client.country,
+          preferredContactMethod: client.preferredContactMethod,
+          email: client.email,
+        })
+        .from(client)
+        .where(eq(client.id, context.portalUser.clientId))
+        .limit(1);
+
+      return clientInfo ?? null;
+    }),
   },
 };

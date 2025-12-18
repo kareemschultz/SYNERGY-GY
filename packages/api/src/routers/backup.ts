@@ -89,19 +89,6 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
-// Helper: Parse manifest file (reserved for future use)
-async function _parseManifest(
-  _backupPath: string
-): Promise<Record<string, unknown> | null> {
-  try {
-    // Try to read manifest from zip (would need unzip)
-    // For now, return null - manifest will be parsed during backup creation
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 // Helper: Get backup file info
 async function getBackupFileInfo(filePath: string): Promise<{
   exists: boolean;

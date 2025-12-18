@@ -4,6 +4,8 @@ import { Loader2, Menu } from "lucide-react";
 import { useState } from "react";
 import { MobileSidebar, Sidebar } from "@/components/layout/sidebar";
 import { ModeToggle } from "@/components/mode-toggle";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
+import { ActiveTimerDisplay } from "@/components/time-tracking/time-timer";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -168,6 +170,8 @@ function AppLayout() {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <ActiveTimerDisplay />
+            <NotificationDropdown />
             <ModeToggle />
             <UserMenu />
           </div>

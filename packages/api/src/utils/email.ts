@@ -62,6 +62,44 @@ export type DocumentUploadConfirmationData = {
   uploadedAt: string;
 };
 
+export type MessageNotificationData = {
+  recipientEmail: string;
+  recipientName: string;
+  senderName: string;
+  subject: string;
+  messagePreview: string;
+  portalUrl: string;
+};
+
+export type PortalDocumentUploadedData = {
+  staffEmail: string;
+  staffName: string;
+  clientName: string;
+  documentName: string;
+  category: string;
+  uploadedAt: string;
+  reviewUrl: string;
+};
+
+export type MatterCreatedNotificationData = {
+  clientEmail: string;
+  clientName: string;
+  matterTitle: string;
+  matterDescription: string;
+  portalUrl: string;
+};
+
+export type DeadlineApproachingData = {
+  recipientEmail: string;
+  recipientName: string;
+  deadlineTitle: string;
+  deadlineDate: string;
+  daysRemaining: number;
+  matterTitle: string;
+  clientName: string;
+  portalUrl: string;
+};
+
 // Email service class
 class EmailService {
   private resend: Resend | null = null;
@@ -233,6 +271,70 @@ class EmailService {
     await this.sendEmail({
       to: data.clientName, // Assuming email is included in clientName for now
       subject: "Document Upload Confirmation",
+      html,
+      text,
+    });
+  }
+
+  /**
+   * Send message notification (for both staff and portal users)
+   */
+  async sendMessageNotification(data: MessageNotificationData): Promise<void> {
+    const html = this.getMessageNotificationTemplate(data);
+    const text = this.getMessageNotificationTextTemplate(data);
+
+    await this.sendEmail({
+      to: data.recipientEmail,
+      subject: `New Message: ${data.subject}`,
+      html,
+      text,
+    });
+  }
+
+  /**
+   * Send notification to staff when portal user uploads a document
+   */
+  async sendPortalDocumentUploaded(
+    data: PortalDocumentUploadedData
+  ): Promise<void> {
+    const html = this.getPortalDocumentUploadedTemplate(data);
+    const text = this.getPortalDocumentUploadedTextTemplate(data);
+
+    await this.sendEmail({
+      to: data.staffEmail,
+      subject: `Document Uploaded: ${data.documentName} from ${data.clientName}`,
+      html,
+      text,
+    });
+  }
+
+  /**
+   * Send notification when a new matter is created
+   */
+  async sendMatterCreatedNotification(
+    data: MatterCreatedNotificationData
+  ): Promise<void> {
+    const html = this.getMatterCreatedTemplate(data);
+    const text = this.getMatterCreatedTextTemplate(data);
+
+    await this.sendEmail({
+      to: data.clientEmail,
+      subject: `New Matter Created: ${data.matterTitle}`,
+      html,
+      text,
+    });
+  }
+
+  /**
+   * Send deadline approaching notification
+   */
+  async sendDeadlineApproaching(data: DeadlineApproachingData): Promise<void> {
+    const html = this.getDeadlineApproachingTemplate(data);
+    const text = this.getDeadlineApproachingTextTemplate(data);
+
+    await this.sendEmail({
+      to: data.recipientEmail,
+      subject: `Deadline Approaching: ${data.deadlineTitle}`,
       html,
       text,
     });
@@ -485,6 +587,87 @@ class EmailService {
     return this.getEmailLayout(content, "Upload Confirmation");
   }
 
+  private getMessageNotificationTemplate(
+    data: MessageNotificationData
+  ): string {
+    const content = `
+      <h2>New Message</h2>
+      <p>Hello ${data.recipientName},</p>
+      <p>You have received a new message from <strong>${data.senderName}</strong>:</p>
+      <div class="info-box">
+        <p><strong>Subject:</strong> ${data.subject}</p>
+        <p>${data.messagePreview}</p>
+      </div>
+      <center>
+        <a href="${data.portalUrl}" class="button">View Message</a>
+      </center>
+      <p>Log in to your portal to view the full message and respond.</p>
+    `;
+    return this.getEmailLayout(content, "New Message");
+  }
+
+  private getPortalDocumentUploadedTemplate(
+    data: PortalDocumentUploadedData
+  ): string {
+    const content = `
+      <h2>Document Pending Review</h2>
+      <p>Hello ${data.staffName},</p>
+      <p>A client has uploaded a new document that requires your review:</p>
+      <div class="info-box">
+        <p><strong>Client:</strong> ${data.clientName}</p>
+        <p><strong>Document:</strong> ${data.documentName}</p>
+        <p><strong>Category:</strong> ${data.category}</p>
+        <p><strong>Uploaded:</strong> ${data.uploadedAt}</p>
+      </div>
+      <center>
+        <a href="${data.reviewUrl}" class="button">Review Document</a>
+      </center>
+      <p>Please review and approve or reject this document.</p>
+    `;
+    return this.getEmailLayout(content, "Document Pending Review");
+  }
+
+  private getMatterCreatedTemplate(
+    data: MatterCreatedNotificationData
+  ): string {
+    const content = `
+      <h2>New Matter Created</h2>
+      <p>Hello ${data.clientName},</p>
+      <p>A new matter has been created for you:</p>
+      <div class="info-box">
+        <p><strong>${data.matterTitle}</strong></p>
+        <p>${data.matterDescription}</p>
+      </div>
+      <center>
+        <a href="${data.portalUrl}" class="button">View in Portal</a>
+      </center>
+      <p>Log in to your client portal to track the progress of this matter.</p>
+    `;
+    return this.getEmailLayout(content, "New Matter Created");
+  }
+
+  private getDeadlineApproachingTemplate(
+    data: DeadlineApproachingData
+  ): string {
+    const urgencyClass = data.daysRemaining <= 3 ? "warning" : "info-box";
+    const content = `
+      <h2>Deadline Approaching</h2>
+      <p>Hello ${data.recipientName},</p>
+      <p>A deadline is approaching and requires your attention:</p>
+      <div class="${urgencyClass}">
+        <p><strong>${data.deadlineTitle}</strong></p>
+        <p><strong>Due Date:</strong> ${data.deadlineDate}</p>
+        <p><strong>Days Remaining:</strong> ${data.daysRemaining}</p>
+        <p><strong>Matter:</strong> ${data.matterTitle}</p>
+        <p><strong>Client:</strong> ${data.clientName}</p>
+      </div>
+      <center>
+        <a href="${data.portalUrl}" class="button">View Details</a>
+      </center>
+    `;
+    return this.getEmailLayout(content, "Deadline Approaching");
+  }
+
   // ===========================
   // Plain Text Email Templates
   // ===========================
@@ -646,6 +829,100 @@ Grace Cameron Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
+
+  private getMessageNotificationTextTemplate(
+    data: MessageNotificationData
+  ): string {
+    return `
+New Message
+
+Hello ${data.recipientName},
+
+You have received a new message from ${data.senderName}:
+
+Subject: ${data.subject}
+
+${data.messagePreview}
+
+View full message at: ${data.portalUrl}
+
+---
+GK-Nexus
+Grace Cameron Management Consultancy & KAJ Accountancy Services
+${this.appUrl}
+    `;
+  }
+
+  private getPortalDocumentUploadedTextTemplate(
+    data: PortalDocumentUploadedData
+  ): string {
+    return `
+Document Pending Review
+
+Hello ${data.staffName},
+
+A client has uploaded a new document that requires your review:
+
+Client: ${data.clientName}
+Document: ${data.documentName}
+Category: ${data.category}
+Uploaded: ${data.uploadedAt}
+
+Review document at: ${data.reviewUrl}
+
+---
+GK-Nexus
+Grace Cameron Management Consultancy & KAJ Accountancy Services
+${this.appUrl}
+    `;
+  }
+
+  private getMatterCreatedTextTemplate(
+    data: MatterCreatedNotificationData
+  ): string {
+    return `
+New Matter Created
+
+Hello ${data.clientName},
+
+A new matter has been created for you:
+
+${data.matterTitle}
+${data.matterDescription}
+
+View in portal at: ${data.portalUrl}
+
+---
+GK-Nexus
+Grace Cameron Management Consultancy & KAJ Accountancy Services
+${this.appUrl}
+    `;
+  }
+
+  private getDeadlineApproachingTextTemplate(
+    data: DeadlineApproachingData
+  ): string {
+    return `
+Deadline Approaching
+
+Hello ${data.recipientName},
+
+A deadline is approaching and requires your attention:
+
+${data.deadlineTitle}
+Due Date: ${data.deadlineDate}
+Days Remaining: ${data.daysRemaining}
+Matter: ${data.matterTitle}
+Client: ${data.clientName}
+
+View details at: ${data.portalUrl}
+
+---
+GK-Nexus
+Grace Cameron Management Consultancy & KAJ Accountancy Services
+${this.appUrl}
+    `;
+  }
 }
 
 // Export singleton instance
@@ -665,3 +942,12 @@ export const sendDocumentRequest = (data: DocumentRequestData) =>
 export const sendDocumentUploadConfirmation = (
   data: DocumentUploadConfirmationData
 ) => emailService.sendDocumentUploadConfirmation(data);
+export const sendMessageNotification = (data: MessageNotificationData) =>
+  emailService.sendMessageNotification(data);
+export const sendPortalDocumentUploaded = (data: PortalDocumentUploadedData) =>
+  emailService.sendPortalDocumentUploaded(data);
+export const sendMatterCreatedNotification = (
+  data: MatterCreatedNotificationData
+) => emailService.sendMatterCreatedNotification(data);
+export const sendDeadlineApproaching = (data: DeadlineApproachingData) =>
+  emailService.sendDeadlineApproaching(data);

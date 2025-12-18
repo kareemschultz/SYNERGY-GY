@@ -25,15 +25,11 @@ export const deadlineTypeEnum = pgEnum("deadline_type", [
   "OTHER",
 ]);
 
-// Recurrence pattern enum
-export const recurrencePatternEnum = pgEnum("recurrence_pattern", [
-  "NONE",
-  "DAILY",
-  "WEEKLY",
-  "MONTHLY",
-  "QUARTERLY",
-  "ANNUALLY",
-]);
+// Recurrence pattern enum for deadlines
+export const deadlineRecurrencePatternEnum = pgEnum(
+  "deadline_recurrence_pattern",
+  ["NONE", "DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "ANNUALLY"]
+);
 
 // Deadline priority enum
 export const deadlinePriorityEnum = pgEnum("deadline_priority", [
@@ -69,7 +65,7 @@ export const deadline = pgTable(
     dueDate: timestamp("due_date").notNull(),
 
     // Recurrence
-    recurrencePattern: recurrencePatternEnum("recurrence_pattern")
+    recurrencePattern: deadlineRecurrencePatternEnum("recurrence_pattern")
       .default("NONE")
       .notNull(),
     recurrenceEndDate: date("recurrence_end_date"),

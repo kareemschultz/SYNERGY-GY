@@ -7,6 +7,7 @@ import {
   Loader2,
   Lock,
   LogOut,
+  Phone,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -20,7 +21,15 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { client as api } from "@/utils/orpc";
 
@@ -34,6 +43,16 @@ type NotificationPreferences = {
   emailOnDocumentRequest: boolean;
 };
 
+type ContactInfo = {
+  phone: string | null;
+  alternatePhone: string | null;
+  address: string | null;
+  city: string | null;
+  country: string | null;
+  preferredContactMethod: "EMAIL" | "PHONE" | "WHATSAPP" | "IN_PERSON" | null;
+  email: string | null;
+};
+
 function PortalSettings() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -45,6 +64,14 @@ function PortalSettings() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Contact info form state
+  const [phone, setPhone] = useState("");
+  const [alternatePhone, setAlternatePhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [preferredContactMethod, setPreferredContactMethod] =
+    useState<string>("");
 
   // Check authentication
   useEffect(() => {
@@ -63,6 +90,25 @@ function PortalSettings() {
     queryFn: () => api.portal.user.getNotificationPreferences(),
     enabled: isAuthenticated,
   });
+
+  // Load contact info
+  const { data: contactInfo, isLoading: contactLoading } = useQuery({
+    queryKey: ["portal", "contactInfo"],
+    queryFn: () => api.portal.contactInfo.get(),
+    enabled: isAuthenticated,
+  });
+
+  // Initialize contact form when data loads
+  useEffect(() => {
+    if (contactInfo) {
+      const info = contactInfo as ContactInfo;
+      setPhone(info.phone || "");
+      setAlternatePhone(info.alternatePhone || "");
+      setAddress(info.address || "");
+      setCity(info.city || "");
+      setPreferredContactMethod(info.preferredContactMethod || "");
+    }
+  }, [contactInfo]);
 
   // Change password mutation
   const changePasswordMutation = useMutation({
@@ -114,6 +160,34 @@ function PortalSettings() {
     },
   });
 
+  // Update contact info mutation
+  const updateContactMutation = useMutation({
+    mutationFn: (data: {
+      phone?: string;
+      alternatePhone?: string;
+      address?: string;
+      city?: string;
+      preferredContactMethod?: "EMAIL" | "PHONE" | "WHATSAPP" | "IN_PERSON";
+    }) => api.portal.contactInfo.update(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portal", "contactInfo"] });
+      toast({
+        title: "Contact info updated",
+        description: "Your contact information has been saved.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update contact info. Please try again.",
+      });
+    },
+  });
+
   const handleChangePassword = () => {
     if (!currentPassword.trim()) {
       toast({
@@ -145,6 +219,21 @@ function PortalSettings() {
     changePasswordMutation.mutate({
       currentPassword,
       newPassword,
+    });
+  };
+
+  const handleUpdateContact = () => {
+    updateContactMutation.mutate({
+      phone: phone || undefined,
+      alternatePhone: alternatePhone || undefined,
+      address: address || undefined,
+      city: city || undefined,
+      preferredContactMethod: preferredContactMethod as
+        | "EMAIL"
+        | "PHONE"
+        | "WHATSAPP"
+        | "IN_PERSON"
+        | undefined,
     });
   };
 
@@ -205,6 +294,105 @@ function PortalSettings() {
 
       {/* Content */}
       <main className="mx-auto max-w-3xl space-y-6 p-6">
+        {/* Contact Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Phone className="h-5 w-5 text-muted-foreground" />
+              Contact Information
+            </CardTitle>
+            <CardDescription>
+              Keep your contact details up to date
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {contactLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+592 XXX XXXX"
+                      value={phone}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="alternatePhone">Alternate Phone</Label>
+                    <Input
+                      id="alternatePhone"
+                      onChange={(e) => setAlternatePhone(e.target.value)}
+                      placeholder="+592 XXX XXXX"
+                      value={alternatePhone}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Textarea
+                    id="address"
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Enter your address"
+                    rows={2}
+                    value={address}
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="Georgetown"
+                      value={city}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="preferredContact">
+                      Preferred Contact Method
+                    </Label>
+                    <Select
+                      onValueChange={setPreferredContactMethod}
+                      value={preferredContactMethod}
+                    >
+                      <SelectTrigger id="preferredContact">
+                        <SelectValue placeholder="Select preference" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="EMAIL">Email</SelectItem>
+                        <SelectItem value="PHONE">Phone</SelectItem>
+                        <SelectItem value="WHATSAPP">WhatsApp</SelectItem>
+                        <SelectItem value="IN_PERSON">In Person</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <Button
+                  disabled={updateContactMutation.isPending}
+                  onClick={handleUpdateContact}
+                >
+                  {updateContactMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Contact Info"
+                  )}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Change Password */}
         <Card>
           <CardHeader>
@@ -352,6 +540,24 @@ function PortalSettings() {
                     onCheckedChange={(checked) =>
                       updatePrefsMutation.mutate({
                         emailOnDocumentRequest: checked,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <p className="font-medium">Messages</p>
+                    <p className="text-muted-foreground text-sm">
+                      Get notified when you receive new messages
+                    </p>
+                  </div>
+                  <Switch
+                    checked={prefs.emailOnMatterUpdate}
+                    disabled={updatePrefsMutation.isPending}
+                    onCheckedChange={(checked) =>
+                      updatePrefsMutation.mutate({
+                        emailOnMatterUpdate: checked,
                       })
                     }
                   />

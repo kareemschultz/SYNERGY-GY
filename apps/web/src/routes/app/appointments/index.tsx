@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Calendar,
   CalendarDays,
+  CalendarRange,
   CheckCircle,
   Clock,
   Filter,
@@ -40,6 +41,7 @@ type AppointmentStatus =
   | "RESCHEDULED";
 
 function AppointmentsPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">(
     "all"
@@ -171,12 +173,20 @@ function AppointmentsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         actions={
-          <Button asChild>
-            <Link to="/app/appointments/new">
-              <Plus className="mr-2 size-4" />
-              New Appointment
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app/appointments/calendar">
+                <CalendarRange className="mr-2 size-4" />
+                Calendar
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/app/appointments/new">
+                <Plus className="mr-2 size-4" />
+                New Appointment
+              </Link>
+            </Button>
+          </div>
         }
         description="Manage client appointments and scheduling"
         title="Appointments"
@@ -301,6 +311,12 @@ function AppointmentsPage() {
               onComplete={(id: string) => completeMutation.mutate(id)}
               onConfirm={(id: string) => confirmMutation.mutate(id)}
               onNoShow={(id: string) => noShowMutation.mutate(id)}
+              onViewDetails={(id: string) =>
+                navigate({
+                  to: "/app/appointments/$appointment-id",
+                  params: { "appointment-id": id },
+                })
+              }
             />
           ))}
         </div>

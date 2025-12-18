@@ -16,6 +16,7 @@ import { documentsRouter } from "./documents";
 import { invoicesRouter } from "./invoices";
 import { knowledgeBaseRouter } from "./knowledge-base";
 import { mattersRouter } from "./matters";
+import { notificationsRouter } from "./notifications";
 import { portalRouter } from "./portal";
 import { reportsRouter } from "./reports";
 import { serviceCatalogRouter } from "./service-catalog";
@@ -23,6 +24,7 @@ import { settingsRouter } from "./settings";
 import { staffSetupRouter } from "./staff-setup";
 import { tagsRouter } from "./tags";
 import { taxCalculatorsRouter } from "./tax-calculators";
+import { timeTrackingRouter } from "./time-tracking";
 import { trainingRouter } from "./training";
 
 export const appRouter = {
@@ -55,6 +57,8 @@ export const appRouter = {
   tags: tagsRouter,
   taxCalculators: taxCalculatorsRouter,
   training: trainingRouter,
+  notifications: notificationsRouter,
+  timeTracking: timeTrackingRouter,
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;
