@@ -3,6 +3,8 @@
 // Activity logging / audit trail
 // biome-ignore lint/performance/noBarrelFile: Auto-fix
 export * from "./activity";
+// Staff invites and bootstrap tokens
+export * from "./invites";
 // Appointment scheduling
 export * from "./appointments";
 export * from "./auth";

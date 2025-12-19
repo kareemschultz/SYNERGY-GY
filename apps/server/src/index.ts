@@ -4,6 +4,7 @@ import { createContext } from "@SYNERGY-GY/api/context";
 import { appRouter } from "@SYNERGY-GY/api/routers/index";
 import { startBackupScheduler } from "@SYNERGY-GY/api/utils/backup-scheduler";
 import { runInitialSetup } from "@SYNERGY-GY/api/utils/initial-setup";
+import { signupProtectionMiddleware } from "@SYNERGY-GY/api/utils/signup-protection";
 import { auth } from "@SYNERGY-GY/auth";
 import {
   and,
@@ -121,6 +122,10 @@ app.use(
     credentials: true,
   })
 );
+
+// Signup protection middleware - validates invite tokens before allowing registration
+// This MUST run before the auth handler to intercept signup requests
+app.use("/api/auth/*", signupProtectionMiddleware());
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 

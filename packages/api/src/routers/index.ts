@@ -13,6 +13,7 @@ import { dashboardRouter } from "./dashboard";
 import { deadlinesRouter } from "./deadlines";
 import { documentVerificationRouter } from "./document-verification";
 import { documentsRouter } from "./documents";
+import { invitesRouter } from "./invites";
 import { invoicesRouter } from "./invoices";
 import { knowledgeBaseRouter } from "./knowledge-base";
 import { mattersRouter } from "./matters";
@@ -46,6 +47,7 @@ export const appRouter = {
   deadlines: deadlinesRouter,
   documentVerification: documentVerificationRouter,
   documents: documentsRouter,
+  invites: invitesRouter,
   invoices: invoicesRouter,
   knowledgeBase: knowledgeBaseRouter,
   matters: mattersRouter,

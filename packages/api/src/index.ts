@@ -112,6 +112,9 @@ const requireRole = (allowedRoles: StaffRole[]) =>
 // Admin procedure (Owner and Managers)
 export const adminProcedure = publicProcedure.use(requireRole(ADMIN_ROLES));
 
+// Owner-only procedure (for sensitive operations like creating invites)
+export const ownerProcedure = publicProcedure.use(requireRole(["OWNER"]));
+
 // Manager procedure
 export const managerProcedure = publicProcedure.use(requireRole(MANAGER_ROLES));
 
