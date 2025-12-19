@@ -672,6 +672,95 @@ disabled={!itemDetails?.id}
 
 ---
 
+## Docker & Deployment Patterns
+
+### Shell Scripts in Docker
+
+**NEVER** use shell scripts (`*.sh`) for operations inside Docker containers. They may work locally but fail in production.
+
+**Why shell scripts fail in Docker:**
+- Container may not have bash installed
+- Scripts directory may not be copied in Dockerfile
+- Running `docker` commands from inside a container doesn't work
+- Shell script dependencies may not exist
+
+**Solution:** Use Node.js utilities instead of shell scripts:
+```typescript
+// ✅ Use Node.js backup utility (works inside containers)
+const { createBackup } = await import("./utils/backup-utility");
+const result = await createBackup(backupName);
+```
+
+**Backup Utility Location:** `/packages/api/src/utils/backup-utility.ts`
+- Uses Drizzle ORM for data export (no external dependencies)
+- Creates compressed JSON backups with `node:zlib`
+- Works inside the Docker container
+
+---
+
+## Biome Linting Patterns
+
+### noLeakedRender False Positives
+
+Biome's `lint/nursery/noLeakedRender` may flag false positives for ternaries inside callbacks (not actual renders).
+
+**Problem:**
+```typescript
+// Biome complains about potential leaked render (false positive)
+onValueChange={(value) =>
+  setFilters({
+    clientId: value === "all" ? undefined : value,  // Flagged!
+  })
+}
+```
+
+**Solution - use if/else instead:**
+```typescript
+// ✅ Use if/else to avoid the false positive
+onValueChange={(value) => {
+  if (value === "all") {
+    setFilters({ ...filters, clientId: undefined });
+  } else {
+    setFilters({ ...filters, clientId: value });
+  }
+}}
+```
+
+### Import Source Corrections
+
+When imports fail with "Export not found", check the actual export location:
+- `staff` is in `packages/db/src/schema/core.ts`, NOT `auth.ts`
+- `user` is in `packages/db/src/schema/auth.ts`
+
+---
+
+## API Schema vs Implementation
+
+### Filter Schema ≠ Filter Implementation
+
+Just because an API schema accepts a filter parameter doesn't mean the query uses it!
+
+**Example - Reports router:**
+```typescript
+// Schema accepts clientId
+const executeReportSchema = z.object({
+  filters: z.object({
+    clientId: z.string().optional(),  // Schema accepts it
+  }).optional(),
+});
+
+// BUT the query must actually USE it:
+if (input.filters?.clientId) {
+  conditions.push(eq(matter.clientId, input.filters.clientId));
+}
+```
+
+**Always verify:** When adding UI filters, check both:
+1. API schema accepts the parameter
+2. Query logic actually uses it
+
+---
+
 ## Anti-Patterns to Avoid
 
 | Anti-Pattern | Correct Approach |
@@ -690,3 +779,7 @@ disabled={!itemDetails?.id}
 | `WizardStep icon={...}` | Remove icon prop |
 | `{value && <div>...}` for unknown | `{value ? <div>... : null}` |
 | `orpc.nested.sub.useMutation()` | `useMutation({ mutationFn: () => client.nested.sub() })` |
+| Shell scripts (`*.sh`) in Docker | Use Node.js utilities instead |
+| Ternary in callbacks (noLeakedRender) | Use if/else statements |
+| `import { staff } from "./schema/auth"` | `import { staff } from "./schema/core"` |
+| Schema accepts filter but query ignores | Add filter logic to actual query |
