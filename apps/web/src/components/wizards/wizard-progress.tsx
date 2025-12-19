@@ -16,6 +16,42 @@ type WizardProgressProps = {
   className?: string;
 };
 
+function getStepIndicatorClasses(
+  isActive: boolean,
+  isCompleted: boolean,
+  isClickable: boolean
+): string {
+  const classes: string[] = [
+    "relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full border-2 font-medium text-sm transition-all",
+  ];
+
+  if (isActive || isCompleted) {
+    classes.push("border-primary bg-primary text-primary-foreground");
+  } else {
+    classes.push(
+      "border-muted-foreground/30 bg-background text-muted-foreground"
+    );
+  }
+
+  if (isClickable && !isActive) {
+    classes.push("cursor-pointer hover:border-primary/50");
+  }
+
+  return classes.join(" ");
+}
+
+function getStepLabelClasses(isActive: boolean, isCompleted: boolean): string {
+  const classes: string[] = ["font-medium text-sm"];
+
+  if (isActive || isCompleted) {
+    classes.push("text-foreground");
+  } else {
+    classes.push("text-muted-foreground");
+  }
+
+  return classes.join(" ");
+}
+
 export function WizardProgress({
   steps,
   currentStep,
@@ -37,18 +73,18 @@ export function WizardProgress({
           isHorizontal ? "items-center justify-between" : "flex-col space-y-4"
         )}
       >
+        {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Progress indicator renders step states (active, completed, visited) with connecting lines and accessible navigation buttons */}
         {steps.map((step, index) => {
           const isActive = index === currentStep;
           const isCompleted = index < currentStep;
           const isVisited = visitedSteps.has(index);
           const isClickable = isVisited || index === currentStep + 1;
+          const isNotLastStep = index !== steps.length - 1;
+          const showFlex1 = isHorizontal === true && isNotLastStep === true;
 
           return (
             <li
-              className={cn(
-                "relative",
-                isHorizontal && index !== steps.length - 1 && "flex-1"
-              )}
+              className={cn("relative", showFlex1 ? "flex-1" : null)}
               key={step.id}
             >
               <div
@@ -59,22 +95,19 @@ export function WizardProgress({
               >
                 {/* Step indicator */}
                 <button
-                  aria-current={isActive ? "step" : undefined}
+                  aria-current={isActive ? "step" : false}
                   aria-label={`Step ${index + 1}: ${step.title}${isCompleted ? " (completed)" : ""}`}
-                  className={cn(
-                    "relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full border-2 font-medium text-sm transition-all",
-                    isActive &&
-                      "border-primary bg-primary text-primary-foreground",
-                    isCompleted &&
-                      "border-primary bg-primary text-primary-foreground",
-                    !(isActive || isCompleted) &&
-                      "border-muted-foreground/30 bg-background text-muted-foreground",
-                    isClickable &&
-                      !isActive &&
-                      "cursor-pointer hover:border-primary/50"
+                  className={getStepIndicatorClasses(
+                    isActive,
+                    isCompleted,
+                    isClickable
                   )}
                   disabled={!isClickable}
-                  onClick={() => isClickable && onStepClick?.(index)}
+                  onClick={() => {
+                    if (isClickable) {
+                      onStepClick?.(index);
+                    }
+                  }}
                   type="button"
                 >
                   {isCompleted ? (
@@ -92,25 +125,18 @@ export function WizardProgress({
                       : "flex flex-col justify-center"
                   )}
                 >
-                  <span
-                    className={cn(
-                      "font-medium text-sm",
-                      isActive && "text-foreground",
-                      isCompleted && "text-foreground",
-                      !(isActive || isCompleted) && "text-muted-foreground"
-                    )}
-                  >
+                  <span className={getStepLabelClasses(isActive, isCompleted)}>
                     {step.title}
                   </span>
-                  {step.description && !isHorizontal && (
+                  {step.description !== null && !isHorizontal ? (
                     <span className="text-muted-foreground text-xs">
                       {step.description}
                     </span>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Connector line (horizontal) */}
-                {isHorizontal && index !== steps.length - 1 && (
+                {isHorizontal === true && isNotLastStep === true ? (
                   <div
                     aria-hidden="true"
                     className={cn(
@@ -118,11 +144,11 @@ export function WizardProgress({
                       isCompleted ? "bg-primary" : "bg-muted-foreground/30"
                     )}
                   />
-                )}
+                ) : null}
               </div>
 
               {/* Connector line (vertical) */}
-              {!isHorizontal && index !== steps.length - 1 && (
+              {!isHorizontal && isNotLastStep ? (
                 <div
                   aria-hidden="true"
                   className={cn(
@@ -130,7 +156,7 @@ export function WizardProgress({
                     isCompleted ? "bg-primary" : "bg-muted-foreground/30"
                   )}
                 />
-              )}
+              ) : null}
             </li>
           );
         })}

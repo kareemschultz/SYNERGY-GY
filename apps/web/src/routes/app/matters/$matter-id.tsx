@@ -222,6 +222,7 @@ const priorityStyles: Record<string, string> = {
   URGENT: "bg-red-500/10 text-red-600",
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Matter overview displays details, dates, fees, client info, and assigned staff across multiple conditional sections
 function OverviewTab({ matter }: { matter: MatterData }) {
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -257,28 +258,28 @@ function OverviewTab({ matter }: { matter: MatterData }) {
               </Badge>
             </div>
           </div>
-          {matter.description && (
+          {matter.description ? (
             <div>
               <p className="mb-1 font-medium text-muted-foreground text-sm">
                 Description
               </p>
               <p className="text-sm">{matter.description}</p>
             </div>
-          )}
+          ) : null}
           <div>
             <p className="mb-1 font-medium text-muted-foreground text-sm">
               Business
             </p>
             <p className="text-sm">{matter.business}</p>
           </div>
-          {matter.serviceType && (
+          {matter.serviceType ? (
             <div>
               <p className="mb-1 font-medium text-muted-foreground text-sm">
                 Service Type
               </p>
               <p className="text-sm">{matter.serviceType.name}</p>
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 
@@ -290,7 +291,7 @@ function OverviewTab({ matter }: { matter: MatterData }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {matter.startDate && (
+          {matter.startDate ? (
             <div>
               <p className="mb-1 font-medium text-muted-foreground text-sm">
                 Start Date
@@ -299,8 +300,8 @@ function OverviewTab({ matter }: { matter: MatterData }) {
                 {new Date(matter.startDate).toLocaleDateString()}
               </p>
             </div>
-          )}
-          {matter.dueDate && (
+          ) : null}
+          {matter.dueDate ? (
             <div>
               <p className="mb-1 font-medium text-muted-foreground text-sm">
                 Due Date
@@ -309,8 +310,8 @@ function OverviewTab({ matter }: { matter: MatterData }) {
                 {new Date(matter.dueDate).toLocaleDateString()}
               </p>
             </div>
-          )}
-          {matter.estimatedFee && (
+          ) : null}
+          {matter.estimatedFee ? (
             <div>
               <p className="mb-1 font-medium text-muted-foreground text-sm">
                 Estimated Fee
@@ -320,8 +321,8 @@ function OverviewTab({ matter }: { matter: MatterData }) {
                 {Number(matter.estimatedFee).toLocaleString()}
               </p>
             </div>
-          )}
-          {matter.actualFee && (
+          ) : null}
+          {matter.actualFee ? (
             <div>
               <p className="mb-1 font-medium text-muted-foreground text-sm">
                 Actual Fee
@@ -331,7 +332,7 @@ function OverviewTab({ matter }: { matter: MatterData }) {
                 {Number(matter.actualFee).toLocaleString()}
               </p>
             </div>
-          )}
+          ) : null}
           <div>
             <p className="mb-1 font-medium text-muted-foreground text-sm">
               Payment Status
@@ -343,7 +344,7 @@ function OverviewTab({ matter }: { matter: MatterData }) {
         </CardContent>
       </Card>
 
-      {matter.client && (
+      {matter.client ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -358,27 +359,27 @@ function OverviewTab({ matter }: { matter: MatterData }) {
               </p>
               <p className="text-sm">{matter.client.displayName}</p>
             </div>
-            {matter.client.email && (
+            {matter.client.email ? (
               <div>
                 <p className="mb-1 font-medium text-muted-foreground text-sm">
                   Email
                 </p>
                 <p className="text-sm">{matter.client.email}</p>
               </div>
-            )}
-            {matter.client.phone && (
+            ) : null}
+            {matter.client.phone ? (
               <div>
                 <p className="mb-1 font-medium text-muted-foreground text-sm">
                   Phone
                 </p>
                 <p className="text-sm">{matter.client.phone}</p>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
-      {matter.assignedStaff && (
+      {matter.assignedStaff ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -390,7 +391,7 @@ function OverviewTab({ matter }: { matter: MatterData }) {
             <p className="text-sm">{matter.assignedStaff.user.name}</p>
           </CardContent>
         </Card>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -436,13 +437,14 @@ function ChecklistTab({ matter }: { matter: MatterData }) {
                     >
                       {item.item}
                     </p>
-                    {item.isCompleted && item.completedBy && (
+                    {item.isCompleted === true && item.completedBy !== null ? (
                       <p className="text-muted-foreground text-xs">
                         Completed by {item.completedBy.name}
-                        {item.completedAt &&
-                          ` on ${new Date(item.completedAt).toLocaleDateString()}`}
+                        {item.completedAt
+                          ? ` on ${new Date(item.completedAt).toLocaleDateString()}`
+                          : ""}
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -477,9 +479,9 @@ function NotesTab({ matter }: { matter: MatterData }) {
                     {note.createdBy?.name || "Unknown"}
                   </p>
                   <div className="flex items-center gap-2">
-                    {note.isInternal && (
+                    {note.isInternal ? (
                       <Badge variant="secondary">Internal</Badge>
-                    )}
+                    ) : null}
                     <span className="text-muted-foreground text-xs">
                       {new Date(note.createdAt).toLocaleDateString()}
                     </span>
@@ -496,8 +498,9 @@ function NotesTab({ matter }: { matter: MatterData }) {
 }
 
 function DocumentsTab({ matterId }: { matterId: string }) {
-  const { data: documents, isLoading } = client.documents.getByMatter.useQuery({
-    matterId,
+  const { data: documents, isLoading } = useQuery({
+    queryKey: ["documents", "getByMatter", matterId],
+    queryFn: () => client.documents.getByMatter({ matterId }),
   });
 
   if (isLoading) {
@@ -524,36 +527,44 @@ function DocumentsTab({ matterId }: { matterId: string }) {
           </p>
         ) : (
           <div className="space-y-3">
-            {documents.map((doc) => (
-              <div
-                className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
-                key={doc.id}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                    <FileText className="h-6 w-6" />
+            {documents.map(
+              (doc: {
+                id: string;
+                originalName: string;
+                category: string;
+                fileSize: number;
+                createdAt: Date;
+              }) => (
+                <div
+                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  key={doc.id}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                      <FileText className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{doc.originalName}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {doc.category} • {(doc.fileSize / 1024).toFixed(1)} KB •{" "}
+                        {new Date(doc.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">{doc.originalName}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {doc.category} • {(doc.fileSize / 1024).toFixed(1)} KB •{" "}
-                      {new Date(doc.createdAt).toLocaleDateString()}
-                    </p>
+                  <div className="flex gap-2">
+                    <Button asChild size="icon" variant="ghost">
+                      <a
+                        href={`/api/download/${doc.id}`}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button asChild size="icon" variant="ghost">
-                    <a
-                      href={`/api/download/${doc.id}`}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      <Download className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         )}
       </CardContent>

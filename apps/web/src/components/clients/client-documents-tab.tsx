@@ -112,6 +112,176 @@ export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
     (doc) => doc.client?.id === clientId
   );
 
+  // Helper function to format days until expiration
+  const formatDaysUntil = (daysUntil: number | null): string => {
+    if (daysUntil === null) {
+      return "N/A";
+    }
+    if (daysUntil <= 0) {
+      return "Expired";
+    }
+    return `${daysUntil} days`;
+  };
+
+  // Render function for expiring documents view
+  const renderExpiringContent = () => {
+    if (expiringLoading) {
+      return (
+        <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Loading expiring documents...
+        </div>
+      );
+    }
+
+    if (!clientExpiringDocs || clientExpiringDocs.length === 0) {
+      return (
+        <div className="rounded-lg border-2 border-dashed py-12 text-center">
+          <Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <p className="mt-4 font-medium text-muted-foreground">
+            No documents expiring soon
+          </p>
+          <p className="mt-1 text-muted-foreground text-sm">
+            Documents with expiration dates within the next 90 days will appear
+            here
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <div className="grid grid-cols-3 gap-4">
+          {/* Expired */}
+          <Card className="border-red-200 bg-red-50/50 dark:bg-red-950/20">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <span className="font-medium text-red-700 text-sm">
+                  Expired
+                </span>
+              </div>
+              <p className="mt-1 font-bold text-2xl text-red-700">
+                {
+                  clientExpiringDocs.filter(
+                    (d) =>
+                      Boolean(d.expirationDate) &&
+                      getDaysUntilExpiration(d.expirationDate ?? "") <= 0
+                  ).length
+                }
+              </p>
+            </CardContent>
+          </Card>
+          {/* Critical (1-7 days) */}
+          <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <span className="font-medium text-amber-700 text-sm">
+                  Critical (7 days)
+                </span>
+              </div>
+              <p className="mt-1 font-bold text-2xl text-amber-700">
+                {
+                  clientExpiringDocs.filter((d) => {
+                    if (!d.expirationDate) {
+                      return false;
+                    }
+                    const days = getDaysUntilExpiration(d.expirationDate);
+                    return days > 0 && days <= 7;
+                  }).length
+                }
+              </p>
+            </CardContent>
+          </Card>
+          {/* Warning (8-30 days) */}
+          <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-blue-700 text-sm">
+                  Upcoming (30 days)
+                </span>
+              </div>
+              <p className="mt-1 font-bold text-2xl text-blue-700">
+                {
+                  clientExpiringDocs.filter((d) => {
+                    if (!d.expirationDate) {
+                      return false;
+                    }
+                    const days = getDaysUntilExpiration(d.expirationDate);
+                    return days > 7 && days <= 30;
+                  }).length
+                }
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="rounded-md border">
+          <div className="grid gap-3 p-4">
+            {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rendering expiring documents requires conditional styling based on urgency level, expiration status, and multiple display properties */}
+            {clientExpiringDocs.map((doc) => {
+              const daysUntil = doc.expirationDate
+                ? getDaysUntilExpiration(doc.expirationDate)
+                : null;
+              const urgency =
+                daysUntil !== null ? getExpirationUrgency(daysUntil) : null;
+              const UrgencyIcon = urgency?.icon || Calendar;
+
+              return (
+                <div
+                  className={`flex items-center justify-between rounded-lg border p-4 transition-colors ${urgency?.bgColor || ""} ${urgency?.borderColor || ""}`}
+                  key={doc.id}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-full ${urgency?.bgColor || "bg-gray-100"}`}
+                    >
+                      <UrgencyIcon
+                        className={`h-5 w-5 ${urgency?.color || "text-gray-500"}`}
+                      />
+                    </div>
+                    <div>
+                      <p className="font-medium">{doc.originalName}</p>
+                      <p className="text-muted-foreground text-sm">
+                        {doc.category} •{" "}
+                        {doc.expirationDate
+                          ? new Date(doc.expirationDate).toLocaleDateString()
+                          : "No expiration set"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge
+                      className={
+                        urgency
+                          ? `${urgency.bgColor} ${urgency.color} border-current`
+                          : ""
+                      }
+                      variant="outline"
+                    >
+                      {formatDaysUntil(daysUntil)}
+                    </Badge>
+                    <Button asChild size="icon" variant="ghost">
+                      <a
+                        href={`/api/download/${doc.id}`}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Progress & Actions */}
@@ -234,11 +404,11 @@ export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
               </CardContent>
             </Card>
           ))}
-          {services?.length === 0 && (
+          {services?.length === 0 ? (
             <div className="rounded-lg border-2 border-dashed py-12 text-center text-muted-foreground">
               No services selected for this client.
             </div>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -271,172 +441,17 @@ export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
                 </Button>
               </div>
             ))}
-            {allDocuments?.length === 0 && (
+            {allDocuments?.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
                 No documents found.
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}
 
       {view === "expiring" && (
-        <div className="space-y-4">
-          {expiringLoading ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Loading expiring documents...
-            </div>
-          ) : clientExpiringDocs && clientExpiringDocs.length > 0 ? (
-            <>
-              <div className="grid grid-cols-3 gap-4">
-                {/* Expired */}
-                <Card className="border-red-200 bg-red-50/50 dark:bg-red-950/20">
-                  <CardContent className="pt-4">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                      <span className="font-medium text-red-700 text-sm">
-                        Expired
-                      </span>
-                    </div>
-                    <p className="mt-1 font-bold text-2xl text-red-700">
-                      {
-                        clientExpiringDocs.filter(
-                          (d) =>
-                            d.expirationDate &&
-                            getDaysUntilExpiration(d.expirationDate) <= 0
-                        ).length
-                      }
-                    </p>
-                  </CardContent>
-                </Card>
-                {/* Critical (1-7 days) */}
-                <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
-                  <CardContent className="pt-4">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-600" />
-                      <span className="font-medium text-amber-700 text-sm">
-                        Critical (7 days)
-                      </span>
-                    </div>
-                    <p className="mt-1 font-bold text-2xl text-amber-700">
-                      {
-                        clientExpiringDocs.filter((d) => {
-                          if (!d.expirationDate) {
-                            return false;
-                          }
-                          const days = getDaysUntilExpiration(d.expirationDate);
-                          return days > 0 && days <= 7;
-                        }).length
-                      }
-                    </p>
-                  </CardContent>
-                </Card>
-                {/* Warning (8-30 days) */}
-                <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
-                  <CardContent className="pt-4">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium text-blue-700 text-sm">
-                        Upcoming (30 days)
-                      </span>
-                    </div>
-                    <p className="mt-1 font-bold text-2xl text-blue-700">
-                      {
-                        clientExpiringDocs.filter((d) => {
-                          if (!d.expirationDate) {
-                            return false;
-                          }
-                          const days = getDaysUntilExpiration(d.expirationDate);
-                          return days > 7 && days <= 30;
-                        }).length
-                      }
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="rounded-md border">
-                <div className="grid gap-3 p-4">
-                  {clientExpiringDocs.map((doc) => {
-                    const daysUntil = doc.expirationDate
-                      ? getDaysUntilExpiration(doc.expirationDate)
-                      : null;
-                    const urgency =
-                      daysUntil !== null
-                        ? getExpirationUrgency(daysUntil)
-                        : null;
-                    const UrgencyIcon = urgency?.icon || Calendar;
-
-                    return (
-                      <div
-                        className={`flex items-center justify-between rounded-lg border p-4 transition-colors ${urgency?.bgColor || ""} ${urgency?.borderColor || ""}`}
-                        key={doc.id}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`flex h-10 w-10 items-center justify-center rounded-full ${urgency?.bgColor || "bg-gray-100"}`}
-                          >
-                            <UrgencyIcon
-                              className={`h-5 w-5 ${urgency?.color || "text-gray-500"}`}
-                            />
-                          </div>
-                          <div>
-                            <p className="font-medium">{doc.originalName}</p>
-                            <p className="text-muted-foreground text-sm">
-                              {doc.category} •{" "}
-                              {doc.expirationDate
-                                ? new Date(
-                                    doc.expirationDate
-                                  ).toLocaleDateString()
-                                : "No expiration set"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge
-                            className={
-                              urgency
-                                ? `${urgency.bgColor} ${urgency.color} border-current`
-                                : ""
-                            }
-                            variant="outline"
-                          >
-                            {daysUntil !== null
-                              ? daysUntil <= 0
-                                ? "Expired"
-                                : `${daysUntil} days`
-                              : "N/A"}
-                          </Badge>
-                          <Button asChild size="icon" variant="ghost">
-                            <a
-                              href={`/api/download/${doc.id}`}
-                              rel="noreferrer"
-                              target="_blank"
-                            >
-                              <Download className="h-4 w-4" />
-                            </a>
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="rounded-lg border-2 border-dashed py-12 text-center">
-              <Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
-              <p className="mt-4 font-medium text-muted-foreground">
-                No documents expiring soon
-              </p>
-              <p className="mt-1 text-muted-foreground text-sm">
-                Documents with expiration dates within the next 90 days will
-                appear here
-              </p>
-            </div>
-          )}
-        </div>
+        <div className="space-y-4">{renderExpiringContent()}</div>
       )}
     </div>
   );

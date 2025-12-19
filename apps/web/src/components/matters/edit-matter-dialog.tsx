@@ -257,13 +257,14 @@ export function EditMatterDialog({
                     <Input
                       id={field.name}
                       onBlur={field.handleBlur}
-                      onChange={(e) =>
-                        field.handleChange(
-                          e.target.value // Fixed noLeakedRender
-                            ? Number.parseInt(e.target.value, 10)
-                            : undefined
-                        )
-                      }
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        let parsedValue: number | undefined;
+                        if (inputValue !== "") {
+                          parsedValue = Number.parseInt(inputValue, 10);
+                        }
+                        field.handleChange(parsedValue);
+                      }}
                       type="number"
                       value={field.state.value ?? ""}
                     />
@@ -335,9 +336,9 @@ export function EditMatterDialog({
             onClick={() => form.handleSubmit()}
             type="submit"
           >
-            {Boolean(updateMutation.isPending) && ( // Fixed noLeakedRender
+            {updateMutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            ) : null}{" "}
             Save Changes
           </Button>
         </DialogFooter>

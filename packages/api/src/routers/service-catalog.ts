@@ -699,14 +699,22 @@ export const serviceCatalogRouter = {
             continue;
           }
 
-          const categoryKey = service.category.name;
+          // Type assertion for category relation (Drizzle returns union type)
+          const category = service.category as {
+            id: string;
+            name: string;
+            displayName: string;
+            description: string | null;
+          };
+
+          const categoryKey = category.name;
 
           if (!grouped[categoryKey]) {
             grouped[categoryKey] = {
-              categoryId: service.category.id,
-              categoryName: service.category.name,
-              categoryDisplayName: service.category.displayName,
-              categoryDescription: service.category.description || "",
+              categoryId: category.id,
+              categoryName: category.name,
+              categoryDisplayName: category.displayName,
+              categoryDescription: category.description || "",
               services: [],
             };
           }

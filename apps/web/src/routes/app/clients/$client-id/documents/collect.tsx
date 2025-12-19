@@ -14,6 +14,24 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { client } from "@/utils/orpc";
 
+type UploadedDocument = {
+  requirementName: string;
+  documentId: string;
+  uploadedAt: string;
+};
+
+type ClientService = {
+  id: string;
+  serviceName: string;
+  requiredDocuments: string[];
+  uploadedDocuments: UploadedDocument[];
+};
+
+type ServiceDocumentCollectionCardProps = {
+  service: ClientService;
+  onDocumentUploaded: () => void;
+};
+
 export const Route = createFileRoute(
   "/app/clients/$client-id/documents/collect"
 )({
@@ -76,14 +94,14 @@ function ClientDocumentCollectionPage() {
           />
         ))}
 
-        {services.length === 0 && (
+        {services.length === 0 ? (
           <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center text-muted-foreground">
             <p>No active service selections found for this client.</p>
             <p className="mt-1 text-sm">
               Add services to the client to see document requirements.
             </p>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -91,14 +109,7 @@ function ClientDocumentCollectionPage() {
 
 function ServiceDocumentCollectionCard({
   service,
-  onDocumentUploaded,
-}: {
-  service: any;
-  onDocumentUploaded: () => void;
-}) {
-  // Mock logic for now as we don't have the full type of 'service' here easily without importing from DB or API
-  // Assuming service has: serviceName, requiredDocuments (string[]), uploadedDocuments (object[])
-
+}: ServiceDocumentCollectionCardProps) {
   const requiredDocs = service.requiredDocuments || [];
   const uploads = service.uploadedDocuments || [];
 
@@ -113,10 +124,10 @@ function ServiceDocumentCollectionCard({
       <CardContent className="space-y-4">
         {requiredDocs.map((reqName: string) => {
           const isUploaded = uploads.some(
-            (u: any) => u.requirementName === reqName
+            (u: UploadedDocument) => u.requirementName === reqName
           );
           const upload = uploads.find(
-            (u: any) => u.requirementName === reqName
+            (u: UploadedDocument) => u.requirementName === reqName
           );
 
           return (
@@ -141,15 +152,15 @@ function ServiceDocumentCollectionCard({
 
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-sm">{reqName}</p>
-                {isUploaded && (
+                {isUploaded === true && upload !== undefined ? (
                   <p className="truncate text-muted-foreground text-xs">
                     Uploaded on{" "}
                     {new Date(upload.uploadedAt).toLocaleDateString()}
                   </p>
-                )}
+                ) : null}
               </div>
 
-              {isUploaded ? (
+              {isUploaded === true && upload !== undefined ? (
                 <Button asChild size="sm" variant="outline">
                   <a
                     href={`/api/download/${upload.documentId}`}

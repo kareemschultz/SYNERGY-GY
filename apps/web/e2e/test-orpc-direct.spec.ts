@@ -27,7 +27,9 @@ test("test oRPC client directly in browser", async ({ page }) => {
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
 
-  await page.waitForURL("**/app**", { timeout: 10_000 }).catch(() => {});
+  await page.waitForURL("**/app**", { timeout: 10_000 }).catch(() => {
+    /* ignore timeout */
+  });
   console.log(`  URL: ${page.url()}`);
 
   // Wait for app to initialize

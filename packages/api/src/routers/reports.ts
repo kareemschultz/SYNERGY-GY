@@ -116,7 +116,7 @@ export const reportsRouter = {
   /**
    * List available reports
    */
-  list: staffProcedure.input(listReportsSchema).handler(async ({ input }) => {
+  list: staffProcedure.input(listReportsSchema).handler(({ input }) => {
     // Return standard reports as a list
     const reports = Object.entries(STANDARD_REPORTS).map(([code, report]) => ({
       code,
@@ -146,7 +146,11 @@ export const reportsRouter = {
     // Group by category
     const grouped = filteredReports.reduce(
       (acc, report) => {
-        (acc[report.category] ??= []).push(report);
+        const category = report.category;
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(report);
         return acc;
       },
       {} as Record<string, typeof filteredReports>
@@ -1207,7 +1211,7 @@ export const reportsRouter = {
 
     const reports = await db.query.reportDefinition.findMany({
       where: eq(reportDefinition.type, "CUSTOM"),
-      orderBy: (rd, { desc }) => [desc(rd.createdAt)],
+      orderBy: (rd, { desc: descOrder }) => [descOrder(rd.createdAt)],
       with: {
         createdBy: {
           columns: { name: true, email: true },
@@ -1368,12 +1372,8 @@ export const reportsRouter = {
    * List scheduled reports
    */
   listSchedules: staffProcedure.handler(async () => {
-    const { scheduledReport: scheduledReportTable } = await import(
-      "@SYNERGY-GY/db"
-    );
-
-    // Use scheduledReportTable variable to avoid unused variable warning
-    void scheduledReportTable;
+    // Dynamic import to ensure schema is available - table reference used via db.query
+    await import("@SYNERGY-GY/db");
 
     const schedules = await db.query.scheduledReport.findMany({
       orderBy: (sr, { asc }) => [asc(sr.nextRunAt)],
@@ -1608,6 +1608,9 @@ function calculateNextRun(
           next.setMonth(next.getMonth() + 1);
         }
       }
+      break;
+    default:
+      // Exhaustive check - all ReportFrequency values should be handled above
       break;
   }
 

@@ -52,7 +52,7 @@ export function StepIdentification({
             </p>
           </div>
 
-          {Boolean(isIndividual && !isForeignNational) && (
+          {Boolean(isIndividual) && !isForeignNational ? (
             <div className="space-y-2">
               <Label htmlFor="nisNumber">NIS Number</Label>
               <Input
@@ -65,13 +65,13 @@ export function StepIdentification({
                 Required for NIS and PAYE services
               </p>
             </div>
-          )}
+          ) : null}
         </WizardStepFields>
       </WizardStepSection>
 
       <WizardStepSection className="mt-6" title="Personal Identification">
         <WizardStepFields columns={2}>
-          {Boolean(isIndividual && !isForeignNational) && (
+          {Boolean(isIndividual) && !isForeignNational ? (
             <div className="space-y-2">
               <Label htmlFor="nationalId">National ID</Label>
               <Input
@@ -81,7 +81,7 @@ export function StepIdentification({
                 value={data.nationalId}
               />
             </div>
-          )}
+          ) : null}
 
           <div className="space-y-2">
             <Label htmlFor="passportNumber">

@@ -201,7 +201,7 @@ export function TagSelector({
                                 : "border-muted-foreground/30"
                             )}
                           >
-                            {isSelected && <Check className="h-3 w-3" />}
+                            {isSelected ? <Check className="h-3 w-3" /> : null}
                           </div>
                           <div
                             className="mr-2 h-3 w-3 rounded-full"

@@ -21,9 +21,9 @@ export function WizardStep({
       {/* Step header */}
       <div className="mb-6">
         <h2 className="font-semibold text-xl">{title}</h2>
-        {description && (
+        {description ? (
           <p className="mt-1 text-muted-foreground text-sm">{description}</p>
-        )}
+        ) : null}
       </div>
 
       {/* Step content */}
@@ -47,14 +47,14 @@ export function WizardStepSection({
 }: WizardStepSectionProps) {
   return (
     <div className={cn("space-y-4", className)}>
-      {(title || description) && (
+      {title || description ? (
         <div>
-          {title && <h3 className="font-medium text-base">{title}</h3>}
-          {description && (
+          {title ? <h3 className="font-medium text-base">{title}</h3> : null}
+          {description ? (
             <p className="text-muted-foreground text-sm">{description}</p>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
       {children}
     </div>
   );

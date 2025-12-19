@@ -20,6 +20,40 @@ type StepServicesProps = {
   onUpdate: (updates: Partial<ClientOnboardingData>) => void;
 };
 
+/**
+ * Helper function to get button className based on selection state and business type.
+ * Extracted to avoid nested ternary.
+ */
+function getBusinessButtonClassName(
+  isSelected: boolean,
+  businessValue: "GCMC" | "KAJ"
+): string {
+  if (!isSelected) {
+    return "border-border hover:border-primary/50";
+  }
+  if (businessValue === "GCMC") {
+    return "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30";
+  }
+  return "border-blue-500 bg-blue-50 dark:bg-blue-950/30";
+}
+
+/**
+ * Helper function to get checkbox indicator className based on selection state and business type.
+ * Extracted to avoid nested ternary.
+ */
+function getBusinessCheckboxClassName(
+  isSelected: boolean,
+  businessValue: "GCMC" | "KAJ"
+): string {
+  if (!isSelected) {
+    return "border-muted-foreground/30";
+  }
+  if (businessValue === "GCMC") {
+    return "border-emerald-500 bg-emerald-500 text-white";
+  }
+  return "border-blue-500 bg-blue-500 text-white";
+}
+
 export function StepServices({ data, errors, onUpdate }: StepServicesProps) {
   const toggleBusiness = (business: Business) => {
     const current = data.businesses;
@@ -73,11 +107,7 @@ export function StepServices({ data, errors, onUpdate }: StepServicesProps) {
                 aria-pressed={isSelected}
                 className={cn(
                   "flex items-center gap-3 rounded-lg border px-4 py-3 transition-all",
-                  isSelected
-                    ? business.value === "GCMC"
-                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
-                      : "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                    : "border-border hover:border-primary/50"
+                  getBusinessButtonClassName(isSelected, business.value)
                 )}
                 key={business.value}
                 onClick={() => toggleBusiness(business.value)}
@@ -86,11 +116,7 @@ export function StepServices({ data, errors, onUpdate }: StepServicesProps) {
                 <div
                   className={cn(
                     "flex size-6 items-center justify-center rounded-full border-2",
-                    isSelected
-                      ? business.value === "GCMC"
-                        ? "border-emerald-500 bg-emerald-500 text-white"
-                        : "border-blue-500 bg-blue-500 text-white"
-                      : "border-muted-foreground/30"
+                    getBusinessCheckboxClassName(isSelected, business.value)
                   )}
                 >
                   {isSelected ? <Check className="size-4" /> : null}

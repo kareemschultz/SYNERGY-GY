@@ -442,8 +442,8 @@ function PortalSettings() {
               />
             </div>
 
-            {newPassword &&
-            confirmPassword &&
+            {newPassword !== "" &&
+            confirmPassword !== "" &&
             newPassword !== confirmPassword ? (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />

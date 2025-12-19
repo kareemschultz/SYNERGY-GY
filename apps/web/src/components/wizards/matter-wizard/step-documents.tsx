@@ -36,6 +36,7 @@ type StepDocumentsProps = {
 /**
  * Infer document category from document name for automatic categorization
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Document categorization requires checking multiple keyword patterns for identity, tax, financial, legal, immigration, business, and training documents
 function inferDocumentCategory(documentName: string): DocumentCategory {
   const lower = documentName.toLowerCase();
 
@@ -139,6 +140,7 @@ function inferDocumentCategory(documentName: string): DocumentCategory {
 /**
  * Get document requirements based on the selected service type
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Service-specific document requirements involve matching service types against tax, immigration, corporate, and business registration patterns
 function getDocumentRequirementsByService(serviceTypeName: string): string[] {
   const serviceLower = serviceTypeName.toLowerCase();
 
@@ -418,6 +420,7 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Document requirement cards track upload status, file details, and service linkage with conditional UI states */}
           {requirements.map((docName) => {
             const isUploaded = data.documents?.uploads?.some(
               (u) => u.linkedRequirement === docName
@@ -453,7 +456,7 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
 
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-sm">{docName}</p>
-                  {isUploaded && uploadedFile && (
+                  {Boolean(isUploaded) && uploadedFile ? (
                     <p className="truncate text-muted-foreground text-xs">
                       {uploadedFile.file.name} (
                       {(uploadedFile.file.size || 0) / 1024 < 1024
@@ -461,7 +464,7 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
                         : `${((uploadedFile.file.size || 0) / (1024 * 1024)).toFixed(1)} MB`}
                       )
                     </p>
-                  )}
+                  ) : null}
                 </div>
 
                 {isUploaded ? (

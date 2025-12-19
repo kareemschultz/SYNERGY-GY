@@ -32,7 +32,7 @@ async function seedTags() {
 
     if (existing.length > 0) {
       console.log(`  ⏭️  Skipped: ${defaultTag.name} (already exists)`);
-      skipped++;
+      skipped += 1;
       continue;
     }
 
@@ -44,7 +44,7 @@ async function seedTags() {
     });
 
     console.log(`  ✅ Created: ${defaultTag.name}`);
-    created++;
+    created += 1;
   }
 
   console.log(`\n✨ Done! Created: ${created}, Skipped: ${skipped}`);

@@ -67,6 +67,7 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Analytics dashboard aggregates KPIs, monthly trends, matter distribution, and revenue charts from multiple data sources
 function AnalyticsPage() {
   // Fetch KPIs
   const { data: kpis, isLoading: kpisLoading } = useQuery({
@@ -334,8 +335,8 @@ function AnalyticsPage() {
                           }
                         />
                         <Tooltip
-                          formatter={(value: number) => [
-                            formatCurrency(value),
+                          formatter={(value) => [
+                            formatCurrency(value as number),
                             "Revenue",
                           ]}
                         />
@@ -407,13 +408,13 @@ function AnalyticsPage() {
                         dataKey="value"
                         innerRadius={60}
                         label={({ name, percent }) =>
-                          `${name} (${(percent * 100).toFixed(0)}%)`
+                          `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
                         }
                         labelLine={false}
                         outerRadius={100}
                       >
-                        {deadlineDistribution?.map((entry, index) => (
-                          <Cell fill={entry.fill} key={`cell-${index}`} />
+                        {deadlineDistribution?.map((entry) => (
+                          <Cell fill={entry.fill} key={`cell-${entry.name}`} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -443,8 +444,8 @@ function AnalyticsPage() {
                         labelLine={false}
                         outerRadius={100}
                       >
-                        {businessData.map((entry, index) => (
-                          <Cell fill={entry.fill} key={`cell-${index}`} />
+                        {businessData.map((entry) => (
+                          <Cell fill={entry.fill} key={`cell-${entry.name}`} />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -472,15 +473,17 @@ function AnalyticsPage() {
                         data={clientTypes}
                         dataKey="value"
                         label={({ name, percent }) =>
-                          `${name} (${(percent * 100).toFixed(0)}%)`
+                          `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
                         }
                         labelLine
                         outerRadius={120}
                       >
-                        {clientTypes?.map((_, index) => (
+                        {clientTypes?.map((entry) => (
                           <Cell
-                            fill={COLORS[index % COLORS.length]}
-                            key={`cell-${index}`}
+                            fill={
+                              COLORS[clientTypes.indexOf(entry) % COLORS.length]
+                            }
+                            key={`cell-${entry.name}`}
                           />
                         ))}
                       </Pie>
@@ -562,8 +565,11 @@ function AnalyticsPage() {
                           labelLine
                           outerRadius={120}
                         >
-                          {matterStatusData.map((entry, index) => (
-                            <Cell fill={entry.fill} key={`cell-${index}`} />
+                          {matterStatusData.map((entry) => (
+                            <Cell
+                              fill={entry.fill}
+                              key={`cell-${entry.name}`}
+                            />
                           ))}
                         </Pie>
                         <Tooltip />
@@ -587,10 +593,10 @@ function AnalyticsPage() {
                       <YAxis fontSize={12} />
                       <Tooltip />
                       <Bar dataKey="matters" fill="#10b981" name="New Matters">
-                        {trends?.map((_, index) => (
+                        {trends?.map((trend) => (
                           <Cell
-                            fill={COLORS[index % COLORS.length]}
-                            key={`cell-${index}`}
+                            fill={COLORS[trends.indexOf(trend) % COLORS.length]}
+                            key={`cell-${trend.month}`}
                           />
                         ))}
                       </Bar>
@@ -623,15 +629,15 @@ function AnalyticsPage() {
                         labelLine
                         outerRadius={120}
                       >
-                        {revenueByBusiness?.map((entry, index) => (
+                        {revenueByBusiness?.map((entry) => (
                           <Cell
                             fill={entry.name === "GCMC" ? "#3b82f6" : "#10b981"}
-                            key={`cell-${index}`}
+                            key={`cell-${entry.name}`}
                           />
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
+                        formatter={(value) => formatCurrency(value as number)}
                       />
                       <Legend />
                     </PieChart>
@@ -656,8 +662,8 @@ function AnalyticsPage() {
                         }
                       />
                       <Tooltip
-                        formatter={(value: number) => [
-                          formatCurrency(value),
+                        formatter={(value) => [
+                          formatCurrency(value as number),
                           "Revenue",
                         ]}
                       />
@@ -676,7 +682,7 @@ function AnalyticsPage() {
                 <CardTitle>Staff Workload Distribution</CardTitle>
               </CardHeader>
               <CardContent>
-                {staffWorkload && staffWorkload.length > 0 ? (
+                {staffWorkload !== undefined && staffWorkload.length > 0 ? (
                   <ResponsiveContainer height={400} width="100%">
                     <BarChart data={staffWorkload} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" />

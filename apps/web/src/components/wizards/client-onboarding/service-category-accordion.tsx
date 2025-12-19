@@ -19,13 +19,13 @@ type ServiceCategoryAccordionProps = {
 };
 
 export function ServiceCategoryAccordion({
-  categoryName,
+  categoryName: _categoryName,
   categoryDisplayName,
   categoryDescription,
   services,
   selectedServiceIds,
-  onServiceToggle,
-  onServiceDetails,
+  onServiceToggle: _onServiceToggle,
+  onServiceDetails: _onServiceDetails,
   renderServiceItem,
 }: ServiceCategoryAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -46,12 +46,21 @@ export function ServiceCategoryAccordion({
       ? Math.max(...(maxPrices as number[]))
       : minCategoryPrice;
 
-  const priceDisplay =
-    minCategoryPrice && maxCategoryPrice && maxCategoryPrice > minCategoryPrice
-      ? `${formatCurrency(minCategoryPrice, { compact: true })} - ${formatCurrency(maxCategoryPrice, { compact: true })}`
-      : minCategoryPrice
-        ? `From ${formatCurrency(minCategoryPrice, { compact: true })}`
-        : "Contact for pricing";
+  const getPriceDisplay = (): string => {
+    if (
+      minCategoryPrice &&
+      maxCategoryPrice &&
+      maxCategoryPrice > minCategoryPrice
+    ) {
+      return `${formatCurrency(minCategoryPrice, { compact: true })} - ${formatCurrency(maxCategoryPrice, { compact: true })}`;
+    }
+    if (minCategoryPrice) {
+      return `From ${formatCurrency(minCategoryPrice, { compact: true })}`;
+    }
+    return "Contact for pricing";
+  };
+
+  const priceDisplay = getPriceDisplay();
 
   return (
     <div className="rounded-lg border">

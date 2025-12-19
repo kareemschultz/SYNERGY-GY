@@ -1,3 +1,4 @@
+import type { AnyFieldApi } from "@tanstack/react-form";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { Save, X } from "lucide-react";
@@ -24,6 +25,45 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { client, queryClient } from "@/utils/orpc";
+
+// Helper component for text input fields
+function FormTextField({
+  field,
+  label,
+  type = "text",
+  placeholder,
+}: {
+  field: AnyFieldApi;
+  label: string;
+  type?: "text" | "email" | "date";
+  placeholder?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={field.name}>{label}</Label>
+      <Input
+        id={field.name}
+        onBlur={field.handleBlur}
+        onChange={(e) => field.handleChange(e.target.value)}
+        placeholder={placeholder}
+        type={type}
+        value={field.state.value}
+      />
+    </div>
+  );
+}
+
+// Helper to toggle business in array
+function toggleBusinessInArray(
+  current: ("GCMC" | "KAJ")[],
+  business: "GCMC" | "KAJ",
+  checked: boolean
+): ("GCMC" | "KAJ")[] {
+  if (checked) {
+    return [...current, business];
+  }
+  return current.filter((b) => b !== business);
+}
 
 const clientTypes = [
   { value: "INDIVIDUAL", label: "Individual" },
@@ -68,6 +108,7 @@ type EditClientDialogProps = {
   clientData: ClientData;
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Edit dialog handles complex form with dynamic fields based on client type (individual vs business) and multiple field sections
 export function EditClientDialog({
   open,
   onOpenChange,
@@ -111,7 +152,7 @@ export function EditClientDialog({
       businesses: clientData.businesses,
       notes: clientData.notes || "",
     },
-    onSubmit: async ({ value }) => {
+    onSubmit: ({ value }) => {
       if (!value.displayName.trim()) {
         toast.error("Display Name is required");
         return;
@@ -212,16 +253,11 @@ export function EditClientDialog({
 
               <form.Field name="displayName">
                 {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>Display Name *</Label>
-                    <Input
-                      id={field.name}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder="How this client should be displayed"
-                      value={field.state.value}
-                    />
-                  </div>
+                  <FormTextField
+                    field={field}
+                    label="Display Name *"
+                    placeholder="How this client should be displayed"
+                  />
                 )}
               </form.Field>
             </div>
@@ -231,44 +267,21 @@ export function EditClientDialog({
               <div className="grid gap-4 md:grid-cols-3">
                 <form.Field name="firstName">
                   {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>First Name</Label>
-                      <Input
-                        id={field.name}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        value={field.state.value}
-                      />
-                    </div>
+                    <FormTextField field={field} label="First Name" />
                   )}
                 </form.Field>
 
                 <form.Field name="lastName">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>Last Name</Label>
-                      <Input
-                        id={field.name}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        value={field.state.value}
-                      />
-                    </div>
-                  )}
+                  {(field) => <FormTextField field={field} label="Last Name" />}
                 </form.Field>
 
                 <form.Field name="dateOfBirth">
                   {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>Date of Birth</Label>
-                      <Input
-                        id={field.name}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        type="date"
-                        value={field.state.value}
-                      />
-                    </div>
+                    <FormTextField
+                      field={field}
+                      label="Date of Birth"
+                      type="date"
+                    />
                   )}
                 </form.Field>
               </div>
@@ -279,44 +292,23 @@ export function EditClientDialog({
               <div className="grid gap-4 md:grid-cols-2">
                 <form.Field name="businessName">
                   {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>Business Name</Label>
-                      <Input
-                        id={field.name}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        value={field.state.value}
-                      />
-                    </div>
+                    <FormTextField field={field} label="Business Name" />
                   )}
                 </form.Field>
 
                 <form.Field name="registrationNumber">
                   {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>Registration Number</Label>
-                      <Input
-                        id={field.name}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        value={field.state.value}
-                      />
-                    </div>
+                    <FormTextField field={field} label="Registration Number" />
                   )}
                 </form.Field>
 
                 <form.Field name="incorporationDate">
                   {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor={field.name}>Incorporation Date</Label>
-                      <Input
-                        id={field.name}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        type="date"
-                        value={field.state.value}
-                      />
-                    </div>
+                    <FormTextField
+                      field={field}
+                      label="Incorporation Date"
+                      type="date"
+                    />
                   )}
                 </form.Field>
               </div>
@@ -324,14 +316,8 @@ export function EditClientDialog({
 
             <form.Field name="nationality">
               {(field) => (
-                <div className="space-y-2 md:w-1/2">
-                  <Label htmlFor={field.name}>Nationality</Label>
-                  <Input
-                    id={field.name}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    value={field.state.value}
-                  />
+                <div className="md:w-1/2">
+                  <FormTextField field={field} label="Nationality" />
                 </div>
               )}
             </form.Field>
@@ -343,44 +329,17 @@ export function EditClientDialog({
             <div className="grid gap-4 md:grid-cols-2">
               <form.Field name="email">
                 {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>Email</Label>
-                    <Input
-                      id={field.name}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      type="email"
-                      value={field.state.value}
-                    />
-                  </div>
+                  <FormTextField field={field} label="Email" type="email" />
                 )}
               </form.Field>
 
               <form.Field name="phone">
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>Phone</Label>
-                    <Input
-                      id={field.name}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      value={field.state.value}
-                    />
-                  </div>
-                )}
+                {(field) => <FormTextField field={field} label="Phone" />}
               </form.Field>
 
               <form.Field name="alternatePhone">
                 {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>Alternate Phone</Label>
-                    <Input
-                      id={field.name}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      value={field.state.value}
-                    />
-                  </div>
+                  <FormTextField field={field} label="Alternate Phone" />
                 )}
               </form.Field>
             </div>
@@ -402,31 +361,11 @@ export function EditClientDialog({
 
             <div className="grid gap-4 md:grid-cols-2">
               <form.Field name="city">
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>City</Label>
-                    <Input
-                      id={field.name}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      value={field.state.value}
-                    />
-                  </div>
-                )}
+                {(field) => <FormTextField field={field} label="City" />}
               </form.Field>
 
               <form.Field name="country">
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>Country</Label>
-                    <Input
-                      id={field.name}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      value={field.state.value}
-                    />
-                  </div>
-                )}
+                {(field) => <FormTextField field={field} label="Country" />}
               </form.Field>
             </div>
           </div>
@@ -436,44 +375,16 @@ export function EditClientDialog({
             <h3 className="font-semibold text-sm">Identification</h3>
             <div className="grid gap-4 md:grid-cols-3">
               <form.Field name="tinNumber">
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>TIN Number</Label>
-                    <Input
-                      id={field.name}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      value={field.state.value}
-                    />
-                  </div>
-                )}
+                {(field) => <FormTextField field={field} label="TIN Number" />}
               </form.Field>
 
               <form.Field name="nationalId">
-                {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>National ID</Label>
-                    <Input
-                      id={field.name}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      value={field.state.value}
-                    />
-                  </div>
-                )}
+                {(field) => <FormTextField field={field} label="National ID" />}
               </form.Field>
 
               <form.Field name="passportNumber">
                 {(field) => (
-                  <div className="space-y-2">
-                    <Label htmlFor={field.name}>Passport Number</Label>
-                    <Input
-                      id={field.name}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      value={field.state.value}
-                    />
-                  </div>
+                  <FormTextField field={field} label="Passport Number" />
                 )}
               </form.Field>
             </div>
@@ -485,38 +396,48 @@ export function EditClientDialog({
             <form.Field name="businesses">
               {(field) => (
                 <div className="flex gap-6">
-                  <label className="flex cursor-pointer items-center gap-2">
+                  <div className="flex cursor-pointer items-center gap-2">
                     <Checkbox
                       checked={field.state.value.includes("GCMC")}
-                      onCheckedChange={(checked) => {
-                        const current = field.state.value;
-                        if (checked) {
-                          field.handleChange([...current, "GCMC"]);
-                        } else {
-                          field.handleChange(
-                            current.filter((b) => b !== "GCMC")
-                          );
-                        }
-                      }}
+                      id="business-gcmc"
+                      onCheckedChange={(checked) =>
+                        field.handleChange(
+                          toggleBusinessInArray(
+                            field.state.value,
+                            "GCMC",
+                            Boolean(checked)
+                          )
+                        )
+                      }
                     />
-                    <span className="font-medium text-emerald-600">GCMC</span>
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2">
+                    <label
+                      className="cursor-pointer font-medium text-emerald-600"
+                      htmlFor="business-gcmc"
+                    >
+                      GCMC
+                    </label>
+                  </div>
+                  <div className="flex cursor-pointer items-center gap-2">
                     <Checkbox
                       checked={field.state.value.includes("KAJ")}
-                      onCheckedChange={(checked) => {
-                        const current = field.state.value;
-                        if (checked) {
-                          field.handleChange([...current, "KAJ"]);
-                        } else {
-                          field.handleChange(
-                            current.filter((b) => b !== "KAJ")
-                          );
-                        }
-                      }}
+                      id="business-kaj"
+                      onCheckedChange={(checked) =>
+                        field.handleChange(
+                          toggleBusinessInArray(
+                            field.state.value,
+                            "KAJ",
+                            Boolean(checked)
+                          )
+                        )
+                      }
                     />
-                    <span className="font-medium text-blue-600">KAJ</span>
-                  </label>
+                    <label
+                      className="cursor-pointer font-medium text-blue-600"
+                      htmlFor="business-kaj"
+                    >
+                      KAJ
+                    </label>
+                  </div>
                 </div>
               )}
             </form.Field>
@@ -555,11 +476,14 @@ export function EditClientDialog({
           >
             {updateMutation.isPending ? (
               <svg
+                aria-label="Loading"
                 className="mr-2 h-4 w-4 animate-spin"
                 fill="none"
+                role="img"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
+                <title>Loading</title>
                 <circle
                   className="opacity-25"
                   cx="12"

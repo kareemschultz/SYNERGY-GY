@@ -32,7 +32,7 @@ function PortalForgotPassword() {
     try {
       await api.portal.auth.requestPasswordReset({ email });
       setIsSubmitted(true);
-    } catch (err) {
+    } catch (_err) {
       // Show generic message for security - don't reveal if email exists
       setIsSubmitted(true);
     } finally {

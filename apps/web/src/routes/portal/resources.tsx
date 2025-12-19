@@ -27,6 +27,84 @@ export const Route = createFileRoute("/portal/resources")({
   component: PortalResourcesPage,
 });
 
+type ResourceItem = {
+  id: string;
+  title: string;
+  type: string;
+  category: string;
+  business: string | null;
+  shortDescription: string | null;
+  description: string | null;
+};
+
+// Helper function to render resources grid based on loading/data state
+function renderResourcesGrid(
+  isLoading: boolean,
+  items: ResourceItem[] | undefined,
+  handleDownload: (id: string) => void
+) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <Card className="animate-pulse" key={i}>
+            <CardHeader className="h-24 bg-muted/50" />
+            <CardContent className="h-32" />
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (!items || items.length === 0) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/10 text-muted-foreground">
+        <FileText className="mb-2 h-10 w-10 opacity-20" />
+        <p>No resources found.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {items.map((item) => (
+        <Card
+          className="flex flex-col transition-shadow hover:shadow-md"
+          key={item.id}
+        >
+          <CardHeader className="pb-2">
+            <div className="mb-2 flex items-start justify-between">
+              <Badge variant="outline">{item.category}</Badge>
+              {item.business ? (
+                <Badge className="ml-2" variant="secondary">
+                  {item.business}
+                </Badge>
+              ) : null}
+            </div>
+            <CardTitle className="line-clamp-2 text-lg">{item.title}</CardTitle>
+            <CardDescription>{item.type.replace("_", " ")}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 pb-2">
+            <p className="line-clamp-3 text-muted-foreground text-sm">
+              {item.shortDescription || item.description}
+            </p>
+          </CardContent>
+          <CardFooter className="mt-auto pt-4">
+            <Button
+              className="w-full"
+              onClick={() => handleDownload(item.id)}
+              variant="outline"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download
+            </Button>
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 function PortalResourcesPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("ALL");
@@ -128,60 +206,7 @@ function PortalResourcesPage() {
         </Select>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card className="animate-pulse" key={i}>
-              <CardHeader className="h-24 bg-muted/50" />
-              <CardContent className="h-32" />
-            </Card>
-          ))}
-        </div>
-      ) : data?.items.length === 0 ? (
-        <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/10 text-muted-foreground">
-          <FileText className="mb-2 h-10 w-10 opacity-20" />
-          <p>No resources found.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {data?.items.map((item) => (
-            <Card
-              className="flex flex-col transition-shadow hover:shadow-md"
-              key={item.id}
-            >
-              <CardHeader className="pb-2">
-                <div className="mb-2 flex items-start justify-between">
-                  <Badge variant="outline">{item.category}</Badge>
-                  {item.business && (
-                    <Badge className="ml-2" variant="secondary">
-                      {item.business}
-                    </Badge>
-                  )}
-                </div>
-                <CardTitle className="line-clamp-2 text-lg">
-                  {item.title}
-                </CardTitle>
-                <CardDescription>{item.type.replace("_", " ")}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 pb-2">
-                <p className="line-clamp-3 text-muted-foreground text-sm">
-                  {item.shortDescription || item.description}
-                </p>
-              </CardContent>
-              <CardFooter className="mt-auto pt-4">
-                <Button
-                  className="w-full"
-                  onClick={() => handleDownload(item.id)}
-                  variant="outline"
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
+      {renderResourcesGrid(isLoading, data?.items, handleDownload)}
     </div>
   );
 }

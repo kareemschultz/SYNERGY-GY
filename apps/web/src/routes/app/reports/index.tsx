@@ -73,6 +73,7 @@ type ReportFilters = {
   toDate?: string;
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Reports page handles report listing, filtering, execution, export, and results display with conditional dialogs and data transformations
 function ReportsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -161,7 +162,7 @@ function ReportsPage() {
       // Convert base64 to blob and download
       const binaryString = atob(data.file);
       const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
+      for (let i = 0; i < binaryString.length; i += 1) {
         bytes[i] = binaryString.charCodeAt(i);
       }
       const blob = new Blob([bytes], { type: data.contentType });
@@ -244,6 +245,17 @@ function ReportsPage() {
 
   const reports = reportsData?.reports || [];
   const categories = categoriesData || [];
+
+  // Helper function to format summary values
+  const formatSummaryValue = (value: unknown): string => {
+    if (typeof value === "number") {
+      return value.toLocaleString();
+    }
+    if (typeof value === "object") {
+      return JSON.stringify(value, null, 2);
+    }
+    return String(value);
+  };
 
   return (
     <div className="flex flex-col">
@@ -381,7 +393,9 @@ function ReportsPage() {
                 </TabsList>
 
                 <TabsContent className="mt-4" value="data">
-                  {reportResults && reportResults.data.length > 0 ? (
+                  {reportResults !== undefined &&
+                  reportResults !== null &&
+                  reportResults.data.length > 0 ? (
                     <div className="max-h-[400px] overflow-auto rounded-md border">
                       <Table>
                         <TableHeader>
@@ -395,6 +409,7 @@ function ReportsPage() {
                           {(
                             reportResults.data as Record<string, unknown>[]
                           ).map((row, idx) => (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: Report rows from dynamic data use index as fallback key
                             <TableRow key={idx}>
                               {reportResults.columns.map((col) => (
                                 <TableCell key={col.key}>
@@ -414,7 +429,7 @@ function ReportsPage() {
                 </TabsContent>
 
                 <TabsContent className="mt-4" value="summary">
-                  {reportResults?.summary && (
+                  {reportResults?.summary !== undefined ? (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {Object.entries(reportResults.summary).map(
                         ([key, value]) => (
@@ -424,18 +439,14 @@ function ReportsPage() {
                                 {key.replace(/([A-Z])/g, " $1").trim()}
                               </p>
                               <p className="font-semibold text-2xl">
-                                {typeof value === "number"
-                                  ? value.toLocaleString()
-                                  : typeof value === "object"
-                                    ? JSON.stringify(value, null, 2)
-                                    : String(value)}
+                                {formatSummaryValue(value)}
                               </p>
                             </CardContent>
                           </Card>
                         )
                       )}
                     </div>
-                  )}
+                  ) : null}
                 </TabsContent>
               </Tabs>
 

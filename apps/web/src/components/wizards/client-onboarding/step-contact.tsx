@@ -58,7 +58,7 @@ export function StepContact({
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
             <Input
-              aria-describedby={errors.email ? "email-error" : undefined}
+              aria-describedby={errors.email ? "email-error" : ""}
               aria-invalid={!!errors.email}
               id="email"
               onBlur={() => onFieldBlur?.("email")}
@@ -81,7 +81,7 @@ export function StepContact({
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number</Label>
             <Input
-              aria-describedby={errors.phone ? "phone-error" : undefined}
+              aria-describedby={errors.phone ? "phone-error" : ""}
               aria-invalid={!!errors.phone}
               id="phone"
               onBlur={() => onFieldBlur?.("phone")}

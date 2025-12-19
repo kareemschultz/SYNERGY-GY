@@ -15,6 +15,23 @@ import {
   staffProcedure,
 } from "../index";
 
+/**
+ * Calculate percentage growth between two periods.
+ * Returns 100 if only current period has value, 0 if both are zero.
+ */
+function calculateGrowthPercentage(
+  currentValue: number,
+  previousValue: number
+): number {
+  if (previousValue > 0) {
+    return ((currentValue - previousValue) / previousValue) * 100;
+  }
+  if (currentValue > 0) {
+    return 100;
+  }
+  return 0;
+}
+
 // Analytics router for dashboard visualizations
 export const analyticsRouter = {
   // Get KPI overview
@@ -156,13 +173,10 @@ export const analyticsRouter = {
     // Calculate percentage changes
     const newClientsThisMonth = newClientsThisMonthResult[0]?.count ?? 0;
     const newClientsLastMonth = newClientsLastMonthResult[0]?.count ?? 0;
-    const clientGrowth =
-      newClientsLastMonth > 0
-        ? ((newClientsThisMonth - newClientsLastMonth) / newClientsLastMonth) *
-          100
-        : newClientsThisMonth > 0
-          ? 100
-          : 0;
+    const clientGrowth = calculateGrowthPercentage(
+      newClientsThisMonth,
+      newClientsLastMonth
+    );
 
     const revenueThisMonth = Number.parseFloat(
       revenueThisMonthResult[0]?.total ?? "0"
@@ -170,12 +184,10 @@ export const analyticsRouter = {
     const revenueLastMonth = Number.parseFloat(
       revenueLastMonthResult[0]?.total ?? "0"
     );
-    const revenueGrowth =
-      revenueLastMonth > 0
-        ? ((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100
-        : revenueThisMonth > 0
-          ? 100
-          : 0;
+    const revenueGrowth = calculateGrowthPercentage(
+      revenueThisMonth,
+      revenueLastMonth
+    );
 
     const completedDeadlines = completedDeadlinesThisMonthResult[0]?.count ?? 0;
     const totalDeadlines = totalDeadlinesThisMonthResult[0]?.count ?? 0;
@@ -215,7 +227,14 @@ export const analyticsRouter = {
     .handler(async ({ input, context }) => {
       const accessibleBusinesses = getAccessibleBusinesses(context.staff);
       const now = new Date();
-      const trends = [];
+      const trends: {
+        month: string;
+        monthKey: string;
+        clients: number;
+        matters: number;
+        revenue: number;
+        deadlinesCompleted: number;
+      }[] = [];
 
       for (let i = input.months - 1; i >= 0; i--) {
         const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -358,7 +377,12 @@ export const analyticsRouter = {
       .where(eq(staff.isActive, true));
 
     // Get matter counts per staff
-    const workload = [];
+    const workload: {
+      name: string;
+      activeMatters: number;
+      pendingDeadlines: number;
+      total: number;
+    }[] = [];
     for (const s of staffList) {
       const matterCount = await db
         .select({ count: count() })

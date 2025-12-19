@@ -66,6 +66,87 @@ const clientTypeLabels: Record<string, string> = {
   INVESTOR: "Investor",
 };
 
+function LoadingSkeleton({
+  effectiveView,
+  canViewFinancials,
+}: {
+  effectiveView: "table" | "cards";
+  canViewFinancials: boolean;
+}) {
+  if (effectiveView === "cards") {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loaders don't need stable keys
+          <Skeleton className="h-48 rounded-lg" key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-12" />
+            <TableHead>Name</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Businesses</TableHead>
+            <TableHead>Workload</TableHead>
+            <TableHead className="hidden lg:table-cell">Compliance</TableHead>
+            {canViewFinancials ? (
+              <TableHead className="hidden xl:table-cell">Financial</TableHead>
+            ) : null}
+            <TableHead className="hidden md:table-cell">Contact</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="w-12" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 5 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loaders don't need stable keys
+            <TableRow key={i}>
+              <TableCell>
+                <Skeleton className="h-4 w-4" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-32" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-20" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-16" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-12" />
+              </TableCell>
+              <TableCell className="hidden lg:table-cell">
+                <Skeleton className="h-4 w-16" />
+              </TableCell>
+              {canViewFinancials ? (
+                <TableCell className="hidden xl:table-cell">
+                  <Skeleton className="h-4 w-16" />
+                </TableCell>
+              ) : null}
+              <TableCell className="hidden md:table-cell">
+                <Skeleton className="h-8 w-32" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-16" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-8 w-8" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
 function ClientsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -310,102 +391,42 @@ function ClientsPage() {
         </div>
 
         {/* Error state */}
-        {Boolean(error) && (
+        {error ? (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
             Failed to load clients. Please try again.
           </div>
-        )}
+        ) : null}
 
         {/* Loading state */}
-        {isLoading &&
-          (effectiveView === "cards" ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton className="h-48 rounded-lg" key={i} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12" />
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Businesses</TableHead>
-                    <TableHead>Workload</TableHead>
-                    <TableHead className="hidden lg:table-cell">
-                      Compliance
-                    </TableHead>
-                    {canViewFinancials && (
-                      <TableHead className="hidden xl:table-cell">
-                        Financial
-                      </TableHead>
-                    )}
-                    <TableHead className="hidden md:table-cell">
-                      Contact
-                    </TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell>
-                        <Skeleton className="h-4 w-4" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-32" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-20" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-16" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-12" />
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Skeleton className="h-4 w-16" />
-                      </TableCell>
-                      {canViewFinancials && (
-                        <TableCell className="hidden xl:table-cell">
-                          <Skeleton className="h-4 w-16" />
-                        </TableCell>
-                      )}
-                      <TableCell className="hidden md:table-cell">
-                        <Skeleton className="h-8 w-32" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-5 w-16" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-8 w-8" />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ))}
+        {isLoading ? (
+          <LoadingSkeleton
+            canViewFinancials={canViewFinancials}
+            effectiveView={effectiveView}
+          />
+        ) : null}
 
         {/* Content */}
-        {!isLoading &&
-          (effectiveView === "cards" ? (
+        {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Content rendering handles loading states, view mode switching, empty states, and table row mapping */}
+        {(() => {
+          if (isLoading) {
+            return null;
+          }
+          if (effectiveView === "cards") {
             // Card View
-            data?.clients && data.clients.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {data.clients.map((c) => (
-                  <ClientCard
-                    canViewFinancials={canViewFinancials}
-                    client={c}
-                    key={c.id}
-                  />
-                ))}
-              </div>
-            ) : (
+            if (data?.clients?.length) {
+              return (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {data.clients.map((c) => (
+                    <ClientCard
+                      canViewFinancials={canViewFinancials}
+                      client={c}
+                      key={c.id}
+                    />
+                  ))}
+                </div>
+              );
+            }
+            return (
               <div className="rounded-lg border-2 border-dashed py-12 text-center">
                 <p className="text-muted-foreground">No clients found</p>
                 <Button asChild className="mt-4" size="sm" variant="outline">
@@ -415,9 +436,10 @@ function ClientsPage() {
                   </Link>
                 </Button>
               </div>
-            )
-          ) : (
-            // Table View
+            );
+          }
+          // Table View
+          return (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -425,9 +447,9 @@ function ClientsPage() {
                     <TableHead className="w-12">
                       <Checkbox
                         aria-label="Select all clients"
-                        checked={isAllSelected}
-                        data-state={
-                          isPartiallySelected ? "indeterminate" : undefined
+                        checked={
+                          isAllSelected ||
+                          (isPartiallySelected ? "indeterminate" : false)
                         }
                         onCheckedChange={toggleSelectAll}
                       />
@@ -439,11 +461,11 @@ function ClientsPage() {
                     <TableHead className="hidden lg:table-cell">
                       Compliance
                     </TableHead>
-                    {canViewFinancials && (
+                    {canViewFinancials ? (
                       <TableHead className="hidden xl:table-cell">
                         Financial
                       </TableHead>
-                    )}
+                    ) : null}
                     <TableHead className="hidden md:table-cell">
                       Engagement
                     </TableHead>
@@ -452,10 +474,10 @@ function ClientsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data?.clients && data.clients.length > 0 ? (
+                  {data?.clients?.length ? (
                     data.clients.map((c) => (
                       <TableRow
-                        data-state={isSelected(c.id) ? "selected" : undefined}
+                        className={isSelected(c.id) ? "bg-muted/50" : ""}
                         key={c.id}
                       >
                         <TableCell>
@@ -495,7 +517,7 @@ function ClientsPage() {
                             nisCompliant={c.nisCompliant}
                           />
                         </TableCell>
-                        {canViewFinancials && (
+                        {canViewFinancials ? (
                           <TableCell className="hidden xl:table-cell">
                             {c.financials ? (
                               <FinancialBadge
@@ -507,7 +529,7 @@ function ClientsPage() {
                               <span className="text-muted-foreground">-</span>
                             )}
                           </TableCell>
-                        )}
+                        ) : null}
                         <TableCell className="hidden md:table-cell">
                           <EngagementBadge
                             lastContactDate={c.lastContactDate}
@@ -571,10 +593,11 @@ function ClientsPage() {
                 </TableBody>
               </Table>
             </div>
-          ))}
+          );
+        })()}
 
         {/* Bulk Actions Toolbar */}
-        {hasSelection && (
+        {hasSelection ? (
           <div className="mt-4">
             <BulkActionsToolbar
               entityName="clients"
@@ -601,10 +624,10 @@ function ClientsPage() {
               </Button>
             </BulkActionsToolbar>
           </div>
-        )}
+        ) : null}
 
         {/* Pagination */}
-        {Boolean(data?.totalPages) && (data?.totalPages ?? 0) > 1 && (
+        {(data?.totalPages ?? 0) > 1 ? (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
               Showing {(page - 1) * 20 + 1} to{" "}
@@ -635,7 +658,7 @@ function ClientsPage() {
               </Button>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -644,16 +667,16 @@ function ClientsPage() {
 function BusinessBadges({ businesses }: { businesses: string[] }) {
   return (
     <div className="flex gap-1">
-      {businesses.includes("GCMC") && (
+      {businesses.includes("GCMC") ? (
         <Badge className="bg-emerald-500/10 text-emerald-600" variant="outline">
           GCMC
         </Badge>
-      )}
-      {businesses.includes("KAJ") && (
+      ) : null}
+      {businesses.includes("KAJ") ? (
         <Badge className="bg-blue-500/10 text-blue-600" variant="outline">
           KAJ
         </Badge>
-      )}
+      ) : null}
     </div>
   );
 }

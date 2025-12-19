@@ -88,13 +88,14 @@ export function StepDetails({ data, errors, onUpdate }: StepDetailsProps) {
               <Label htmlFor="taxYear">Tax Year</Label>
               <Input
                 id="taxYear"
-                onChange={(e) =>
-                  onUpdate({
-                    taxYear: e.target.value
-                      ? Number.parseInt(e.target.value, 10)
-                      : undefined,
-                  })
-                }
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  let taxYear: number | undefined;
+                  if (inputValue !== "") {
+                    taxYear = Number.parseInt(inputValue, 10);
+                  }
+                  onUpdate({ taxYear });
+                }}
                 placeholder="e.g., 2024"
                 type="number"
                 value={data.taxYear || ""}

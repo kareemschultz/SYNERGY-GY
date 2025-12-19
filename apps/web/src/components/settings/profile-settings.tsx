@@ -112,8 +112,8 @@ export function ProfileSettings() {
     }
   };
 
-  const getInitials = (name: string) =>
-    name
+  const getInitials = (fullName: string) =>
+    fullName
       .split(" ")
       .map((n) => n[0])
       .join("")

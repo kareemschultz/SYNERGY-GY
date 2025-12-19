@@ -4,6 +4,16 @@ import { Edit, MoreVertical, Plus, Search, Trash } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -49,6 +59,8 @@ function AdminKnowledgeBasePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<unknown | null>(null);
   const [search, setSearch] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["knowledgeBase", "list", search || undefined],
@@ -65,9 +77,16 @@ function AdminKnowledgeBasePage() {
   });
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this item?")) {
-      deleteMutation.mutate({ id });
+    setItemToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (itemToDelete) {
+      deleteMutation.mutate({ id: itemToDelete });
     }
+    setDeleteConfirmOpen(false);
+    setItemToDelete(null);
   };
 
   const handleEdit = (item: unknown) => {
@@ -78,6 +97,89 @@ function AdminKnowledgeBasePage() {
   const handleCreate = () => {
     setEditingItem(null);
     setIsDialogOpen(true);
+  };
+
+  // Render table body content based on loading/data state
+  const renderTableBody = () => {
+    if (isLoading) {
+      return (
+        <TableRow>
+          <TableCell className="text-center text-muted-foreground" colSpan={6}>
+            Loading...
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (!data?.items || data.items.length === 0) {
+      return (
+        <TableRow>
+          <TableCell className="text-center text-muted-foreground" colSpan={6}>
+            No resources found
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return data.items.map((item) => (
+      <TableRow key={item.id}>
+        <TableCell className="font-medium">
+          <div className="flex flex-col">
+            <span>{item.title}</span>
+            <span className="text-muted-foreground text-xs">
+              {item.fileName || "No file"}
+            </span>
+          </div>
+        </TableCell>
+        <TableCell>
+          <Badge variant="outline">{item.type.replace("_", " ")}</Badge>
+        </TableCell>
+        <TableCell>{item.category}</TableCell>
+        <TableCell>
+          {item.business ? (
+            <Badge variant={item.business === "GCMC" ? "default" : "secondary"}>
+              {item.business}
+            </Badge>
+          ) : (
+            <Badge variant="outline">General</Badge>
+          )}
+        </TableCell>
+        <TableCell>
+          {item.isStaffOnly ? (
+            <Badge variant="destructive">Staff Only</Badge>
+          ) : (
+            <Badge
+              className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+              variant="secondary"
+            >
+              Public
+            </Badge>
+          )}
+        </TableCell>
+        <TableCell>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="h-8 w-8 p-0" variant="ghost">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleEdit(item)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => handleDelete(item.id)}
+              >
+                <Trash className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+    ));
   };
 
   return (
@@ -122,87 +224,7 @@ function AdminKnowledgeBasePage() {
               <TableHead className="w-[80px]" />
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell className="py-8 text-center" colSpan={6}>
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : data?.items.length === 0 ? (
-              <TableRow>
-                <TableCell className="py-8 text-center" colSpan={6}>
-                  No resources found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              data?.items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex flex-col">
-                      <span>{item.title}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {item.fileName || "No file"}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {item.type.replace("_", " ")}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{item.category}</TableCell>
-                  <TableCell>
-                    {item.business ? (
-                      <Badge
-                        variant={
-                          item.business === "GCMC" ? "default" : "secondary"
-                        }
-                      >
-                        {item.business}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">General</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {item.isStaffOnly ? (
-                      <Badge variant="destructive">Staff Only</Badge>
-                    ) : (
-                      <Badge
-                        className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                        variant="secondary"
-                      >
-                        Public
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button className="h-8 w-8 p-0" variant="ghost">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(item)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => handleDelete(item.id)}
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
+          <TableBody>{renderTableBody()}</TableBody>
         </Table>
       </div>
 
@@ -211,6 +233,27 @@ function AdminKnowledgeBasePage() {
         onOpenChange={setIsDialogOpen}
         open={isDialogOpen}
       />
+
+      <AlertDialog onOpenChange={setDeleteConfirmOpen} open={deleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Resource</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this item? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -260,9 +303,16 @@ function KBItemDialog({
     mutationFn: (input: {
       title: string;
       description: string;
-      type: string;
-      category: string;
-      business: string | null;
+      type: "AGENCY_FORM" | "LETTER_TEMPLATE" | "GUIDE" | "CHECKLIST";
+      category:
+        | "IMMIGRATION"
+        | "TRAINING"
+        | "NIS"
+        | "GRA"
+        | "DCRA"
+        | "GENERAL"
+        | "INTERNAL";
+      business: "GCMC" | "KAJ" | null;
       isStaffOnly: boolean;
       isFeatured: boolean;
       supportsAutoFill: boolean;
@@ -270,7 +320,7 @@ function KBItemDialog({
       requiredFor: string[];
       content?: string;
     }) => client.knowledgeBase.create(input),
-    onSuccess: async () => {
+    onSuccess: () => {
       if (formData.file) {
         toast.success("Resource created (File upload pending backend support)");
       } else {
@@ -287,14 +337,21 @@ function KBItemDialog({
       id: string;
       title: string;
       description: string;
-      type: string;
-      category: string;
-      business: string | null;
-      isStaffOnly: boolean;
-      isFeatured: boolean;
-      supportsAutoFill: boolean;
-      relatedServices: string[];
-      requiredFor: string[];
+      type?: "AGENCY_FORM" | "LETTER_TEMPLATE" | "GUIDE" | "CHECKLIST";
+      category?:
+        | "IMMIGRATION"
+        | "TRAINING"
+        | "NIS"
+        | "GRA"
+        | "DCRA"
+        | "GENERAL"
+        | "INTERNAL";
+      business?: "GCMC" | "KAJ" | null;
+      isStaffOnly?: boolean;
+      isFeatured?: boolean;
+      supportsAutoFill?: boolean;
+      relatedServices?: string[];
+      requiredFor?: string[];
       content?: string;
     }) => client.knowledgeBase.update(input),
     onSuccess: () => {
@@ -305,15 +362,29 @@ function KBItemDialog({
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const data = {
       title: formData.title,
       description: formData.description,
-      type: formData.type,
-      category: formData.category,
-      business: formData.business === "ALL" ? null : formData.business,
+      type: formData.type as
+        | "AGENCY_FORM"
+        | "LETTER_TEMPLATE"
+        | "GUIDE"
+        | "CHECKLIST",
+      category: formData.category as
+        | "IMMIGRATION"
+        | "TRAINING"
+        | "NIS"
+        | "GRA"
+        | "DCRA"
+        | "GENERAL"
+        | "INTERNAL",
+      business: (formData.business === "ALL" ? null : formData.business) as
+        | "GCMC"
+        | "KAJ"
+        | null,
       isStaffOnly: formData.isStaffOnly,
       isFeatured: false,
       supportsAutoFill: false,
@@ -453,7 +524,7 @@ function KBItemDialog({
               </div>
             </div>
 
-            {(formData.type === "GUIDE" || formData.type === "CHECKLIST") && (
+            {formData.type === "GUIDE" || formData.type === "CHECKLIST" ? (
               <div className="space-y-2">
                 <Label htmlFor="content">Content (Markdown)</Label>
                 <Textarea
@@ -466,10 +537,10 @@ function KBItemDialog({
                   value={formData.content}
                 />
               </div>
-            )}
+            ) : null}
 
-            {(formData.type === "AGENCY_FORM" ||
-              formData.type === "LETTER_TEMPLATE") && (
+            {formData.type === "AGENCY_FORM" ||
+            formData.type === "LETTER_TEMPLATE" ? (
               <div className="space-y-2">
                 <Label htmlFor="file">Upload File</Label>
                 <Input
@@ -482,13 +553,13 @@ function KBItemDialog({
                   }
                   type="file"
                 />
-                {isEditing && !formData.file && (
+                {isEditing === true && formData.file === null ? (
                   <p className="text-muted-foreground text-xs">
                     Leave empty to keep existing file
                   </p>
-                )}
+                ) : null}
               </div>
-            )}
+            ) : null}
           </div>
 
           <DialogFooter>

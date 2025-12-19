@@ -28,6 +28,7 @@ export const Route = createFileRoute("/app/admin/settings")({
   component: SystemSettingsPage,
 });
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Admin settings page aggregates app info, backup stats, staff stats, and system configuration across multiple cards
 function SystemSettingsPage() {
   const { data: appInfo, isLoading: appInfoLoading } = useQuery({
     queryKey: ["settings", "appInfo"],

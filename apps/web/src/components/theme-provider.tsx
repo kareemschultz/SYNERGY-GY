@@ -8,5 +8,4 @@ export function ThemeProvider({
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
 
-// biome-ignore lint/performance/noBarrelFile: Auto-fix
 export { useTheme } from "next-themes";

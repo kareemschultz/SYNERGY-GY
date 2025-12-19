@@ -214,15 +214,13 @@ export const mattersRouter = {
           },
           createdBy: true,
           checklist: {
-            // biome-ignore lint/nursery/noShadow: Auto-fix
-            orderBy: (c, { asc }) => [asc(c.sortOrder)],
+            orderBy: (c, { asc: ascOrder }) => [ascOrder(c.sortOrder)],
             with: {
               completedBy: true,
             },
           },
           notes: {
-            // biome-ignore lint/nursery/noShadow: Auto-fix
-            orderBy: (n, { desc }) => [desc(n.createdAt)],
+            orderBy: (n, { desc: descOrder }) => [descOrder(n.createdAt)],
             with: {
               createdBy: true,
             },
@@ -263,7 +261,7 @@ export const mattersRouter = {
         where: eq(serviceCatalog.id, input.serviceTypeId),
       });
 
-      const matterResult = await db
+      const [newMatter] = await db
         .insert(matter)
         .values({
           ...input,
@@ -274,7 +272,6 @@ export const mattersRouter = {
         })
         .returning();
 
-      const newMatter = matterResult[0];
       if (!newMatter) {
         throw new ORPCError("INTERNAL_SERVER_ERROR", {
           message: "Failed to create matter",
@@ -362,7 +359,9 @@ export const mattersRouter = {
       return services.map((s) => ({
         id: s.id,
         name: s.displayName,
-        category: s.category?.displayName || "Other",
+        category:
+          (s.category as { displayName?: string } | null)?.displayName ||
+          "Other",
         business: s.business,
         description: s.shortDescription || s.description,
         estimatedDays: s.estimatedDays,

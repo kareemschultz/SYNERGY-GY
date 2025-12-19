@@ -6,6 +6,7 @@ import {
   timeEntry,
 } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
+import type { SQL } from "drizzle-orm";
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -84,11 +85,12 @@ export const timeTrackingRouter = {
    */
   list: staffProcedure
     .input(listTimeEntriesSchema)
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: List endpoint requires multiple optional filter conditions (business, matter, staff, date range, billable, invoiced) with dynamic where clause construction
     .handler(async ({ input, context }) => {
       const accessibleBusinesses = getAccessibleBusinesses(context.staff);
       const offset = (input.page - 1) * input.limit;
 
-      const conditions = [];
+      const conditions: SQL<unknown>[] = [];
 
       // Business filter
       if (input.business) {
@@ -437,7 +439,7 @@ export const timeTrackingRouter = {
     }
 
     // Calculate elapsed time
-    const elapsedMs = new Date().getTime() - timer.startedAt.getTime();
+    const elapsedMs = Date.now() - timer.startedAt.getTime();
     const elapsedMinutes = Math.floor(elapsedMs / 60_000);
 
     return {
@@ -513,13 +515,16 @@ export const timeTrackingRouter = {
         });
       }
 
+      // Type assertion for matter relation (Drizzle returns union type)
+      const timerMatter = timer.matter as { business: "GCMC" | "KAJ" };
+
       // Calculate duration
       const endTime = new Date();
       const durationMs = endTime.getTime() - timer.startedAt.getTime();
       const durationMinutes = Math.max(1, Math.round(durationMs / 60_000)); // At least 1 minute
 
       const timerDate = timer.startedAt.toISOString().split("T")[0] as string;
-      const matterBusiness = timer.matter.business;
+      const matterBusiness: "GCMC" | "KAJ" = timerMatter.business;
 
       // Get hourly rate
       let hourlyRate: string | null = null;

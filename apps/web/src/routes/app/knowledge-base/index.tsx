@@ -73,7 +73,7 @@ function KnowledgeBasePage() {
 
   const { data: itemDetails } = useQuery({
     ...orpc.knowledgeBase.getById.queryOptions({
-      input: { id: selectedItem! },
+      input: { id: selectedItem ?? "" },
     }),
     enabled: !!selectedItem,
   });
@@ -90,6 +90,88 @@ function KnowledgeBasePage() {
 
   const handleDownload = (id: string) => {
     downloadMutation.mutate({ id });
+  };
+
+  // Helper function to get badge variant based on business
+  const getBusinessBadgeVariant = (
+    itemBusiness: string | null
+  ): "default" | "secondary" | "outline" => {
+    if (itemBusiness === "GCMC") {
+      return "default";
+    }
+    if (itemBusiness === "KAJ") {
+      return "secondary";
+    }
+    return "outline";
+  };
+
+  // Helper function to render main content
+  const renderMainContent = () => {
+    if (isLoading) {
+      return (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card className="animate-pulse" key={i}>
+              <CardHeader className="h-24 bg-muted/50" />
+              <CardContent className="h-32" />
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    if (data?.items.length === 0) {
+      return (
+        <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed text-muted-foreground">
+          <FileText className="mb-2 h-10 w-10 opacity-20" />
+          <p>No resources found matching your filters.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {data?.items.map((item) => (
+          <Card
+            className="flex cursor-pointer flex-col transition-shadow hover:shadow-md"
+            key={item.id}
+            onClick={() => setSelectedItem(item.id)}
+          >
+            <CardHeader className="pb-2">
+              <div className="mb-2 flex items-start justify-between">
+                <Badge variant={getBusinessBadgeVariant(item.business)}>
+                  {item.business || "General"}
+                </Badge>
+                {item.isStaffOnly ? (
+                  <Badge className="ml-2" variant="destructive">
+                    Staff Only
+                  </Badge>
+                ) : null}
+              </div>
+              <CardTitle className="line-clamp-2 text-lg">
+                {item.title}
+              </CardTitle>
+              <CardDescription>{item.category}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pb-2">
+              <p className="line-clamp-3 text-muted-foreground text-sm">
+                {item.shortDescription || item.description}
+              </p>
+            </CardContent>
+            <CardFooter className="border-t bg-muted/5 pt-2">
+              <div className="flex w-full items-center justify-between text-muted-foreground text-xs">
+                <span>{item.type.replace("_", " ")}</span>
+                {item.supportsAutoFill ? (
+                  <span className="flex items-center text-blue-600 dark:text-blue-400">
+                    <Sparkles className="mr-1 h-3 w-3" /> Auto-fill
+                  </span>
+                ) : null}
+              </div>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -187,73 +269,7 @@ function KnowledgeBasePage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {isLoading ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card className="animate-pulse" key={i}>
-                  <CardHeader className="h-24 bg-muted/50" />
-                  <CardContent className="h-32" />
-                </Card>
-              ))}
-            </div>
-          ) : data?.items.length === 0 ? (
-            <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed text-muted-foreground">
-              <FileText className="mb-2 h-10 w-10 opacity-20" />
-              <p>No resources found matching your filters.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {data?.items.map((item) => (
-                <Card
-                  className="flex cursor-pointer flex-col transition-shadow hover:shadow-md"
-                  key={item.id}
-                  onClick={() => setSelectedItem(item.id)}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="mb-2 flex items-start justify-between">
-                      <Badge
-                        variant={
-                          item.business === "GCMC"
-                            ? "default"
-                            : item.business === "KAJ"
-                              ? "secondary"
-                              : "outline"
-                        }
-                      >
-                        {item.business || "General"}
-                      </Badge>
-                      {item.isStaffOnly && (
-                        <Badge className="ml-2" variant="destructive">
-                          Staff Only
-                        </Badge>
-                      )}
-                    </div>
-                    <CardTitle className="line-clamp-2 text-lg">
-                      {item.title}
-                    </CardTitle>
-                    <CardDescription>{item.category}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-1 pb-2">
-                    <p className="line-clamp-3 text-muted-foreground text-sm">
-                      {item.shortDescription || item.description}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="border-t bg-muted/5 pt-2">
-                    <div className="flex w-full items-center justify-between text-muted-foreground text-xs">
-                      <span>{item.type.replace("_", " ")}</span>
-                      {item.supportsAutoFill && (
-                        <span className="flex items-center text-blue-600 dark:text-blue-400">
-                          <Sparkles className="mr-1 h-3 w-3" /> Auto-fill
-                        </span>
-                      )}
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+        <div className="flex-1 overflow-y-auto p-6">{renderMainContent()}</div>
       </div>
 
       {/* Item Details Dialog */}
@@ -274,7 +290,8 @@ function KnowledgeBasePage() {
               <p>{itemDetails?.description}</p>
             </div>
 
-            {itemDetails?.requiredFor && itemDetails.requiredFor.length > 0 && (
+            {itemDetails?.requiredFor !== undefined &&
+            itemDetails.requiredFor.length > 0 ? (
               <div className="space-y-1">
                 <span className="font-semibold text-muted-foreground text-xs uppercase">
                   Required For
@@ -287,7 +304,7 @@ function KnowledgeBasePage() {
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
             <div className="grid grid-cols-2 gap-4 rounded-md bg-muted/20 p-3 text-muted-foreground text-xs">
               <div>
@@ -310,7 +327,7 @@ function KnowledgeBasePage() {
                   {new Date(itemDetails?.updatedAt || "").toLocaleDateString()}
                 </span>
               </div>
-              {itemDetails?.agencyUrl && (
+              {itemDetails?.agencyUrl ? (
                 <div>
                   <span className="block font-medium">Agency Link</span>
                   <a
@@ -322,7 +339,7 @@ function KnowledgeBasePage() {
                     Visit Website
                   </a>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -339,9 +356,11 @@ function KnowledgeBasePage() {
               <Button
                 className="w-full sm:w-auto"
                 disabled={!itemDetails?.id}
-                onClick={() =>
-                  itemDetails?.id && handleDownload(itemDetails.id)
-                }
+                onClick={() => {
+                  if (itemDetails?.id) {
+                    handleDownload(itemDetails.id);
+                  }
+                }}
               >
                 <Download className="mr-2 h-4 w-4" />
                 Download

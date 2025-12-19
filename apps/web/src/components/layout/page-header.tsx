@@ -14,11 +14,12 @@ type BreadcrumbItemType = {
   href?: string;
 };
 
-type PageHeaderProps = {
+export type PageHeaderProps = {
   title: string;
   description?: string;
   breadcrumbs?: BreadcrumbItemType[];
   actions?: React.ReactNode;
+  children?: React.ReactNode;
 };
 
 export function PageHeader({
@@ -26,7 +27,10 @@ export function PageHeader({
   description,
   breadcrumbs,
   actions,
+  children,
 }: PageHeaderProps) {
+  // Support both actions prop and children
+  const actionsContent = actions || children;
   return (
     <div className="border-b bg-card">
       <div className="flex flex-col gap-4 px-6 py-4">
@@ -66,9 +70,9 @@ export function PageHeader({
               <p className="text-muted-foreground text-sm">{description}</p>
             ) : null}
           </div>
-          {actions ? (
+          {actionsContent ? (
             <div className="flex flex-shrink-0 items-center gap-2">
-              {actions}
+              {actionsContent}
             </div>
           ) : null}
         </div>

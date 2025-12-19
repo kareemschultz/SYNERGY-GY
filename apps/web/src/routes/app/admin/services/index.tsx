@@ -1,18 +1,30 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Building2,
   Edit,
   Eye,
   FolderTree,
+  Loader2,
   Package,
   Plus,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { CategoryFormDialog } from "@/components/admin/category-form-dialog";
 import { ServiceFormDialog } from "@/components/admin/service-form-dialog";
 import { PageHeader } from "@/components/layout/page-header";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +52,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/utils";
-import { client } from "@/utils/orpc";
+import { client, queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/admin/services/")({
   component: AdminServicesPage,
@@ -124,7 +136,7 @@ function AdminServicesPage() {
       toast.success("Service deleted successfully");
       setDeleteServiceId(null);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Failed to delete service");
     },
   });
@@ -137,7 +149,7 @@ function AdminServicesPage() {
       toast.success("Category deleted successfully");
       setDeleteCategoryId(null);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Failed to delete category");
     },
   });
@@ -267,9 +279,9 @@ function AdminServicesPage() {
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
                               {service.displayName}
-                              {!!service.isFeatured && (
+                              {service.isFeatured ? (
                                 <Badge variant="secondary">Featured</Badge>
-                              )}
+                              ) : null}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -384,14 +396,13 @@ function AdminServicesPage() {
                             {category.description || "—"}
                           </TableCell>
                           <TableCell>
-                            {/* biome-ignore lint/nursery/noLeakedRender: Auto-fix */}
-                            {"serviceCount" in category && (
+                            {"serviceCount" in category ? (
                               <Badge variant="outline">
                                 {String(
                                   category.serviceCount as number | undefined
                                 )}
                               </Badge>
-                            )}
+                            ) : null}
                           </TableCell>
                           <TableCell>{category.sortOrder}</TableCell>
                           <TableCell>
@@ -475,7 +486,7 @@ function AdminServicesPage() {
 
       {/* Delete Service Confirmation */}
       <AlertDialog
-        onOpenChange={(open) => !open && setDeleteServiceId(null)}
+        onOpenChange={(open: boolean) => !open && setDeleteServiceId(null)}
         open={!!deleteServiceId}
       >
         <AlertDialogContent>
@@ -492,13 +503,15 @@ function AdminServicesPage() {
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteServiceMutation.isPending}
-              onClick={() =>
-                deleteServiceId && deleteServiceMutation.mutate(deleteServiceId)
-              }
+              onClick={() => {
+                if (deleteServiceId) {
+                  deleteServiceMutation.mutate(deleteServiceId);
+                }
+              }}
             >
               {deleteServiceMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+              ) : null}{" "}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -507,7 +520,7 @@ function AdminServicesPage() {
 
       {/* Delete Category Confirmation */}
       <AlertDialog
-        onOpenChange={(open) => !open && setDeleteCategoryId(null)}
+        onOpenChange={(open: boolean) => !open && setDeleteCategoryId(null)}
         open={!!deleteCategoryId}
       >
         <AlertDialogContent>
@@ -524,14 +537,15 @@ function AdminServicesPage() {
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteCategoryMutation.isPending}
-              onClick={() =>
-                deleteCategoryId &&
-                deleteCategoryMutation.mutate(deleteCategoryId)
-              }
+              onClick={() => {
+                if (deleteCategoryId) {
+                  deleteCategoryMutation.mutate(deleteCategoryId);
+                }
+              }}
             >
               {deleteCategoryMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+              ) : null}{" "}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

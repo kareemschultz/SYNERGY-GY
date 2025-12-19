@@ -198,6 +198,7 @@ export const businessConfig: Record<
 };
 
 // File type icons based on MIME type or extension
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: File icon mapping checks file extensions and MIME types for documents, spreadsheets, images, and other file categories
 export function getFileIcon(
   mimeType?: string | null,
   fileName?: string | null

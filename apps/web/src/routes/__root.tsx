@@ -63,12 +63,12 @@ function RootComponent() {
         </div>
         <Toaster richColors />
       </ThemeProvider>
-      {import.meta.env.DEV && (
+      {import.meta.env.DEV ? (
         <>
           <TanStackRouterDevtools position="bottom-left" />
           <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
         </>
-      )}
+      ) : null}
     </>
   );
 }

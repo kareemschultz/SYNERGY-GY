@@ -50,7 +50,7 @@ const getServerUrl = (): string => {
 export const link = new RPCLink({
   // Call getServerUrl() to pass a resolved URL string
   url: getServerUrl(),
-  async fetch(_url, options) {
+  async fetch(_url: Request | URL | string, options) {
     // Handle Request objects specially - extract URL and body
     if (_url instanceof Request) {
       let finalUrl = _url.url;
@@ -86,12 +86,8 @@ export const link = new RPCLink({
     let urlString: string;
     if (typeof _url === "string") {
       urlString = _url;
-    } else if (_url instanceof URL) {
-      urlString = _url.toString();
-    } else if (typeof _url === "function") {
-      urlString = (_url as () => string)();
     } else {
-      urlString = String(_url);
+      urlString = _url.toString();
     }
 
     try {

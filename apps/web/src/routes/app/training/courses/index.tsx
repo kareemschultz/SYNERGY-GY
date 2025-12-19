@@ -120,6 +120,52 @@ function CoursesPage() {
     });
   };
 
+  // Helper function to render course grid content
+  const renderCourseGridContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (!courses || courses.length === 0) {
+      return (
+        <div className="rounded-lg border border-dashed p-12 text-center">
+          <div className="mx-auto max-w-md">
+            <h3 className="font-semibold text-lg">No courses found</h3>
+            <p className="mt-2 text-muted-foreground text-sm">
+              {search.search ||
+              search.category !== "ALL" ||
+              search.isActive !== "true"
+                ? "Try adjusting your filters to see more results."
+                : "Get started by creating your first training course."}
+            </p>
+            {!search.search &&
+              search.category === "ALL" &&
+              search.isActive === "true" && (
+                <Button asChild className="mt-4">
+                  <Link to="/app/training/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Course
+                  </Link>
+                </Button>
+              )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {courses.map((course: Course) => (
+          <CourseCard course={course} key={course.id} />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col">
       <PageHeader
@@ -186,40 +232,7 @@ function CoursesPage() {
         </div>
 
         {/* Course Grid */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : !courses || courses.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-12 text-center">
-            <div className="mx-auto max-w-md">
-              <h3 className="font-semibold text-lg">No courses found</h3>
-              <p className="mt-2 text-muted-foreground text-sm">
-                {search.search ||
-                search.category !== "ALL" ||
-                search.isActive !== "true"
-                  ? "Try adjusting your filters to see more results."
-                  : "Get started by creating your first training course."}
-              </p>
-              {!search.search &&
-                search.category === "ALL" &&
-                search.isActive === "true" && (
-                  <Button asChild className="mt-4">
-                    <Link to="/app/training/new">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create Course
-                    </Link>
-                  </Button>
-                )}
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course: Course) => (
-              <CourseCard course={course} key={course.id} />
-            ))}
-          </div>
-        )}
+        {renderCourseGridContent()}
       </div>
     </div>
   );

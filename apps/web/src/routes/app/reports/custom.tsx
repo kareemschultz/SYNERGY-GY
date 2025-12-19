@@ -204,7 +204,7 @@ function CustomReportsPage() {
         </Button>
       </div>
 
-      {reports && reports.length > 0 ? (
+      {reports !== undefined && reports.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {reports.map((report) => (
             <Card key={report.id}>
@@ -338,9 +338,9 @@ function CustomReportsPage() {
               Cancel
             </Button>
             <Button disabled={createMutation.isPending} onClick={handleCreate}>
-              {createMutation.isPending && (
+              {createMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              ) : null}
               Create Report
             </Button>
           </DialogFooter>
@@ -421,9 +421,9 @@ function CustomReportsPage() {
               Cancel
             </Button>
             <Button disabled={updateMutation.isPending} onClick={handleUpdate}>
-              {updateMutation.isPending && (
+              {updateMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              ) : null}
               Save Changes
             </Button>
           </DialogFooter>
@@ -448,13 +448,15 @@ function CustomReportsPage() {
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               disabled={deleteMutation.isPending}
-              onClick={() =>
-                deleteReportId && deleteMutation.mutate(deleteReportId)
-              }
+              onClick={() => {
+                if (deleteReportId) {
+                  deleteMutation.mutate(deleteReportId);
+                }
+              }}
             >
-              {deleteMutation.isPending && (
+              {deleteMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              ) : null}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -109,6 +109,7 @@ const CATEGORY_MAP: Record<
   },
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Migration scripts inherently require complex logic to handle data transformation, validation, and multiple sequential database operations. Refactoring would reduce clarity.
 async function migrateServiceCatalog() {
   const pool = new Pool({ connectionString: DATABASE_URL });
 
@@ -197,7 +198,7 @@ async function migrateServiceCatalog() {
 
       if (existingService.rows.length > 0) {
         console.log(`  ⊘ Skipped: "${service.name}" (already exists)`);
-        skippedCount++;
+        skippedCount += 1;
         continue;
       }
 
@@ -207,7 +208,7 @@ async function migrateServiceCatalog() {
         console.log(
           `  ⚠️  Warning: No category mapping for "${service.category}" - skipping "${service.name}"`
         );
-        skippedCount++;
+        skippedCount += 1;
         continue;
       }
 
@@ -263,7 +264,7 @@ async function migrateServiceCatalog() {
       console.log(
         `  ✓ Migrated: "${service.name}" (${service.business}/${service.category})`
       );
-      migratedCount++;
+      migratedCount += 1;
     }
 
     // Summary

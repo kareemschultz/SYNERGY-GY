@@ -51,6 +51,7 @@ function ClientOnboardingWizard() {
   const navigate = useNavigate();
 
   const createMutation = useMutation({
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Client creation orchestrates client record, document uploads, and service linking with error handling
     mutationFn: async (data: ClientOnboardingData) => {
       // Map wizard data to API format
       const displayName = getDisplayName(data);
@@ -91,22 +92,14 @@ function ClientOnboardingWizard() {
       // 2. Save service selections
       // Note: Currently using old gcmcServices/kajServices format as the service catalog UI migration is incomplete
       // When service catalog UI is complete, this should use selectedServiceIds only
-      if (
-        data.selectedServiceIds.length > 0 ||
-        data.gcmcServices.length > 0 ||
-        data.kajServices.length > 0
-      ) {
-        // If we have selectedServiceIds (new format), use them
-        if (data.selectedServiceIds.length > 0) {
-          await client.clientServices.saveSelections({
-            clientId: newClient.id,
-            serviceIds: data.selectedServiceIds,
-          });
-        }
-        // Otherwise, fall back to old format (temporary until service catalog UI is complete)
-        // This requires a different API endpoint that accepts category codes
-        // For now, we'll skip this to avoid errors - the service catalog migration needs to be completed
+      // Save service selections if any are provided
+      if (data.selectedServiceIds.length > 0) {
+        await client.clientServices.saveSelections({
+          clientId: newClient.id,
+          serviceIds: data.selectedServiceIds,
+        });
       }
+      // Note: gcmcServices and kajServices are legacy format - service catalog migration required
 
       // 3. Upload documents and link to services
       if (data.documents?.uploads && data.documents.uploads.length > 0) {
@@ -366,12 +359,12 @@ function ClientOnboardingWizard() {
           </WizardContainer>
 
           {/* Show submission error */}
-          {wizard.errors.submit && (
+          {wizard.errors.submit !== undefined ? (
             <div className="mt-4 rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive">
               <p className="font-medium">Error creating client</p>
               <p className="text-sm">{wizard.errors.submit}</p>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

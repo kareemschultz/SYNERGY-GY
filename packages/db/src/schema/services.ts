@@ -135,10 +135,7 @@ export const matter = pgTable(
     isRecurring: boolean("is_recurring").default(false).notNull(),
     recurrencePattern: recurrencePatternEnum("recurrence_pattern"),
     nextRecurrenceDate: date("next_recurrence_date"),
-    parentMatterId: text("parent_matter_id").references(
-      (): typeof matter => matter.id,
-      { onDelete: "set null" }
-    ), // Link to original matter if this is a recurring instance
+    parentMatterId: text("parent_matter_id"), // Link to original matter if this is a recurring instance (self-reference added via alter table)
     recurrenceCount: integer("recurrence_count").default(0), // How many times this has recurred
 
     // Timestamps

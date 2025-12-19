@@ -518,13 +518,13 @@ export function StepBeneficialOwners({
             <Button
               disabled={
                 !(
-                  currentOwner.fullName &&
-                  currentOwner.dateOfBirth &&
-                  currentOwner.nationality
+                  Boolean(currentOwner.fullName) &&
+                  Boolean(currentOwner.dateOfBirth) &&
+                  Boolean(currentOwner.nationality)
                 ) ||
                 currentOwner.ownershipPercentage < 25 ||
                 currentOwner.ownershipPercentage > 100 ||
-                (currentOwner.isPep && !currentOwner.pepDetails)
+                (currentOwner.isPep === true && !currentOwner.pepDetails)
               }
               onClick={handleSaveOwner}
             >

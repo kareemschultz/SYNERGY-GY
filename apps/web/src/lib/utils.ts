@@ -29,10 +29,19 @@ export function formatCurrency(amount: number, currency = "GYD"): string {
   return `${currency} ${formattedAmount}`;
 }
 
+type UploadedDocument = {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  storagePath: string;
+  uploadedAt: string;
+};
+
 export async function uploadFile(
   documentId: string,
   file: File
-): Promise<{ success: boolean; document: any }> {
+): Promise<{ success: boolean; document: UploadedDocument }> {
   const formData = new FormData();
   formData.append("file", file);
 

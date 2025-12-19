@@ -20,6 +20,16 @@ const _BACKUP_DIR = process.env.BACKUP_DIR || "./backups";
 const SCRIPTS_DIR = process.env.SCRIPTS_DIR || "./scripts";
 const CHECK_INTERVAL_MS = 60_000; // Check every minute
 
+// Regex patterns (module-level for performance)
+const WHITESPACE_REGEX = /\s+/;
+const WHITESPACE_GLOBAL_REGEX = /\s+/g;
+const TIMESTAMP_CHARS_REGEX = /[:.]/g;
+const ARCHIVE_PATH_REGEX = /Archive:\s*(.+\.zip)/;
+const SHA256_REGEX = /SHA256:\s*(\w+)/;
+const TABLES_COUNT_REGEX = /Tables:\s*(\d+)/;
+const RECORDS_COUNT_REGEX = /Records:\s*(\d+)/;
+const FILES_COUNT_REGEX = /Files:\s*(\d+)/;
+
 // Simple cron parser - supports basic patterns
 // Format: minute hour day-of-month month day-of-week
 // Examples:
@@ -36,6 +46,7 @@ type CronFields = {
   dayOfWeek: number[];
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Cron field parser handles wildcards, step values, ranges, and comma-separated lists per cron specification
 function parseCronField(field: string, min: number, max: number): number[] {
   const values: number[] = [];
 
@@ -116,7 +127,7 @@ function parseCronField(field: string, min: number, max: number): number[] {
 }
 
 function parseCronExpression(expr: string): CronFields | null {
-  const parts = expr.trim().split(/\s+/);
+  const parts = expr.trim().split(WHITESPACE_REGEX);
   if (parts.length !== 5) {
     return null;
   }
@@ -192,8 +203,11 @@ function formatFileSize(bytes: number): string {
 async function executeBackup(
   schedule: typeof backupSchedule.$inferSelect
 ): Promise<void> {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const backupName = `scheduled-${schedule.name.toLowerCase().replace(/\s+/g, "-")}-${timestamp}`;
+  const timestamp = new Date()
+    .toISOString()
+    .replace(TIMESTAMP_CHARS_REGEX, "-")
+    .slice(0, 19);
+  const backupName = `scheduled-${schedule.name.toLowerCase().replace(WHITESPACE_GLOBAL_REGEX, "-")}-${timestamp}`;
 
   console.log(`[BackupScheduler] Starting scheduled backup: ${backupName}`);
 
@@ -232,7 +246,7 @@ async function executeBackup(
     // Parse output for file path
     const outputLines = stdout.split("\n");
     const archiveLine = outputLines.find((line) => line.includes("Archive:"));
-    const filePath = archiveLine?.match(/Archive:\s*(.+\.zip)/)?.[1];
+    const filePath = archiveLine?.match(ARCHIVE_PATH_REGEX)?.[1];
 
     // Get file info
     let fileSize = 0;
@@ -242,13 +256,13 @@ async function executeBackup(
       fileSize = stats.size;
 
       const checksumLine = outputLines.find((line) => line.includes("SHA256:"));
-      checksum = checksumLine?.match(/SHA256:\s*(\w+)/)?.[1] || "";
+      checksum = checksumLine?.match(SHA256_REGEX)?.[1] || "";
     }
 
     // Parse manifest for stats
-    const tablesMatch = stdout.match(/Tables:\s*(\d+)/);
-    const recordsMatch = stdout.match(/Records:\s*(\d+)/);
-    const filesMatch = stdout.match(/Files:\s*(\d+)/);
+    const tablesMatch = stdout.match(TABLES_COUNT_REGEX);
+    const recordsMatch = stdout.match(RECORDS_COUNT_REGEX);
+    const filesMatch = stdout.match(FILES_COUNT_REGEX);
 
     // Update backup record with success
     await db

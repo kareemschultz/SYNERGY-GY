@@ -130,11 +130,11 @@ export function ActiveTimerDisplay() {
               <p className="truncate text-muted-foreground text-xs">
                 {activeTimer.matter.title}
               </p>
-              {activeTimer.matter.client && (
+              {activeTimer.matter.client ? (
                 <p className="text-muted-foreground text-xs">
                   {activeTimer.matter.client.displayName}
                 </p>
-              )}
+              ) : null}
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground text-xs">

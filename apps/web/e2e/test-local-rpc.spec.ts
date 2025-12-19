@@ -12,7 +12,7 @@ test("test RPC via local server", async ({ page }) => {
   console.log("\n=== TEST: Local RPC Calls ===\n");
 
   // Track network
-  page.on("request", async (req) => {
+  page.on("request", (req) => {
     const url = req.url();
     if (url.includes("/rpc/") || url.includes("/api/")) {
       console.log(`[REQ] ${req.method()} ${url}`);

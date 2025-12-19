@@ -246,37 +246,50 @@ function AuditTrailPage() {
               <CardTitle>Activity by Action Type</CardTitle>
             </CardHeader>
             <CardContent>
-              {statsLoading ? (
-                <div className="flex h-[250px] items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : actionChartData.length > 0 ? (
-                <ResponsiveContainer height={250} width="100%">
-                  <BarChart data={actionChartData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis fontSize={12} type="number" />
-                    <YAxis
-                      dataKey="name"
-                      fontSize={12}
-                      type="category"
-                      width={100}
-                    />
-                    <Tooltip />
-                    <Bar dataKey="value" name="Count">
-                      {actionChartData.map((_, index) => (
-                        <Cell
-                          fill={CHART_COLORS[index % CHART_COLORS.length]}
-                          key={`cell-${index}`}
+              {(() => {
+                if (statsLoading) {
+                  return (
+                    <div className="flex h-[250px] items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  );
+                }
+                if (actionChartData.length > 0) {
+                  return (
+                    <ResponsiveContainer height={250} width="100%">
+                      <BarChart data={actionChartData} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis fontSize={12} type="number" />
+                        <YAxis
+                          dataKey="name"
+                          fontSize={12}
+                          type="category"
+                          width={100}
                         />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-[250px] items-center justify-center text-muted-foreground">
-                  No activity data
-                </div>
-              )}
+                        <Tooltip />
+                        <Bar dataKey="value" name="Count">
+                          {actionChartData.map((entry) => (
+                            <Cell
+                              fill={
+                                CHART_COLORS[
+                                  actionChartData.indexOf(entry) %
+                                    CHART_COLORS.length
+                                ]
+                              }
+                              key={`cell-${entry.name}`}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  );
+                }
+                return (
+                  <div className="flex h-[250px] items-center justify-center text-muted-foreground">
+                    No activity data
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 
@@ -285,41 +298,54 @@ function AuditTrailPage() {
               <CardTitle>Activity by Entity Type</CardTitle>
             </CardHeader>
             <CardContent>
-              {statsLoading ? (
-                <div className="flex h-[250px] items-center justify-center">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : entityChartData.length > 0 ? (
-                <ResponsiveContainer height={250} width="100%">
-                  <PieChart>
-                    <Pie
-                      cx="50%"
-                      cy="50%"
-                      data={entityChartData}
-                      dataKey="value"
-                      innerRadius={50}
-                      label={({ name, percent }) =>
-                        `${name} (${(percent * 100).toFixed(0)}%)`
-                      }
-                      labelLine={false}
-                      outerRadius={90}
-                    >
-                      {entityChartData.map((_, index) => (
-                        <Cell
-                          fill={CHART_COLORS[index % CHART_COLORS.length]}
-                          key={`cell-${index}`}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-[250px] items-center justify-center text-muted-foreground">
-                  No activity data
-                </div>
-              )}
+              {(() => {
+                if (statsLoading) {
+                  return (
+                    <div className="flex h-[250px] items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                  );
+                }
+                if (entityChartData.length > 0) {
+                  return (
+                    <ResponsiveContainer height={250} width="100%">
+                      <PieChart>
+                        <Pie
+                          cx="50%"
+                          cy="50%"
+                          data={entityChartData}
+                          dataKey="value"
+                          innerRadius={50}
+                          label={({ name, percent }) =>
+                            `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
+                          }
+                          labelLine={false}
+                          outerRadius={90}
+                        >
+                          {entityChartData.map((entry) => (
+                            <Cell
+                              fill={
+                                CHART_COLORS[
+                                  entityChartData.indexOf(entry) %
+                                    CHART_COLORS.length
+                                ]
+                              }
+                              key={`cell-${entry.name}`}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  );
+                }
+                return (
+                  <div className="flex h-[250px] items-center justify-center text-muted-foreground">
+                    No activity data
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </div>
@@ -403,139 +429,153 @@ function AuditTrailPage() {
             <CardTitle>Activity Log</CardTitle>
           </CardHeader>
           <CardContent>
-            {logsLoading ? (
-              <div className="flex h-64 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : logs.length === 0 ? (
-              <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
-                <Activity className="mb-2 h-12 w-12" />
-                <p>No activity logs found</p>
-                <p className="text-sm">
-                  Activity will appear here as users interact with the system
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[180px]">Timestamp</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Action</TableHead>
-                        <TableHead>Entity</TableHead>
-                        <TableHead className="max-w-[300px]">
-                          Description
-                        </TableHead>
-                        <TableHead>IP Address</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {logs.map((log) => {
-                        const ActionIcon = ACTION_ICONS[log.action] || Activity;
-                        const EntityIcon =
-                          ENTITY_ICONS[log.entityType] || FileText;
-                        const actionColor =
-                          ACTION_COLORS[log.action] ||
-                          "bg-gray-100 text-gray-700";
-
-                        return (
-                          <TableRow key={log.id}>
-                            <TableCell className="whitespace-nowrap">
-                              <div className="flex flex-col">
-                                <span className="font-medium text-sm">
-                                  {new Date(log.createdAt).toLocaleDateString()}
-                                </span>
-                                <span className="text-muted-foreground text-xs">
-                                  {new Date(log.createdAt).toLocaleTimeString()}
-                                </span>
-                                <span className="text-muted-foreground text-xs">
-                                  {formatDistanceToNow(
-                                    new Date(log.createdAt),
-                                    {
-                                      addSuffix: true,
-                                    }
-                                  )}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                                  <User className="h-4 w-4 text-primary" />
-                                </div>
-                                <div>
-                                  <p className="font-medium text-sm">
-                                    {log.user?.name || "System"}
-                                  </p>
-                                  <p className="text-muted-foreground text-xs">
-                                    {log.user?.email || ""}
-                                  </p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                className={`${actionColor} gap-1`}
-                                variant="outline"
-                              >
-                                <ActionIcon className="h-3 w-3" />
-                                {log.action}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <EntityIcon className="h-4 w-4 text-muted-foreground" />
-                                <span>{log.entityType}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="max-w-[300px] truncate">
-                              {log.description}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-sm">
-                              {log.ipAddress || "-"}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {/* Pagination */}
-                <div className="mt-4 flex items-center justify-between">
-                  <p className="text-muted-foreground text-sm">
-                    Showing {(page - 1) * limit + 1} to{" "}
-                    {Math.min(page * limit, logsData?.total || 0)} of{" "}
-                    {logsData?.total || 0} entries
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      disabled={page === 1}
-                      onClick={() => setPage(page - 1)}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    <span className="text-sm">
-                      Page {page} of {totalPages}
-                    </span>
-                    <Button
-                      disabled={page >= totalPages}
-                      onClick={() => setPage(page + 1)}
-                      size="sm"
-                      variant="outline"
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+            {(() => {
+              if (logsLoading) {
+                return (
+                  <div className="flex h-64 items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
-                </div>
-              </>
-            )}
+                );
+              }
+              if (logs.length === 0) {
+                return (
+                  <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
+                    <Activity className="mb-2 h-12 w-12" />
+                    <p>No activity logs found</p>
+                    <p className="text-sm">
+                      Activity will appear here as users interact with the
+                      system
+                    </p>
+                  </div>
+                );
+              }
+              return (
+                <>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[180px]">Timestamp</TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead>Action</TableHead>
+                          <TableHead>Entity</TableHead>
+                          <TableHead className="max-w-[300px]">
+                            Description
+                          </TableHead>
+                          <TableHead>IP Address</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {logs.map((log) => {
+                          const ActionIcon =
+                            ACTION_ICONS[log.action] || Activity;
+                          const EntityIcon =
+                            ENTITY_ICONS[log.entityType] || FileText;
+                          const actionColor =
+                            ACTION_COLORS[log.action] ||
+                            "bg-gray-100 text-gray-700";
+
+                          return (
+                            <TableRow key={log.id}>
+                              <TableCell className="whitespace-nowrap">
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-sm">
+                                    {new Date(
+                                      log.createdAt
+                                    ).toLocaleDateString()}
+                                  </span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {new Date(
+                                      log.createdAt
+                                    ).toLocaleTimeString()}
+                                  </span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {formatDistanceToNow(
+                                      new Date(log.createdAt),
+                                      {
+                                        addSuffix: true,
+                                      }
+                                    )}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                                    <User className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-sm">
+                                      {log.user?.name || "System"}
+                                    </p>
+                                    <p className="text-muted-foreground text-xs">
+                                      {log.user?.email || ""}
+                                    </p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  className={`${actionColor} gap-1`}
+                                  variant="outline"
+                                >
+                                  <ActionIcon className="h-3 w-3" />
+                                  {log.action}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <EntityIcon className="h-4 w-4 text-muted-foreground" />
+                                  <span>{log.entityType}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="max-w-[300px] truncate">
+                                {log.description}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground text-sm">
+                                {log.ipAddress || "-"}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Pagination */}
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-muted-foreground text-sm">
+                      Showing {(page - 1) * limit + 1} to{" "}
+                      {Math.min(page * limit, logsData?.total || 0)} of{" "}
+                      {logsData?.total || 0} entries
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        disabled={page === 1}
+                        onClick={() => setPage(page - 1)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                      <span className="text-sm">
+                        Page {page} of {totalPages}
+                      </span>
+                      <Button
+                        disabled={page >= totalPages}
+                        onClick={() => setPage(page + 1)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
       </div>

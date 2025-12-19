@@ -340,8 +340,11 @@ export const adminRouter = {
           });
         }
 
+        // Type assertion for user relation (Drizzle returns union type)
+        const existingUser = existing.user as { name: string; email: string };
+
         // If updating email, check it's not taken
-        if (email && email !== existing.user.email) {
+        if (email && email !== existingUser.email) {
           const emailTaken = await db.query.user.findFirst({
             where: eq(user.email, email),
           });
@@ -362,8 +365,8 @@ export const adminRouter = {
           await db
             .update(user)
             .set({
-              name: name || existing.user.name,
-              email: email || existing.user.email,
+              name: name || existingUser.name,
+              email: email || existingUser.email,
             })
             .where(eq(user.id, existing.userId));
         }
@@ -557,10 +560,13 @@ export const adminRouter = {
 
         const invitedByName = context.session.user.name || "GK-Nexus Admin";
 
+        // Type assertion for user relation (Drizzle returns union type)
+        const staffUser = staffMember.user as { name: string; email: string };
+
         // Send password setup email
         await sendStaffPasswordSetup({
-          staffName: staffMember.user.name,
-          email: staffMember.user.email,
+          staffName: staffUser.name,
+          email: staffUser.email,
           setupUrl,
           expiresInHours: 24,
           invitedBy: invitedByName,
@@ -568,8 +574,8 @@ export const adminRouter = {
 
         return {
           success: true,
-          message: `Password setup link sent to ${staffMember.user.email}`,
-          email: staffMember.user.email,
+          message: `Password setup link sent to ${staffUser.email}`,
+          email: staffUser.email,
         };
       }),
 
@@ -615,10 +621,16 @@ export const adminRouter = {
 
         const invitedByName = context.session.user.name || "GK-Nexus Admin";
 
+        // Type assertion for user relation (Drizzle returns union type)
+        const resetStaffUser = staffMember.user as {
+          name: string;
+          email: string;
+        };
+
         // Send password reset email
         await sendStaffPasswordSetup({
-          staffName: staffMember.user.name,
-          email: staffMember.user.email,
+          staffName: resetStaffUser.name,
+          email: resetStaffUser.email,
           setupUrl,
           expiresInHours: 24,
           invitedBy: invitedByName,
@@ -626,8 +638,8 @@ export const adminRouter = {
 
         return {
           success: true,
-          message: `Password reset link sent to ${staffMember.user.email}`,
-          email: staffMember.user.email,
+          message: `Password reset link sent to ${resetStaffUser.email}`,
+          email: resetStaffUser.email,
         };
       }),
 

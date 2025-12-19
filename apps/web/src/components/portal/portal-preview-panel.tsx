@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -46,8 +46,9 @@ export function PortalPreviewPanel({
       // We pass the token in URL, assuming the portal app can consume it to init session
       // This requires the portal app to check query params on load
       setUrl(`/portal?token=${token}&preview=true`);
-    } catch (error: any) {
-      toast.error(`Failed to start preview: ${error.message}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Failed to start preview: ${message}`);
       onOpenChange(false);
     } finally {
       setIsLoading(false);
@@ -64,6 +65,30 @@ export function PortalPreviewPanel({
     setUrl(null);
   }
 
+  const renderPreviewContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex h-full items-center justify-center">
+          <div className="text-muted-foreground">Loading preview...</div>
+        </div>
+      );
+    }
+    if (url) {
+      return (
+        <iframe
+          className="h-full w-full border-0"
+          src={url}
+          title="Portal Preview"
+        />
+      );
+    }
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-muted-foreground">No preview available</div>
+      </div>
+    );
+  };
+
   return (
     <Sheet onOpenChange={onOpenChange} open={open}>
       <SheetContent
@@ -72,27 +97,17 @@ export function PortalPreviewPanel({
       >
         <SheetHeader className="flex flex-row items-center justify-between space-y-0 border-b p-4">
           <SheetTitle>Portal Preview</SheetTitle>
-          {url && (
+          {url ? (
             <Button asChild size="sm" variant="ghost">
               <a href={url} rel="noreferrer" target="_blank">
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Open in New Tab
               </a>
             </Button>
-          )}
+          ) : null}
         </SheetHeader>
         <div className="relative flex-1 bg-muted/20">
-          {isLoading ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : url ? (
-            <iframe
-              className="h-full w-full border-0"
-              src={url}
-              title="Portal Preview"
-            />
-          ) : null}
+          {renderPreviewContent()}
         </div>
       </SheetContent>
     </Sheet>

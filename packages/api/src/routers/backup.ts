@@ -6,6 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { ORPCError } from "@orpc/server";
+import type { SQL } from "drizzle-orm";
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure } from "../index";
@@ -20,6 +21,13 @@ const PROJECT_ROOT = resolve(__dirname, "../../../../..");
 // Configuration - use absolute paths to avoid working directory issues
 const BACKUP_DIR = process.env.BACKUP_DIR || join(PROJECT_ROOT, "backups");
 const SCRIPTS_DIR = process.env.SCRIPTS_DIR || join(PROJECT_ROOT, "scripts");
+
+// Top-level regex patterns for backup output parsing (performance: avoid creating in loops)
+const ARCHIVE_REGEX = /Archive:\s*(.+\.(?:tar\.gz|zip))/;
+const SHA256_REGEX = /SHA256:\s*(\w+)/;
+const TABLES_REGEX = /Tables:\s*(\d+)/;
+const RECORDS_REGEX = /Records:\s*(\d+)/;
+const FILES_REGEX = /Files:\s*(\d+)/;
 
 // Zod schemas
 const createBackupSchema = z.object({
@@ -124,7 +132,12 @@ async function listBackupFiles(): Promise<
       return [];
     }
     const files = await readdir(BACKUP_DIR);
-    const backupFiles = [];
+    const backupFiles: {
+      name: string;
+      path: string;
+      size: number;
+      createdAt: Date;
+    }[] = [];
 
     for (const file of files) {
       // Support both tar.gz and zip formats
@@ -203,9 +216,7 @@ export const backupRouter = {
         const archiveLine = outputLines.find((line) =>
           line.includes("Archive:")
         );
-        const filePath = archiveLine?.match(
-          /Archive:\s*(.+\.(?:tar\.gz|zip))/
-        )?.[1];
+        const filePath = archiveLine?.match(ARCHIVE_REGEX)?.[1];
 
         // Get file info
         let fileSize = 0;
@@ -218,13 +229,13 @@ export const backupRouter = {
           const checksumLine = outputLines.find((line) =>
             line.includes("SHA256:")
           );
-          checksum = checksumLine?.match(/SHA256:\s*(\w+)/)?.[1] || "";
+          checksum = checksumLine?.match(SHA256_REGEX)?.[1] || "";
         }
 
         // Parse manifest for stats (from stdout)
-        const tablesMatch = stdout.match(/Tables:\s*(\d+)/);
-        const recordsMatch = stdout.match(/Records:\s*(\d+)/);
-        const filesMatch = stdout.match(/Files:\s*(\d+)/);
+        const tablesMatch = stdout.match(TABLES_REGEX);
+        const recordsMatch = stdout.match(RECORDS_REGEX);
+        const filesMatch = stdout.match(FILES_REGEX);
 
         // Update backup record with success
         const [updated] = await db
@@ -280,7 +291,7 @@ export const backupRouter = {
     const offset = (page - 1) * limit;
 
     // Build where conditions
-    const conditions = [];
+    const conditions: SQL<unknown>[] = [];
     if (status) {
       conditions.push(eq(systemBackup.status, status));
     }

@@ -110,6 +110,55 @@ const roleDescriptions: Record<
   },
 };
 
+// Helper function to render toggle button content based on state
+function renderToggleButtonContent(isPending: boolean, isActive: boolean) {
+  if (isPending) {
+    return (
+      <>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        {isActive ? "Deactivating..." : "Activating..."}
+      </>
+    );
+  }
+  if (isActive) {
+    return (
+      <>
+        <X className="mr-2 h-4 w-4" />
+        Deactivate
+      </>
+    );
+  }
+  return "Activate";
+}
+
+// Helper function to get password status badge className
+function getPasswordStatusBadgeClassName(
+  hasPassword: boolean | undefined,
+  hasPendingSetup: boolean | undefined
+): string {
+  if (hasPassword) {
+    return "border-green-200 bg-green-500/10 text-green-600";
+  }
+  if (hasPendingSetup) {
+    return "border-yellow-200 bg-yellow-500/10 text-yellow-600";
+  }
+  return "border-red-200 bg-red-500/10 text-red-600";
+}
+
+// Helper function to get password status label
+function getPasswordStatusLabel(
+  hasPassword: boolean | undefined,
+  hasPendingSetup: boolean | undefined
+): string {
+  if (hasPassword) {
+    return "Active";
+  }
+  if (hasPendingSetup) {
+    return "Pending";
+  }
+  return "Not Set";
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
 function StaffDetailPage() {
   const { "staff-id": staffId } = Route.useParams();
@@ -327,19 +376,9 @@ function StaffDetailPage() {
                   onClick={() => toggleActiveMutation.mutate(!staff.isActive)}
                   variant={staff.isActive ? "outline" : "default"}
                 >
-                  {toggleActiveMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {staff.isActive ? "Deactivating..." : "Activating..."}
-                    </>
-                    // biome-ignore lint/style/noNestedTernary: Auto-fix
-                  ) : staff.isActive ? (
-                    <>
-                      <X className="mr-2 h-4 w-4" />
-                      Deactivate
-                    </>
-                  ) : (
-                    "Activate"
+                  {renderToggleButtonContent(
+                    toggleActiveMutation.isPending,
+                    staff.isActive
                   )}
                 </Button>
               </>
@@ -392,32 +431,32 @@ function StaffDetailPage() {
                 <div>
                   <p className="font-medium text-sm">Password Status</p>
                   <p className="text-muted-foreground text-sm">
-                    {passwordStatus?.hasPassword
-                      ? "Password has been set up"
-                      : passwordStatus?.hasPendingSetup
-                        ? `Setup link sent (expires ${passwordStatus.pendingSetupExpires ? new Date(passwordStatus.pendingSetupExpires).toLocaleDateString() : "soon"})`
-                        : "No password set up yet"}
+                    {(() => {
+                      if (passwordStatus?.hasPassword) {
+                        return "Password has been set up";
+                      }
+                      if (passwordStatus?.hasPendingSetup) {
+                        return `Setup link sent (expires ${passwordStatus.pendingSetupExpires ? new Date(passwordStatus.pendingSetupExpires).toLocaleDateString() : "soon"})`;
+                      }
+                      return "No password set up yet";
+                    })()}
                   </p>
                 </div>
                 <Badge
-                  className={
-                    passwordStatus?.hasPassword
-                      ? "border-green-200 bg-green-500/10 text-green-600"
-                      : passwordStatus?.hasPendingSetup
-                        ? "border-yellow-200 bg-yellow-500/10 text-yellow-600"
-                        : "border-red-200 bg-red-500/10 text-red-600"
-                  }
+                  className={getPasswordStatusBadgeClassName(
+                    passwordStatus?.hasPassword,
+                    passwordStatus?.hasPendingSetup
+                  )}
                   variant="outline"
                 >
-                  {passwordStatus?.hasPassword
-                    ? "Active"
-                    : passwordStatus?.hasPendingSetup
-                      ? "Pending"
-                      : "Not Set"}
+                  {getPasswordStatusLabel(
+                    passwordStatus?.hasPassword,
+                    passwordStatus?.hasPendingSetup
+                  )}
                 </Badge>
               </div>
               <div className="flex gap-2">
-                {!passwordStatus?.hasPassword && (
+                {passwordStatus?.hasPassword ? null : (
                   <Button
                     disabled={resendSetupMutation.isPending}
                     onClick={() => resendSetupMutation.mutate()}
@@ -434,7 +473,7 @@ function StaffDetailPage() {
                       : "Send Setup Link"}
                   </Button>
                 )}
-                {passwordStatus?.hasPassword && (
+                {passwordStatus?.hasPassword ? (
                   <Button
                     disabled={resetPasswordMutation.isPending}
                     onClick={() => resetPasswordMutation.mutate()}
@@ -448,7 +487,7 @@ function StaffDetailPage() {
                     )}
                     Reset Password
                   </Button>
-                )}
+                ) : null}
               </div>
             </CardContent>
           </Card>
@@ -599,11 +638,11 @@ function StaffDetailPage() {
                                 )}
                               </SelectContent>
                             </Select>
-                            {!!selectedRole && (
+                            {selectedRole ? (
                               <FormDescription>
                                 {roleDescriptions[selectedRole].description}
                               </FormDescription>
-                            )}
+                            ) : null}
                             <FormMessage />
                           </FormItem>
                         )}
@@ -632,8 +671,7 @@ function StaffDetailPage() {
                                       <Checkbox
                                         checked={field.value?.includes("GCMC")}
                                         disabled={
-                                          // biome-ignore lint/nursery/noLeakedRender: Auto-fix
-                                          selectedRole &&
+                                          !!selectedRole &&
                                           roleDescriptions[selectedRole]
                                             .requiredBusiness === "BOTH"
                                         }
@@ -678,8 +716,7 @@ function StaffDetailPage() {
                                       <Checkbox
                                         checked={field.value?.includes("KAJ")}
                                         disabled={
-                                          // biome-ignore lint/nursery/noLeakedRender: Auto-fix
-                                          selectedRole &&
+                                          !!selectedRole &&
                                           roleDescriptions[selectedRole]
                                             .requiredBusiness === "BOTH"
                                         }
@@ -858,18 +895,7 @@ function StaffDetailPage() {
                       }
                     )}
                   />
-                  <InfoRow
-                    label="Last Updated"
-                    value={new Date(staff.updatedAt).toLocaleDateString(
-                      "en-US",
-                      {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      }
-                    )}
-                  />
-                  <InfoRow label="User ID" value={staff.userId} />
+                  <InfoRow label="User ID" value={staff.user.id} />
                   <InfoRow label="Staff ID" value={staff.id} />
                 </CardContent>
               </Card>
@@ -910,16 +936,16 @@ function RoleBadge({ role }: { role: string }) {
 function BusinessBadges({ businesses }: { businesses: string[] }) {
   return (
     <>
-      {businesses.includes("GCMC") && (
+      {businesses.includes("GCMC") ? (
         <Badge className="bg-emerald-500/10 text-emerald-600" variant="outline">
           GCMC
         </Badge>
-      )}
-      {businesses.includes("KAJ") && (
+      ) : null}
+      {businesses.includes("KAJ") ? (
         <Badge className="bg-blue-500/10 text-blue-600" variant="outline">
           KAJ
         </Badge>
-      )}
+      ) : null}
     </>
   );
 }

@@ -131,6 +131,7 @@ type SalaryResult = {
   };
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Salary calculator displays comprehensive tax breakdown with multiple conditional sections (tax rates, deductions, NIS, gratuity, employer costs, effective rates)
 function SalaryCalculator() {
   const [grossSalary, setGrossSalary] = useState("");
   const [frequency, setFrequency] = useState<PayFrequency>("monthly");
@@ -182,7 +183,7 @@ function SalaryCalculator() {
     },
   });
 
-  const handleCalculate = async () => {
+  const handleCalculate = () => {
     const salary = Number.parseFloat(grossSalary);
     if (Number.isNaN(salary) || salary < 0) {
       toast.error("Please enter a valid gross salary");
@@ -205,7 +206,7 @@ function SalaryCalculator() {
     });
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!result) {
       return;
     }
@@ -400,7 +401,7 @@ function SalaryCalculator() {
             </div>
 
             {/* Month selector for gratuity */}
-            {includeGratuity && (
+            {includeGratuity === true ? (
               <div className="space-y-2">
                 <Label className="flex items-center gap-2" htmlFor="month">
                   Current Month
@@ -437,7 +438,7 @@ function SalaryCalculator() {
                   </SelectContent>
                 </Select>
               </div>
-            )}
+            ) : null}
 
             {/* Advanced Options */}
             <Collapsible onOpenChange={setShowAdvanced} open={showAdvanced}>
@@ -547,7 +548,7 @@ function SalaryCalculator() {
         </Card>
 
         {/* Results */}
-        {!!result && (
+        {result ? (
           <div className="space-y-4">
             {/* Net Pay Summary */}
             <Card className="border-2 border-primary">
@@ -606,14 +607,14 @@ function SalaryCalculator() {
                     -{formatCurrency(result.nis.employeeMonthly)}
                   </span>
                 </div>
-                {result.gratuity.included && (
+                {result.gratuity.included ? (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Gratuity:</span>
                     <span className="font-medium text-green-600">
                       +{formatCurrency(result.gratuity.monthlyAmount)}
                     </span>
                   </div>
-                )}
+                ) : null}
                 <div className="border-t pt-2">
                   <div className="flex justify-between font-semibold">
                     <span>Net Monthly Pay:</span>
@@ -639,7 +640,7 @@ function SalaryCalculator() {
                     -{formatCurrency(result.deductions.personalAllowance)}
                   </span>
                 </div>
-                {result.deductions.qualificationAllowance > 0 && (
+                {result.deductions.qualificationAllowance > 0 ? (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
                       Qualification Allowance:
@@ -649,8 +650,8 @@ function SalaryCalculator() {
                       {formatCurrency(result.deductions.qualificationAllowance)}
                     </span>
                   </div>
-                )}
-                {result.deductions.childDeduction > 0 && (
+                ) : null}
+                {result.deductions.childDeduction > 0 ? (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
                       Child Deduction:
@@ -659,7 +660,7 @@ function SalaryCalculator() {
                       -{formatCurrency(result.deductions.childDeduction)}
                     </span>
                   </div>
-                )}
+                ) : null}
                 <div className="border-t pt-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
@@ -670,7 +671,7 @@ function SalaryCalculator() {
                     </span>
                   </div>
                 </div>
-                {result.tax.firstBracketIncome > 0 && (
+                {result.tax.firstBracketIncome > 0 ? (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
                       First Bracket (25%):
@@ -679,8 +680,8 @@ function SalaryCalculator() {
                       {formatCurrency(result.tax.firstBracketTax)}
                     </span>
                   </div>
-                )}
-                {result.tax.secondBracketIncome > 0 && (
+                ) : null}
+                {result.tax.secondBracketIncome > 0 ? (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
                       Second Bracket (35%):
@@ -689,7 +690,7 @@ function SalaryCalculator() {
                       {formatCurrency(result.tax.secondBracketTax)}
                     </span>
                   </div>
-                )}
+                ) : null}
                 <div className="border-t pt-2">
                   <div className="flex justify-between font-semibold">
                     <span>Total Annual Tax:</span>
@@ -721,7 +722,7 @@ function SalaryCalculator() {
                     {formatCurrency(result.employerCosts.nisContribution)}
                   </span>
                 </div>
-                {result.gratuity.included && (
+                {result.gratuity.included ? (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Gratuity:</span>
                     <span className="font-medium">
@@ -730,7 +731,7 @@ function SalaryCalculator() {
                       )}
                     </span>
                   </div>
-                )}
+                ) : null}
                 <div className="border-t pt-2">
                   <div className="flex justify-between font-semibold">
                     <span>Total Monthly Cost:</span>
@@ -787,14 +788,18 @@ function SalaryCalculator() {
               variant="outline"
             >
               <Save className="mr-2 h-4 w-4" />
-              {saveMutation.isPending
-                ? "Saving..."
-                : saveMutation.isSuccess
-                  ? "Saved!"
-                  : "Save Calculation"}
+              {(() => {
+                if (saveMutation.isPending) {
+                  return "Saving...";
+                }
+                if (saveMutation.isSuccess) {
+                  return "Saved!";
+                }
+                return "Save Calculation";
+              })()}
             </Button>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Information Card */}

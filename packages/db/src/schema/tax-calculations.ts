@@ -3,7 +3,7 @@ import { user } from "./auth";
 
 /**
  * Tax calculation records
- * Stores calculations performed by users for PAYE, VAT, and NIS
+ * Stores calculations performed by users for PAYE, VAT, NIS, and SALARY
  */
 export const taxCalculations = pgTable("tax_calculations", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -11,7 +11,7 @@ export const taxCalculations = pgTable("tax_calculations", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   calculationType: text("calculation_type", {
-    enum: ["PAYE", "VAT", "NIS"],
+    enum: ["PAYE", "VAT", "NIS", "SALARY"],
   }).notNull(),
   inputData: jsonb("input_data").notNull(),
   result: jsonb("result").notNull(),

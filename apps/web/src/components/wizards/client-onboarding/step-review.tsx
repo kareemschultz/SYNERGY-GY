@@ -20,7 +20,6 @@ import {
   getDisplayName,
   getRequiredDocuments,
   isBusinessType,
-  isIndividualType,
   KAJ_SERVICES,
 } from "./types";
 
@@ -30,11 +29,31 @@ type StepReviewProps = {
   onUpdate: (updates: Partial<ClientOnboardingData>) => void;
 };
 
+/**
+ * Helper component to render the appropriate icon based on client type.
+ * Extracted to avoid nested ternary in the main component.
+ */
+function ClientTypeIcon({
+  clientType,
+  isBusiness,
+}: {
+  clientType: string;
+  isBusiness: boolean;
+}) {
+  if (isBusiness) {
+    return <Building2 className="size-6" />;
+  }
+  if (clientType === "FOREIGN_NATIONAL") {
+    return <Globe className="size-6" />;
+  }
+  return <User className="size-6" />;
+}
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Review step displays comprehensive client summary with services, documents, employment, emergency contacts, and validation status across multiple sections
 export function StepReview({ data, errors, onUpdate }: StepReviewProps) {
   const displayName = getDisplayName(data);
   const clientTypeLabel =
     CLIENT_TYPES.find((t) => t.value === data.clientType)?.label || "";
-  const isIndividual = isIndividualType(data.clientType);
   const isBusiness = isBusinessType(data.clientType);
   const requiredDocuments = getRequiredDocuments(data);
 
@@ -54,15 +73,10 @@ export function StepReview({ data, errors, onUpdate }: StepReviewProps) {
       <div className="rounded-lg border bg-card">
         <div className="flex items-start gap-4 p-4">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-            {isIndividual ? (
-              data.clientType === "FOREIGN_NATIONAL" ? (
-                <Globe className="size-6" />
-              ) : (
-                <User className="size-6" />
-              )
-            ) : (
-              <Building2 className="size-6" />
-            )}
+            <ClientTypeIcon
+              clientType={data.clientType}
+              isBusiness={isBusiness}
+            />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-lg">{displayName || "—"}</h3>
@@ -150,7 +164,7 @@ export function StepReview({ data, errors, onUpdate }: StepReviewProps) {
         ) : null}
 
         {/* Business Details (for business types) */}
-        {isBusiness && data.registrationNumber ? (
+        {Boolean(isBusiness) && data.registrationNumber ? (
           <>
             <Separator />
             <div className="grid gap-4 p-4 sm:grid-cols-2">

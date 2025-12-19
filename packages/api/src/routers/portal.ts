@@ -17,6 +17,7 @@ import {
   staffImpersonationSession,
 } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
+import type { SQL } from "drizzle-orm";
 import {
   and,
   asc,
@@ -330,7 +331,7 @@ export const portalRouter = {
         const now = new Date();
 
         // Build conditions
-        const conditions = [];
+        const conditions: SQL<unknown>[] = [];
 
         if (input.status) {
           if (input.status === "EXPIRED") {
@@ -348,12 +349,13 @@ export const portalRouter = {
 
         if (input.search) {
           const searchTerm = `%${input.search}%`;
-          conditions.push(
-            or(
-              sql`${portalInvite.email} ILIKE ${searchTerm}`,
-              sql`${client.displayName} ILIKE ${searchTerm}`
-            )
+          const searchCondition = or(
+            sql`${portalInvite.email} ILIKE ${searchTerm}`,
+            sql`${client.displayName} ILIKE ${searchTerm}`
           );
+          if (searchCondition) {
+            conditions.push(searchCondition);
+          }
         }
 
         const whereClause =
@@ -2060,7 +2062,7 @@ export const portalRouter = {
                 new Date(nextLogout.createdAt).getTime() -
                 new Date(activity.createdAt).getTime();
               totalSessionDuration += duration;
-              sessionCount++;
+              sessionCount += 1;
             }
           }
         }
@@ -2270,7 +2272,8 @@ export const portalRouter = {
             senderType: m.senderType,
             senderName:
               m.senderType === "STAFF"
-                ? m.senderStaffUser?.name || "Staff"
+                ? (m.senderStaffUser as { name?: string } | null)?.name ||
+                  "Staff"
                 : "You",
             isRead: m.isRead,
             createdAt: m.createdAt,
@@ -2345,10 +2348,15 @@ export const portalRouter = {
             },
           });
 
-          if (staffUser?.user?.email) {
+          // Type assertion for user relation (Drizzle returns union type)
+          const staffUserData = staffUser?.user as {
+            email?: string;
+            name?: string;
+          } | null;
+          if (staffUserData?.email) {
             await sendMessageNotification({
-              recipientEmail: staffUser.user.email,
-              recipientName: staffUser.user.name || "Staff",
+              recipientEmail: staffUserData.email,
+              recipientName: staffUserData.name || "Staff",
               senderName: clientInfo.displayName,
               subject: input.subject || "New message",
               messagePreview:

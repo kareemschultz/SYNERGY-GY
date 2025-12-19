@@ -49,6 +49,7 @@ const COUNTRIES = [
   "Other",
 ];
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Wizard step handles different field sets for individuals, businesses, and foreign nationals with conditional validation and nationality selection
 export function StepBasicInfo({
   data,
   errors,
@@ -75,9 +76,7 @@ export function StepBasicInfo({
               First Name <span className="text-destructive">*</span>
             </Label>
             <Input
-              aria-describedby={
-                errors.firstName ? "firstName-error" : undefined
-              }
+              aria-describedby={errors.firstName ? "firstName-error" : ""}
               aria-invalid={!!errors.firstName}
               id="firstName"
               onBlur={() => onFieldBlur?.("firstName")}
@@ -101,7 +100,7 @@ export function StepBasicInfo({
               Last Name <span className="text-destructive">*</span>
             </Label>
             <Input
-              aria-describedby={errors.lastName ? "lastName-error" : undefined}
+              aria-describedby={errors.lastName ? "lastName-error" : ""}
               aria-invalid={!!errors.lastName}
               id="lastName"
               onBlur={() => onFieldBlur?.("lastName")}
@@ -158,9 +157,7 @@ export function StepBasicInfo({
               Business Name <span className="text-destructive">*</span>
             </Label>
             <Input
-              aria-describedby={
-                errors.businessName ? "businessName-error" : undefined
-              }
+              aria-describedby={errors.businessName ? "businessName-error" : ""}
               aria-invalid={!!errors.businessName}
               id="businessName"
               onBlur={() => onFieldBlur?.("businessName")}

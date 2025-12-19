@@ -94,7 +94,7 @@ export function AvailabilitySettings() {
   const { data: availability, isLoading: availabilityLoading } = useQuery({
     queryKey: ["appointments", "availability", staffId],
     queryFn: () =>
-      client.appointments.availability.getForStaff({ staffId: staffId! }),
+      client.appointments.availability.getForStaff({ staffId: staffId ?? "" }),
     enabled: !!staffId,
     staleTime: 0,
   });
@@ -121,7 +121,7 @@ export function AvailabilitySettings() {
     queryKey: ["appointments", "overrides", staffId],
     queryFn: () =>
       client.appointments.availability.getOverrides({
-        staffId: staffId!,
+        staffId: staffId ?? "",
         fromDate: new Date().toISOString().split("T")[0],
         toDate: addMonths(new Date(), 3).toISOString().split("T")[0],
       }),
@@ -130,16 +130,20 @@ export function AvailabilitySettings() {
 
   // Save schedule mutation
   const saveScheduleMutation = useMutation({
-    mutationFn: (scheduleData: DaySchedule[]) =>
-      client.appointments.availability.setWeeklySchedule({
-        staffId: staffId!,
+    mutationFn: (scheduleData: DaySchedule[]) => {
+      if (!staffId) {
+        return Promise.reject(new Error("Staff ID not available"));
+      }
+      return client.appointments.availability.setWeeklySchedule({
+        staffId,
         schedule: scheduleData.map((s) => ({
           dayOfWeek: s.dayOfWeek,
           startTime: s.startTime,
           endTime: s.endTime,
           isAvailable: s.isAvailable,
         })),
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["appointments", "availability"],
@@ -162,15 +166,19 @@ export function AvailabilitySettings() {
       startTime?: string;
       endTime?: string;
       reason?: string;
-    }) =>
-      client.appointments.availability.createOverride({
-        staffId: staffId!,
+    }) => {
+      if (!staffId) {
+        return Promise.reject(new Error("Staff ID not available"));
+      }
+      return client.appointments.availability.createOverride({
+        staffId,
         date: data.date,
         isAvailable: data.isAvailable,
         startTime: data.isAvailable ? data.startTime : undefined,
         endTime: data.isAvailable ? data.endTime : undefined,
         reason: data.reason || undefined,
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["appointments", "overrides"],
@@ -217,6 +225,65 @@ export function AvailabilitySettings() {
       )
     );
     setHasChanges(true);
+  };
+
+  // Render overrides content based on loading/data state
+  const renderOverridesContent = () => {
+    if (overridesLoading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (overrides !== undefined && overrides.length > 0) {
+      return (
+        <div className="space-y-3">
+          {overrides.map((override: Override) => (
+            <div
+              className="flex items-center justify-between rounded-lg border p-4"
+              key={override.id}
+            >
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="font-medium">
+                    {format(new Date(override.date), "EEEE, MMMM d, yyyy")}
+                  </p>
+                  {override.reason ? (
+                    <p className="text-muted-foreground text-sm">
+                      {override.reason}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {override.isAvailable ? (
+                  <Badge variant="outline">
+                    {override.startTime} - {override.endTime}
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive">Unavailable</Badge>
+                )}
+                <Button
+                  onClick={() => setOverrideToDelete(override.id)}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex h-24 items-center justify-center text-muted-foreground">
+        No upcoming overrides
+      </div>
+    );
   };
 
   // Initialize schedule when availability loads
@@ -364,55 +431,7 @@ export function AvailabilitySettings() {
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          {overridesLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : overrides && overrides.length > 0 ? (
-            <div className="space-y-3">
-              {overrides.map((override: Override) => (
-                <div
-                  className="flex items-center justify-between rounded-lg border p-4"
-                  key={override.id}
-                >
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <p className="font-medium">
-                        {format(new Date(override.date), "EEEE, MMMM d, yyyy")}
-                      </p>
-                      {override.reason ? (
-                        <p className="text-muted-foreground text-sm">
-                          {override.reason}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {override.isAvailable ? (
-                      <Badge variant="outline">
-                        {override.startTime} - {override.endTime}
-                      </Badge>
-                    ) : (
-                      <Badge variant="destructive">Unavailable</Badge>
-                    )}
-                    <Button
-                      onClick={() => setOverrideToDelete(override.id)}
-                      size="icon"
-                      variant="ghost"
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex h-24 items-center justify-center text-muted-foreground">
-              No upcoming overrides
-            </div>
-          )}
-        </CardContent>
+        <CardContent>{renderOverridesContent()}</CardContent>
       </Card>
 
       {/* Add Override Dialog */}

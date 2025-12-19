@@ -117,10 +117,34 @@ export function WizardNavigation({
     </Button>
   );
 
+  // Render the action button with tooltip or plain based on state
+  const renderActionButton = () => {
+    const buttonToShow = isLastStep ? SubmitButton : NextButton;
+
+    if (isDisabled && !isSubmitting) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>{buttonToShow}</span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs" side="top">
+              <p className="whitespace-pre-line">{getErrorSummary()}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return buttonToShow;
+  };
+
   return (
     <div className={cn("border-t bg-background px-6 py-4", className)}>
       {/* Validation message when button is disabled */}
-      {isDisabled && hasFieldErrors && (
+      {Boolean(isDisabled) &&
+      Boolean(hasFieldErrors) &&
+      fieldErrors.length > 0 ? (
         <div
           aria-live="polite"
           className="mb-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-sm dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
@@ -134,12 +158,12 @@ export function WizardNavigation({
               : `Please complete ${fieldErrors.length} required field${fieldErrors.length > 1 ? "s" : ""} above to continue`}
           </span>
         </div>
-      )}
+      ) : null}
 
       <div className="flex items-center justify-between">
         {/* Left side - Back button */}
         <div>
-          {!isFirstStep && (
+          {isFirstStep ? null : (
             <Button
               disabled={!canGoPrev || isSubmitting}
               onClick={onPrev}
@@ -154,7 +178,7 @@ export function WizardNavigation({
 
         {/* Right side - Skip and Next/Submit */}
         <div className="flex items-center gap-2">
-          {canSkip && !isLastStep && (
+          {Boolean(canSkip) && !isLastStep && onSkip !== undefined ? (
             <Button
               disabled={isSubmitting}
               onClick={onSkip}
@@ -164,25 +188,10 @@ export function WizardNavigation({
               {skipLabel}
               <SkipForward className="ml-2 size-4" />
             </Button>
-          )}
+          ) : null}
 
           {/* Show tooltip on disabled button explaining why */}
-          {isDisabled && !isSubmitting ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>{isLastStep ? SubmitButton : NextButton}</span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs" side="top">
-                  <p className="whitespace-pre-line">{getErrorSummary()}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : isLastStep ? (
-            SubmitButton
-          ) : (
-            NextButton
-          )}
+          {renderActionButton()}
         </div>
       </div>
     </div>

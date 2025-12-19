@@ -84,6 +84,7 @@ function formatDate(dateString: string): string {
   });
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Invoice list page manages filters, bulk actions, aging report toggle, status badges, and payment tracking
 function InvoicesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -124,7 +125,6 @@ function InvoicesPage() {
 
   const invoices = data?.invoices || [];
   const {
-    selectedIds,
     selectedIdsArray,
     selectedCount,
     isAllSelected,
@@ -305,7 +305,8 @@ function InvoicesPage() {
                   <Checkbox
                     aria-label="Select all invoices"
                     checked={
-                      isAllSelected || (isPartiallySelected && "indeterminate")
+                      isAllSelected ||
+                      (isPartiallySelected === true && "indeterminate")
                     }
                     onCheckedChange={toggleSelectAll}
                   />
@@ -366,9 +367,7 @@ function InvoicesPage() {
                   const statusConfig = statusLabels[invoice.status];
                   return (
                     <TableRow
-                      className={
-                        isSelected(invoice.id) ? "bg-muted/50" : undefined
-                      }
+                      className={isSelected(invoice.id) ? "bg-muted/50" : ""}
                       key={invoice.id}
                     >
                       <TableCell>

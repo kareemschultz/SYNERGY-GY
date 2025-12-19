@@ -8,6 +8,7 @@ import {
   staffAvailabilityOverride,
 } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
+import type { SQL } from "drizzle-orm";
 import {
   and,
   asc,
@@ -189,6 +190,7 @@ export const appointmentsRouter = {
    */
   list: staffProcedure
     .input(listAppointmentsSchema)
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: List handler builds dynamic query with business access checks, search, status, client, date range, and staff filters
     .handler(async ({ input, context }) => {
       const accessibleBusinesses = getAccessibleBusinesses(context.staff);
 
@@ -201,7 +203,7 @@ export const appointmentsRouter = {
         };
       }
 
-      const conditions = [];
+      const conditions: SQL<unknown>[] = [];
 
       // Filter by accessible businesses
       if (input.business) {
@@ -220,12 +222,13 @@ export const appointmentsRouter = {
       // Search filter (title or client name via join)
       if (input.search) {
         const searchTerm = `%${input.search}%`;
-        conditions.push(
-          or(
-            ilike(appointment.title, searchTerm),
-            ilike(appointment.description, searchTerm)
-          )
+        const searchCondition = or(
+          ilike(appointment.title, searchTerm),
+          ilike(appointment.description, searchTerm)
         );
+        if (searchCondition) {
+          conditions.push(searchCondition);
+        }
       }
 
       // Status filter
@@ -439,6 +442,7 @@ export const appointmentsRouter = {
    */
   update: staffProcedure
     .input(updateAppointmentSchema)
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Appointment update requires multiple validation checks (existence, access, status), schedule conflict detection, and conditional end time recalculation
     .handler(async ({ input, context }) => {
       const { id, ...updates } = input;
 
@@ -853,22 +857,23 @@ export const appointmentsRouter = {
         })
       )
       .handler(async ({ input }) => {
-        const conditions = [];
+        const conditions: SQL<unknown>[] = [];
 
         if (!input.includeInactive) {
           conditions.push(eq(appointmentType.isActive, true));
         }
 
         if (input.business) {
-          conditions.push(
-            or(
-              eq(appointmentType.business, input.business),
-              sql`${appointmentType.business} IS NULL`
-            )
+          const businessCondition = or(
+            eq(appointmentType.business, input.business),
+            sql`${appointmentType.business} IS NULL`
           );
+          if (businessCondition) {
+            conditions.push(businessCondition);
+          }
         }
 
-        return db.query.appointmentType.findMany({
+        return await db.query.appointmentType.findMany({
           where: conditions.length > 0 ? and(...conditions) : undefined,
           orderBy: [asc(appointmentType.sortOrder), asc(appointmentType.name)],
         });

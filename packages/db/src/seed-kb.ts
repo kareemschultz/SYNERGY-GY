@@ -1,4 +1,14 @@
 import { db, knowledgeBaseItem, user } from "./index";
+import type { businessEnum } from "./schema/core";
+import type {
+  knowledgeBaseCategoryEnum,
+  knowledgeBaseTypeEnum,
+} from "./schema/knowledge-base";
+
+type KnowledgeBaseType = (typeof knowledgeBaseTypeEnum.enumValues)[number];
+type KnowledgeBaseCategory =
+  (typeof knowledgeBaseCategoryEnum.enumValues)[number];
+type Business = (typeof businessEnum.enumValues)[number];
 
 async function main() {
   console.log("Seeding Knowledge Base...");
@@ -388,9 +398,9 @@ async function main() {
     await db.insert(knowledgeBaseItem).values({
       ...item,
       createdById: creatorId,
-      type: item.type as any,
-      category: item.category as any,
-      business: item.business as any,
+      type: item.type as KnowledgeBaseType,
+      category: item.category as KnowledgeBaseCategory,
+      business: item.business as Business | null,
       isActive: true,
       isStaffOnly: item.isStaffOnly,
       isFeatured: false,

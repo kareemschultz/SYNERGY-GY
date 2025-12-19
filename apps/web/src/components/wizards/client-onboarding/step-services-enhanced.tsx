@@ -18,6 +18,7 @@ import {
   type GCMCService,
   KAJ_SERVICES,
   type KAJService,
+  type ServiceCatalogCategory,
   type ServiceCatalogItem,
 } from "./types";
 
@@ -26,6 +27,40 @@ type StepServicesProps = {
   errors: Record<string, string>;
   onUpdate: (updates: Partial<ClientOnboardingData>) => void;
 };
+
+/**
+ * Helper function to get button className based on selection state and business type.
+ * Extracted to avoid nested ternary.
+ */
+function getBusinessButtonClassName(
+  isSelected: boolean,
+  businessValue: "GCMC" | "KAJ"
+): string {
+  if (!isSelected) {
+    return "border-border hover:border-primary/50";
+  }
+  if (businessValue === "GCMC") {
+    return "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30";
+  }
+  return "border-blue-500 bg-blue-50 dark:bg-blue-950/30";
+}
+
+/**
+ * Helper function to get checkbox indicator className based on selection state and business type.
+ * Extracted to avoid nested ternary.
+ */
+function getBusinessCheckboxClassName(
+  isSelected: boolean,
+  businessValue: "GCMC" | "KAJ"
+): string {
+  if (!isSelected) {
+    return "border-muted-foreground/30";
+  }
+  if (businessValue === "GCMC") {
+    return "border-emerald-500 bg-emerald-500 text-white";
+  }
+  return "border-blue-500 bg-blue-500 text-white";
+}
 
 export function StepServicesEnhanced({
   data,
@@ -67,8 +102,8 @@ export function StepServicesEnhanced({
       if (gcmcData) {
         // Remove GCMC service IDs from selectedServiceIds
         const gcmcServiceIds = new Set(
-          Object.values(gcmcData).flatMap((cat: any) =>
-            cat.services.map((s: any) => s.id)
+          Object.values(gcmcData).flatMap((cat: ServiceCatalogCategory) =>
+            cat.services.map((s: ServiceCatalogItem) => s.id)
           )
         );
         updates.selectedServiceIds = data.selectedServiceIds.filter(
@@ -81,8 +116,8 @@ export function StepServicesEnhanced({
       if (kajData) {
         // Remove KAJ service IDs from selectedServiceIds
         const kajServiceIds = new Set(
-          Object.values(kajData).flatMap((cat: any) =>
-            cat.services.map((s: any) => s.id)
+          Object.values(kajData).flatMap((cat: ServiceCatalogCategory) =>
+            cat.services.map((s: ServiceCatalogItem) => s.id)
           )
         );
         updates.selectedServiceIds = data.selectedServiceIds.filter(
@@ -121,6 +156,146 @@ export function StepServicesEnhanced({
     onUpdate({ kajServices: updated });
   };
 
+  // Render GCMC services content based on loading/data state
+  const renderGcmcServices = () => {
+    if (gcmcLoading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (hasGcmcCatalog) {
+      return (
+        <div className="space-y-3">
+          {Object.entries(gcmcData).map(
+            ([categoryKey, category]: [string, ServiceCatalogCategory]) => (
+              <ServiceCategoryAccordion
+                categoryDescription={category.categoryDescription ?? ""}
+                categoryDisplayName={category.categoryDisplayName}
+                categoryName={category.categoryName}
+                key={categoryKey}
+                onServiceDetails={setSelectedServiceForDetails}
+                onServiceToggle={toggleService}
+                renderServiceItem={(service, isSelected) => (
+                  <ServiceCheckboxItem
+                    isSelected={isSelected}
+                    key={service.id}
+                    onShowDetails={() => setSelectedServiceForDetails(service)}
+                    onToggle={() => toggleService(service.id)}
+                    service={service}
+                  />
+                )}
+                selectedServiceIds={data.selectedServiceIds}
+                services={category.services}
+              />
+            )
+          )}
+        </div>
+      );
+    }
+
+    // Fallback to static services when catalog is empty
+    return (
+      <div className="grid gap-2 sm:grid-cols-2">
+        {GCMC_SERVICES.map((service) => (
+          <div
+            className="flex items-start space-x-3 rounded-lg border p-3"
+            key={service.value}
+          >
+            <Checkbox
+              checked={data.gcmcServices.includes(service.value)}
+              id={`gcmc-${service.value}`}
+              onCheckedChange={() => toggleGCMCService(service.value)}
+            />
+            <div className="grid gap-0.5 leading-none">
+              <Label
+                className="cursor-pointer font-medium"
+                htmlFor={`gcmc-${service.value}`}
+              >
+                {service.label}
+              </Label>
+              <span className="text-muted-foreground text-xs">
+                {service.description}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Render KAJ services content based on loading/data state
+  const renderKajServices = () => {
+    if (kajLoading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (hasKajCatalog) {
+      return (
+        <div className="space-y-3">
+          {Object.entries(kajData).map(
+            ([categoryKey, category]: [string, ServiceCatalogCategory]) => (
+              <ServiceCategoryAccordion
+                categoryDescription={category.categoryDescription ?? ""}
+                categoryDisplayName={category.categoryDisplayName}
+                categoryName={category.categoryName}
+                key={categoryKey}
+                onServiceDetails={setSelectedServiceForDetails}
+                onServiceToggle={toggleService}
+                renderServiceItem={(service, isSelected) => (
+                  <ServiceCheckboxItem
+                    isSelected={isSelected}
+                    key={service.id}
+                    onShowDetails={() => setSelectedServiceForDetails(service)}
+                    onToggle={() => toggleService(service.id)}
+                    service={service}
+                  />
+                )}
+                selectedServiceIds={data.selectedServiceIds}
+                services={category.services}
+              />
+            )
+          )}
+        </div>
+      );
+    }
+
+    // Fallback to static services when catalog is empty
+    return (
+      <div className="grid gap-2 sm:grid-cols-2">
+        {KAJ_SERVICES.map((service) => (
+          <div
+            className="flex items-start space-x-3 rounded-lg border p-3"
+            key={service.value}
+          >
+            <Checkbox
+              checked={data.kajServices.includes(service.value)}
+              id={`kaj-${service.value}`}
+              onCheckedChange={() => toggleKAJService(service.value)}
+            />
+            <div className="grid gap-0.5 leading-none">
+              <Label
+                className="cursor-pointer font-medium"
+                htmlFor={`kaj-${service.value}`}
+              >
+                {service.label}
+              </Label>
+              <span className="text-muted-foreground text-xs">
+                {service.description}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <WizardStep
       description="Select which businesses will serve this client and the specific services they need"
@@ -140,11 +315,7 @@ export function StepServicesEnhanced({
                 aria-pressed={isSelected}
                 className={cn(
                   "flex items-center gap-3 rounded-lg border px-4 py-3 transition-all",
-                  isSelected
-                    ? business.value === "GCMC"
-                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
-                      : "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                    : "border-border hover:border-primary/50"
+                  getBusinessButtonClassName(isSelected, business.value)
                 )}
                 key={business.value}
                 onClick={() => toggleBusiness(business.value)}
@@ -153,11 +324,7 @@ export function StepServicesEnhanced({
                 <div
                   className={cn(
                     "flex size-6 items-center justify-center rounded-full border-2",
-                    isSelected
-                      ? business.value === "GCMC"
-                        ? "border-emerald-500 bg-emerald-500 text-white"
-                        : "border-blue-500 bg-blue-500 text-white"
-                      : "border-muted-foreground/30"
+                    getBusinessCheckboxClassName(isSelected, business.value)
                   )}
                 >
                   {isSelected ? <Check className="size-4" /> : null}
@@ -195,66 +362,7 @@ export function StepServicesEnhanced({
             </span>
           }
         >
-          {gcmcLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : hasGcmcCatalog ? (
-            <div className="space-y-3">
-              {Object.entries(gcmcData).map(
-                ([categoryKey, category]: [string, any]) => (
-                  <ServiceCategoryAccordion
-                    categoryDescription={category.categoryDescription}
-                    categoryDisplayName={category.categoryDisplayName}
-                    categoryName={category.categoryName}
-                    key={categoryKey}
-                    onServiceDetails={setSelectedServiceForDetails}
-                    onServiceToggle={toggleService}
-                    renderServiceItem={(service, isSelected) => (
-                      <ServiceCheckboxItem
-                        isSelected={isSelected}
-                        key={service.id}
-                        onShowDetails={() =>
-                          setSelectedServiceForDetails(service)
-                        }
-                        onToggle={() => toggleService(service.id)}
-                        service={service}
-                      />
-                    )}
-                    selectedServiceIds={data.selectedServiceIds}
-                    services={category.services}
-                  />
-                )
-              )}
-            </div>
-          ) : (
-            // Fallback to static services when catalog is empty
-            <div className="grid gap-2 sm:grid-cols-2">
-              {GCMC_SERVICES.map((service) => (
-                <div
-                  className="flex items-start space-x-3 rounded-lg border p-3"
-                  key={service.value}
-                >
-                  <Checkbox
-                    checked={data.gcmcServices.includes(service.value)}
-                    id={`gcmc-${service.value}`}
-                    onCheckedChange={() => toggleGCMCService(service.value)}
-                  />
-                  <div className="grid gap-0.5 leading-none">
-                    <Label
-                      className="cursor-pointer font-medium"
-                      htmlFor={`gcmc-${service.value}`}
-                    >
-                      {service.label}
-                    </Label>
-                    <span className="text-muted-foreground text-xs">
-                      {service.description}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {renderGcmcServices()}
         </WizardStepSection>
       ) : null}
 
@@ -275,66 +383,7 @@ export function StepServicesEnhanced({
             </span>
           }
         >
-          {kajLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : hasKajCatalog ? (
-            <div className="space-y-3">
-              {Object.entries(kajData).map(
-                ([categoryKey, category]: [string, any]) => (
-                  <ServiceCategoryAccordion
-                    categoryDescription={category.categoryDescription}
-                    categoryDisplayName={category.categoryDisplayName}
-                    categoryName={category.categoryName}
-                    key={categoryKey}
-                    onServiceDetails={setSelectedServiceForDetails}
-                    onServiceToggle={toggleService}
-                    renderServiceItem={(service, isSelected) => (
-                      <ServiceCheckboxItem
-                        isSelected={isSelected}
-                        key={service.id}
-                        onShowDetails={() =>
-                          setSelectedServiceForDetails(service)
-                        }
-                        onToggle={() => toggleService(service.id)}
-                        service={service}
-                      />
-                    )}
-                    selectedServiceIds={data.selectedServiceIds}
-                    services={category.services}
-                  />
-                )
-              )}
-            </div>
-          ) : (
-            // Fallback to static services when catalog is empty
-            <div className="grid gap-2 sm:grid-cols-2">
-              {KAJ_SERVICES.map((service) => (
-                <div
-                  className="flex items-start space-x-3 rounded-lg border p-3"
-                  key={service.value}
-                >
-                  <Checkbox
-                    checked={data.kajServices.includes(service.value)}
-                    id={`kaj-${service.value}`}
-                    onCheckedChange={() => toggleKAJService(service.value)}
-                  />
-                  <div className="grid gap-0.5 leading-none">
-                    <Label
-                      className="cursor-pointer font-medium"
-                      htmlFor={`kaj-${service.value}`}
-                    >
-                      {service.label}
-                    </Label>
-                    <span className="text-muted-foreground text-xs">
-                      {service.description}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {renderKajServices()}
         </WizardStepSection>
       ) : null}
 

@@ -69,13 +69,13 @@ export function TemplateGeneratorDialog({
       "templates",
       "list",
       {
-        isActive: true,
+        includeInactive: false,
         category: categoryFilter === "all" ? undefined : categoryFilter,
       },
     ],
     queryFn: () =>
       client.documents.templates.list({
-        isActive: true,
+        includeInactive: false,
         category:
           categoryFilter === "all"
             ? undefined
@@ -129,8 +129,8 @@ export function TemplateGeneratorDialog({
       setOpen(false);
       resetState();
       // Optionally download the file
-      if (data.generatedFileName) {
-        toast.info(`Document saved as: ${data.generatedFileName}`);
+      if (data.fileName) {
+        toast.info(`Document saved as: ${data.fileName}`);
       }
     },
     onError: (error) => {

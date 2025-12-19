@@ -28,6 +28,7 @@ const priorityLabels: Record<string, { label: string; className: string }> = {
   },
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Review step displays matter summary with client, service, priority, dates, fees, and document uploads across multiple sections
 export function StepReview({ data }: StepReviewProps) {
   const priority = priorityLabels[data.priority] || priorityLabels.NORMAL;
 

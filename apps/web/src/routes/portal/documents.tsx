@@ -99,11 +99,191 @@ const getUploadStatusColor = (status: string) => {
       return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
     case "REJECTED":
       return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-    case "PENDING_REVIEW":
     default:
       return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
   }
 };
+
+function getDropzoneClassName(
+  isDragActive: boolean,
+  hasSelectedFile: boolean
+): string {
+  const baseClasses =
+    "cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-all";
+
+  if (isDragActive) {
+    return `${baseClasses} scale-[1.02] border-primary bg-primary/5`;
+  }
+  if (hasSelectedFile) {
+    return `${baseClasses} border-green-500 bg-green-50 dark:bg-green-900/10`;
+  }
+  return `${baseClasses} border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50`;
+}
+
+function DropzoneContent({
+  selectedFile,
+  isDragActive,
+  onRemoveFile,
+}: {
+  selectedFile: File | null;
+  isDragActive: boolean;
+  onRemoveFile: () => void;
+}) {
+  if (selectedFile) {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <FileText className="h-12 w-12 text-green-600" />
+        <p className="font-medium">{selectedFile.name}</p>
+        <p className="text-muted-foreground text-sm">
+          {formatFileSize(selectedFile.size)}
+        </p>
+        <Button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveFile();
+          }}
+          size="sm"
+          variant="ghost"
+        >
+          <X className="mr-1 h-4 w-4" />
+          Remove
+        </Button>
+      </div>
+    );
+  }
+
+  if (isDragActive) {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <Upload className="h-12 w-12 text-primary" />
+        <p className="font-medium text-primary">Drop file here...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <Upload className="h-12 w-12 text-muted-foreground" />
+      <p className="font-medium">Drag & drop a file here</p>
+      <p className="text-muted-foreground text-sm">or click to browse</p>
+      <p className="mt-2 text-muted-foreground text-xs">
+        PDF, Word, Excel, Images (max 50MB)
+      </p>
+    </div>
+  );
+}
+
+type UploadItem = {
+  id: string;
+  originalName: string;
+  status: string;
+  category: string;
+  reviewNotes: string | null;
+  fileSize: number;
+  createdAt: Date | string;
+  reviewedAt: Date | string | null;
+};
+
+function UploadsContent({
+  isLoading,
+  uploads,
+  onUploadClick,
+}: {
+  isLoading: boolean;
+  uploads: UploadItem[];
+  onUploadClick: () => void;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (uploads.length === 0) {
+    return (
+      <div className="rounded-lg border-2 border-dashed bg-muted/10 py-12 text-center text-muted-foreground">
+        <Upload className="mx-auto mb-4 h-16 w-16 opacity-50" />
+        <p className="font-medium text-lg">No uploads yet</p>
+        <p className="mt-2 text-sm">Upload a document to get started</p>
+        <Button className="mt-4" onClick={onUploadClick} variant="outline">
+          <Upload className="mr-2 h-4 w-4" />
+          Upload Document
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {uploads.map((upload) => (
+        <div
+          className="rounded-lg border bg-white p-4 dark:bg-transparent"
+          key={upload.id}
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex flex-1 items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                <FileText className="h-6 w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <h3 className="truncate font-medium text-sm">
+                    {upload.originalName}
+                  </h3>
+                  <Badge
+                    className={getUploadStatusColor(upload.status)}
+                    variant="outline"
+                  >
+                    {upload.status === "PENDING_REVIEW" ? (
+                      <Clock className="mr-1 h-3 w-3" />
+                    ) : null}
+                    {upload.status === "APPROVED" ? (
+                      <Check className="mr-1 h-3 w-3" />
+                    ) : null}
+                    {upload.status === "REJECTED" ? (
+                      <X className="mr-1 h-3 w-3" />
+                    ) : null}
+                    {upload.status.replace("_", " ")}
+                  </Badge>
+                  <Badge
+                    className={getCategoryColor(upload.category)}
+                    variant="outline"
+                  >
+                    {upload.category}
+                  </Badge>
+                </div>
+                {upload.reviewNotes ? (
+                  <p className="mb-2 text-muted-foreground text-sm">
+                    <strong>Review notes:</strong> {upload.reviewNotes}
+                  </p>
+                ) : null}
+                <div className="flex items-center gap-4 text-muted-foreground text-xs">
+                  <span>{formatFileSize(upload.fileSize)}</span>
+                  <span>-</span>
+                  <span>
+                    Uploaded on{" "}
+                    {new Date(upload.createdAt).toLocaleDateString()}
+                  </span>
+                  {upload.reviewedAt ? (
+                    <>
+                      <span>-</span>
+                      <span>
+                        Reviewed on{" "}
+                        {new Date(upload.reviewedAt).toLocaleDateString()}
+                      </span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function PortalDocuments() {
   const _navigate = useNavigate();
@@ -124,7 +304,8 @@ function PortalDocuments() {
     })
   );
 
-  const { data: matters } = useQuery(
+  // Query matters for linking (currently not displayed but kept for future use)
+  useQuery(
     orpc.portal.matters.list.queryOptions({
       input: { page: 1, limit: 100 },
     })
@@ -185,8 +366,8 @@ function PortalDocuments() {
       });
 
       if (!uploadResponse.ok) {
-        const error = await uploadResponse.json();
-        throw new Error(error.error || "Failed to upload file");
+        const uploadError = await uploadResponse.json();
+        throw new Error(uploadError.error || "Failed to upload file");
       }
 
       toast.success(
@@ -283,11 +464,12 @@ function PortalDocuments() {
             <TabsTrigger value="library">Document Library</TabsTrigger>
             <TabsTrigger value="uploads">
               My Uploads
-              {uploadsData?.uploads.filter((u) => u.status === "PENDING_REVIEW")
-                .length ? (
+              {(uploadsData?.uploads.filter(
+                (u) => u.status === "PENDING_REVIEW"
+              ).length ?? 0) > 0 ? (
                 <Badge className="ml-2" variant="secondary">
                   {
-                    uploadsData.uploads.filter(
+                    uploadsData?.uploads.filter(
                       (u) => u.status === "PENDING_REVIEW"
                     ).length
                   }
@@ -367,14 +549,14 @@ function PortalDocuments() {
                                 >
                                   {doc.category}
                                 </Badge>
-                                {doc.matterId && (
+                                {doc.matterId ? (
                                   <Badge
                                     className="text-xs"
                                     variant="secondary"
                                   >
                                     Matter Linked
                                   </Badge>
-                                )}
+                                ) : null}
                               </div>
                               {doc.description ? (
                                 <p className="mb-2 text-muted-foreground text-sm">
@@ -416,101 +598,11 @@ function PortalDocuments() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {uploadsLoading ? (
-                  <div className="flex justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : uploadsData?.uploads.length ? (
-                  <div className="space-y-3">
-                    {uploadsData.uploads.map((upload) => (
-                      <div
-                        className="rounded-lg border bg-white p-4 dark:bg-transparent"
-                        key={upload.id}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex flex-1 items-start gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                              <FileText className="h-6 w-6" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="mb-1 flex flex-wrap items-center gap-2">
-                                <h3 className="truncate font-medium text-sm">
-                                  {upload.originalName}
-                                </h3>
-                                <Badge
-                                  className={getUploadStatusColor(
-                                    upload.status
-                                  )}
-                                  variant="outline"
-                                >
-                                  {upload.status === "PENDING_REVIEW" && (
-                                    <Clock className="mr-1 h-3 w-3" />
-                                  )}
-                                  {upload.status === "APPROVED" && (
-                                    <Check className="mr-1 h-3 w-3" />
-                                  )}
-                                  {upload.status === "REJECTED" && (
-                                    <X className="mr-1 h-3 w-3" />
-                                  )}
-                                  {upload.status.replace("_", " ")}
-                                </Badge>
-                                <Badge
-                                  className={getCategoryColor(upload.category)}
-                                  variant="outline"
-                                >
-                                  {upload.category}
-                                </Badge>
-                              </div>
-                              {upload.reviewNotes ? (
-                                <p className="mb-2 text-muted-foreground text-sm">
-                                  <strong>Review notes:</strong>{" "}
-                                  {upload.reviewNotes}
-                                </p>
-                              ) : null}
-                              <div className="flex items-center gap-4 text-muted-foreground text-xs">
-                                <span>{formatFileSize(upload.fileSize)}</span>
-                                <span>-</span>
-                                <span>
-                                  Uploaded on{" "}
-                                  {new Date(
-                                    upload.createdAt
-                                  ).toLocaleDateString()}
-                                </span>
-                                {upload.reviewedAt ? (
-                                  <>
-                                    <span>-</span>
-                                    <span>
-                                      Reviewed on{" "}
-                                      {new Date(
-                                        upload.reviewedAt
-                                      ).toLocaleDateString()}
-                                    </span>
-                                  </>
-                                ) : null}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-lg border-2 border-dashed bg-muted/10 py-12 text-center text-muted-foreground">
-                    <Upload className="mx-auto mb-4 h-16 w-16 opacity-50" />
-                    <p className="font-medium text-lg">No uploads yet</p>
-                    <p className="mt-2 text-sm">
-                      Upload a document to get started
-                    </p>
-                    <Button
-                      className="mt-4"
-                      onClick={() => setUploadDialogOpen(true)}
-                      variant="outline"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Document
-                    </Button>
-                  </div>
-                )}
+                <UploadsContent
+                  isLoading={uploadsLoading}
+                  onUploadClick={() => setUploadDialogOpen(true)}
+                  uploads={uploadsData?.uploads ?? []}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -532,51 +624,14 @@ function PortalDocuments() {
             {/* Dropzone */}
             <div
               {...getRootProps()}
-              className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-all ${
-                isDragActive
-                  ? "scale-[1.02] border-primary bg-primary/5"
-                  : selectedFile
-                    ? "border-green-500 bg-green-50 dark:bg-green-900/10"
-                    : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
-              }`}
+              className={getDropzoneClassName(isDragActive, !!selectedFile)}
             >
               <input {...getInputProps()} />
-              {selectedFile ? (
-                <div className="flex flex-col items-center gap-2">
-                  <FileText className="h-12 w-12 text-green-600" />
-                  <p className="font-medium">{selectedFile.name}</p>
-                  <p className="text-muted-foreground text-sm">
-                    {formatFileSize(selectedFile.size)}
-                  </p>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedFile(null);
-                    }}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <X className="mr-1 h-4 w-4" />
-                    Remove
-                  </Button>
-                </div>
-              ) : isDragActive ? (
-                <div className="flex flex-col items-center gap-2">
-                  <Upload className="h-12 w-12 text-primary" />
-                  <p className="font-medium text-primary">Drop file here...</p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <Upload className="h-12 w-12 text-muted-foreground" />
-                  <p className="font-medium">Drag & drop a file here</p>
-                  <p className="text-muted-foreground text-sm">
-                    or click to browse
-                  </p>
-                  <p className="mt-2 text-muted-foreground text-xs">
-                    PDF, Word, Excel, Images (max 50MB)
-                  </p>
-                </div>
-              )}
+              <DropzoneContent
+                isDragActive={isDragActive}
+                onRemoveFile={() => setSelectedFile(null)}
+                selectedFile={selectedFile}
+              />
             </div>
 
             {/* Category */}

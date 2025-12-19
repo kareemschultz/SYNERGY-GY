@@ -89,6 +89,43 @@ const statusConfig: Record<
   },
 };
 
+// Helper function to render table body based on loading/data state
+function renderInviteTableBody(
+  isLoading: boolean,
+  invites: Invite[] | undefined
+) {
+  if (isLoading) {
+    return (
+      <TableRow>
+        <TableCell className="h-32 text-center" colSpan={7}>
+          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading invites...
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  if (invites && invites.length > 0) {
+    return invites.map((invite) => (
+      <InviteTableRow invite={invite} key={invite.id} />
+    ));
+  }
+
+  return (
+    <TableRow>
+      <TableCell className="h-32 text-center" colSpan={7}>
+        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+          <MailX className="h-8 w-8" />
+          <p>No portal invites found</p>
+          <p className="text-sm">Send invites from the client detail page</p>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 function PortalInvitesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -184,38 +221,13 @@ function PortalInvitesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={7}>
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading invites...
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : data?.invites && data.invites.length > 0 ? (
-                data.invites.map((invite) => (
-                  <InviteTableRow invite={invite} key={invite.id} />
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={7}>
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <MailX className="h-8 w-8" />
-                      <p>No portal invites found</p>
-                      <p className="text-sm">
-                        Send invites from the client detail page
-                      </p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
+              {renderInviteTableBody(isLoading, data?.invites)}
             </TableBody>
           </Table>
         </div>
 
         {/* Pagination */}
-        {data && data.pagination.totalPages > 1 ? (
+        {data !== undefined && data.pagination.totalPages > 1 ? (
           <div className="mt-4 flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
               Showing {(page - 1) * 20 + 1} to{" "}
@@ -362,9 +374,7 @@ function InviteTableRow({ invite }: { invite: Invite }) {
             <span className="text-muted-foreground">-</span>
           ) : (
             <span
-              className={
-                displayStatus === "EXPIRED" ? "text-red-600" : undefined
-              }
+              className={displayStatus === "EXPIRED" ? "text-red-600" : ""}
               title={format(new Date(invite.expiresAt), "PPpp")}
             >
               {formatDistanceToNow(new Date(invite.expiresAt), {
@@ -389,8 +399,8 @@ function InviteTableRow({ invite }: { invite: Invite }) {
                   View Client
                 </Link>
               </DropdownMenuItem>
-              {(canRevoke || canResend) && <DropdownMenuSeparator />}
-              {canRevoke && (
+              {canRevoke || canResend ? <DropdownMenuSeparator /> : null}
+              {canRevoke ? (
                 <DropdownMenuItem
                   className="text-red-600"
                   disabled={revokeMutation.isPending}
@@ -399,8 +409,8 @@ function InviteTableRow({ invite }: { invite: Invite }) {
                   <XCircle className="mr-2 h-4 w-4" />
                   Revoke Invite
                 </DropdownMenuItem>
-              )}
-              {canResend && (
+              ) : null}
+              {canResend ? (
                 <DropdownMenuItem
                   disabled={resendMutation.isPending}
                   onClick={() => resendMutation.mutate()}
@@ -417,7 +427,7 @@ function InviteTableRow({ invite }: { invite: Invite }) {
                     </>
                   )}
                 </DropdownMenuItem>
-              )}
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         </TableCell>

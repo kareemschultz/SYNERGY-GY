@@ -319,7 +319,7 @@ function ClientDetailPage() {
               </div>
 
               <div className="flex flex-wrap gap-4 text-sm">
-                {!!clientData.email && (
+                {clientData.email ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Mail className="h-4 w-4" />
                     <a
@@ -329,8 +329,8 @@ function ClientDetailPage() {
                       {clientData.email}
                     </a>
                   </div>
-                )}
-                {!!clientData.phone && (
+                ) : null}
+                {clientData.phone ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="h-4 w-4" />
                     <a
@@ -340,13 +340,13 @@ function ClientDetailPage() {
                       {clientData.phone}
                     </a>
                   </div>
-                )}
-                {!!clientData.city && (
+                ) : null}
+                {clientData.city ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="h-4 w-4" />
                     {clientData.city}, {clientData.country}
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           </CardContent>
@@ -379,12 +379,12 @@ function ClientDetailPage() {
               <FileText className="mr-2 h-4 w-4" />
               Documents
             </TabsTrigger>
-            {canViewFinancials && (
+            {canViewFinancials ? (
               <TabsTrigger value="invoices">
                 <CreditCard className="mr-2 h-4 w-4" />
                 Invoices
               </TabsTrigger>
-            )}
+            ) : null}
           </TabsList>
 
           {/* Overview Tab */}
@@ -445,11 +445,11 @@ function ClientDetailPage() {
           </TabsContent>
 
           {/* Invoices Tab - Only visible if staff has financial access */}
-          {canViewFinancials && (
+          {canViewFinancials ? (
             <TabsContent className="mt-6" value="invoices">
               <InvoicesSection clientId={clientId} />
             </TabsContent>
-          )}
+          ) : null}
         </Tabs>
       </div>
 
@@ -569,16 +569,16 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 function BusinessBadges({ businesses }: { businesses: string[] }) {
   return (
     <div className="flex gap-1">
-      {businesses.includes("GCMC") && (
+      {businesses.includes("GCMC") ? (
         <Badge className="bg-emerald-500/10 text-emerald-600" variant="outline">
           GCMC
         </Badge>
-      )}
-      {businesses.includes("KAJ") && (
+      ) : null}
+      {businesses.includes("KAJ") ? (
         <Badge className="bg-blue-500/10 text-blue-600" variant="outline">
           KAJ
         </Badge>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -720,7 +720,7 @@ function ContactsSection({
               >
                 {createMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
+                ) : null}{" "}
                 Add Contact
               </Button>
             </div>
@@ -742,18 +742,18 @@ function ContactsSection({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{contact.name}</span>
-                    {contact.isPrimary === "true" && (
+                    {contact.isPrimary === "true" ? (
                       <Badge variant="secondary">Primary</Badge>
-                    )}
+                    ) : null}
                   </div>
-                  {!!contact.relationship && (
+                  {contact.relationship ? (
                     <p className="text-muted-foreground text-sm">
                       {contact.relationship}
                     </p>
-                  )}
+                  ) : null}
                   <div className="mt-1 flex gap-4 text-muted-foreground text-sm">
-                    {!!contact.email && <span>{contact.email}</span>}
-                    {!!contact.phone && <span>{contact.phone}</span>}
+                    {contact.email ? <span>{contact.email}</span> : null}
+                    {contact.phone ? <span>{contact.phone}</span> : null}
                   </div>
                 </div>
                 <Button
@@ -928,7 +928,7 @@ function CommunicationsSection({
               >
                 {createMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
+                ) : null}{" "}
                 Log Communication
               </Button>
             </div>
@@ -957,15 +957,15 @@ function CommunicationsSection({
                     {new Date(comm.communicatedAt).toLocaleString()}
                   </span>
                 </div>
-                {!!comm.subject && (
+                {comm.subject ? (
                   <p className="mt-1 font-medium text-sm">{comm.subject}</p>
-                )}
+                ) : null}
                 <p className="mt-1 text-sm">{comm.summary}</p>
-                {!!comm.staff?.user?.name && (
+                {comm.staff?.user?.name ? (
                   <p className="mt-1 text-muted-foreground text-xs">
                     by {comm.staff.user.name}
                   </p>
-                )}
+                ) : null}
               </div>
             ))}
           </div>
@@ -1076,12 +1076,12 @@ function InvoicesSection({ clientId }: { clientId: string }) {
                       <p className="font-medium">
                         GYD {Number.parseFloat(invoice.totalAmount).toFixed(2)}
                       </p>
-                      {Number.parseFloat(invoice.amountDue) > 0 && (
+                      {Number.parseFloat(invoice.amountDue) > 0 ? (
                         <p className="text-red-600 text-sm">
                           Due: GYD{" "}
                           {Number.parseFloat(invoice.amountDue).toFixed(2)}
                         </p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 </Link>
@@ -1096,6 +1096,11 @@ function InvoicesSection({ clientId }: { clientId: string }) {
 
 // Overview Tab Component
 type ClientData = {
+  id: string;
+  displayName: string;
+  type: string;
+  status: string;
+  businesses: string[];
   firstName?: string | null;
   lastName?: string | null;
   dateOfBirth?: string | null;
@@ -1117,6 +1122,8 @@ type ClientData = {
   nisCompliant?: boolean;
   amlRiskRating?: "LOW" | "MEDIUM" | "HIGH";
   lastComplianceCheckDate?: string | null;
+  contacts: Contact[];
+  communications: Communication[];
 };
 
 type OverviewTabProps = {
@@ -1182,6 +1189,7 @@ type OverviewTabProps = {
   isLoading: boolean;
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Client overview tab displays stats, matters, invoices, documents, and activity with conditional rendering based on client type and permissions
 function OverviewTab({
   clientData,
   dashboardData,
@@ -1234,20 +1242,23 @@ function OverviewTab({
                   : "muted"
               }
             />
-            {canViewFinancials && dashboardData?.financials ? (
+            {canViewFinancials === true &&
+            dashboardData !== undefined &&
+            dashboardData.financials !== undefined &&
+            dashboardData.financials !== null ? (
               <QuickStatCard
                 icon={DollarSign}
                 label="Outstanding Balance"
                 subtext={
-                  dashboardData.financials.overdueCount > 0
+                  (dashboardData.financials.overdueCount ?? 0) > 0
                     ? `${dashboardData.financials.overdueCount} overdue`
-                    : undefined
+                    : ""
                 }
                 value={formatCurrency(
-                  dashboardData.financials.totalOutstanding
+                  dashboardData.financials.totalOutstanding ?? 0
                 )}
                 variant={
-                  dashboardData.financials.overdueCount > 0
+                  (dashboardData.financials.overdueCount ?? 0) > 0
                     ? "danger"
                     : "default"
                 }
@@ -1282,7 +1293,10 @@ function OverviewTab({
         </Card>
 
         {/* Financial Summary Card */}
-        {canViewFinancials && dashboardData?.financials ? (
+        {canViewFinancials === true &&
+        dashboardData !== undefined &&
+        dashboardData.financials !== undefined &&
+        dashboardData.financials !== null ? (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Financial Summary</CardTitle>
@@ -1302,7 +1316,7 @@ function OverviewTab({
                   dashboardData.financials.totalOutstanding
                 )}
               />
-              {Number.parseFloat(dashboardData.financials.totalOverdue) > 0 && (
+              {Number.parseFloat(dashboardData.financials.totalOverdue) > 0 ? (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground text-sm">Overdue</span>
                   <span className="font-medium text-red-600 text-sm">
@@ -1310,7 +1324,7 @@ function OverviewTab({
                     {dashboardData.financials.overdueCount} invoices)
                   </span>
                 </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
         ) : (
@@ -1342,30 +1356,38 @@ function OverviewTab({
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            ) : (dashboardData?.matters.recent?.length || 0) > 0 ? (
-              <div className="space-y-2">
-                {dashboardData?.matters.recent.slice(0, 3).map((m) => (
-                  <MatterMiniCard
-                    business={m.business}
-                    id={m.id}
-                    key={m.id}
-                    referenceNumber={m.referenceNumber}
-                    status={m.status}
-                    title={m.title}
-                    updatedAt={m.updatedAt}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="py-4 text-center text-muted-foreground text-sm">
-                No matters yet
-              </p>
-            )}
+            {(() => {
+              if (isLoading) {
+                return (
+                  <div className="space-y-2">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                );
+              }
+              if ((dashboardData?.matters.recent?.length || 0) > 0) {
+                return (
+                  <div className="space-y-2">
+                    {dashboardData?.matters.recent.slice(0, 3).map((m) => (
+                      <MatterMiniCard
+                        business={m.business}
+                        id={m.id}
+                        key={m.id}
+                        referenceNumber={m.referenceNumber}
+                        status={m.status}
+                        title={m.title}
+                        updatedAt={m.updatedAt}
+                      />
+                    ))}
+                  </div>
+                );
+              }
+              return (
+                <p className="py-4 text-center text-muted-foreground text-sm">
+                  No matters yet
+                </p>
+              );
+            })()}
           </CardContent>
         </Card>
 
@@ -1378,32 +1400,42 @@ function OverviewTab({
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            ) : (dashboardData?.appointments.upcoming?.length || 0) > 0 ? (
-              <div className="space-y-2">
-                {dashboardData?.appointments.upcoming.slice(0, 3).map((apt) => (
-                  <AppointmentMiniCard
-                    appointmentType={apt.appointmentType}
-                    assignedStaff={apt.assignedStaff}
-                    endAt={apt.endAt}
-                    id={apt.id}
-                    key={apt.id}
-                    locationType={apt.locationType}
-                    scheduledAt={apt.scheduledAt}
-                    status={apt.status}
-                    title={apt.title}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="py-4 text-center text-muted-foreground text-sm">
-                No upcoming appointments
-              </p>
-            )}
+            {(() => {
+              if (isLoading) {
+                return (
+                  <div className="space-y-2">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                );
+              }
+              if ((dashboardData?.appointments.upcoming?.length || 0) > 0) {
+                return (
+                  <div className="space-y-2">
+                    {dashboardData?.appointments.upcoming
+                      .slice(0, 3)
+                      .map((apt) => (
+                        <AppointmentMiniCard
+                          appointmentType={apt.appointmentType}
+                          assignedStaff={apt.assignedStaff}
+                          endAt={apt.endAt}
+                          id={apt.id}
+                          key={apt.id}
+                          locationType={apt.locationType}
+                          scheduledAt={apt.scheduledAt}
+                          status={apt.status}
+                          title={apt.title}
+                        />
+                      ))}
+                  </div>
+                );
+              }
+              return (
+                <p className="py-4 text-center text-muted-foreground text-sm">
+                  No upcoming appointments
+                </p>
+              );
+            })()}
           </CardContent>
         </Card>
 
@@ -1413,33 +1445,41 @@ function OverviewTab({
             <CardTitle className="text-base">Recent Communications</CardTitle>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            ) : (dashboardData?.communications.recent?.length || 0) > 0 ? (
-              <div className="space-y-2">
-                {dashboardData?.communications.recent
-                  .slice(0, 3)
-                  .map((comm) => (
-                    <CommunicationMiniCard
-                      communicatedAt={comm.communicatedAt}
-                      direction={comm.direction}
-                      id={comm.id}
-                      key={comm.id}
-                      staff={comm.staff}
-                      subject={comm.subject}
-                      summary={comm.summary}
-                      type={comm.type}
-                    />
-                  ))}
-              </div>
-            ) : (
-              <p className="py-4 text-center text-muted-foreground text-sm">
-                No communications logged
-              </p>
-            )}
+            {(() => {
+              if (isLoading) {
+                return (
+                  <div className="space-y-2">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                );
+              }
+              if ((dashboardData?.communications.recent?.length || 0) > 0) {
+                return (
+                  <div className="space-y-2">
+                    {dashboardData?.communications.recent
+                      .slice(0, 3)
+                      .map((comm) => (
+                        <CommunicationMiniCard
+                          communicatedAt={comm.communicatedAt}
+                          direction={comm.direction}
+                          id={comm.id}
+                          key={comm.id}
+                          staff={comm.staff}
+                          subject={comm.subject}
+                          summary={comm.summary}
+                          type={comm.type}
+                        />
+                      ))}
+                  </div>
+                );
+              }
+              return (
+                <p className="py-4 text-center text-muted-foreground text-sm">
+                  No communications logged
+                </p>
+              );
+            })()}
           </CardContent>
         </Card>
       </div>

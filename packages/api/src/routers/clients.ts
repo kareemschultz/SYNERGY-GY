@@ -19,6 +19,28 @@ import {
   staffProcedure,
 } from "../index";
 
+type SortByField =
+  | "activeMatterCount"
+  | "createdAt"
+  | "updatedAt"
+  | "displayName";
+
+/**
+ * Get the SQL expression for the sort field in client list queries.
+ */
+function getClientSortColumn(sortBy: SortByField) {
+  if (sortBy === "activeMatterCount") {
+    return sql`m.active_count`;
+  }
+  if (sortBy === "createdAt") {
+    return sql`c.created_at`;
+  }
+  if (sortBy === "updatedAt") {
+    return sql`c.updated_at`;
+  }
+  return sql`c.display_name`;
+}
+
 // Input schemas
 const clientTypeValues = [
   "INDIVIDUAL",
@@ -403,15 +425,7 @@ export const clientsRouter = {
             AND status IN ('REQUESTED', 'CONFIRMED')
         ) apt ON true
         ${rawWhereString ? sql.raw(`WHERE ${rawWhereString}`) : sql``}
-        ORDER BY ${
-          input.sortBy === "activeMatterCount"
-            ? sql`m.active_count`
-            : input.sortBy === "createdAt"
-              ? sql`c.created_at`
-              : input.sortBy === "updatedAt"
-                ? sql`c.updated_at`
-                : sql`c.display_name`
-        } ${input.sortOrder === "desc" ? sql`DESC` : sql`ASC`}
+        ORDER BY ${getClientSortColumn(input.sortBy as SortByField)} ${input.sortOrder === "desc" ? sql`DESC` : sql`ASC`}
         LIMIT ${input.limit}
         OFFSET ${offset}
       `);

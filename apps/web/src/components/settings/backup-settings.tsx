@@ -71,7 +71,7 @@ export function BackupSettings() {
   const [selectedBackup, setSelectedBackup] = useState<Backup | null>(null);
 
   // Fetch backup statistics
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats } = useQuery({
     queryKey: ["backup", "stats"],
     queryFn: () => client.backup.getStats(),
   });
@@ -178,6 +178,94 @@ export function BackupSettings() {
       hour: "numeric",
       minute: "2-digit",
     });
+
+  // Render backup list content based on loading/data state
+  const renderBackupListContent = () => {
+    if (listLoading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (backupList?.backups.length === 0) {
+      return (
+        <div className="rounded-lg border-2 border-dashed py-8 text-center">
+          <Archive className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <h3 className="mt-4 font-medium">No backups yet</h3>
+          <p className="mt-1 text-muted-foreground text-sm">
+            Create your first backup to protect your data.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Size</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {backupList?.backups.map((backup) => (
+              <TableRow key={backup.id}>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(backup.status)}
+                    <span className="max-w-[200px] truncate">
+                      {backup.name}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>{getStatusBadge(backup.status)}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{backup.type}</Badge>
+                </TableCell>
+                <TableCell>{backup.fileSizeFormatted || "—"}</TableCell>
+                <TableCell>{formatDate(backup.createdAt)}</TableCell>
+                <TableCell>
+                  <div className="flex items-center justify-end gap-1">
+                    {backup.status === "completed" && backup.fileExists && (
+                      <Button
+                        onClick={() => {
+                          setSelectedBackup(backup);
+                          setRestoreDialogOpen(true);
+                        }}
+                        size="sm"
+                        title="Restore"
+                        variant="ghost"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => {
+                        setSelectedBackup(backup);
+                        setDeleteDialogOpen(true);
+                      }}
+                      size="sm"
+                      title="Delete"
+                      variant="ghost"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -289,14 +377,14 @@ export function BackupSettings() {
             </Button>
           </div>
 
-          {createBackupMutation.isPending && (
+          {createBackupMutation.isPending ? (
             <div className="mt-4 space-y-2">
               <Progress className="h-2" value={33} />
               <p className="text-center text-muted-foreground text-xs">
                 Backing up database and files...
               </p>
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 
@@ -323,90 +411,14 @@ export function BackupSettings() {
           </div>
         </CardHeader>
         <CardContent>
-          {listLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : backupList?.backups.length === 0 ? (
-            <div className="rounded-lg border-2 border-dashed py-8 text-center">
-              <Archive className="mx-auto h-12 w-12 text-muted-foreground/50" />
-              <h3 className="mt-4 font-medium">No backups yet</h3>
-              <p className="mt-1 text-muted-foreground text-sm">
-                Create your first backup to protect your data.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {backupList?.backups.map((backup) => (
-                    <TableRow key={backup.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(backup.status)}
-                          <span className="max-w-[200px] truncate">
-                            {backup.name}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(backup.status)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{backup.type}</Badge>
-                      </TableCell>
-                      <TableCell>{backup.fileSizeFormatted || "—"}</TableCell>
-                      <TableCell>{formatDate(backup.createdAt)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-1">
-                          {backup.status === "completed" &&
-                            backup.fileExists && (
-                              <Button
-                                onClick={() => {
-                                  setSelectedBackup(backup);
-                                  setRestoreDialogOpen(true);
-                                }}
-                                size="sm"
-                                title="Restore"
-                                variant="ghost"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            )}
-                          <Button
-                            onClick={() => {
-                              setSelectedBackup(backup);
-                              setDeleteDialogOpen(true);
-                            }}
-                            size="sm"
-                            title="Delete"
-                            variant="ghost"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+          {renderBackupListContent()}
 
-          {backupList && backupList.pagination.totalPages > 1 && (
+          {backupList !== undefined && backupList.pagination.totalPages > 1 ? (
             <div className="mt-4 flex items-center justify-center text-muted-foreground text-sm">
               Showing {backupList.backups.length} of{" "}
               {backupList.pagination.total} backups
             </div>
-          )}
+          ) : null}
         </CardContent>
       </Card>
 

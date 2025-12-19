@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -58,12 +59,23 @@ export function TableLoadingState({
   columns: number;
   rows?: number;
 }) {
+  // Generate stable unique IDs for skeleton rows/cells
+  // These are placeholder skeletons with no data identity, so we generate UUIDs
+  const skeletonData = useMemo(
+    () =>
+      Array.from({ length: rows }, () => ({
+        rowId: crypto.randomUUID(),
+        cellIds: Array.from({ length: columns }, () => crypto.randomUUID()),
+      })),
+    [rows, columns]
+  );
+
   return (
     <>
-      {Array.from({ length: rows }).map((_, rowIndex) => (
-        <tr key={`loading-row-${rowIndex}`}>
-          {Array.from({ length: columns }).map((_, colIndex) => (
-            <td className="p-4" key={`loading-cell-${rowIndex}-${colIndex}`}>
+      {skeletonData.map((row) => (
+        <tr key={row.rowId}>
+          {row.cellIds.map((cellId) => (
+            <td className="p-4" key={cellId}>
               <Skeleton className="h-4 w-full" />
             </td>
           ))}

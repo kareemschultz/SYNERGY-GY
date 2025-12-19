@@ -138,11 +138,11 @@ function PortalActivityPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {log.entityType && (
+                          {log.entityType ? (
                             <span className="text-sm">
                               {log.entityType}: {log.entityId?.slice(0, 8)}...
                             </span>
-                          )}
+                          ) : null}
                           {log.metadata ? (
                             <div className="text-muted-foreground text-xs">
                               {JSON.stringify(

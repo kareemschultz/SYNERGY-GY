@@ -23,55 +23,18 @@
       "!**/.svelte-kit",
       "!**/wrangler.jsonc",
       "!**/.source",
-      "!.playwright-mcp"
+      "!.playwright-mcp",
+      "!**/packages/db/src/schema/index.ts",
+      "!**/packages/db/src/index.ts",
+      "!**/apps/web/src/components/appointments/index.ts",
+      "!**/apps/web/src/components/layout/index.ts",
+      "!**/apps/web/src/components/shared/index.ts",
+      "!**/apps/web/src/components/wizards/index.ts",
+      "!**/apps/web/src/components/wizards/client-onboarding/index.ts",
+      "!**/apps/web/src/components/wizards/matter-wizard/index.ts",
+      "!**/apps/web/src/test/utils.tsx",
+      "!**/apps/web/src/components/theme-provider.tsx"
     ]
   },
-  "extends": ["ultracite/core", "ultracite/react"],
-  "linter": {
-    "rules": {
-      "nursery": {
-        "noLeakedRender": "warn",
-        "noIncrementDecrement": "warn",
-        "noDuplicateDependencies": "warn",
-        "noShadow": "warn",
-        "useMaxParams": "warn"
-      },
-      "performance": {
-        "noBarrelFile": "warn",
-        "useTopLevelRegex": "warn",
-        "noNamespaceImport": "warn"
-      },
-      "complexity": {
-        "noExcessiveCognitiveComplexity": "warn",
-        "noVoid": "warn"
-      },
-      "style": {
-        "noNestedTernary": "warn",
-        "noNonNullAssertion": "warn",
-        "useDefaultSwitchClause": "warn",
-        "useFilenamingConvention": "warn",
-        "useCollapsedIf": "warn"
-      },
-      "suspicious": {
-        "noArrayIndexKey": "warn",
-        "noExplicitAny": "warn",
-        "useAwait": "warn",
-        "noEmptyBlockStatements": "warn",
-        "noEvolvingTypes": "warn",
-        "noAssignInExpressions": "warn",
-        "noAlert": "warn"
-      },
-      "correctness": {
-        "noUndeclaredVariables": "warn",
-        "noUnusedVariables": "warn",
-        "noUnusedFunctionParameters": "warn",
-        "useExhaustiveDependencies": "warn",
-        "noInvalidUseBeforeDeclaration": "warn"
-      },
-      "a11y": {
-        "noLabelWithoutControl": "warn",
-        "noSvgWithoutTitle": "warn"
-      }
-    }
-  }
+  "extends": ["ultracite/core", "ultracite/react"]
 }

@@ -5,6 +5,7 @@ import {
   document,
   serviceCatalog,
 } from "@SYNERGY-GY/db";
+import type { SQL } from "drizzle-orm";
 import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure, staffProcedure } from "../index";
@@ -260,7 +261,7 @@ export const clientServicesRouter = {
     .handler(async ({ input }) => {
       const { business, startDate, endDate } = input;
 
-      const conditions = [];
+      const conditions: SQL<unknown>[] = [];
 
       if (business) {
         conditions.push(eq(clientServiceSelection.business, business));
@@ -293,7 +294,7 @@ export const clientServicesRouter = {
           clientServiceSelection.serviceName,
           clientServiceSelection.business
         )
-        .orderBy(({ count }) => sql`${count} DESC`);
+        .orderBy(({ count: countVal }) => sql`${countVal} DESC`);
 
       return results;
     }),
@@ -327,10 +328,16 @@ export const clientServicesRouter = {
 
       // Calculate average completion time
       const completionTimes = completedServices
-        .filter((s) => s.selectedAt && s.completedAt)
+        .filter(
+          (
+            s
+          ): s is typeof s & {
+            completedAt: NonNullable<typeof s.completedAt>;
+          } => s.selectedAt !== null && s.completedAt !== null
+        )
         .map((s) => {
           const start = new Date(s.selectedAt).getTime();
-          const end = new Date(s.completedAt!).getTime();
+          const end = new Date(s.completedAt).getTime();
           return (end - start) / (1000 * 60 * 60 * 24); // Days
         });
 
@@ -365,7 +372,7 @@ export const clientServicesRouter = {
                       times: [],
                     };
                   }
-                  acc[key].count++;
+                  acc[key].count += 1;
                   if (s.selectedAt && s.completedAt) {
                     const start = new Date(s.selectedAt).getTime();
                     const end = new Date(s.completedAt).getTime();

@@ -159,7 +159,7 @@ export function AddServiceDialog({
           </div>
 
           <Tabs className="flex-1 overflow-hidden" defaultValue={defaultTab}>
-            {Boolean(availableBusinesses.length > 1) && (
+            {availableBusinesses.length > 1 ? (
               <TabsList className="w-full justify-start">
                 {availableBusinesses.map((b) => (
                   <TabsTrigger key={b.value} value={b.value}>
@@ -167,86 +167,68 @@ export function AddServiceDialog({
                   </TabsTrigger>
                 ))}
               </TabsList>
-            )}
+            ) : null}
 
             <div className="flex-1 overflow-hidden p-1">
-              {availableBusinesses.map((b) => (
-                <TabsContent className="h-full" key={b.value} value={b.value}>
-                  <ScrollArea className="h-[50vh] pr-4">
-                    {b.value === "GCMC" ? (
-                      gcmcLoading ? (
-                        <div className="flex items-center justify-center py-12">
-                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : (
-                        <div className="space-y-3 pb-4">
-                          {Object.entries(filterServices(gcmcData) || {}).map(
-                            ([categoryKey, category]) => (
-                              <ServiceCategoryAccordion
-                                categoryDescription={
-                                  category.categoryDescription
-                                }
-                                categoryDisplayName={
-                                  category.categoryDisplayName
-                                }
-                                categoryName={category.categoryName}
-                                key={categoryKey}
-                                onServiceDetails={setSelectedServiceForDetails}
-                                onServiceToggle={toggleService}
-                                renderServiceItem={(service, isSelected) => (
-                                  <ServiceCheckboxItem
-                                    isSelected={isSelected}
-                                    key={service.id}
-                                    onShowDetails={() =>
-                                      setSelectedServiceForDetails(service)
-                                    }
-                                    onToggle={() => toggleService(service.id)}
-                                    service={service}
-                                  />
-                                )}
-                                selectedServiceIds={selectedServiceIds}
-                                services={category.services}
-                              />
-                            )
-                          )}
-                        </div>
-                      )
-                    ) : kajLoading ? (
+              {availableBusinesses.map((b) => {
+                const isGCMC = b.value === "GCMC";
+                let isLoading: boolean;
+                let data: ServicesGroupedByCategory | undefined;
+                if (isGCMC) {
+                  isLoading = gcmcLoading;
+                  data = gcmcData;
+                } else {
+                  isLoading = kajLoading;
+                  data = kajData;
+                }
+
+                const renderContent = () => {
+                  if (isLoading) {
+                    return (
                       <div className="flex items-center justify-center py-12">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                       </div>
-                    ) : (
-                      <div className="space-y-3 pb-4">
-                        {Object.entries(filterServices(kajData) || {}).map(
-                          ([categoryKey, category]) => (
-                            <ServiceCategoryAccordion
-                              categoryDescription={category.categoryDescription}
-                              categoryDisplayName={category.categoryDisplayName}
-                              categoryName={category.categoryName}
-                              key={categoryKey}
-                              onServiceDetails={setSelectedServiceForDetails}
-                              onServiceToggle={toggleService}
-                              renderServiceItem={(service, isSelected) => (
-                                <ServiceCheckboxItem
-                                  isSelected={isSelected}
-                                  key={service.id}
-                                  onShowDetails={() =>
-                                    setSelectedServiceForDetails(service)
-                                  }
-                                  onToggle={() => toggleService(service.id)}
-                                  service={service}
-                                />
-                              )}
-                              selectedServiceIds={selectedServiceIds}
-                              services={category.services}
-                            />
-                          )
-                        )}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </TabsContent>
-              ))}
+                    );
+                  }
+                  return (
+                    <div className="space-y-3 pb-4">
+                      {Object.entries(filterServices(data) || {}).map(
+                        ([categoryKey, category]) => (
+                          <ServiceCategoryAccordion
+                            categoryDescription={category.categoryDescription}
+                            categoryDisplayName={category.categoryDisplayName}
+                            categoryName={category.categoryName}
+                            key={categoryKey}
+                            onServiceDetails={setSelectedServiceForDetails}
+                            onServiceToggle={toggleService}
+                            renderServiceItem={(service, isSelected) => (
+                              <ServiceCheckboxItem
+                                isSelected={isSelected}
+                                key={service.id}
+                                onShowDetails={() =>
+                                  setSelectedServiceForDetails(service)
+                                }
+                                onToggle={() => toggleService(service.id)}
+                                service={service}
+                              />
+                            )}
+                            selectedServiceIds={selectedServiceIds}
+                            services={category.services}
+                          />
+                        )
+                      )}
+                    </div>
+                  );
+                };
+
+                return (
+                  <TabsContent className="h-full" key={b.value} value={b.value}>
+                    <ScrollArea className="h-[50vh] pr-4">
+                      {renderContent()}
+                    </ScrollArea>
+                  </TabsContent>
+                );
+              })}
             </div>
           </Tabs>
 
@@ -270,9 +252,9 @@ export function AddServiceDialog({
                   }
                   onClick={() => saveMutation.mutate()}
                 >
-                  {Boolean(saveMutation.isPending) && (
+                  {saveMutation.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
+                  ) : null}
                   Add Services
                 </Button>
               </div>

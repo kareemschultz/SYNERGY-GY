@@ -136,6 +136,7 @@ type DocumentUploadWizardProps = {
   onCancel?: () => void;
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Multi-step wizard with 4 distinct steps (file selection, categorization, client linking, review) each requiring different UI and state handling
 export function DocumentUploadWizard({
   onComplete,
   onCancel,
@@ -208,10 +209,10 @@ export function DocumentUploadWizard({
 
   const uploadMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const results = [];
+      const results: unknown[] = [];
       const totalFiles = files.length;
 
-      for (let i = 0; i < files.length; i++) {
+      for (let i = 0; i < files.length; i += 1) {
         const file = files[i];
         setUploadProgress(Math.round(((i + 0.5) / totalFiles) * 100));
 
@@ -286,7 +287,8 @@ export function DocumentUploadWizard({
       case 1:
         return files.length > 0;
       case 2:
-        return form.state.values.category !== "";
+        // Category always has a value (defaults to "OTHER")
+        return Boolean(form.state.values.category);
       case 3:
         return true; // Client is optional
       case 4:
@@ -318,11 +320,15 @@ export function DocumentUploadWizard({
                 <div
                   className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors",
-                    isActive &&
-                      "border-primary bg-primary text-primary-foreground",
-                    isCompleted && "border-primary bg-primary/10 text-primary",
-                    !(isActive || isCompleted) &&
-                      "border-muted-foreground/30 text-muted-foreground"
+                    isActive
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "",
+                    isCompleted
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "",
+                    isActive || isCompleted
+                      ? ""
+                      : "border-muted-foreground/30 text-muted-foreground"
                   )}
                 >
                   {isCompleted ? (
@@ -334,8 +340,8 @@ export function DocumentUploadWizard({
                 <span
                   className={cn(
                     "font-medium text-xs",
-                    isActive && "text-primary",
-                    !isActive && "text-muted-foreground"
+                    isActive ? "text-primary" : "",
+                    isActive ? "" : "text-muted-foreground"
                   )}
                 >
                   {step.title}
@@ -390,7 +396,7 @@ export function DocumentUploadWizard({
                 )}
               </div>
 
-              {files.length > 0 && (
+              {files.length > 0 ? (
                 <div className="space-y-2">
                   <p className="font-medium text-sm">
                     Selected Files ({files.length})
@@ -422,7 +428,7 @@ export function DocumentUploadWizard({
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null}
             </>
           )}
 
@@ -569,7 +575,7 @@ export function DocumentUploadWizard({
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  {selectedClient && (
+                  {selectedClient !== null ? (
                     <Button
                       className="mt-2"
                       onClick={() => {
@@ -584,10 +590,10 @@ export function DocumentUploadWizard({
                       <X className="mr-1 h-3 w-3" />
                       Clear client selection
                     </Button>
-                  )}
+                  ) : null}
                 </div>
 
-                {selectedClient && (
+                {selectedClient !== null ? (
                   <form.Field name="matterId">
                     {(field) => (
                       <div className="space-y-2">
@@ -612,7 +618,7 @@ export function DocumentUploadWizard({
                       </div>
                     )}
                   </form.Field>
-                )}
+                ) : null}
               </div>
             </div>
           )}
@@ -667,7 +673,7 @@ export function DocumentUploadWizard({
                             {getCategoryInfo(form.state.values.category)?.label}
                           </Badge>
                         </div>
-                        {selectedClient && (
+                        {selectedClient !== null ? (
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
                               Client:
@@ -676,7 +682,7 @@ export function DocumentUploadWizard({
                               {selectedClient.displayName}
                             </span>
                           </div>
-                        )}
+                        ) : null}
                         {form.state.values.tags.length > 0 && (
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Tags:</span>
@@ -723,7 +729,7 @@ export function DocumentUploadWizard({
       <div className="flex justify-between">
         <Button
           disabled={uploadMutation.isPending}
-          onClick={currentStep === 1 ? onCancel : handleBack}
+          onClick={() => (currentStep === 1 ? onCancel?.() : handleBack())}
           variant="outline"
         >
           {currentStep === 1 ? (

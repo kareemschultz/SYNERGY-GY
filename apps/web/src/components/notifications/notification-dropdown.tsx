@@ -171,6 +171,107 @@ export function NotificationDropdown() {
   const unreadCount = unreadData?.count ?? 0;
   const notifications = (data?.notifications ?? []) as Notification[];
 
+  const renderNotificationsContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex h-32 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
+          <X className="mb-2 h-6 w-6" />
+          <p className="text-sm">Failed to load notifications</p>
+        </div>
+      );
+    }
+
+    if (notifications.length === 0) {
+      return (
+        <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
+          <BellOff className="mb-2 h-8 w-8 opacity-50" />
+          <p className="text-sm">No notifications yet</p>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        {notifications.map((notification) => {
+          const typeStyle = typeStyles[notification.type] || typeStyles.SYSTEM;
+          const isUnread = !notification.readAt;
+
+          return (
+            <button
+              className={`relative w-full cursor-pointer border-b px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/50 ${
+                priorityStyles[notification.priority]
+              } ${isUnread ? "bg-blue-50/50 dark:bg-blue-950/20" : ""}`}
+              key={notification.id}
+              onClick={() => handleNotificationClick(notification)}
+              type="button"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-2">
+                    <Badge
+                      className={`${typeStyle.className} text-xs`}
+                      variant="outline"
+                    >
+                      {typeStyle.label}
+                    </Badge>
+                    {isUnread ? (
+                      <span className="h-2 w-2 rounded-full bg-blue-500" />
+                    ) : null}
+                  </div>
+                  <p className="font-medium text-sm leading-tight">
+                    {notification.title}
+                  </p>
+                  <p className="mt-0.5 line-clamp-2 text-muted-foreground text-xs">
+                    {notification.message}
+                  </p>
+                  <p className="mt-1 text-muted-foreground text-xs">
+                    {formatRelativeTime(notification.createdAt)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  {isUnread ? (
+                    <Button
+                      className="h-6 w-6"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markAsReadMutation.mutate(notification.id);
+                      }}
+                      size="icon"
+                      title="Mark as read"
+                      variant="ghost"
+                    >
+                      <Check className="h-3 w-3" />
+                    </Button>
+                  ) : null}
+                  <Button
+                    className="h-6 w-6"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      dismissMutation.mutate(notification.id);
+                    }}
+                    size="icon"
+                    title="Dismiss"
+                    variant="ghost"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger asChild>
@@ -181,18 +282,18 @@ export function NotificationDropdown() {
           variant="ghost"
         >
           <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
+          {unreadCount > 0 ? (
             <span className="-top-1 -right-1 absolute flex h-5 w-5 items-center justify-center rounded-full bg-red-500 font-medium text-white text-xs">
-              {unreadCount > 9 ? "9+" : unreadCount}
+              {unreadCount > 9 ? "9+" : String(unreadCount)}
             </span>
-          )}
+          ) : null}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0 sm:w-96">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h4 className="font-semibold">Notifications</h4>
-          {unreadCount > 0 && (
+          {unreadCount > 0 ? (
             <Button
               className="h-auto p-0 text-xs"
               disabled={markAllAsReadMutation.isPending}
@@ -206,108 +307,16 @@ export function NotificationDropdown() {
               )}
               Mark all read
             </Button>
-          )}
+          ) : null}
         </div>
 
         {/* Content */}
         <ScrollArea className="h-[400px]">
-          {isLoading ? (
-            <div className="flex h-32 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : error ? (
-            <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
-              <X className="mb-2 h-6 w-6" />
-              <p className="text-sm">Failed to load notifications</p>
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
-              <BellOff className="mb-2 h-8 w-8 opacity-50" />
-              <p className="text-sm">No notifications yet</p>
-            </div>
-          ) : (
-            <div>
-              {notifications.map((notification) => {
-                const typeStyle =
-                  typeStyles[notification.type] || typeStyles.SYSTEM;
-                const isUnread = !notification.readAt;
-
-                return (
-                  <div
-                    className={`relative cursor-pointer border-b px-4 py-3 transition-colors last:border-b-0 hover:bg-muted/50 ${
-                      priorityStyles[notification.priority]
-                    } ${isUnread ? "bg-blue-50/50 dark:bg-blue-950/20" : ""}`}
-                    key={notification.id}
-                    onClick={() => handleNotificationClick(notification)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleNotificationClick(notification);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-1 flex items-center gap-2">
-                          <Badge
-                            className={`${typeStyle.className} text-xs`}
-                            variant="outline"
-                          >
-                            {typeStyle.label}
-                          </Badge>
-                          {isUnread && (
-                            <span className="h-2 w-2 rounded-full bg-blue-500" />
-                          )}
-                        </div>
-                        <p className="font-medium text-sm leading-tight">
-                          {notification.title}
-                        </p>
-                        <p className="mt-0.5 line-clamp-2 text-muted-foreground text-xs">
-                          {notification.message}
-                        </p>
-                        <p className="mt-1 text-muted-foreground text-xs">
-                          {formatRelativeTime(notification.createdAt)}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 gap-1">
-                        {isUnread && (
-                          <Button
-                            className="h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              markAsReadMutation.mutate(notification.id);
-                            }}
-                            size="icon"
-                            title="Mark as read"
-                            variant="ghost"
-                          >
-                            <Check className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <Button
-                          className="h-6 w-6"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            dismissMutation.mutate(notification.id);
-                          }}
-                          size="icon"
-                          title="Dismiss"
-                          variant="ghost"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {renderNotificationsContent()}
         </ScrollArea>
 
         {/* Footer */}
-        {notifications.length > 0 && (
+        {notifications.length > 0 ? (
           <>
             <Separator />
             <div className="p-2">
@@ -324,7 +333,7 @@ export function NotificationDropdown() {
               </Button>
             </div>
           </>
-        )}
+        ) : null}
       </PopoverContent>
     </Popover>
   );

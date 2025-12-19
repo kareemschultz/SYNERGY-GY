@@ -10,6 +10,9 @@ type DocumentCategory =
   | "TRAINING"
   | "OTHER";
 
+// Top-level regex for email validation (performance: avoid creating in loops)
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // Service Catalog Types for Enhanced Selection
 
 /**
@@ -42,6 +45,7 @@ export type ServiceCatalogItem = {
   basePrice: string | number | null;
   maxPrice: string | number | null;
   pricingTiers: PricingTier[] | null;
+  pricingNotes?: string | null;
 
   // Details
   estimatedDays: number | null;
@@ -245,6 +249,16 @@ export type GCMCService = (typeof GCMC_SERVICES)[number]["value"];
 export type KAJService = (typeof KAJ_SERVICES)[number]["value"];
 
 // Note: PricingTier and ServiceCatalogItem are already defined above (lines 18-56)
+
+/**
+ * Service category grouping for wizard
+ */
+export type ServiceCatalogCategory = {
+  categoryName: string;
+  categoryDisplayName: string;
+  categoryDescription: string | null;
+  services: ServiceCatalogItem[];
+};
 
 export type ServicesByCategory = Record<string, ServiceCatalogItem[]>;
 
@@ -506,7 +520,7 @@ export const onboardingSteps: OnboardingStep[] = [
         errors.contact = "Please provide at least a phone number or email";
       }
 
-      if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      if (data.email && !EMAIL_REGEX.test(data.email)) {
         errors.email = "Please enter a valid email address";
       }
 
@@ -695,6 +709,7 @@ export function getRequiredDocuments(data: ClientOnboardingData): string[] {
 /**
  * Document category mapping for auto-categorization
  */
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Document categorization requires checking multiple keyword patterns for identity, tax, financial, legal, immigration, business, and training documents
 export function inferDocumentCategory(documentName: string): DocumentCategory {
   const lower = documentName.toLowerCase();
 

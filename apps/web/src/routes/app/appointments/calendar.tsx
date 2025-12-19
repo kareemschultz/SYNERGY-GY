@@ -219,7 +219,7 @@ function AppointmentsCalendarPage() {
           </div>
         ) : (
           <div className="grid grid-cols-7">
-            {calendarDays.map((calendarDay, idx) => {
+            {calendarDays.map((calendarDay, _idx) => {
               const dateKey = format(calendarDay, "yyyy-MM-dd");
               const dayAppointments = appointmentsByDate[dateKey] ?? [];
               const isCurrentMonth = isSameMonth(calendarDay, currentDate);
@@ -232,14 +232,14 @@ function AppointmentsCalendarPage() {
                     "[&:nth-child(7n)]:border-r-0",
                     !isCurrentMonth && "bg-muted/30"
                   )}
-                  key={idx}
+                  key={dateKey}
                 >
                   <div
                     className={cn(
                       "mb-1 flex h-7 w-7 items-center justify-center rounded-full text-sm",
-                      isToday &&
+                      isToday === true &&
                         "bg-primary font-semibold text-primary-foreground",
-                      !isCurrentMonth && "text-muted-foreground"
+                      isCurrentMonth === false && "text-muted-foreground"
                     )}
                   >
                     {format(calendarDay, "d")}
@@ -266,11 +266,11 @@ function AppointmentsCalendarPage() {
                         {apt.client.displayName}
                       </button>
                     ))}
-                    {dayAppointments.length > 3 && (
+                    {dayAppointments.length > 3 ? (
                       <p className="px-1 text-muted-foreground text-xs">
                         +{dayAppointments.length - 3} more
                       </p>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               );

@@ -1,5 +1,6 @@
 import { DEFAULT_TAGS, db, tag } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
+import type { SQL } from "drizzle-orm";
 import { asc, eq, ilike, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -22,7 +23,7 @@ export const tagsRouter = {
       const accessibleBusinesses = getAccessibleBusinesses(context.staff);
 
       // Build conditions
-      const conditions = [];
+      const conditions: (SQL<unknown> | undefined)[] = [];
 
       // Filter by search
       if (input.search) {
@@ -121,7 +122,7 @@ export const tagsRouter = {
       });
 
       if (existing) {
-        results.skipped++;
+        results.skipped += 1;
         continue;
       }
 
@@ -132,7 +133,7 @@ export const tagsRouter = {
         createdById: context.session.user.id,
       });
 
-      results.created++;
+      results.created += 1;
       results.tags.push(defaultTag.name);
     }
 

@@ -66,6 +66,78 @@ export function ServicePicker({
     setSearch("");
   };
 
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (services.length === 0) {
+      return (
+        <div className="py-12 text-center">
+          <Package className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <p className="mt-4 text-muted-foreground">
+            {search ? "No services match your search" : "No services available"}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2 pr-4">
+        {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Service item renders conditional pricing display, badges, and category info */}
+        {services.map((service) => (
+          <button
+            className="flex w-full items-center justify-between rounded-lg border p-4 text-left transition-colors hover:bg-muted/50"
+            key={service.id}
+            onClick={() => handleSelect(service)}
+            type="button"
+          >
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{service.displayName}</span>
+                {service.isFeatured ? (
+                  <Badge variant="secondary">Featured</Badge>
+                ) : null}
+              </div>
+              {service.shortDescription ? (
+                <p className="mt-1 line-clamp-1 text-muted-foreground text-sm">
+                  {service.shortDescription}
+                </p>
+              ) : null}
+              <div className="mt-2 flex items-center gap-3 text-sm">
+                <Badge variant="outline">{service.pricingType}</Badge>
+                {service.category ? (
+                  <span className="text-muted-foreground">
+                    {service.category.displayName}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+            <div className="ml-4 text-right">
+              {service.basePrice ? (
+                <span className="font-semibold">
+                  {formatCurrency(Number(service.basePrice), service.currency)}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">Custom</span>
+              )}
+              {service.maxPrice !== null && service.pricingType === "RANGE" ? (
+                <p className="text-muted-foreground text-xs">
+                  up to{" "}
+                  {formatCurrency(Number(service.maxPrice), service.currency)}
+                </p>
+              ) : null}
+            </div>
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
@@ -93,78 +165,7 @@ export function ServicePicker({
             />
           </div>
 
-          <ScrollArea className="h-[400px]">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : services.length === 0 ? (
-              <div className="py-12 text-center">
-                <Package className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                <p className="mt-4 text-muted-foreground">
-                  {search
-                    ? "No services match your search"
-                    : "No services available"}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2 pr-4">
-                {services.map((service) => (
-                  <button
-                    className="flex w-full items-center justify-between rounded-lg border p-4 text-left transition-colors hover:bg-muted/50"
-                    key={service.id}
-                    onClick={() => handleSelect(service)}
-                    type="button"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          {service.displayName}
-                        </span>
-                        {service.isFeatured ? (
-                          <Badge variant="secondary">Featured</Badge>
-                        ) : null}
-                      </div>
-                      {service.shortDescription ? (
-                        <p className="mt-1 line-clamp-1 text-muted-foreground text-sm">
-                          {service.shortDescription}
-                        </p>
-                      ) : null}
-                      <div className="mt-2 flex items-center gap-3 text-sm">
-                        <Badge variant="outline">{service.pricingType}</Badge>
-                        {service.category ? (
-                          <span className="text-muted-foreground">
-                            {service.category.displayName}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="ml-4 text-right">
-                      {service.basePrice ? (
-                        <span className="font-semibold">
-                          {formatCurrency(
-                            Number(service.basePrice),
-                            service.currency
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">Custom</span>
-                      )}
-                      {service.maxPrice && service.pricingType === "RANGE" ? (
-                        <p className="text-muted-foreground text-xs">
-                          up to{" "}
-                          {formatCurrency(
-                            Number(service.maxPrice),
-                            service.currency
-                          )}
-                        </p>
-                      ) : null}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+          <ScrollArea className="h-[400px]">{renderContent()}</ScrollArea>
         </div>
       </DialogContent>
     </Dialog>

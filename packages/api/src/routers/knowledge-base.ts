@@ -68,12 +68,13 @@ export const knowledgeBaseRouter = {
       }
 
       if (business) {
-        conditions.push(
-          or(
-            eq(knowledgeBaseItem.business, business),
-            sql`${knowledgeBaseItem.business} IS NULL`
-          )!
+        const businessCondition = or(
+          eq(knowledgeBaseItem.business, business),
+          sql`${knowledgeBaseItem.business} IS NULL`
         );
+        if (businessCondition) {
+          conditions.push(businessCondition);
+        }
       }
 
       if (isStaffOnly !== undefined) {
@@ -85,12 +86,13 @@ export const knowledgeBaseRouter = {
       }
 
       if (search) {
-        conditions.push(
-          or(
-            ilike(knowledgeBaseItem.title, `%${search}%`),
-            ilike(knowledgeBaseItem.description, `%${search}%`)
-          )!
+        const searchCondition = or(
+          ilike(knowledgeBaseItem.title, `%${search}%`),
+          ilike(knowledgeBaseItem.description, `%${search}%`)
         );
+        if (searchCondition) {
+          conditions.push(searchCondition);
+        }
       }
 
       const offset = (page - 1) * limit;
@@ -247,7 +249,7 @@ export const knowledgeBaseRouter = {
       }
 
       // Fetch client data
-      let clientData = null;
+      let clientData: Awaited<ReturnType<typeof db.query.client.findFirst>>;
       if (input.clientId) {
         clientData = await db.query.client.findFirst({
           where: eq(client.id, input.clientId),
@@ -255,7 +257,9 @@ export const knowledgeBaseRouter = {
       }
 
       // Fetch matter data
-      let matterData = null;
+      let matterData: Awaited<
+        ReturnType<typeof db.query.matter.findFirst>
+      > | null = null;
       if (input.matterId) {
         matterData = await db.query.matter.findFirst({
           where: eq(matter.id, input.matterId),

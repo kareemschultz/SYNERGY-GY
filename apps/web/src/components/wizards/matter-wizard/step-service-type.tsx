@@ -52,6 +52,74 @@ export function StepServiceType({
     );
   }, [serviceTypes]);
 
+  // Render service type selector based on business selection and data state
+  const renderServiceTypeSelector = () => {
+    if (!data.business) {
+      return (
+        <div className="rounded-md border border-dashed p-4 text-center">
+          <p className="text-muted-foreground text-sm">
+            Select a business first
+          </p>
+        </div>
+      );
+    }
+
+    if (serviceTypes && serviceTypes.length === 0) {
+      return (
+        <div className="rounded-md border border-dashed p-4 text-center">
+          <p className="text-muted-foreground text-sm">
+            No service types available for {data.business}.
+          </p>
+          <Link
+            className="mt-2 inline-block text-primary text-sm hover:underline"
+            to="/app/services"
+          >
+            Create service types
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <Select
+          onValueChange={(value) => {
+            const selectedService = serviceTypes?.find((st) => st.id === value);
+            onUpdate({
+              serviceTypeId: value,
+              serviceTypeName: selectedService?.name || "",
+              title: data.title || selectedService?.name || "",
+            });
+          }}
+          value={data.serviceTypeId}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select service type" />
+          </SelectTrigger>
+          <SelectContent>
+            {groupedServiceTypes
+              ? Object.entries(groupedServiceTypes).map(([category, types]) => (
+                  <div key={category}>
+                    <div className="px-2 py-1.5 font-semibold text-muted-foreground text-xs">
+                      {category}
+                    </div>
+                    {types?.map((st) => (
+                      <SelectItem key={st.id} value={st.id}>
+                        {st.name}
+                      </SelectItem>
+                    ))}
+                  </div>
+                ))
+              : null}
+          </SelectContent>
+        </Select>
+        {errors.serviceTypeId ? (
+          <p className="text-destructive text-sm">{errors.serviceTypeId}</p>
+        ) : null}
+      </>
+    );
+  };
+
   return (
     <WizardStep
       description="Select the business unit and type of service for this matter."
@@ -92,69 +160,7 @@ export function StepServiceType({
           {/* Service Type Selection - only show when business is selected */}
           <div className="space-y-2">
             <Label>Service Type *</Label>
-            {data.business ? (
-              serviceTypes && serviceTypes.length === 0 ? (
-                <div className="rounded-md border border-dashed p-4 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    No service types available for {data.business}.
-                  </p>
-                  <Link
-                    className="mt-2 inline-block text-primary text-sm hover:underline"
-                    to="/app/services"
-                  >
-                    Create service types
-                  </Link>
-                </div>
-              ) : (
-                <>
-                  <Select
-                    onValueChange={(value) => {
-                      const selectedService = serviceTypes?.find(
-                        (st) => st.id === value
-                      );
-                      onUpdate({
-                        serviceTypeId: value,
-                        serviceTypeName: selectedService?.name || "",
-                        title: data.title || selectedService?.name || "",
-                      });
-                    }}
-                    value={data.serviceTypeId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select service type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {groupedServiceTypes &&
-                        Object.entries(groupedServiceTypes).map(
-                          ([category, types]) => (
-                            <div key={category}>
-                              <div className="px-2 py-1.5 font-semibold text-muted-foreground text-xs">
-                                {category}
-                              </div>
-                              {types?.map((st) => (
-                                <SelectItem key={st.id} value={st.id}>
-                                  {st.name}
-                                </SelectItem>
-                              ))}
-                            </div>
-                          )
-                        )}
-                    </SelectContent>
-                  </Select>
-                  {errors.serviceTypeId ? (
-                    <p className="text-destructive text-sm">
-                      {errors.serviceTypeId}
-                    </p>
-                  ) : null}
-                </>
-              )
-            ) : (
-              <div className="rounded-md border border-dashed p-4 text-center">
-                <p className="text-muted-foreground text-sm">
-                  Select a business first
-                </p>
-              </div>
-            )}
+            {renderServiceTypeSelector()}
           </div>
         </div>
       </WizardStepSection>

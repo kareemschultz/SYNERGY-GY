@@ -671,16 +671,24 @@ export const invoicesRouter = {
         });
       }
 
+      // Type assertion for client relation (Drizzle returns union type)
+      const invClient = inv.client as {
+        displayName: string;
+        email: string | null;
+        address: string | null;
+        tinNumber: string | null;
+      };
+
       // Generate PDF
       const pdfBytes = await generateInvoicePdf({
         invoiceNumber: inv.invoiceNumber,
         business: inv.business as "GCMC" | "KAJ",
         invoiceDate: inv.invoiceDate,
         dueDate: inv.dueDate,
-        clientName: inv.client.displayName,
-        clientEmail: inv.client.email,
-        clientAddress: inv.client.address || null,
-        clientTin: inv.client.tinNumber || null,
+        clientName: invClient.displayName,
+        clientEmail: invClient.email,
+        clientAddress: invClient.address || null,
+        clientTin: invClient.tinNumber || null,
         lineItems: inv.lineItems.map((item) => ({
           description: item.description,
           quantity: item.quantity,
@@ -1146,8 +1154,9 @@ export const invoicesRouter = {
         const rows = accessibleInvoices.map((inv) => [
           inv.invoiceNumber,
           inv.business,
-          inv.client?.displayName || "",
-          inv.matter?.referenceNumber || "",
+          (inv.client as { displayName?: string } | null)?.displayName || "",
+          (inv.matter as { referenceNumber?: string } | null)
+            ?.referenceNumber || "",
           inv.invoiceDate,
           inv.dueDate,
           inv.status,

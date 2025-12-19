@@ -38,6 +38,7 @@ type WizardContainerProps = {
   fieldLabels?: Record<string, string>;
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Wizard container orchestrates multi-step form state, navigation, validation errors, progress indicators, and responsive layouts
 export function WizardContainer({
   children,
   steps,

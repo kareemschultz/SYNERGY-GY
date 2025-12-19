@@ -14,6 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { client as api } from "@/utils/orpc";
 
+// Top-level regex patterns for password validation (performance: avoid creating in loops)
+const UPPERCASE_REGEX = /[A-Z]/;
+const LOWERCASE_REGEX = /[a-z]/;
+const NUMBER_REGEX = /[0-9]/;
+
 export const Route = createFileRoute("/portal/reset-password")({
   component: PortalResetPassword,
   validateSearch: (search: Record<string, unknown>) => ({
@@ -25,13 +30,13 @@ function validatePasswordStrength(password: string): string | null {
   if (password.length < 8) {
     return "Password must be at least 8 characters long";
   }
-  if (!/[A-Z]/.test(password)) {
+  if (!UPPERCASE_REGEX.test(password)) {
     return "Password must contain at least one uppercase letter";
   }
-  if (!/[a-z]/.test(password)) {
+  if (!LOWERCASE_REGEX.test(password)) {
     return "Password must contain at least one lowercase letter";
   }
-  if (!/[0-9]/.test(password)) {
+  if (!NUMBER_REGEX.test(password)) {
     return "Password must contain at least one number";
   }
   return null;

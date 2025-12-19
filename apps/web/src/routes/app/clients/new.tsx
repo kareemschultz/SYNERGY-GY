@@ -101,7 +101,7 @@ function NewClientPage() {
       businesses: [] as ("GCMC" | "KAJ")[],
       notes: "",
     } satisfies FormValues,
-    onSubmit: async ({ value }) => {
+    onSubmit: ({ value }) => {
       // Validate required fields
       const errors: string[] = [];
 
@@ -160,17 +160,17 @@ function NewClientPage() {
                 Cancel
               </Link>
             </Button>
-            {hasErrors && (
+            {hasErrors ? (
               <span className="hidden items-center gap-1 text-amber-600 text-sm sm:flex">
                 <AlertCircle className="h-4 w-4" />
                 {validationErrors.length} field
                 {validationErrors.length > 1 ? "s" : ""} need attention
               </span>
-            )}
+            ) : null}
             <Button
               disabled={createMutation.isPending}
               onClick={() => form.handleSubmit()}
-              title={hasErrors ? validationErrors.join(", ") : undefined}
+              title={hasErrors ? validationErrors.join(", ") : ""}
             >
               {createMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -233,25 +233,24 @@ function NewClientPage() {
                 <form.Field name="displayName">
                   {(field) => {
                     const showError =
-                      field.state.meta.isTouched && !field.state.value.trim();
+                      field.state.meta.isTouched === true &&
+                      field.state.value.trim() === "";
                     return (
                       <div className="space-y-2">
                         <Label htmlFor={field.name}>Display Name *</Label>
                         <Input
                           aria-describedby={
-                            showError ? `${field.name}-error` : undefined
+                            showError ? `${field.name}-error` : ""
                           }
                           aria-invalid={showError}
-                          className={
-                            showError ? "border-destructive" : undefined
-                          }
+                          className={showError ? "border-destructive" : ""}
                           id={field.name}
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
                           placeholder="How this client should be displayed"
                           value={field.state.value}
                         />
-                        {showError && (
+                        {showError ? (
                           <p
                             className="text-destructive text-sm"
                             id={`${field.name}-error`}
@@ -259,7 +258,7 @@ function NewClientPage() {
                           >
                             Display Name is required
                           </p>
-                        )}
+                        ) : null}
                       </div>
                     );
                   }}
@@ -267,7 +266,7 @@ function NewClientPage() {
               </div>
 
               {/* Individual fields */}
-              {!!isIndividual && (
+              {isIndividual ? (
                 <div className="grid gap-4 md:grid-cols-3">
                   <form.Field name="firstName">
                     {(field) => (
@@ -312,10 +311,10 @@ function NewClientPage() {
                     )}
                   </form.Field>
                 </div>
-              )}
+              ) : null}
 
               {/* Business/Organization fields */}
-              {!isIndividual && (
+              {isIndividual ? null : (
                 <div className="grid gap-4 md:grid-cols-2">
                   <form.Field name="businessName">
                     {(field) => (
@@ -533,18 +532,18 @@ function NewClientPage() {
             className={
               form.state.values.businesses.length === 0
                 ? "border-amber-200 dark:border-amber-800"
-                : undefined
+                : ""
             }
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Business Assignment *
-                {form.state.values.businesses.length === 0 && (
+                {form.state.values.businesses.length === 0 ? (
                   <span className="flex items-center gap-1 font-normal text-amber-600 text-sm">
                     <AlertCircle className="h-4 w-4" />
                     Required
                   </span>
-                )}
+                ) : null}
               </CardTitle>
             </CardHeader>
             <CardContent>

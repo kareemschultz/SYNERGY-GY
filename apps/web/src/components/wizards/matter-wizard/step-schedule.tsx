@@ -9,7 +9,7 @@ type StepScheduleProps = {
   onUpdate: (updates: Partial<MatterWizardData>) => void;
 };
 
-export function StepSchedule({ data, errors, onUpdate }: StepScheduleProps) {
+export function StepSchedule({ data, onUpdate }: StepScheduleProps) {
   return (
     <WizardStep
       description="Set the timeline and estimated fees for this matter. This step is optional."

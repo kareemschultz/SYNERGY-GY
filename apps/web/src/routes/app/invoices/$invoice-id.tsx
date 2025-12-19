@@ -40,22 +40,56 @@ export const Route = createFileRoute("/app/invoices/$invoice-id")({
   component: InvoiceDetailPage,
 });
 
+// Line item type
+type InvoiceLineItem = {
+  id: string;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  amount: string;
+};
+
+// Payment type
+type InvoicePayment = {
+  id: string;
+  paymentDate: string;
+  paymentMethod: string;
+  amount: string;
+  referenceNumber: string | null;
+  recordedBy: { name: string } | null;
+};
+
 // Invoice type for unwrapping
 type InvoiceData = {
   id: string;
   invoiceNumber: string;
   status: string;
   issueDate: string;
+  invoiceDate: string;
   dueDate: string;
   subtotal: string;
   taxAmount: string;
   discountAmount: string;
   totalAmount: string;
+  amountPaid: string;
+  amountDue: string;
   notes: string | null;
-  client: { id: string; displayName: string } | null;
+  terms: string | null;
+  discountType: string | null;
+  discountValue: string | null;
+  discountReason: string | null;
+  referenceNumber: string | null;
+  business: string;
+  clientId: string;
+  client: { id: string; displayName: string; email: string | null } | null;
   matter: { id: string; title: string; referenceNumber: string } | null;
-  items: unknown[];
-  payments: unknown[];
+  items: InvoiceLineItem[];
+  lineItems: InvoiceLineItem[];
+  payments: InvoicePayment[];
+  createdBy: { name: string } | null;
+  sentBy: { name: string } | null;
+  sentAt: string | null;
+  paidDate: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -113,7 +147,7 @@ function formatDate(dateString: string): string {
   });
 }
 
-function formatDateTime(date: Date): string {
+function formatDateTime(date: Date | string): string {
   return new Date(date).toLocaleString("en-US", {
     year: "numeric",
     month: "short",
@@ -173,7 +207,7 @@ function InvoiceDetailPage() {
       // Convert base64 to blob and download
       const binaryString = atob(data.pdf);
       const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
+      for (let i = 0; i < binaryString.length; i += 1) {
         bytes[i] = binaryString.charCodeAt(i);
       }
       const blob = new Blob([bytes], { type: "application/pdf" });
@@ -254,7 +288,7 @@ function InvoiceDetailPage() {
           { label: "Invoices", href: "/app/invoices" },
           { label: invoice.invoiceNumber },
         ]}
-        description={`Invoice for ${invoice.client.displayName}`}
+        description={`Invoice for ${invoice.client?.displayName ?? "Unknown Client"}`}
         title={invoice.invoiceNumber}
       />
 
@@ -306,9 +340,9 @@ function InvoiceDetailPage() {
                         params={{ clientId: invoice.clientId }}
                         to="/app/clients/$clientId"
                       >
-                        {invoice.client.displayName}
+                        {invoice.client?.displayName ?? "Unknown Client"}
                       </Link>
-                      {!!invoice.client.email && (
+                      {!!invoice.client?.email && (
                         <p className="text-muted-foreground text-xs">
                           {invoice.client.email}
                         </p>

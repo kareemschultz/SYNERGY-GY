@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,6 +77,22 @@ export function ServiceFormDialog({
   const [sortOrder, setSortOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
+
+  // Define resetForm before use in useEffect
+  const resetForm = useCallback(() => {
+    setCategoryId("");
+    setName("");
+    setDisplayName("");
+    setDescription("");
+    setShortDescription("");
+    setPricingType("FIXED");
+    setBasePrice("");
+    setMaxPrice("");
+    setTypicalDuration("");
+    setSortOrder(0);
+    setIsActive(true);
+    setIsFeatured(false);
+  }, []);
 
   // Populate form when editing
   useEffect(() => {
@@ -173,21 +189,6 @@ export function ServiceFormDialog({
       toast.error(error.message || "Failed to update service");
     },
   });
-
-  const resetForm = () => {
-    setCategoryId("");
-    setName("");
-    setDisplayName("");
-    setDescription("");
-    setShortDescription("");
-    setPricingType("FIXED");
-    setBasePrice("");
-    setMaxPrice("");
-    setTypicalDuration("");
-    setSortOrder(0);
-    setIsActive(true);
-    setIsFeatured(false);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

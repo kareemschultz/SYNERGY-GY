@@ -15,7 +15,9 @@ test("debug oRPC client internals", async ({ page }) => {
   await page.getByLabel("Email").fill(EMAIL);
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: SIGN_IN_REGEX }).click();
-  await page.waitForURL("**/app**", { timeout: 10_000 }).catch(() => {});
+  await page.waitForURL("**/app**", { timeout: 10_000 }).catch(() => {
+    /* ignore timeout */
+  });
   console.log(`Logged in, URL: ${page.url()}`);
 
   await page.waitForTimeout(2000);

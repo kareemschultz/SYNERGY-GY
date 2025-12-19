@@ -231,7 +231,8 @@ function NewMatterPage() {
                   {(field) => (
                     <div className="space-y-2">
                       <Label htmlFor={field.name}>Service Type *</Label>
-                      {serviceTypes && serviceTypes.length === 0 ? (
+                      {serviceTypes !== undefined &&
+                      serviceTypes.length === 0 ? (
                         <div className="rounded-md border border-dashed p-4 text-center">
                           <p className="text-muted-foreground text-sm">
                             No service types available for {selectedBusiness}.
@@ -251,7 +252,10 @@ function NewMatterPage() {
                             const selectedService = serviceTypes?.find(
                               (st) => st.id === value
                             );
-                            if (selectedService && !form.state.values.title) {
+                            if (
+                              selectedService !== undefined &&
+                              !form.state.values.title
+                            ) {
                               form.setFieldValue("title", selectedService.name);
                             }
                           }}
@@ -261,7 +265,7 @@ function NewMatterPage() {
                             <SelectValue placeholder="Select service type" />
                           </SelectTrigger>
                           <SelectContent>
-                            {groupedServiceTypes &&
+                            {groupedServiceTypes !== undefined &&
                               Object.entries(groupedServiceTypes).map(
                                 ([category, types]) => (
                                   <div key={category}>

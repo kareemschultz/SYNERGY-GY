@@ -767,7 +767,8 @@ function AppointmentDetailPage() {
             </Button>
             <Button
               disabled={
-                !(newScheduledAt && newScheduledTime) ||
+                newScheduledAt === undefined ||
+                newScheduledTime === "" ||
                 rescheduleMutation.isPending
               }
               onClick={() => rescheduleMutation.mutate()}

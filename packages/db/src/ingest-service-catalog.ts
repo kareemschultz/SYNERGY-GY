@@ -1,8 +1,9 @@
-// packages/db/src/ingestServiceCatalog.ts
+// packages/db/src/ingest-service-catalog.ts
 
 import dotenv from "dotenv";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+// biome-ignore lint/performance/noNamespaceImport: Drizzle ORM requires namespace import for schema object to enable proper type inference and relation queries. Named imports would break db.query functionality.
 import * as schema from "./schema";
 import type { businessEnum } from "./schema/core";
 import {
@@ -1021,7 +1022,7 @@ async function ingestServiceCatalog() {
             basePrice: serviceData.basePrice,
             maxPrice: serviceData.maxPrice,
             currency: serviceData.currency,
-            pricingTiers: serviceData.pricingTiers as any, // Drizzle expects JSONB to be any type
+            pricingTiers: serviceData.pricingTiers,
             pricingNotes: serviceData.pricingNotes,
             discountsAvailable: serviceData.discountsAvailable,
             governmentFees: serviceData.governmentFees,

@@ -42,6 +42,23 @@ function DashboardPage() {
     queryFn: () => client.dashboard.getUpcomingDeadlines({ limit: 5 }),
   });
 
+  // Type definitions for dashboard data
+  type DashboardDeadline = {
+    id: string;
+    title: string;
+    dueDate: string;
+    priority: string;
+    client?: { displayName: string } | null;
+  };
+
+  type DashboardMatter = {
+    id: string;
+    title: string;
+    referenceNumber: string;
+    status: string;
+    client?: { displayName: string } | null;
+  };
+
   // Unwrap oRPC response envelopes
   const stats = unwrapOrpc<{
     activeClients: number;
@@ -52,8 +69,9 @@ function DashboardPage() {
   }>(statsRaw);
   const mattersByStatus =
     unwrapOrpc<Record<string, number>>(mattersByStatusRaw);
-  const recentMatters = unwrapOrpc<unknown[]>(recentMattersRaw);
-  const upcomingDeadlines = unwrapOrpc<unknown[]>(upcomingDeadlinesRaw);
+  const recentMatters = unwrapOrpc<DashboardMatter[]>(recentMattersRaw);
+  const upcomingDeadlines =
+    unwrapOrpc<DashboardDeadline[]>(upcomingDeadlinesRaw);
 
   return (
     <div className="flex flex-col">

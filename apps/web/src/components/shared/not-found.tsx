@@ -1,3 +1,4 @@
+import type { NotFoundRouteProps } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Home, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,12 +11,16 @@ type NotFoundProps = {
   showBackLink?: boolean;
 };
 
-export function NotFound({
-  title = "Page Not Found",
-  description = "Sorry, we couldn't find the page you're looking for. It may have been moved or deleted.",
-  showHomeLink = true,
-  showBackLink = true,
-}: NotFoundProps) {
+// Component accepts both custom props and TanStack Router's NotFoundRouteProps
+export function NotFound(props: NotFoundProps | NotFoundRouteProps) {
+  // Handle both custom props and router props
+  const title = "title" in props ? props.title : "Page Not Found";
+  const description =
+    "description" in props
+      ? props.description
+      : "Sorry, we couldn't find the page you're looking for. It may have been moved or deleted.";
+  const showHomeLink = "showHomeLink" in props ? props.showHomeLink : true;
+  const showBackLink = "showBackLink" in props ? props.showBackLink : true;
   return (
     <div className="flex min-h-[80vh] items-center justify-center p-4">
       <Card className="w-full max-w-md text-center">
@@ -29,20 +34,20 @@ export function NotFound({
         <CardContent className="space-y-6">
           <p className="text-muted-foreground">{description}</p>
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-            {showBackLink && (
+            {showBackLink ? (
               <Button onClick={() => window.history.back()} variant="outline">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Go Back
               </Button>
-            )}
-            {showHomeLink && (
+            ) : null}
+            {showHomeLink ? (
               <Button asChild>
                 <Link to="/app">
                   <Home className="mr-2 h-4 w-4" />
                   Go to Dashboard
                 </Link>
               </Button>
-            )}
+            ) : null}
           </div>
           <div className="border-t pt-4">
             <p className="text-muted-foreground text-sm">

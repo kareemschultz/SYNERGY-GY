@@ -45,6 +45,7 @@ type Message = {
   createdAt: Date;
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Portal messages handles inbox display, message threading, read status tracking, and compose/reply functionality
 function PortalMessages() {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [newMessageOpen, setNewMessageOpen] = useState(false);
@@ -52,7 +53,7 @@ function PortalMessages() {
   const [content, setContent] = useState("");
 
   // Fetch messages
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["portal", "messages", "list"],
     queryFn: () => client.portal.messages.list({ page: 1, limit: 50 }),
     refetchInterval: 30_000, // Refetch every 30 seconds for new messages
@@ -78,8 +79,8 @@ function PortalMessages() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: (data: { subject?: string; content: string }) =>
-      client.portal.messages.send(data),
+    mutationFn: (messageData: { subject?: string; content: string }) =>
+      client.portal.messages.send(messageData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["portal", "messages"] });
       toast.success("Message sent successfully");
@@ -87,8 +88,8 @@ function PortalMessages() {
       setSubject("");
       setContent("");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to send message: ${error.message}`);
+    onError: (mutationError: Error) => {
+      toast.error(`Failed to send message: ${mutationError.message}`);
     },
   });
 
@@ -101,7 +102,7 @@ function PortalMessages() {
     ) {
       markReadMutation.mutate(selectedMessage.id);
     }
-  }, [selectedMessage?.id]);
+  }, [selectedMessage?.id, selectedMessage, markReadMutation.mutate]);
 
   const handleSendMessage = () => {
     if (!content.trim()) {
@@ -151,7 +152,7 @@ function PortalMessages() {
               </h1>
             </div>
             <div className="flex gap-2">
-              {(data?.unreadCount ?? 0) > 0 && (
+              {(data?.unreadCount ?? 0) > 0 ? (
                 <Button
                   disabled={markAllReadMutation.isPending}
                   onClick={() => markAllReadMutation.mutate()}
@@ -161,7 +162,7 @@ function PortalMessages() {
                   <CheckCheck className="mr-2 h-4 w-4" />
                   Mark All Read
                 </Button>
-              )}
+              ) : null}
               <Button onClick={() => setNewMessageOpen(true)}>
                 <MessageSquare className="mr-2 h-4 w-4" />
                 New Message
@@ -179,15 +180,16 @@ function PortalMessages() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Inbox</CardTitle>
-                {(data?.unreadCount ?? 0) > 0 && (
+                {(data?.unreadCount ?? 0) > 0 ? (
                   <Badge variant="secondary">{data?.unreadCount} unread</Badge>
-                )}
+                ) : null}
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {data?.messages.length ? (
                 <ScrollArea className="h-[500px]">
                   <div className="divide-y">
+                    {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Message list item renders read status, sender type styling, and conditional truncation */}
                     {data.messages.map((message) => (
                       <button
                         className={`w-full p-4 text-left transition-colors hover:bg-muted/50 ${
@@ -199,6 +201,7 @@ function PortalMessages() {
                         }`}
                         key={message.id}
                         onClick={() => setSelectedMessage(message)}
+                        type="button"
                       >
                         <div className="flex items-start gap-3">
                           <div
@@ -270,9 +273,9 @@ function PortalMessages() {
                           <span className="font-medium">
                             {selectedMessage.senderName}
                           </span>
-                          {selectedMessage.isRead && (
+                          {selectedMessage.isRead ? (
                             <Check className="h-4 w-4 text-green-600" />
-                          )}
+                          ) : null}
                         </div>
                         <p className="text-muted-foreground text-sm">
                           {new Date(selectedMessage.createdAt).toLocaleString()}
@@ -294,7 +297,7 @@ function PortalMessages() {
                   </ScrollArea>
 
                   {/* Reply Area - Only show for staff messages */}
-                  {selectedMessage.senderType === "STAFF" && (
+                  {selectedMessage.senderType === "STAFF" ? (
                     <div className="border-t p-4">
                       <form
                         className="flex gap-2"
@@ -303,10 +306,13 @@ function PortalMessages() {
                           if (!content.trim()) {
                             return;
                           }
+                          const subjectText = selectedMessage.subject;
+                          const hasSubject =
+                            subjectText !== null && subjectText !== "";
+                          const replySubject =
+                            hasSubject === true ? `Re: ${subjectText}` : null;
                           sendMessageMutation.mutate({
-                            subject: selectedMessage.subject
-                              ? `Re: ${selectedMessage.subject}`
-                              : undefined,
+                            subject: replySubject ?? undefined,
                             content: content.trim(),
                           });
                           setContent("");
@@ -333,7 +339,7 @@ function PortalMessages() {
                         </Button>
                       </form>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               ) : (
                 <div className="flex h-[550px] flex-col items-center justify-center text-muted-foreground">

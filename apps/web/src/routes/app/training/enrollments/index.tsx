@@ -189,13 +189,242 @@ function EnrollmentsPage() {
 
   // Filter by search term (client name or course title)
   const filteredEnrollments = (enrollments ?? []).filter((enrollment) => {
-    if (!searchTerm) return true;
+    if (!searchTerm) {
+      return true;
+    }
     const search = searchTerm.toLowerCase();
     return (
       enrollment.clientName?.toLowerCase().includes(search) ||
       enrollment.courseTitle?.toLowerCase().includes(search)
     );
   });
+
+  // Helper function to render certificate cell content
+  const renderCertificateCell = (
+    enrollment: (typeof filteredEnrollments)[0]
+  ) => {
+    if (enrollment.certificateNumber) {
+      return (
+        <div className="flex items-center gap-2">
+          <Award className="h-4 w-4 text-green-600" />
+          <div className="flex flex-col">
+            <span className="font-medium text-sm">
+              {enrollment.certificateNumber}
+            </span>
+            {enrollment.certificateIssuedAt ? (
+              <span className="text-muted-foreground text-xs">
+                {format(
+                  new Date(enrollment.certificateIssuedAt),
+                  "MMM dd, yyyy"
+                )}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      );
+    }
+
+    if (enrollment.status === "ATTENDED") {
+      return (
+        <Button
+          disabled={issueCertificateMutation.isPending}
+          onClick={() => handleIssueCertificate(enrollment.id)}
+          size="sm"
+          variant="outline"
+        >
+          <Award className="mr-2 h-4 w-4" />
+          Issue
+        </Button>
+      );
+    }
+
+    return <span className="text-muted-foreground text-sm">-</span>;
+  };
+
+  // Helper function to render enrollments table body content
+  const renderEnrollmentsTableContent = () => {
+    if (isLoading) {
+      return (
+        <TableRow>
+          <TableCell className="h-32 text-center" colSpan={8}>
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading enrollments...
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (filteredEnrollments.length > 0) {
+      return filteredEnrollments.map((enrollment) => (
+        <TableRow key={enrollment.id}>
+          <TableCell>
+            <div className="flex flex-col">
+              <Link
+                className="font-medium hover:underline"
+                params={{ clientId: enrollment.clientId }}
+                to="/app/clients/$clientId"
+              >
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  {enrollment.clientName}
+                </div>
+              </Link>
+              {enrollment.clientEmail ? (
+                <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                  <Mail className="h-3 w-3" />
+                  {enrollment.clientEmail}
+                </div>
+              ) : null}
+            </div>
+          </TableCell>
+          <TableCell>
+            <span className="font-medium">{enrollment.courseTitle}</span>
+          </TableCell>
+          <TableCell>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span>
+                  {format(
+                    new Date(enrollment.scheduleStartDate),
+                    "MMM dd, yyyy"
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <MapPin className="h-3 w-3" />
+                {enrollment.scheduleLocation}
+              </div>
+            </div>
+          </TableCell>
+          <TableCell>
+            <Badge variant={STATUS_VARIANTS[enrollment.status] || "default"}>
+              {STATUS_LABELS[enrollment.status] || enrollment.status}
+            </Badge>
+          </TableCell>
+          <TableCell>
+            <Badge
+              variant={PAYMENT_VARIANTS[enrollment.paymentStatus] || "default"}
+            >
+              {PAYMENT_LABELS[enrollment.paymentStatus] ||
+                enrollment.paymentStatus}
+            </Badge>
+          </TableCell>
+          <TableCell>{renderCertificateCell(enrollment)}</TableCell>
+          <TableCell>
+            <span className="text-muted-foreground text-sm">
+              {format(new Date(enrollment.enrolledAt), "MMM dd, yyyy")}
+            </span>
+          </TableCell>
+          <TableCell>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link
+                    params={{ scheduleId: enrollment.scheduleId }}
+                    to="/app/training/schedules/$scheduleId"
+                  >
+                    View Schedule
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    params={{ clientId: enrollment.clientId }}
+                    to="/app/clients/$clientId"
+                  >
+                    View Client
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {enrollment.status === "REGISTERED" && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      handleUpdateStatus(enrollment.id, "CONFIRMED")
+                    }
+                  >
+                    Confirm Registration
+                  </DropdownMenuItem>
+                )}
+                {enrollment.status === "CONFIRMED" && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      handleUpdateStatus(enrollment.id, "ATTENDED")
+                    }
+                  >
+                    Mark as Attended
+                  </DropdownMenuItem>
+                )}
+                {(enrollment.status === "REGISTERED" ||
+                  enrollment.status === "CONFIRMED") && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleUpdateStatus(enrollment.id, "NO_SHOW")
+                      }
+                    >
+                      Mark as No Show
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() =>
+                        handleUpdateStatus(enrollment.id, "CANCELLED")
+                      }
+                    >
+                      Cancel Enrollment
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                {enrollment.paymentStatus !== "PAID" && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      handleUpdatePaymentStatus(enrollment.id, "PAID")
+                    }
+                  >
+                    Mark as Paid
+                  </DropdownMenuItem>
+                )}
+                {enrollment.paymentStatus === "PENDING" && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      handleUpdatePaymentStatus(enrollment.id, "PARTIAL")
+                    }
+                  >
+                    Mark as Partial Payment
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableCell>
+        </TableRow>
+      ));
+    }
+
+    return (
+      <TableRow>
+        <TableCell className="h-32 text-center" colSpan={8}>
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+            <User className="h-12 w-12" />
+            <p>No enrollments found</p>
+            {(statusFilter !== "all" ||
+              paymentFilter !== "all" ||
+              searchTerm) && (
+              <p className="text-sm">
+                Try adjusting your filters to see more results.
+              </p>
+            )}
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
   return (
     <div className="flex flex-col">
@@ -265,229 +494,7 @@ function EnrollmentsPage() {
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={8}>
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading enrollments...
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : filteredEnrollments.length > 0 ? (
-                filteredEnrollments.map((enrollment) => (
-                  <TableRow key={enrollment.id}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <Link
-                          className="font-medium hover:underline"
-                          params={{ clientId: enrollment.clientId }}
-                          to="/app/clients/$clientId"
-                        >
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            {enrollment.clientName}
-                          </div>
-                        </Link>
-                        {enrollment.clientEmail ? (
-                          <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                            <Mail className="h-3 w-3" />
-                            {enrollment.clientEmail}
-                          </div>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium">
-                        {enrollment.courseTitle}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>
-                            {format(
-                              new Date(enrollment.scheduleStartDate),
-                              "MMM dd, yyyy"
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                          <MapPin className="h-3 w-3" />
-                          {enrollment.scheduleLocation}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          STATUS_VARIANTS[enrollment.status] || "default"
-                        }
-                      >
-                        {STATUS_LABELS[enrollment.status] || enrollment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          PAYMENT_VARIANTS[enrollment.paymentStatus] ||
-                          "default"
-                        }
-                      >
-                        {PAYMENT_LABELS[enrollment.paymentStatus] ||
-                          enrollment.paymentStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {enrollment.certificateNumber ? (
-                        <div className="flex items-center gap-2">
-                          <Award className="h-4 w-4 text-green-600" />
-                          <div className="flex flex-col">
-                            <span className="font-medium text-sm">
-                              {enrollment.certificateNumber}
-                            </span>
-                            {enrollment.certificateIssuedAt ? (
-                              <span className="text-muted-foreground text-xs">
-                                {format(
-                                  new Date(enrollment.certificateIssuedAt),
-                                  "MMM dd, yyyy"
-                                )}
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-                      ) : enrollment.status === "ATTENDED" ? (
-                        <Button
-                          disabled={issueCertificateMutation.isPending}
-                          onClick={() => handleIssueCertificate(enrollment.id)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Award className="mr-2 h-4 w-4" />
-                          Issue
-                        </Button>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-muted-foreground text-sm">
-                        {format(
-                          new Date(enrollment.enrolledAt),
-                          "MMM dd, yyyy"
-                        )}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link
-                              params={{ scheduleId: enrollment.scheduleId }}
-                              to="/app/training/schedules/$scheduleId"
-                            >
-                              View Schedule
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link
-                              params={{ clientId: enrollment.clientId }}
-                              to="/app/clients/$clientId"
-                            >
-                              View Client
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {enrollment.status === "REGISTERED" && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleUpdateStatus(enrollment.id, "CONFIRMED")
-                              }
-                            >
-                              Confirm Registration
-                            </DropdownMenuItem>
-                          )}
-                          {enrollment.status === "CONFIRMED" && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleUpdateStatus(enrollment.id, "ATTENDED")
-                              }
-                            >
-                              Mark as Attended
-                            </DropdownMenuItem>
-                          )}
-                          {(enrollment.status === "REGISTERED" ||
-                            enrollment.status === "CONFIRMED") && (
-                            <>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleUpdateStatus(enrollment.id, "NO_SHOW")
-                                }
-                              >
-                                Mark as No Show
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() =>
-                                  handleUpdateStatus(enrollment.id, "CANCELLED")
-                                }
-                              >
-                                Cancel Enrollment
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                          <DropdownMenuSeparator />
-                          {enrollment.paymentStatus !== "PAID" && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleUpdatePaymentStatus(enrollment.id, "PAID")
-                              }
-                            >
-                              Mark as Paid
-                            </DropdownMenuItem>
-                          )}
-                          {enrollment.paymentStatus === "PENDING" && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleUpdatePaymentStatus(
-                                  enrollment.id,
-                                  "PARTIAL"
-                                )
-                              }
-                            >
-                              Mark as Partial Payment
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={8}>
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <User className="h-12 w-12" />
-                      <p>No enrollments found</p>
-                      {(statusFilter !== "all" ||
-                        paymentFilter !== "all" ||
-                        searchTerm) && (
-                        <p className="text-sm">
-                          Try adjusting your filters to see more results.
-                        </p>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
+            <TableBody>{renderEnrollmentsTableContent()}</TableBody>
           </Table>
         </div>
       </div>

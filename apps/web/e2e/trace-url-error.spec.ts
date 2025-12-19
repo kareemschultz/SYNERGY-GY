@@ -79,7 +79,7 @@ test("trace URL construction error", async ({ page }) => {
 
   // Step 4: Check what oRPC is trying to do
   console.log("\nStep 4: Testing queryOptions output");
-  const queryOptionsTest = await page.evaluate(async () => {
+  const queryOptionsTest = await page.evaluate(() => {
     // Try to simulate what queryOptions does
     // This tests if the procedure path is correctly formed
     const paths = [

@@ -220,7 +220,9 @@ export async function downloadFromCloud(
   } catch (error) {
     // Clean up partial file
     if (existsSync(localPath)) {
-      await unlink(localPath).catch(() => {});
+      await unlink(localPath).catch(() => {
+        // Ignore cleanup errors - file may not exist or be locked
+      });
     }
 
     return {
@@ -370,13 +372,16 @@ function getSignatureKey(
   return kSigning;
 }
 
-function signRequest(
-  config: S3Config,
-  method: string,
-  path: string,
-  headers: Record<string, string>,
-  payload: Buffer | string
-): Record<string, string> {
+type SignRequestOptions = {
+  config: S3Config;
+  method: string;
+  path: string;
+  headers: Record<string, string>;
+  payload: Buffer | string;
+};
+
+function signRequest(options: SignRequestOptions): Record<string, string> {
+  const { config, method, path, headers, payload } = options;
   const now = new Date();
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
   const dateStamp = amzDate.slice(0, 8);
@@ -451,13 +456,13 @@ async function uploadWithSignature(
   const _endpointUrl = new URL(config.endpoint);
   const url = `${config.endpoint}/${config.bucket}/${key}`;
 
-  const headers = signRequest(
+  const headers = signRequest({
     config,
-    "PUT",
-    key,
-    { "content-type": contentType },
-    data
-  );
+    method: "PUT",
+    path: key,
+    headers: { "content-type": contentType },
+    payload: data,
+  });
 
   try {
     const response = await fetch(url, {
@@ -485,7 +490,13 @@ async function downloadWithSignature(
   key: string
 ): Promise<{ success: boolean; data?: Buffer; error?: string }> {
   const url = `${config.endpoint}/${config.bucket}/${key}`;
-  const headers = signRequest(config, "GET", key, {}, "");
+  const headers = signRequest({
+    config,
+    method: "GET",
+    path: key,
+    headers: {},
+    payload: "",
+  });
 
   try {
     const response = await fetch(url, {
@@ -522,13 +533,13 @@ async function listWithSignature(
   error?: string;
 }> {
   const url = `${config.endpoint}/${config.bucket}?list-type=2&prefix=${encodeURIComponent(prefix)}`;
-  const headers = signRequest(
+  const headers = signRequest({
     config,
-    "GET",
-    `?list-type=2&prefix=${prefix}`,
-    {},
-    ""
-  );
+    method: "GET",
+    path: `?list-type=2&prefix=${prefix}`,
+    headers: {},
+    payload: "",
+  });
 
   try {
     const response = await fetch(url, {
@@ -585,7 +596,13 @@ async function deleteWithSignature(
   key: string
 ): Promise<{ success: boolean; error?: string }> {
   const url = `${config.endpoint}/${config.bucket}/${key}`;
-  const headers = signRequest(config, "DELETE", key, {}, "");
+  const headers = signRequest({
+    config,
+    method: "DELETE",
+    path: key,
+    headers: {},
+    payload: "",
+  });
 
   try {
     const response = await fetch(url, {

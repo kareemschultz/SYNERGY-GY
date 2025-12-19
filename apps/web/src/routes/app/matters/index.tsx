@@ -139,7 +139,6 @@ function MattersPage() {
 
   const matters = data?.matters || [];
   const {
-    selectedIds,
     selectedIdsArray,
     selectedCount,
     isAllSelected,
@@ -252,6 +251,114 @@ function MattersPage() {
     }
   };
 
+  // Helper function to render matters table body content
+  const renderMattersTableContent = () => {
+    if (isLoading) {
+      return (
+        <TableRow>
+          <TableCell className="h-32 text-center" colSpan={9}>
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading matters...
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (matters.length > 0) {
+      return matters.map((m) => (
+        <TableRow className={isSelected(m.id) ? "bg-muted/50" : ""} key={m.id}>
+          <TableCell>
+            <Checkbox
+              aria-label={`Select ${m.referenceNumber}`}
+              checked={isSelected(m.id)}
+              onCheckedChange={() => toggleSelection(m.id)}
+            />
+          </TableCell>
+          <TableCell className="font-mono text-sm">
+            <Link
+              className="hover:underline"
+              params={{ matterId: m.id }}
+              to="/app/matters/$matterId"
+            >
+              {m.referenceNumber}
+            </Link>
+          </TableCell>
+          <TableCell className="font-medium">
+            <Link
+              className="hover:underline"
+              params={{ matterId: m.id }}
+              to="/app/matters/$matterId"
+            >
+              {m.title}
+            </Link>
+          </TableCell>
+          <TableCell>
+            {m.client ? (
+              <Link
+                className="hover:underline"
+                params={{ clientId: m.client.id }}
+                to="/app/clients/$clientId"
+              >
+                {m.client.displayName}
+              </Link>
+            ) : (
+              "-"
+            )}
+          </TableCell>
+          <TableCell>
+            <div className="flex items-center gap-2">
+              <BusinessBadge business={m.business} />
+              <span className="text-sm">{m.serviceType?.name || "-"}</span>
+            </div>
+          </TableCell>
+          <TableCell>
+            <StatusBadge status={m.status} />
+          </TableCell>
+          <TableCell>
+            <PriorityBadge priority={m.priority} />
+          </TableCell>
+          <TableCell>
+            {m.dueDate ? new Date(m.dueDate).toLocaleDateString() : "-"}
+          </TableCell>
+          <TableCell>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link params={{ matterId: m.id }} to="/app/matters/$matterId">
+                    View Details
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableCell>
+        </TableRow>
+      ));
+    }
+
+    return (
+      <TableRow>
+        <TableCell className="h-32 text-center" colSpan={9}>
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+            <p>No matters found</p>
+            <Button asChild size="sm">
+              <Link to="/app/matters/wizard">
+                <Wand2 className="mr-2 h-4 w-4" />
+                Create your first matter
+              </Link>
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <div className="flex flex-col">
       <PageHeader
@@ -350,7 +457,8 @@ function MattersPage() {
                   <Checkbox
                     aria-label="Select all matters"
                     checked={
-                      isAllSelected || (isPartiallySelected && "indeterminate")
+                      isAllSelected ||
+                      (isPartiallySelected === true && "indeterminate")
                     }
                     onCheckedChange={toggleSelectAll}
                   />
@@ -365,118 +473,7 @@ function MattersPage() {
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={9}>
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading matters...
-                    </div>
-                  </TableCell>
-                </TableRow>
-                // biome-ignore lint/nursery/noLeakedRender: Auto-fix
-                // biome-ignore lint/style/noNestedTernary: Auto-fix
-              ) : matters.length > 0 ? (
-                matters.map((m) => (
-                  <TableRow
-                    className={isSelected(m.id) ? "bg-muted/50" : undefined}
-                    key={m.id}
-                  >
-                    <TableCell>
-                      <Checkbox
-                        aria-label={`Select ${m.referenceNumber}`}
-                        checked={isSelected(m.id)}
-                        onCheckedChange={() => toggleSelection(m.id)}
-                      />
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">
-                      <Link
-                        className="hover:underline"
-                        params={{ matterId: m.id }}
-                        to="/app/matters/$matterId"
-                      >
-                        {m.referenceNumber}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <Link
-                        className="hover:underline"
-                        params={{ matterId: m.id }}
-                        to="/app/matters/$matterId"
-                      >
-                        {m.title}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      {m.client ? (
-                        <Link
-                          className="hover:underline"
-                          params={{ clientId: m.client.id }}
-                          to="/app/clients/$clientId"
-                        >
-                          {m.client.displayName}
-                        </Link>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <BusinessBadge business={m.business} />
-                        <span className="text-sm">
-                          {m.serviceType?.name || "-"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={m.status} />
-                    </TableCell>
-                    <TableCell>
-                      <PriorityBadge priority={m.priority} />
-                    </TableCell>
-                    <TableCell>
-                      {m.dueDate
-                        ? new Date(m.dueDate).toLocaleDateString()
-                        : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="icon" variant="ghost">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link
-                              params={{ matterId: m.id }}
-                              to="/app/matters/$matterId"
-                            >
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell className="h-32 text-center" colSpan={9}>
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <p>No matters found</p>
-                      <Button asChild size="sm">
-                        <Link to="/app/matters/wizard">
-                          <Wand2 className="mr-2 h-4 w-4" />
-                          Create your first matter
-                        </Link>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
+            <TableBody>{renderMattersTableContent()}</TableBody>
           </Table>
         </div>
 

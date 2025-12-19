@@ -6,8 +6,11 @@ import { startBackupScheduler } from "@SYNERGY-GY/api/utils/backup-scheduler";
 import { runInitialSetup } from "@SYNERGY-GY/api/utils/initial-setup";
 import { auth } from "@SYNERGY-GY/auth";
 import {
+  and,
   db,
   document as documentTable,
+  eq,
+  gte,
   portalDocumentUpload,
   portalSession,
   portalUser,
@@ -21,7 +24,6 @@ import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { and, eq, gte } from "drizzle-orm";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
@@ -36,6 +38,9 @@ startBackupScheduler();
 // Storage configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./data/uploads";
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+// Regex patterns (module-level for performance)
+const PORTAL_SESSION_REGEX = /portal_session=([^;]+)/;
 
 // Allowed MIME types
 const ALLOWED_MIME_TYPES = new Set([
@@ -221,7 +226,7 @@ app.post("/api/portal-upload/:documentId", async (c) => {
   // Get portal session from cookie
   const sessionToken = c.req.raw.headers
     .get("cookie")
-    ?.match(/portal_session=([^;]+)/)?.[1];
+    ?.match(PORTAL_SESSION_REGEX)?.[1];
   if (!sessionToken) {
     return c.json({ error: "Unauthorized" }, 401);
   }

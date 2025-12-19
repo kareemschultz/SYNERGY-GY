@@ -197,7 +197,7 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
         </div>
       ) : (
         <div className="space-y-6">
-          {servicesWithDocs.length > 0 && (
+          {servicesWithDocs.length > 0 ? (
             <>
               <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
                 <div className="flex items-start gap-3">
@@ -225,12 +225,12 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
                 />
               ))}
             </>
-          )}
+          ) : null}
 
           {/* General/Client-type requirements */}
-          {Object.keys(generalRequirements).length > 0 && (
+          {Object.keys(generalRequirements).length > 0 ? (
             <>
-              {servicesWithDocs.length > 0 && (
+              {servicesWithDocs.length > 0 ? (
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t" />
@@ -241,7 +241,7 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
                     </span>
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {Object.entries(generalRequirements).map(([category, docs]) => (
                 <ServiceDocumentGroup
@@ -254,32 +254,30 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
                 />
               ))}
             </>
-          )}
+          ) : null}
 
           {servicesWithDocs.length === 0 &&
-            Object.keys(generalRequirements).length === 0 && (
-              <div className="rounded-lg border border-dashed bg-muted/20 py-8 text-center text-muted-foreground">
-                <p>
-                  No specific documents required based on current selections.
-                </p>
-                <p className="mt-1 text-sm">
-                  You can upload general documents later from the client detail
-                  page.
-                </p>
-              </div>
-            )}
+          Object.keys(generalRequirements).length === 0 ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 py-8 text-center text-muted-foreground">
+              <p>No specific documents required based on current selections.</p>
+              <p className="mt-1 text-sm">
+                You can upload general documents later from the client detail
+                page.
+              </p>
+            </div>
+          ) : null}
         </div>
       )}
 
       {/* Template Generator */}
-      {data.businesses.length > 0 && (
+      {data.businesses.length > 0 ? (
         <div className="mt-8">
           <TemplateGenerator
             data={data}
             onTemplateGenerated={handleTemplateGenerated}
           />
         </div>
-      )}
+      ) : null}
 
       {/* Skip information */}
       <Alert className="mt-8 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-200">
@@ -323,6 +321,7 @@ function ServiceDocumentGroup({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Document requirement cards track upload status, file details, and service linkage with conditional UI states */}
         {requiredDocs.map((docName) => {
           const isUploaded = uploads?.some(
             (u) =>
@@ -357,28 +356,31 @@ function ServiceDocumentGroup({
 
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-sm">{docName}</p>
-                {isUploaded && (
+                {Boolean(isUploaded) && uploadedFile ? (
                   <p className="truncate text-muted-foreground text-xs">
-                    {uploadedFile?.file.name} (
-                    {(uploadedFile?.file.size || 0) / 1024 < 1024
-                      ? `${((uploadedFile?.file.size || 0) / 1024).toFixed(1)} KB`
-                      : `${((uploadedFile?.file.size || 0) / (1024 * 1024)).toFixed(1)} MB`}
+                    {uploadedFile.file.name} (
+                    {(uploadedFile.file.size || 0) / 1024 < 1024
+                      ? `${((uploadedFile.file.size || 0) / 1024).toFixed(1)} KB`
+                      : `${((uploadedFile.file.size || 0) / (1024 * 1024)).toFixed(1)} MB`}
                     )
                   </p>
-                )}
+                ) : null}
               </div>
 
-              {isUploaded ? (
+              {Boolean(isUploaded) &&
+              uploadIndex !== undefined &&
+              uploadIndex !== -1 ? (
                 <Button
                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                  onClick={() => onRemove(uploadIndex!)}
+                  onClick={() => onRemove(uploadIndex)}
                   size="icon"
                   type="button"
                   variant="ghost"
                 >
                   <X className="h-4 w-4" />
                 </Button>
-              ) : (
+              ) : null}
+              {isUploaded ? null : (
                 <div className="relative">
                   <Input
                     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"

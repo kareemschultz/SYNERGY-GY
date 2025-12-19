@@ -28,10 +28,11 @@ import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/lib/utils";
 import { client } from "@/utils/orpc";
 
-export const Route = createFileRoute("/app/admin/services/$serviceId")({
+export const Route = createFileRoute("/app/admin/services/$service-id")({
   component: ServiceDetailPage,
 });
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Service detail page displays comprehensive service information including pricing, requirements, agencies, and edit functionality
 function ServiceDetailPage() {
   const { serviceId } = Route.useParams();
   const navigate = useNavigate();
@@ -159,8 +160,8 @@ function ServiceDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="list-disc space-y-1 pl-5">
-                    {topicsCovered.map((topic, idx) => (
-                      <li className="text-muted-foreground" key={idx}>
+                    {topicsCovered.map((topic) => (
+                      <li className="text-muted-foreground" key={topic}>
                         {topic}
                       </li>
                     ))}
@@ -183,10 +184,10 @@ function ServiceDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {documentRequirements.map((doc, idx) => (
+                    {documentRequirements.map((doc) => (
                       <li
                         className="flex items-start gap-2 rounded-lg border bg-muted/30 p-3"
-                        key={idx}
+                        key={doc}
                       >
                         <FileText className="mt-0.5 h-4 w-4 text-muted-foreground" />
                         <span>{doc}</span>
@@ -208,8 +209,8 @@ function ServiceDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {deliverables.map((item, idx) => (
-                      <li className="flex items-center gap-2" key={idx}>
+                    {deliverables.map((item) => (
+                      <li className="flex items-center gap-2" key={item}>
                         <div className="h-2 w-2 rounded-full bg-green-500" />
                         <span>{item}</span>
                       </li>
@@ -264,7 +265,8 @@ function ServiceDetailPage() {
                   </div>
                 ) : null}
 
-                {service.maxPrice && service.pricingType === "RANGE" ? (
+                {service.maxPrice !== null &&
+                service.pricingType === "RANGE" ? (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">To</span>
                     <span className="font-bold text-lg">
@@ -288,7 +290,7 @@ function ServiceDetailPage() {
                 {service.discountsAvailable ? (
                   <div className="rounded-lg bg-green-50 p-3 dark:bg-green-950/30">
                     <p className="font-medium text-green-700 text-sm dark:text-green-400">
-                      Discounts: {service.discountsAvailable}
+                      Discounts: {String(service.discountsAvailable)}
                     </p>
                   </div>
                 ) : null}
@@ -302,33 +304,55 @@ function ServiceDetailPage() {
                   <CardTitle>Pricing Tiers</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {pricingTiers.map((tier, idx) => (
-                    <div className="rounded-lg border p-3" key={idx}>
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{tier.name}</span>
-                        {tier.price ? (
+                  {pricingTiers.map((tier) => {
+                    const renderTierPrice = () => {
+                      if (tier.price) {
+                        return (
                           <span className="font-bold">
                             {formatCurrency(tier.price, service.currency)}
                           </span>
-                        ) : tier.minPrice && tier.maxPrice ? (
+                        );
+                      }
+                      if (
+                        tier.minPrice !== undefined &&
+                        tier.maxPrice !== undefined
+                      ) {
+                        return (
                           <span className="text-sm">
-                            {formatCurrency(tier.minPrice, service.currency)} -{" "}
-                            {formatCurrency(tier.maxPrice, service.currency)}
+                            {formatCurrency(
+                              tier.minPrice ?? 0,
+                              service.currency
+                            )}{" "}
+                            -{" "}
+                            {formatCurrency(
+                              tier.maxPrice ?? 0,
+                              service.currency
+                            )}
                           </span>
+                        );
+                      }
+                      return null;
+                    };
+
+                    return (
+                      <div className="rounded-lg border p-3" key={tier.name}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{tier.name}</span>
+                          {renderTierPrice()}
+                        </div>
+                        {tier.description ? (
+                          <p className="mt-1 text-muted-foreground text-sm">
+                            {tier.description}
+                          </p>
+                        ) : null}
+                        {tier.conditions ? (
+                          <p className="mt-1 text-muted-foreground text-xs italic">
+                            {tier.conditions}
+                          </p>
                         ) : null}
                       </div>
-                      {tier.description ? (
-                        <p className="mt-1 text-muted-foreground text-sm">
-                          {tier.description}
-                        </p>
-                      ) : null}
-                      {tier.conditions ? (
-                        <p className="mt-1 text-muted-foreground text-xs italic">
-                          {tier.conditions}
-                        </p>
-                      ) : null}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
             ) : null}
@@ -388,8 +412,8 @@ function ServiceDetailPage() {
                     <div>
                       <span className="font-medium text-sm">Agencies</span>
                       <div className="mt-1 flex flex-wrap gap-1">
-                        {governmentAgencies.map((agency, idx) => (
-                          <Badge key={idx} variant="secondary">
+                        {governmentAgencies.map((agency) => (
+                          <Badge key={agency} variant="secondary">
                             {agency}
                           </Badge>
                         ))}
@@ -408,8 +432,8 @@ function ServiceDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {tags.map((tag, idx) => (
-                      <Badge key={idx} variant="outline">
+                    {tags.map((tag) => (
+                      <Badge key={tag} variant="outline">
                         {tag}
                       </Badge>
                     ))}

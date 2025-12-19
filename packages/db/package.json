@@ -20,7 +20,7 @@
     "db:down": "docker compose down",
     "db:seed": "bun run src/seed.ts",
     "db:seed-catalog": "bun run src/scripts/seed-service-catalog.ts",
-    "db:ingest-catalog": "bun run src/ingestServiceCatalog.ts"
+    "db:ingest-catalog": "bun run src/ingest-service-catalog.ts"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.8",

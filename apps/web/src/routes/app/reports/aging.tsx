@@ -110,7 +110,9 @@ function AgingReportPage() {
   });
 
   const handleExportCSV = () => {
-    if (!data) return;
+    if (!data) {
+      return;
+    }
 
     const rows = [
       ["Aging Category", "Amount (GYD)", "Invoice Count"],
@@ -179,6 +181,91 @@ function AgingReportPage() {
   ];
 
   const invoices = invoicesData?.invoices ?? [];
+
+  // Helper function to render overdue invoices content
+  const renderOverdueInvoicesContent = () => {
+    if (invoicesLoading) {
+      return (
+        <div className="flex h-32 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (invoices.length === 0) {
+      return (
+        <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
+          <TrendingUp className="mb-2 h-8 w-8 opacity-50" />
+          <p>No overdue invoices</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Invoice #</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Due Date</TableHead>
+              <TableHead>Days Overdue</TableHead>
+              <TableHead className="text-right">Amount Due</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {invoices.map((invoice) => {
+              const dueDate = new Date(invoice.dueDate);
+              const today = new Date();
+              const daysOverdue = Math.floor(
+                (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
+              );
+
+              const getUrgencyClass = () => {
+                if (daysOverdue > 90) {
+                  return "text-red-700 font-semibold";
+                }
+                if (daysOverdue > 60) {
+                  return "text-red-500";
+                }
+                if (daysOverdue > 30) {
+                  return "text-orange-500";
+                }
+                return "text-yellow-600";
+              };
+
+              return (
+                <TableRow key={invoice.id}>
+                  <TableCell className="font-medium">
+                    {invoice.invoiceNumber}
+                  </TableCell>
+                  <TableCell>{invoice.client?.displayName || "-"}</TableCell>
+                  <TableCell>{dueDate.toLocaleDateString()}</TableCell>
+                  <TableCell className={getUrgencyClass()}>
+                    {daysOverdue > 0 ? `${daysOverdue} days` : "Due today"}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {formatCurrency(invoice.amountDue)}
+                  </TableCell>
+                  <TableCell>
+                    <Button asChild size="sm" variant="ghost">
+                      <Link
+                        params={{ invoiceId: invoice.id }}
+                        to="/app/invoices/$invoiceId"
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col">
@@ -361,7 +448,9 @@ function AgingReportPage() {
                         const amount = Number.parseFloat(bucket.amount);
                         const percentage =
                           totalAmount > 0 ? (amount / totalAmount) * 100 : 0;
-                        if (percentage === 0) return null;
+                        if (percentage === 0) {
+                          return null;
+                        }
                         return (
                           <div
                             className={`${bucket.color} flex items-center justify-center font-medium text-white text-xs transition-all`}
@@ -416,86 +505,7 @@ function AgingReportPage() {
                   Overdue Invoices
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {invoicesLoading ? (
-                  <div className="flex h-32 items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : invoices.length === 0 ? (
-                  <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
-                    <TrendingUp className="mb-2 h-8 w-8 opacity-50" />
-                    <p>No overdue invoices</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Invoice #</TableHead>
-                          <TableHead>Client</TableHead>
-                          <TableHead>Due Date</TableHead>
-                          <TableHead>Days Overdue</TableHead>
-                          <TableHead className="text-right">
-                            Amount Due
-                          </TableHead>
-                          <TableHead />
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {invoices.map((invoice) => {
-                          const dueDate = new Date(invoice.dueDate);
-                          const today = new Date();
-                          const daysOverdue = Math.floor(
-                            (today.getTime() - dueDate.getTime()) /
-                              (1000 * 60 * 60 * 24)
-                          );
-
-                          let urgencyClass = "text-yellow-600";
-                          if (daysOverdue > 90) {
-                            urgencyClass = "text-red-700 font-semibold";
-                          } else if (daysOverdue > 60) {
-                            urgencyClass = "text-red-500";
-                          } else if (daysOverdue > 30) {
-                            urgencyClass = "text-orange-500";
-                          }
-
-                          return (
-                            <TableRow key={invoice.id}>
-                              <TableCell className="font-medium">
-                                {invoice.invoiceNumber}
-                              </TableCell>
-                              <TableCell>
-                                {invoice.client?.displayName || "-"}
-                              </TableCell>
-                              <TableCell>
-                                {dueDate.toLocaleDateString()}
-                              </TableCell>
-                              <TableCell className={urgencyClass}>
-                                {daysOverdue > 0
-                                  ? `${daysOverdue} days`
-                                  : "Due today"}
-                              </TableCell>
-                              <TableCell className="text-right font-medium">
-                                {formatCurrency(invoice.amountDue)}
-                              </TableCell>
-                              <TableCell>
-                                <Button asChild size="sm" variant="ghost">
-                                  <Link
-                                    params={{ invoiceId: invoice.id }}
-                                    to="/app/invoices/$invoiceId"
-                                  >
-                                    <ArrowRight className="h-4 w-4" />
-                                  </Link>
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
+              <CardContent>{renderOverdueInvoicesContent()}</CardContent>
             </Card>
           </TabsContent>
         </Tabs>

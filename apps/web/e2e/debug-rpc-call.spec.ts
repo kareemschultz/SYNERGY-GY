@@ -13,7 +13,15 @@ test("debug RPC call mechanism", async ({ page }) => {
   await page.addInitScript(() => {
     const origFetch = window.fetch;
     window.fetch = async function (...args) {
-      const url = typeof args[0] === "string" ? args[0] : args[0].url;
+      let url: string;
+      const input = args[0];
+      if (typeof input === "string") {
+        url = input;
+      } else if (input instanceof Request) {
+        url = input.url;
+      } else {
+        url = input.toString();
+      }
       console.log(`[FETCH CALL] ${url}`);
       try {
         const response = await origFetch.apply(this, args);
@@ -76,7 +84,7 @@ test("debug RPC call mechanism", async ({ page }) => {
   // Step 4: Check TanStack Query state
   console.log("\nStep 4: Check TanStack Query cache");
   const queryState = await page.evaluate(() => {
-    // @ts-expect-error - accessing window for debugging
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const queryClient = (window as any).__REACT_QUERY_DEVTOOLS_STATE__?.client;
     if (queryClient) {
       const cache = queryClient.getQueryCache().getAll();

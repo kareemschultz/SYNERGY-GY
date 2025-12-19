@@ -115,13 +115,14 @@ type DocumentType = {
   description?: string | null;
   tags?: string[] | null;
   status: string;
-  createdAt: string;
+  createdAt: Date;
   expirationDate?: string | null;
   client?: { id: string; displayName: string } | null;
   matter?: { id: string; title: string; referenceNumber: string } | null;
-  uploadedBy?: { id: string; name: string } | null;
+  uploadedBy?: { id: string; name: string | null } | null;
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Document management page handles filters, bulk actions, quick view, upload dialogs, and category/tag management
 function DocumentsPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -344,6 +345,152 @@ function DocumentsPage() {
     categoryFilter === "all" &&
     statusFilter === "ACTIVE";
 
+  // Helper function to render documents table body content
+  const renderDocumentsTableContent = () => {
+    if (isLoading) {
+      return (
+        <TableRow>
+          <TableCell className="h-32 text-center" colSpan={9}>
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading documents...
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (documents.length > 0) {
+      // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Document row renders 9 columns with conditional content for tags, client links, matter links, date formatting, status badges, and action menu
+      return documents.map((doc) => (
+        <TableRow
+          className={`cursor-pointer transition-colors hover:bg-muted/80 ${isSelected(doc.id) ? "bg-muted/50" : ""}`}
+          key={doc.id}
+          onClick={() => openQuickView(doc as DocumentType)}
+        >
+          <TableCell onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              aria-label={`Select ${doc.originalName}`}
+              checked={isSelected(doc.id)}
+              onCheckedChange={() => toggleSelection(doc.id)}
+            />
+          </TableCell>
+          <TableCell>
+            <div className="flex items-center gap-2">
+              {getFileIcon(doc.mimeType)}
+              <span className="font-medium">{doc.originalName}</span>
+            </div>
+          </TableCell>
+          <TableCell>
+            <CategoryBadge category={doc.category} />
+          </TableCell>
+          <TableCell>
+            {doc.tags?.length ? (
+              <div className="flex flex-wrap gap-1">
+                {doc.tags.slice(0, 3).map((tag) => (
+                  <Badge
+                    className="bg-slate-100 text-slate-700 text-xs dark:bg-slate-800 dark:text-slate-300"
+                    key={tag}
+                    variant="secondary"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+                {doc.tags.length > 3 ? (
+                  <Badge
+                    className="bg-slate-100 text-slate-500 text-xs"
+                    variant="secondary"
+                  >
+                    +{doc.tags.length - 3}
+                  </Badge>
+                ) : null}
+              </div>
+            ) : (
+              <span className="text-muted-foreground">-</span>
+            )}
+          </TableCell>
+          <TableCell>
+            {doc.client ? (
+              <Link
+                className="hover:underline"
+                params={{ clientId: doc.client.id }}
+                to="/app/clients/$clientId"
+              >
+                {doc.client.displayName}
+              </Link>
+            ) : (
+              <span className="text-muted-foreground">-</span>
+            )}
+          </TableCell>
+          <TableCell>
+            {doc.matter ? (
+              <Link
+                className="hover:underline"
+                params={{ matterId: doc.matter.id }}
+                to="/app/matters/$matterId"
+              >
+                {doc.matter.referenceNumber}
+              </Link>
+            ) : (
+              <span className="text-muted-foreground">-</span>
+            )}
+          </TableCell>
+          <TableCell className="text-muted-foreground text-sm">
+            {formatFileSize(doc.fileSize)}
+          </TableCell>
+          <TableCell className="text-muted-foreground text-sm">
+            {new Date(doc.createdAt).toLocaleDateString()}
+          </TableCell>
+          <TableCell onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => openQuickView(doc as DocumentType)}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Quick View
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleDownload(doc.id)}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={() => archiveMutation.mutate(doc.id)}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableCell>
+        </TableRow>
+      ));
+    }
+
+    return (
+      <TableRow>
+        <TableCell className="h-32 text-center" colSpan={9}>
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+            <FolderOpen className="h-8 w-8" />
+            <p>No documents found</p>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/app/documents/upload">
+                <Upload className="mr-2 h-4 w-4" />
+                Upload your first document
+              </Link>
+            </Button>
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <div className="flex flex-col">
       <PageHeader
@@ -370,7 +517,7 @@ function DocumentsPage() {
         ) : (
           <>
             {/* Stats Cards */}
-            {!!stats && (
+            {stats ? (
               <div className="mb-6 grid gap-4 md:grid-cols-4">
                 <div className="rounded-lg border bg-card p-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -409,7 +556,7 @@ function DocumentsPage() {
                   </p>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Filters */}
             <div className="mb-6 space-y-4">
@@ -464,29 +611,29 @@ function DocumentsPage() {
                 >
                   <Filter className="mr-2 h-4 w-4" />
                   Filters
-                  {activeFilterCount > 0 && (
+                  {activeFilterCount > 0 ? (
                     <Badge className="ml-2" variant="secondary">
                       {activeFilterCount}
                     </Badge>
-                  )}
+                  ) : null}
                 </Button>
 
-                {activeFilterCount > 0 && (
+                {activeFilterCount > 0 ? (
                   <Button onClick={clearAllFilters} size="sm" variant="ghost">
                     <X className="mr-2 h-4 w-4" />
                     Clear all
                   </Button>
-                )}
+                ) : null}
               </div>
 
               {/* Extended Filters */}
-              {showFilters && (
+              {showFilters ? (
                 <div className="flex flex-wrap items-end gap-4 rounded-lg border bg-muted/30 p-4">
                   {/* File Type Filter */}
                   <div className="space-y-2">
-                    <label className="text-muted-foreground text-sm">
+                    <span className="text-muted-foreground text-sm">
                       File Type
-                    </label>
+                    </span>
                     <Select
                       onValueChange={(value) => {
                         setFileTypeFilter(value);
@@ -511,9 +658,9 @@ function DocumentsPage() {
 
                   {/* Status Filter */}
                   <div className="space-y-2">
-                    <label className="text-muted-foreground text-sm">
+                    <span className="text-muted-foreground text-sm">
                       Status
-                    </label>
+                    </span>
                     <Select
                       onValueChange={(value) => {
                         setStatusFilter(value);
@@ -534,9 +681,9 @@ function DocumentsPage() {
 
                   {/* Date From */}
                   <div className="space-y-2">
-                    <label className="text-muted-foreground text-sm">
+                    <span className="text-muted-foreground text-sm">
                       From Date
-                    </label>
+                    </span>
                     <div className="relative">
                       <Calendar className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -553,9 +700,9 @@ function DocumentsPage() {
 
                   {/* Date To */}
                   <div className="space-y-2">
-                    <label className="text-muted-foreground text-sm">
+                    <span className="text-muted-foreground text-sm">
                       To Date
-                    </label>
+                    </span>
                     <div className="relative">
                       <Calendar className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -570,15 +717,15 @@ function DocumentsPage() {
                     </div>
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
 
             {/* Error state */}
-            {!!error && (
+            {error ? (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
                 Failed to load documents. Please try again.
               </div>
-            )}
+            ) : null}
 
             {/* Documents Table */}
             <div className="rounded-md border">
@@ -590,7 +737,7 @@ function DocumentsPage() {
                         aria-label="Select all documents"
                         checked={
                           isAllSelected ||
-                          (isPartiallySelected && "indeterminate")
+                          (isPartiallySelected ? "indeterminate" : false)
                         }
                         onCheckedChange={toggleSelectAll}
                       />
@@ -605,160 +752,17 @@ function DocumentsPage() {
                     <TableHead className="w-12" />
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell className="h-32 text-center" colSpan={9}>
-                        <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Loading documents...
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    // biome-ignore lint/nursery/noLeakedRender: Auto-fix
-                    // biome-ignore lint/style/noNestedTernary: Auto-fix
-                  ) : documents.length > 0 ? (
-                    documents.map((doc) => (
-                      <TableRow
-                        className={`cursor-pointer transition-colors hover:bg-muted/80 ${isSelected(doc.id) ? "bg-muted/50" : ""}`}
-                        key={doc.id}
-                        onClick={() => openQuickView(doc as DocumentType)}
-                      >
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            aria-label={`Select ${doc.originalName}`}
-                            checked={isSelected(doc.id)}
-                            onCheckedChange={() => toggleSelection(doc.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {getFileIcon(doc.mimeType)}
-                            <span className="font-medium">
-                              {doc.originalName}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <CategoryBadge category={doc.category} />
-                        </TableCell>
-                        <TableCell>
-                          {doc.tags && doc.tags.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {doc.tags.slice(0, 3).map((tag) => (
-                                <Badge
-                                  className="bg-slate-100 text-slate-700 text-xs dark:bg-slate-800 dark:text-slate-300"
-                                  key={tag}
-                                  variant="secondary"
-                                >
-                                  {tag}
-                                </Badge>
-                              ))}
-                              {doc.tags.length > 3 && (
-                                <Badge
-                                  className="bg-slate-100 text-slate-500 text-xs"
-                                  variant="secondary"
-                                >
-                                  +{doc.tags.length - 3}
-                                </Badge>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {doc.client ? (
-                            <Link
-                              className="hover:underline"
-                              params={{ clientId: doc.client.id }}
-                              to="/app/clients/$clientId"
-                            >
-                              {doc.client.displayName}
-                            </Link>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {doc.matter ? (
-                            <Link
-                              className="hover:underline"
-                              params={{ matterId: doc.matter.id }}
-                              to="/app/matters/$matterId"
-                            >
-                              {doc.matter.referenceNumber}
-                            </Link>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {formatFileSize(doc.fileSize)}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {new Date(doc.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="icon" variant="ghost">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  openQuickView(doc as DocumentType)
-                                }
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                Quick View
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDownload(doc.id)}
-                              >
-                                <Download className="mr-2 h-4 w-4" />
-                                Download
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={() => archiveMutation.mutate(doc.id)}
-                              >
-                                <Archive className="mr-2 h-4 w-4" />
-                                Archive
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell className="h-32 text-center" colSpan={9}>
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                          <FolderOpen className="h-8 w-8" />
-                          <p>No documents found</p>
-                          <Button asChild size="sm" variant="outline">
-                            <Link to="/app/documents/upload">
-                              <Upload className="mr-2 h-4 w-4" />
-                              Upload your first document
-                            </Link>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
+                <TableBody>{renderDocumentsTableContent()}</TableBody>
               </Table>
             </div>
 
             {/* Pagination */}
-            {!!data && data.totalPages > 1 && (
+            {(data?.totalPages ?? 0) > 1 ? (
               <div className="mt-4 flex items-center justify-between">
                 <p className="text-muted-foreground text-sm">
                   Showing {(page - 1) * 20 + 1} to{" "}
-                  {Math.min(page * 20, data.total)} of {data.total} documents
+                  {Math.min(page * 20, data?.total ?? 0)} of {data?.total ?? 0}{" "}
+                  documents
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -770,7 +774,7 @@ function DocumentsPage() {
                     Previous
                   </Button>
                   <Button
-                    disabled={page === data.totalPages}
+                    disabled={page === (data?.totalPages ?? 0)}
                     onClick={() => setPage(page + 1)}
                     size="sm"
                     variant="outline"
@@ -779,7 +783,7 @@ function DocumentsPage() {
                   </Button>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Bulk Actions Toolbar */}
             <BulkActionsToolbar

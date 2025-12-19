@@ -2,6 +2,15 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/test/utils";
 import { ErrorBoundary } from "./error-boundary";
 
+// Regex patterns at top level for performance
+const TRY_AGAIN_REGEX = /try again/i;
+const RELOAD_PAGE_REGEX = /reload page/i;
+
+// Empty function for suppressing console.error in tests
+const noop = () => {
+  /* suppress console.error */
+};
+
 describe("ErrorBoundary", () => {
   it("renders children when no error occurs", () => {
     render(
@@ -16,7 +25,7 @@ describe("ErrorBoundary", () => {
 
   it("renders error UI when child component throws", () => {
     // Suppress console.error for this test
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(noop);
 
     const ThrowingComponent = () => {
       throw new Error("Test error");
@@ -30,17 +39,17 @@ describe("ErrorBoundary", () => {
 
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /try again/i })
+      screen.getByRole("button", { name: TRY_AGAIN_REGEX })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /reload page/i })
+      screen.getByRole("button", { name: RELOAD_PAGE_REGEX })
     ).toBeInTheDocument();
 
     consoleSpy.mockRestore();
   });
 
   it("renders custom fallback when provided", () => {
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(noop);
 
     const ThrowingComponent = () => {
       throw new Error("Test error");
@@ -62,7 +71,7 @@ describe("ErrorBoundary", () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = "development";
 
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(noop);
 
     const ThrowingComponent = () => {
       throw new Error("Detailed error message");

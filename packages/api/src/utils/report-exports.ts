@@ -78,6 +78,7 @@ function formatCellValue(value: unknown, type?: string): string {
 }
 
 // Generate PDF report
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Report PDF generation handles multi-page layout, dynamic columns, data formatting, summary sections, and pagination
 export async function generateReportPdf(
   reportData: ReportExportData
 ): Promise<Uint8Array> {

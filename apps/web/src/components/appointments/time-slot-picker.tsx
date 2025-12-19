@@ -13,6 +13,25 @@ type TimeSlot = {
   available: boolean;
 };
 
+type StaffAvailability = {
+  id: string;
+  staffId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+};
+
+type StaffOverride = {
+  id: string;
+  staffId: string;
+  date: Date;
+  startTime: string | null;
+  endTime: string | null;
+  isAvailable: boolean;
+  reason: string | null;
+};
+
 type TimeSlotPickerProps = {
   staffId?: string;
   selectedDate: Date;
@@ -25,7 +44,7 @@ type TimeSlotPickerProps = {
 // Generate time slots from 8 AM to 6 PM in 30-minute intervals
 function generateTimeSlots(): TimeSlot[] {
   const slots: TimeSlot[] = [];
-  for (let hour = 8; hour < 18; hour++) {
+  for (let hour = 8; hour < 18; hour += 1) {
     for (const minute of [0, 30]) {
       const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
       slots.push({ time, available: true });
@@ -45,26 +64,38 @@ export function TimeSlotPicker({
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>(generateTimeSlots());
 
   // Get staff availability for the selected day
-  const { data: availability, isLoading: availabilityLoading } = useQuery({
+  const { data: availability, isLoading: availabilityLoading } = useQuery<
+    StaffAvailability[]
+  >({
     queryKey: ["staffAvailability", staffId],
-    queryFn: () =>
-      staffId
-        ? client.appointments.availability.getForStaff({ staffId })
-        : Promise.resolve([]),
+    queryFn: async () => {
+      if (!staffId) {
+        return [];
+      }
+      const result = await client.appointments.availability.getForStaff({
+        staffId,
+      });
+      return result as StaffAvailability[];
+    },
     enabled: !!staffId,
   });
 
   // Get staff overrides for the selected date
-  const { data: overrides, isLoading: overridesLoading } = useQuery({
+  const { data: overrides, isLoading: overridesLoading } = useQuery<
+    StaffOverride[]
+  >({
     queryKey: ["staffOverrides", staffId, format(selectedDate, "yyyy-MM-dd")],
-    queryFn: () =>
-      staffId
-        ? client.appointments.availability.getOverrides({
-            staffId,
-            fromDate: format(selectedDate, "yyyy-MM-dd"),
-            toDate: format(selectedDate, "yyyy-MM-dd"),
-          })
-        : Promise.resolve([]),
+    queryFn: async () => {
+      if (!staffId) {
+        return [];
+      }
+      const result = await client.appointments.availability.getOverrides({
+        staffId,
+        fromDate: format(selectedDate, "yyyy-MM-dd"),
+        toDate: format(selectedDate, "yyyy-MM-dd"),
+      });
+      return result as StaffOverride[];
+    },
     enabled: !!staffId,
   });
 

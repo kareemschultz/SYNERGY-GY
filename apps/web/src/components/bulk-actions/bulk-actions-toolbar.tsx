@@ -2,6 +2,9 @@ import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 
+// Regex for singularizing entity names (move to top level for performance)
+const TRAILING_S_REGEX = /s$/;
+
 type BulkActionsToolbarProps = {
   selectedCount: number;
   onClearSelection: () => void;
@@ -28,7 +31,9 @@ export function BulkActionsToolbar({
       <div className="flex items-center gap-4">
         <span className="font-medium text-sm">
           {selectedCount}{" "}
-          {selectedCount === 1 ? entityName.replace(/s$/, "") : entityName}{" "}
+          {selectedCount === 1
+            ? entityName.replace(TRAILING_S_REGEX, "")
+            : entityName || ""}{" "}
           selected
         </span>
         <Button

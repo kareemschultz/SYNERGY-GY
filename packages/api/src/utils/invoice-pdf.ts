@@ -1,4 +1,18 @@
+import type { RGB } from "pdf-lib";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+
+/**
+ * Get the color for invoice status badge text
+ */
+function getStatusColor(status: string, gray: RGB): RGB {
+  if (status === "PAID") {
+    return rgb(0.1, 0.6, 0.2);
+  }
+  if (status === "OVERDUE") {
+    return rgb(0.8, 0.2, 0.2);
+  }
+  return gray;
+}
 
 // Business information for invoice headers
 const BUSINESS_INFO = {
@@ -161,12 +175,7 @@ export async function generateInvoicePdf(
     y: detailsY,
     size: 10,
     font: fontBold,
-    color:
-      invoiceData.status === "PAID"
-        ? rgb(0.1, 0.6, 0.2)
-        : invoiceData.status === "OVERDUE"
-          ? rgb(0.8, 0.2, 0.2)
-          : gray,
+    color: getStatusColor(invoiceData.status, gray),
   });
 
   // Bill To section

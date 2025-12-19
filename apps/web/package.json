@@ -66,7 +66,6 @@
   "devDependencies": {
     "@SYNERGY-GY/config": "workspace:*",
     "@playwright/test": "^1.57.0",
-    "@radix-ui/react-progress": "^1.1.8",
     "@tanstack/react-query-devtools": "^5.85.5",
     "@tanstack/react-router-devtools": "^1.114.27",
     "@tanstack/router-plugin": "^1.114.27",

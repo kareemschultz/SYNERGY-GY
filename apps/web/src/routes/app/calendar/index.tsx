@@ -151,12 +151,12 @@ function CalendarPage() {
   const calendarDays: (number | null)[] = [];
 
   // Add empty cells for days before the first of the month
-  for (let i = 0; i < startDayOfWeek; i++) {
+  for (let i = 0; i < startDayOfWeek; i += 1) {
     calendarDays.push(null);
   }
 
   // Add days of the month
-  for (let day = 1; day <= daysInMonth; day++) {
+  for (let day = 1; day <= daysInMonth; day += 1) {
     calendarDays.push(day);
   }
 

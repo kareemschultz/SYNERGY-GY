@@ -116,8 +116,8 @@ export function TimeEntriesList({
       resetForm();
       setAddDialogOpen(false);
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to add time entry");
+    onError: (createError) => {
+      toast.error(createError.message || "Failed to add time entry");
     },
   });
 
@@ -138,8 +138,8 @@ export function TimeEntriesList({
       resetForm();
       setEditEntry(null);
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to update time entry");
+    onError: (updateError) => {
+      toast.error(updateError.message || "Failed to update time entry");
     },
   });
 
@@ -152,8 +152,8 @@ export function TimeEntriesList({
       });
       toast.success("Time entry deleted");
     },
-    onError: (error) => {
-      toast.error(error.message || "Failed to delete time entry");
+    onError: (deleteError) => {
+      toast.error(deleteError.message || "Failed to delete time entry");
     },
   });
 
@@ -211,6 +211,118 @@ export function TimeEntriesList({
   const entries = (data?.entries ?? []) as TimeEntry[];
   const summary = data?.summary;
 
+  // Render entries content based on loading/error/data state
+  const renderEntriesContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex h-32 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex h-32 items-center justify-center text-muted-foreground">
+          Failed to load time entries
+        </div>
+      );
+    }
+
+    if (entries.length === 0) {
+      return (
+        <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
+          <Clock className="mb-2 h-8 w-8 opacity-50" />
+          <p className="text-sm">No time entries yet</p>
+          <p className="text-xs">Start a timer or add time manually</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {entries.map((entry) => (
+          <div
+            className="flex items-center justify-between rounded-lg border p-3"
+            key={entry.id}
+          >
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-sm">{entry.description}</p>
+                {entry.isBillable ? (
+                  <Badge
+                    className="bg-green-500/10 text-green-600"
+                    variant="outline"
+                  >
+                    Billable
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">Non-billable</Badge>
+                )}
+                {entry.invoiceId ? (
+                  <Badge
+                    className="bg-blue-500/10 text-blue-600"
+                    variant="outline"
+                  >
+                    Invoiced
+                  </Badge>
+                ) : null}
+              </div>
+              <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
+                <span>{new Date(entry.date).toLocaleDateString()}</span>
+                <span>{entry.staff.user.name}</span>
+                {entry.totalAmount ? (
+                  <span className="flex items-center gap-1 text-green-600">
+                    <DollarSign className="h-3 w-3" />
+                    {formatCurrency(entry.totalAmount)}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-sm">
+                {formatDuration(entry.durationMinutes)}
+              </span>
+              {!entry.invoiceId && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditDialog(entry)}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-red-600"
+                      onClick={() => deleteMutation.mutate(entry.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Get button text for submit
+  const getSubmitButtonText = () => {
+    if (createMutation.isPending || updateMutation.isPending) {
+      return "Saving...";
+    }
+    if (editEntry) {
+      return "Update";
+    }
+    return "Add Entry";
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -241,93 +353,7 @@ export function TimeEntriesList({
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex h-32 items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : error ? (
-          <div className="flex h-32 items-center justify-center text-muted-foreground">
-            Failed to load time entries
-          </div>
-        ) : entries.length === 0 ? (
-          <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
-            <Clock className="mb-2 h-8 w-8 opacity-50" />
-            <p className="text-sm">No time entries yet</p>
-            <p className="text-xs">Start a timer or add time manually</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {entries.map((entry) => (
-              <div
-                className="flex items-center justify-between rounded-lg border p-3"
-                key={entry.id}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-sm">{entry.description}</p>
-                    {entry.isBillable ? (
-                      <Badge
-                        className="bg-green-500/10 text-green-600"
-                        variant="outline"
-                      >
-                        Billable
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">Non-billable</Badge>
-                    )}
-                    {entry.invoiceId && (
-                      <Badge
-                        className="bg-blue-500/10 text-blue-600"
-                        variant="outline"
-                      >
-                        Invoiced
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="mt-1 flex items-center gap-4 text-muted-foreground text-xs">
-                    <span>{new Date(entry.date).toLocaleDateString()}</span>
-                    <span>{entry.staff.user.name}</span>
-                    {entry.totalAmount && (
-                      <span className="flex items-center gap-1 text-green-600">
-                        <DollarSign className="h-3 w-3" />
-                        {formatCurrency(entry.totalAmount)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-sm">
-                    {formatDuration(entry.durationMinutes)}
-                  </span>
-                  {!entry.invoiceId && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(entry)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => deleteMutation.mutate(entry.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
+      <CardContent>{renderEntriesContent()}</CardContent>
 
       {/* Add/Edit Dialog */}
       <Dialog
@@ -418,11 +444,7 @@ export function TimeEntriesList({
               disabled={createMutation.isPending || updateMutation.isPending}
               onClick={handleSubmit}
             >
-              {createMutation.isPending || updateMutation.isPending
-                ? "Saving..."
-                : editEntry
-                  ? "Update"
-                  : "Add Entry"}
+              {getSubmitButtonText()}
             </Button>
           </DialogFooter>
         </DialogContent>

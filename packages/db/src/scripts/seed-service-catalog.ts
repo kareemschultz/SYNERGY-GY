@@ -1078,7 +1078,7 @@ async function seedServiceCatalog() {
     try {
       await db.insert(serviceCatalog).values(service);
       console.log(`✓ ${service.business}/${service.name}`);
-      successCount++;
+      successCount += 1;
     } catch (error) {
       console.error(`✗ Failed to insert ${service.name}:`, error);
     }

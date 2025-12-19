@@ -11,12 +11,93 @@ import { Separator } from "@/components/ui/separator";
 import { formatCurrency, formatDuration } from "@/utils/pricing";
 import type { ServiceCatalogItem } from "./types";
 
+/**
+ * Helper component to display pricing information based on pricing type.
+ * Extracted to avoid nested ternary in the main component.
+ */
+function PricingDisplay({ service }: { service: ServiceCatalogItem }) {
+  if (service.pricingType === "FIXED") {
+    return (
+      <div className="flex items-baseline gap-2">
+        <span className="font-bold text-2xl">
+          {formatCurrency(service.basePrice || 0)}
+        </span>
+        <span className="text-muted-foreground">one-time</span>
+      </div>
+    );
+  }
+
+  if (service.pricingType === "RANGE") {
+    return (
+      <div className="flex items-baseline gap-2">
+        <span className="font-bold text-2xl">
+          {formatCurrency(service.basePrice || 0)} -{" "}
+          {formatCurrency(service.maxPrice || 0)}
+        </span>
+      </div>
+    );
+  }
+
+  if (service.pricingType === "TIERED" && service.pricingTiers) {
+    return (
+      <div className="space-y-2">
+        {service.pricingTiers.map((tier) => (
+          <div
+            className="flex items-baseline justify-between rounded bg-muted/30 p-2"
+            key={tier.name}
+          >
+            <span className="text-sm">{tier.name}</span>
+            <TierPriceDisplay tier={tier} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (service.pricingType === "CUSTOM") {
+    return (
+      <div className="rounded-md bg-muted/30 p-3">
+        <p className="text-muted-foreground text-sm">
+          {service.pricingNotes || "Contact us for a custom quote"}
+        </p>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+/**
+ * Helper component to display tier price based on available price data.
+ * Extracted to avoid nested ternary in PricingDisplay.
+ */
+function TierPriceDisplay({
+  tier,
+}: {
+  tier: { price?: number; minPrice?: number; maxPrice?: number };
+}) {
+  if (tier.price !== undefined) {
+    return <span className="font-semibold">{formatCurrency(tier.price)}</span>;
+  }
+
+  if (tier.minPrice !== undefined && tier.maxPrice !== undefined) {
+    return (
+      <span className="font-semibold">
+        {formatCurrency(tier.minPrice)} - {formatCurrency(tier.maxPrice)}
+      </span>
+    );
+  }
+
+  return <span className="text-muted-foreground">Custom</span>;
+}
+
 type ServiceDetailsModalProps = {
   service: ServiceCatalogItem | null;
   isOpen: boolean;
   onClose: () => void;
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Modal displays comprehensive service details including pricing tiers, document requirements, government agencies, and timeline information
 export function ServiceDetailsModal({
   service,
   isOpen,
@@ -71,61 +152,7 @@ export function ServiceDetailsModal({
           {/* Pricing Details */}
           <div>
             <h3 className="mb-3 font-semibold text-sm">Pricing</h3>
-            {service.pricingType === "FIXED" ? (
-              <div className="rounded-lg border bg-accent/20 p-4">
-                <div className="font-medium text-lg">
-                  {formatCurrency(service.basePrice)}
-                </div>
-                <div className="text-muted-foreground text-sm">Fixed price</div>
-              </div>
-            ) : service.pricingType === "RANGE" ? (
-              <div className="rounded-lg border bg-accent/20 p-4">
-                <div className="font-medium text-lg">
-                  {formatCurrency(service.basePrice)} -{" "}
-                  {formatCurrency(service.maxPrice)}
-                </div>
-                <div className="text-muted-foreground text-sm">
-                  Price range (depends on complexity)
-                </div>
-              </div>
-            ) : service.pricingType === "TIERED" &&
-              service.pricingTiers &&
-              service.pricingTiers.length > 0 ? (
-              <div className="space-y-2">
-                {service.pricingTiers.map((tier, index) => (
-                  <div
-                    className="flex items-center justify-between rounded-lg border p-3"
-                    key={index}
-                  >
-                    <div>
-                      <div className="font-medium">{tier.name}</div>
-                      {tier.description ? (
-                        <div className="text-muted-foreground text-sm">
-                          {tier.description}
-                        </div>
-                      ) : null}
-                    </div>
-                    <div className="font-semibold text-primary">
-                      {tier.price
-                        ? formatCurrency(tier.price)
-                        : tier.minPrice && tier.maxPrice
-                          ? `${formatCurrency(tier.minPrice)} - ${formatCurrency(tier.maxPrice)}`
-                          : tier.minPrice
-                            ? `From ${formatCurrency(tier.minPrice)}`
-                            : "Contact"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : service.pricingType === "CUSTOM" ? (
-              <div className="rounded-lg border bg-accent/20 p-4">
-                <div className="font-medium">Custom Pricing</div>
-                <div className="text-muted-foreground text-sm">
-                  Contact us for a personalized quote based on your specific
-                  requirements.
-                </div>
-              </div>
-            ) : null}
+            <PricingDisplay service={service} />
           </div>
 
           <Separator />
@@ -196,8 +223,8 @@ export function ServiceDetailsModal({
                   Required Documents ({documentCount})
                 </h3>
                 <ul className="space-y-2">
-                  {service.documentRequirements?.map((doc, index) => (
-                    <li className="flex items-start gap-2 text-sm" key={index}>
+                  {service.documentRequirements?.map((doc) => (
+                    <li className="flex items-start gap-2 text-sm" key={doc}>
                       <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                       <span>{doc}</span>
                     </li>
@@ -216,8 +243,8 @@ export function ServiceDetailsModal({
                   Government Agencies Involved ({agencyCount})
                 </h3>
                 <ul className="space-y-2">
-                  {service.governmentAgencies?.map((agency, index) => (
-                    <li className="flex items-start gap-2 text-sm" key={index}>
+                  {service.governmentAgencies?.map((agency) => (
+                    <li className="flex items-start gap-2 text-sm" key={agency}>
                       <Building2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                       <span>{agency}</span>
                     </li>

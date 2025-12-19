@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +49,16 @@ export function CategoryFormDialog({
   const [icon, setIcon] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
+
+  // Define resetForm before use in useEffect
+  const resetForm = useCallback(() => {
+    setName("");
+    setDisplayName("");
+    setDescription("");
+    setIcon("");
+    setSortOrder(0);
+    setIsActive(true);
+  }, []);
 
   // Populate form when editing
   useEffect(() => {
@@ -111,15 +121,6 @@ export function CategoryFormDialog({
       toast.error(error.message || "Failed to update category");
     },
   });
-
-  const resetForm = () => {
-    setName("");
-    setDisplayName("");
-    setDescription("");
-    setIcon("");
-    setSortOrder(0);
-    setIsActive(true);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
