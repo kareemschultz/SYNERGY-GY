@@ -5,9 +5,12 @@ import {
   CalendarDays,
   CalendarRange,
   CheckCircle,
+  ChevronDown,
+  ChevronUp,
   Clock,
   Filter,
   Plus,
+  Search,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -18,6 +21,7 @@ import { TableSkeleton } from "@/components/shared/loading-skeleton";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -49,6 +53,11 @@ function AppointmentsPage() {
   const [dateRange, setDateRange] = useState<
     "today" | "week" | "month" | "all"
   >("week");
+  const [search, setSearch] = useState("");
+  const [businessFilter, setBusinessFilter] = useState<string>("all");
+  const [staffFilter, setStaffFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Calculate date range
   const getDateRange = () => {
@@ -89,18 +98,51 @@ function AppointmentsPage() {
 
   const { startDate, endDate } = getDateRange();
 
+  // Query for staff list (for filter dropdown)
+  const { data: staffData } = useQuery({
+    queryKey: ["admin", "staff", "forFilter"],
+    queryFn: () =>
+      client.admin.staff.list({ limit: 100, isActive: true, sortBy: "name" }),
+    staleTime: 60_000,
+  });
+
+  // Query for appointment types (for filter dropdown)
+  const { data: typesData } = useQuery({
+    queryKey: ["appointments", "types", "forFilter"],
+    queryFn: () => client.appointments.types.list({ includeInactive: false }),
+    staleTime: 60_000,
+  });
+
   const {
     data: appointmentsData,
     isLoading,
     error,
     refetch,
   } = useQuery({
-    queryKey: ["appointments", statusFilter, startDate, endDate],
+    queryKey: [
+      "appointments",
+      {
+        statusFilter,
+        startDate,
+        endDate,
+        search,
+        businessFilter,
+        staffFilter,
+        typeFilter,
+      },
+    ],
     queryFn: () =>
       client.appointments.list({
         status: statusFilter === "all" ? undefined : statusFilter,
         fromDate: startDate,
         toDate: endDate,
+        search: search || undefined,
+        business:
+          businessFilter === "all"
+            ? undefined
+            : (businessFilter as "GCMC" | "KAJ"),
+        staffId: staffFilter === "all" ? undefined : staffFilter,
+        appointmentTypeId: typeFilter === "all" ? undefined : typeFilter,
         limit: 100,
       }),
   });
@@ -243,42 +285,155 @@ function AppointmentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs
-          onValueChange={(v) =>
-            setDateRange(v as "today" | "week" | "month" | "all")
-          }
-          value={dateRange}
-        >
-          <TabsList>
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="week">This Week</TabsTrigger>
-            <TabsTrigger value="month">This Month</TabsTrigger>
-            <TabsTrigger value="all">All Time</TabsTrigger>
-          </TabsList>
-        </Tabs>
+      <div className="flex flex-col gap-4">
+        {/* Primary Filters Row */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Search Input */}
+          <div className="relative min-w-64 flex-1">
+            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-10"
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search appointments..."
+              value={search}
+            />
+          </div>
 
-        <div className="flex items-center gap-2">
-          <Filter className="size-4 text-muted-foreground" />
-          <Select
+          {/* Date Range Tabs */}
+          <Tabs
             onValueChange={(v) =>
-              setStatusFilter(v as AppointmentStatus | "all")
+              setDateRange(v as "today" | "week" | "month" | "all")
             }
-            value={statusFilter}
+            value={dateRange}
           >
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="REQUESTED">Requested</SelectItem>
-              <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-              <SelectItem value="COMPLETED">Completed</SelectItem>
-              <SelectItem value="CANCELLED">Cancelled</SelectItem>
-              <SelectItem value="NO_SHOW">No Show</SelectItem>
-            </SelectContent>
-          </Select>
+            <TabsList>
+              <TabsTrigger value="today">Today</TabsTrigger>
+              <TabsTrigger value="week">This Week</TabsTrigger>
+              <TabsTrigger value="month">This Month</TabsTrigger>
+              <TabsTrigger value="all">All Time</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <Filter className="size-4 text-muted-foreground" />
+            <Select
+              onValueChange={(v) =>
+                setStatusFilter(v as AppointmentStatus | "all")
+              }
+              value={statusFilter}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="REQUESTED">Requested</SelectItem>
+                <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="NO_SHOW">No Show</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Toggle Advanced Filters */}
+          <Button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            size="sm"
+            variant="outline"
+          >
+            More Filters
+            {showAdvancedFilters ? (
+              <ChevronUp className="ml-2 h-4 w-4" />
+            ) : (
+              <ChevronDown className="ml-2 h-4 w-4" />
+            )}
+          </Button>
         </div>
+
+        {/* Advanced Filters Row */}
+        {showAdvancedFilters ? (
+          <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/30 p-4">
+            {/* Business Filter */}
+            <div className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-xs">Business</span>
+              <Select
+                onValueChange={(value) => setBusinessFilter(value)}
+                value={businessFilter}
+              >
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="Business" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="GCMC">GCMC</SelectItem>
+                  <SelectItem value="KAJ">KAJ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Staff Filter */}
+            <div className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-xs">Staff</span>
+              <Select
+                onValueChange={(value) => setStaffFilter(value)}
+                value={staffFilter}
+              >
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="All Staff" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Staff</SelectItem>
+                  {staffData?.staff?.map(
+                    (s: { id: string; userName: string }) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.userName}
+                      </SelectItem>
+                    )
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Appointment Type Filter */}
+            <div className="flex flex-col gap-1">
+              <span className="text-muted-foreground text-xs">Type</span>
+              <Select
+                onValueChange={(value) => setTypeFilter(value)}
+                value={typeFilter}
+              >
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {typesData?.map((t: { id: string; name: string }) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Clear Filters */}
+            {(businessFilter !== "all" ||
+              staffFilter !== "all" ||
+              typeFilter !== "all") && (
+              <Button
+                onClick={() => {
+                  setBusinessFilter("all");
+                  setStaffFilter("all");
+                  setTypeFilter("all");
+                }}
+                variant="ghost"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* Content */}

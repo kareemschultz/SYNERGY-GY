@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Clock,
   Download,
   FileText,
   Loader2,
@@ -44,6 +45,15 @@ import {
 } from "@/components/ui/table";
 import { useSelection } from "@/hooks/use-selection";
 import { client } from "@/utils/orpc";
+
+// Sort options for invoices
+const sortOptions = [
+  { value: "invoiceDate", label: "Invoice Date" },
+  { value: "dueDate", label: "Due Date" },
+  { value: "invoiceNumber", label: "Invoice #" },
+  { value: "totalAmount", label: "Amount" },
+  { value: "status", label: "Status" },
+] as const;
 
 export const Route = createFileRoute("/app/invoices/")({
   component: InvoicesPage,
@@ -89,18 +99,57 @@ function InvoicesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [businessFilter, setBusinessFilter] = useState<string>("all");
+  const [clientFilter, setClientFilter] = useState<string>("all");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("invoiceDate");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [showAgingReport, setShowAgingReport] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [agingBusinessFilter, setAgingBusinessFilter] = useState<
     "GCMC" | "KAJ" | undefined
   >(undefined);
 
   const queryClient = useQueryClient();
 
+  // Fetch clients for filter dropdown
+  const { data: clientsData } = useQuery({
+    queryKey: ["clients", "forFilter"],
+    queryFn: () =>
+      client.clients.list({
+        limit: 100,
+        status: "ACTIVE",
+        sortBy: "displayName",
+        sortOrder: "asc",
+      }),
+    staleTime: 60_000,
+  });
+
+  // Fetch invoice summary stats
+  const { data: summaryData } = useQuery({
+    queryKey: [
+      "invoices",
+      "summary",
+      { business: businessFilter === "all" ? undefined : businessFilter },
+    ],
+    queryFn: () => client.invoices.getSummary(),
+  });
+
   const { data, isLoading, error } = useQuery({
     queryKey: [
       "invoices",
-      { search, status: statusFilter, business: businessFilter, page },
+      {
+        search,
+        status: statusFilter,
+        business: businessFilter,
+        clientId: clientFilter,
+        fromDate,
+        toDate,
+        sortBy,
+        sortOrder,
+        page,
+      },
     ],
     queryFn: () =>
       client.invoices.list({
@@ -120,8 +169,23 @@ function InvoicesPage() {
           businessFilter === "all"
             ? undefined
             : (businessFilter as "GCMC" | "KAJ"),
+        clientId: clientFilter === "all" ? undefined : clientFilter,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+        sortBy: sortBy as
+          | "invoiceNumber"
+          | "invoiceDate"
+          | "dueDate"
+          | "totalAmount"
+          | "status",
+        sortOrder,
       }),
   });
+
+  // Count active filters
+  const activeFilterCount = [clientFilter !== "all", fromDate, toDate].filter(
+    Boolean
+  ).length;
 
   const invoices = data?.invoices || [];
   const {
@@ -205,8 +269,37 @@ function InvoicesPage() {
       />
 
       <div className="p-6">
-        {/* Filters */}
-        <div className="mb-6 flex flex-wrap items-center gap-4">
+        {/* Summary Stats Cards */}
+        {summaryData ? (
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryCard
+              icon={FileText}
+              label="Total Invoices"
+              value={String(summaryData.totalInvoices ?? 0)}
+            />
+            <SummaryCard
+              className="text-green-600"
+              icon={CheckCircle2}
+              label="Total Revenue"
+              value={`GYD ${formatCurrency(summaryData.totalRevenue ?? "0")}`}
+            />
+            <SummaryCard
+              className="text-yellow-600"
+              icon={Clock}
+              label="Outstanding"
+              value={`GYD ${formatCurrency(summaryData.totalOutstanding ?? "0")}`}
+            />
+            <SummaryCard
+              className="text-red-600"
+              icon={Calendar}
+              label="Overdue"
+              value={`GYD ${formatCurrency(summaryData.totalOverdue ?? "0")}`}
+            />
+          </div>
+        ) : null}
+
+        {/* Main Filters Row */}
+        <div className="mb-4 flex flex-wrap items-center gap-4">
           <div className="relative min-w-64 flex-1">
             <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -256,7 +349,131 @@ function InvoicesPage() {
               <SelectItem value="CANCELLED">Cancelled</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Sort Dropdown */}
+          <Select
+            onValueChange={(value) => {
+              setSortBy(value);
+              setPage(1);
+            }}
+            value={sortBy}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Sort Order Toggle */}
+          <Button
+            className="px-3"
+            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+            size="icon"
+            title={sortOrder === "asc" ? "Ascending" : "Descending"}
+            variant="outline"
+          >
+            {sortOrder === "asc" ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+
+          {/* Advanced Filters Toggle */}
+          <Button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            variant={activeFilterCount > 0 ? "secondary" : "outline"}
+          >
+            <ChevronDown
+              className={`mr-2 h-4 w-4 transition-transform ${showAdvancedFilters ? "rotate-180" : ""}`}
+            />
+            More Filters
+            {activeFilterCount > 0 ? (
+              <Badge className="ml-2" variant="secondary">
+                {activeFilterCount}
+              </Badge>
+            ) : null}
+          </Button>
         </div>
+
+        {/* Advanced Filters Panel */}
+        {showAdvancedFilters ? (
+          <div className="mb-6 rounded-lg border bg-muted/30 p-4">
+            <div className="flex flex-wrap items-end gap-4">
+              {/* Client Filter */}
+              <div className="min-w-48 space-y-2">
+                <span className="block font-medium text-sm">Client</span>
+                <Select
+                  onValueChange={(value) => {
+                    setClientFilter(value);
+                    setPage(1);
+                  }}
+                  value={clientFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Clients" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Clients</SelectItem>
+                    {clientsData?.clients?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Range */}
+              <div className="space-y-2">
+                <span className="block font-medium text-sm">From Date</span>
+                <Input
+                  className="w-40"
+                  onChange={(e) => {
+                    setFromDate(e.target.value);
+                    setPage(1);
+                  }}
+                  type="date"
+                  value={fromDate}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <span className="block font-medium text-sm">To Date</span>
+                <Input
+                  className="w-40"
+                  onChange={(e) => {
+                    setToDate(e.target.value);
+                    setPage(1);
+                  }}
+                  type="date"
+                  value={toDate}
+                />
+              </div>
+
+              {/* Clear Filters */}
+              {activeFilterCount > 0 ? (
+                <Button
+                  onClick={() => {
+                    setClientFilter("all");
+                    setFromDate("");
+                    setToDate("");
+                    setPage(1);
+                  }}
+                  variant="ghost"
+                >
+                  Clear Filters
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         {/* Aging Report Toggle */}
         <div className="mb-6">
@@ -524,6 +741,35 @@ function InvoicesPage() {
             {markAsPaidMutation.isPending ? "Updating..." : "Mark as Paid"}
           </Button>
         </BulkActionsToolbar>
+      </div>
+    </div>
+  );
+}
+
+// Summary card component for stats display
+type SummaryCardProps = {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  className?: string;
+};
+
+function SummaryCard({
+  icon: Icon,
+  label,
+  value,
+  className,
+}: SummaryCardProps) {
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <div className="flex items-center gap-3">
+        <div className="rounded-full bg-muted p-2">
+          <Icon className={`h-4 w-4 ${className ?? "text-muted-foreground"}`} />
+        </div>
+        <div>
+          <p className="text-muted-foreground text-sm">{label}</p>
+          <p className={`font-semibold text-lg ${className ?? ""}`}>{value}</p>
+        </div>
       </div>
     </div>
   );

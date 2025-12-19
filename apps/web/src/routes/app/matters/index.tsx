@@ -101,19 +101,69 @@ const statusValues = [
 
 const priorityValues = ["LOW", "NORMAL", "HIGH", "URGENT"] as const;
 
+// Sort options for matters
+const sortOptions = [
+  { value: "createdAt", label: "Created Date" },
+  { value: "dueDate", label: "Due Date" },
+  { value: "referenceNumber", label: "Reference #" },
+  { value: "status", label: "Status" },
+] as const;
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Page component with multiple filters and view modes
 function MattersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [businessFilter, setBusinessFilter] = useState<string>("all");
+  const [clientFilter, setClientFilter] = useState<string>("all");
+  const [staffFilter, setStaffFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [page, setPage] = useState(1);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Fetch clients for filter dropdown
+  const { data: clientsData } = useQuery({
+    queryKey: ["clients", "forFilter"],
+    queryFn: () =>
+      client.clients.list({
+        limit: 100,
+        status: "ACTIVE",
+        sortBy: "displayName",
+        sortOrder: "asc",
+      }),
+    staleTime: 60_000,
+  });
+
+  // Fetch staff for filter dropdown (admin endpoint)
+  const { data: staffData } = useQuery({
+    queryKey: ["admin", "staff", "forFilter"],
+    queryFn: () =>
+      client.admin.staff.list({ limit: 100, isActive: true, sortBy: "name" }),
+    staleTime: 60_000,
+  });
+
+  // Count active filters
+  const activeFilterCount = [
+    clientFilter !== "all",
+    staffFilter !== "all",
+  ].filter(Boolean).length;
+
   const { data, isLoading, error } = useQuery({
     queryKey: [
       "matters",
-      { search, status: statusFilter, business: businessFilter, page },
+      {
+        search,
+        status: statusFilter,
+        business: businessFilter,
+        clientId: clientFilter,
+        assignedStaffId: staffFilter,
+        sortBy,
+        sortOrder,
+        page,
+      },
     ],
     queryFn: () =>
       client.matters.list({
@@ -134,6 +184,14 @@ function MattersPage() {
           businessFilter === "all"
             ? undefined
             : (businessFilter as "GCMC" | "KAJ"),
+        clientId: clientFilter === "all" ? undefined : clientFilter,
+        assignedStaffId: staffFilter === "all" ? undefined : staffFilter,
+        sortBy: sortBy as
+          | "referenceNumber"
+          | "createdAt"
+          | "dueDate"
+          | "status",
+        sortOrder,
       }),
   });
 
@@ -387,8 +445,8 @@ function MattersPage() {
       />
 
       <div className="p-6">
-        {/* Filters */}
-        <div className="mb-6 flex flex-wrap items-center gap-4">
+        {/* Main Filters Row */}
+        <div className="mb-4 flex flex-wrap items-center gap-4">
           <div className="relative min-w-64 flex-1">
             <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -439,7 +497,156 @@ function MattersPage() {
               <SelectItem value="CANCELLED">Cancelled</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Sort Dropdown */}
+          <Select
+            onValueChange={(value) => {
+              setSortBy(value);
+              setPage(1);
+            }}
+            value={sortBy}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Sort Order Toggle */}
+          <Button
+            className="px-3"
+            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+            size="icon"
+            title={sortOrder === "asc" ? "Ascending" : "Descending"}
+            variant="outline"
+          >
+            {sortOrder === "asc" ? (
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+              </svg>
+            ) : (
+              <svg
+                aria-hidden="true"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+              </svg>
+            )}
+          </Button>
+
+          {/* Advanced Filters Toggle */}
+          <Button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            variant={activeFilterCount > 0 ? "secondary" : "outline"}
+          >
+            <svg
+              aria-hidden="true"
+              className={`mr-2 h-4 w-4 transition-transform ${showAdvancedFilters ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M19 9l-7 7-7-7" />
+            </svg>
+            More Filters
+            {activeFilterCount > 0 ? (
+              <Badge className="ml-2" variant="secondary">
+                {activeFilterCount}
+              </Badge>
+            ) : null}
+          </Button>
         </div>
+
+        {/* Advanced Filters Panel */}
+        {showAdvancedFilters ? (
+          <div className="mb-6 rounded-lg border bg-muted/30 p-4">
+            <div className="flex flex-wrap items-end gap-4">
+              {/* Client Filter */}
+              <div className="min-w-48 space-y-2">
+                <span className="block font-medium text-sm">Client</span>
+                <Select
+                  onValueChange={(value) => {
+                    setClientFilter(value);
+                    setPage(1);
+                  }}
+                  value={clientFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Clients" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Clients</SelectItem>
+                    {clientsData?.clients?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Assigned Staff Filter */}
+              <div className="min-w-48 space-y-2">
+                <span className="block font-medium text-sm">
+                  Assigned Staff
+                </span>
+                <Select
+                  onValueChange={(value) => {
+                    setStaffFilter(value);
+                    setPage(1);
+                  }}
+                  value={staffFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Staff" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Staff</SelectItem>
+                    {staffData?.staff?.map(
+                      (s: { id: string; userName: string }) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.userName}
+                        </SelectItem>
+                      )
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Clear Filters */}
+              {activeFilterCount > 0 ? (
+                <Button
+                  onClick={() => {
+                    setClientFilter("all");
+                    setStaffFilter("all");
+                    setPage(1);
+                  }}
+                  variant="ghost"
+                >
+                  Clear Filters
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         {/* Error state */}
         {!!error && (

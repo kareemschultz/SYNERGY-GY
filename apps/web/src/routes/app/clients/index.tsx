@@ -2,12 +2,15 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Archive,
+  ArrowDownWideNarrow,
+  ArrowUpWideNarrow,
   Download,
   Grid3X3,
   List,
   MoreHorizontal,
   Plus,
   Search,
+  UserPlus,
   Wand2,
 } from "lucide-react";
 import { useState } from "react";
@@ -24,6 +27,14 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -147,11 +158,22 @@ function LoadingSkeleton({
   );
 }
 
+// Sort options for clients list
+const sortOptions = [
+  { value: "displayName", label: "Name" },
+  { value: "createdAt", label: "Date Added" },
+  { value: "updatedAt", label: "Last Updated" },
+  { value: "activeMatterCount", label: "Active Matters" },
+] as const;
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Page component with multiple filters, bulk actions, and view modes
 function ClientsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [businessFilter, setBusinessFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("ACTIVE");
+  const [sortBy, setSortBy] = useState<string>("displayName");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
 
@@ -166,6 +188,8 @@ function ClientsPage() {
         type: typeFilter,
         business: businessFilter,
         status: statusFilter,
+        sortBy,
+        sortOrder,
         page,
       },
     ],
@@ -194,6 +218,12 @@ function ClientsPage() {
           statusFilter === "all"
             ? undefined
             : (statusFilter as "ACTIVE" | "INACTIVE" | "ARCHIVED"),
+        sortBy: sortBy as
+          | "displayName"
+          | "createdAt"
+          | "updatedAt"
+          | "activeMatterCount",
+        sortOrder,
       }),
   });
 
@@ -246,6 +276,35 @@ function ClientsPage() {
     },
   });
 
+  // Assign staff modal state
+  const [showAssignStaffModal, setShowAssignStaffModal] = useState(false);
+  const [selectedStaffId, setSelectedStaffId] = useState<string>("");
+
+  // Query for staff list (for assign staff dropdown)
+  const { data: staffData } = useQuery({
+    queryKey: ["admin", "staff", "forAssign"],
+    queryFn: () =>
+      client.admin.staff.list({ limit: 100, isActive: true, sortBy: "name" }),
+    staleTime: 60_000,
+    enabled: showAssignStaffModal, // Only fetch when modal is open
+  });
+
+  // Bulk assign staff mutation
+  const assignStaffMutation = useMutation({
+    mutationFn: (input: { ids: string[]; primaryStaffId: string }) =>
+      client.clients.bulk.assignStaff(input),
+    onSuccess: (result) => {
+      toast.success(`${result.updatedCount} clients updated`);
+      clearSelection();
+      setShowAssignStaffModal(false);
+      setSelectedStaffId("");
+      queryClient.invalidateQueries({ queryKey: ["clientsWithStats"] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to assign staff");
+    },
+  });
+
   const handleBulkArchive = () => {
     if (selectedCount > 0) {
       archiveMutation.mutate(Array.from(selectedIds));
@@ -255,6 +314,15 @@ function ClientsPage() {
   const handleBulkExport = () => {
     if (selectedCount > 0) {
       exportMutation.mutate(Array.from(selectedIds));
+    }
+  };
+
+  const handleBulkAssignStaff = () => {
+    if (selectedCount > 0 && selectedStaffId) {
+      assignStaffMutation.mutate({
+        ids: Array.from(selectedIds),
+        primaryStaffId: selectedStaffId,
+      });
     }
   };
 
@@ -366,6 +434,47 @@ function ClientsPage() {
               <SelectItem value="ARCHIVED">Archived</SelectItem>
             </SelectContent>
           </Select>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-1">
+            <Select
+              onValueChange={(value) => {
+                setSortBy(value);
+                setPage(1);
+              }}
+              value={sortBy}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                {sortOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() => {
+                if (sortOrder === "asc") {
+                  setSortOrder("desc");
+                } else {
+                  setSortOrder("asc");
+                }
+                setPage(1);
+              }}
+              size="icon"
+              title={sortOrder === "asc" ? "Ascending" : "Descending"}
+              variant="outline"
+            >
+              {sortOrder === "asc" ? (
+                <ArrowUpWideNarrow className="h-4 w-4" />
+              ) : (
+                <ArrowDownWideNarrow className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
 
           {/* View Toggle (hidden on mobile) */}
           {!isMobile && (
@@ -614,6 +723,14 @@ function ClientsPage() {
                 Export CSV
               </Button>
               <Button
+                onClick={() => setShowAssignStaffModal(true)}
+                size="sm"
+                variant="outline"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Assign Staff
+              </Button>
+              <Button
                 disabled={archiveMutation.isPending}
                 onClick={handleBulkArchive}
                 size="sm"
@@ -659,6 +776,73 @@ function ClientsPage() {
             </div>
           </div>
         ) : null}
+
+        {/* Assign Staff Modal */}
+        <Dialog
+          onOpenChange={(open) => {
+            setShowAssignStaffModal(open);
+            if (!open) {
+              setSelectedStaffId("");
+            }
+          }}
+          open={showAssignStaffModal}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Assign Primary Staff</DialogTitle>
+              <DialogDescription>
+                Select a staff member to assign as the primary contact for{" "}
+                {selectedCount} selected client{selectedCount !== 1 ? "s" : ""}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Select
+                onValueChange={(value) => setSelectedStaffId(value)}
+                value={selectedStaffId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a staff member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {staffData?.staff?.map(
+                    (s: {
+                      id: string;
+                      userName: string;
+                      jobTitle: string | null;
+                    }) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        <div className="flex flex-col">
+                          <span>{s.userName}</span>
+                          {s.jobTitle ? (
+                            <span className="text-muted-foreground text-xs">
+                              {s.jobTitle}
+                            </span>
+                          ) : null}
+                        </div>
+                      </SelectItem>
+                    )
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button
+                onClick={() => setShowAssignStaffModal(false)}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={!selectedStaffId || assignStaffMutation.isPending}
+                onClick={handleBulkAssignStaff}
+              >
+                {assignStaffMutation.isPending
+                  ? "Assigning..."
+                  : "Assign Staff"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
