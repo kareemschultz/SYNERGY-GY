@@ -2,7 +2,55 @@ import { client, clientBeneficialOwner, db, staff } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { staffProcedure } from "../index";
+import { getAccessibleBusinesses, type Staff, staffProcedure } from "../index";
+
+// Business filtering helper type
+type Business = "GCMC" | "KAJ";
+
+/**
+ * Validate that staff can access a client's business
+ */
+async function validateClientAccess(
+  staffRecord: Staff | null,
+  clientId: string
+): Promise<boolean> {
+  const accessibleBusinesses = getAccessibleBusinesses(staffRecord);
+  if (accessibleBusinesses.length === 0) {
+    return false;
+  }
+
+  const clientRecord = await db.query.client.findFirst({
+    where: eq(client.id, clientId),
+    columns: { businesses: true },
+  });
+
+  if (!clientRecord) {
+    return false;
+  }
+
+  return clientRecord.businesses.some((b) =>
+    accessibleBusinesses.includes(b as Business)
+  );
+}
+
+/**
+ * Validate that staff can access a beneficial owner (via client)
+ */
+async function validateBeneficialOwnerAccess(
+  staffRecord: Staff | null,
+  ownerId: string
+): Promise<boolean> {
+  const owner = await db.query.clientBeneficialOwner.findFirst({
+    where: eq(clientBeneficialOwner.id, ownerId),
+    columns: { clientId: true },
+  });
+
+  if (!owner) {
+    return false;
+  }
+
+  return validateClientAccess(staffRecord, owner.clientId);
+}
 
 // Enum values
 const ownershipTypeValues = ["DIRECT", "INDIRECT", "BENEFICIAL"] as const;
@@ -59,54 +107,78 @@ export const beneficialOwnersRouter = {
   /**
    * List all beneficial owners for a client
    */
-  list: staffProcedure.input(listByClientSchema).handler(async ({ input }) => {
-    const owners = await db
-      .select({
-        id: clientBeneficialOwner.id,
-        clientId: clientBeneficialOwner.clientId,
-        fullName: clientBeneficialOwner.fullName,
-        dateOfBirth: clientBeneficialOwner.dateOfBirth,
-        nationality: clientBeneficialOwner.nationality,
-        nationalId: clientBeneficialOwner.nationalId,
-        passportNumber: clientBeneficialOwner.passportNumber,
-        ownershipPercentage: clientBeneficialOwner.ownershipPercentage,
-        ownershipType: clientBeneficialOwner.ownershipType,
-        positionHeld: clientBeneficialOwner.positionHeld,
-        isPep: clientBeneficialOwner.isPep,
-        pepDetails: clientBeneficialOwner.pepDetails,
-        pepRelationship: clientBeneficialOwner.pepRelationship,
-        email: clientBeneficialOwner.email,
-        phone: clientBeneficialOwner.phone,
-        address: clientBeneficialOwner.address,
-        riskLevel: clientBeneficialOwner.riskLevel,
-        riskNotes: clientBeneficialOwner.riskNotes,
-        isVerified: clientBeneficialOwner.isVerified,
-        verifiedAt: clientBeneficialOwner.verifiedAt,
-        verifiedById: clientBeneficialOwner.verifiedById,
-        verificationDocumentId: clientBeneficialOwner.verificationDocumentId,
-        createdAt: clientBeneficialOwner.createdAt,
-        updatedAt: clientBeneficialOwner.updatedAt,
-      })
-      .from(clientBeneficialOwner)
-      .where(
-        input.includeUnverified
-          ? eq(clientBeneficialOwner.clientId, input.clientId)
-          : and(
-              eq(clientBeneficialOwner.clientId, input.clientId),
-              eq(clientBeneficialOwner.isVerified, true)
-            )
-      )
-      .orderBy(desc(clientBeneficialOwner.ownershipPercentage));
+  list: staffProcedure
+    .input(listByClientSchema)
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access
+      const hasAccess = await validateClientAccess(
+        context.staff,
+        input.clientId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
 
-    return owners;
-  }),
+      const owners = await db
+        .select({
+          id: clientBeneficialOwner.id,
+          clientId: clientBeneficialOwner.clientId,
+          fullName: clientBeneficialOwner.fullName,
+          dateOfBirth: clientBeneficialOwner.dateOfBirth,
+          nationality: clientBeneficialOwner.nationality,
+          nationalId: clientBeneficialOwner.nationalId,
+          passportNumber: clientBeneficialOwner.passportNumber,
+          ownershipPercentage: clientBeneficialOwner.ownershipPercentage,
+          ownershipType: clientBeneficialOwner.ownershipType,
+          positionHeld: clientBeneficialOwner.positionHeld,
+          isPep: clientBeneficialOwner.isPep,
+          pepDetails: clientBeneficialOwner.pepDetails,
+          pepRelationship: clientBeneficialOwner.pepRelationship,
+          email: clientBeneficialOwner.email,
+          phone: clientBeneficialOwner.phone,
+          address: clientBeneficialOwner.address,
+          riskLevel: clientBeneficialOwner.riskLevel,
+          riskNotes: clientBeneficialOwner.riskNotes,
+          isVerified: clientBeneficialOwner.isVerified,
+          verifiedAt: clientBeneficialOwner.verifiedAt,
+          verifiedById: clientBeneficialOwner.verifiedById,
+          verificationDocumentId: clientBeneficialOwner.verificationDocumentId,
+          createdAt: clientBeneficialOwner.createdAt,
+          updatedAt: clientBeneficialOwner.updatedAt,
+        })
+        .from(clientBeneficialOwner)
+        .where(
+          input.includeUnverified
+            ? eq(clientBeneficialOwner.clientId, input.clientId)
+            : and(
+                eq(clientBeneficialOwner.clientId, input.clientId),
+                eq(clientBeneficialOwner.isVerified, true)
+              )
+        )
+        .orderBy(desc(clientBeneficialOwner.ownershipPercentage));
+
+      return owners;
+    }),
 
   /**
    * Get a single beneficial owner by ID
    */
   get: staffProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate access via beneficial owner's client
+      const hasAccess = await validateBeneficialOwnerAccess(
+        context.staff,
+        input.id
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this beneficial owner",
+        });
+      }
+
       const owner = await db.query.clientBeneficialOwner.findFirst({
         where: eq(clientBeneficialOwner.id, input.id),
         with: {
@@ -130,7 +202,18 @@ export const beneficialOwnersRouter = {
    */
   create: staffProcedure
     .input(createBeneficialOwnerSchema)
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access
+      const hasAccess = await validateClientAccess(
+        context.staff,
+        input.clientId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
+
       // Verify client exists
       const clientExists = await db.query.client.findFirst({
         where: eq(client.id, input.clientId),
@@ -192,8 +275,16 @@ export const beneficialOwnersRouter = {
    */
   update: staffProcedure
     .input(updateBeneficialOwnerSchema)
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       const { id, ...updates } = input;
+
+      // SECURITY: Validate access via beneficial owner's client
+      const hasAccess = await validateBeneficialOwnerAccess(context.staff, id);
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this beneficial owner",
+        });
+      }
 
       // Verify exists
       const existing = await db.query.clientBeneficialOwner.findFirst({
@@ -248,7 +339,18 @@ export const beneficialOwnersRouter = {
    */
   delete: staffProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate access via beneficial owner's client
+      const hasAccess = await validateBeneficialOwnerAccess(
+        context.staff,
+        input.id
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this beneficial owner",
+        });
+      }
+
       const existing = await db.query.clientBeneficialOwner.findFirst({
         where: eq(clientBeneficialOwner.id, input.id),
       });
@@ -272,6 +374,17 @@ export const beneficialOwnersRouter = {
   verify: staffProcedure
     .input(verifyBeneficialOwnerSchema)
     .handler(async ({ input, context }) => {
+      // SECURITY: Validate access via beneficial owner's client
+      const hasAccess = await validateBeneficialOwnerAccess(
+        context.staff,
+        input.id
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this beneficial owner",
+        });
+      }
+
       const existing = await db.query.clientBeneficialOwner.findFirst({
         where: eq(clientBeneficialOwner.id, input.id),
       });
@@ -320,7 +433,18 @@ export const beneficialOwnersRouter = {
    */
   getTotalOwnership: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access
+      const hasAccess = await validateClientAccess(
+        context.staff,
+        input.clientId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
+
       const owners = await db
         .select({
           ownershipPercentage: clientBeneficialOwner.ownershipPercentage,

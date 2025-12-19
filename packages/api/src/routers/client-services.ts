@@ -5,10 +5,64 @@ import {
   document,
   serviceCatalog,
 } from "@SYNERGY-GY/db";
+import { ORPCError } from "@orpc/server";
 import type { SQL } from "drizzle-orm";
 import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
-import { adminProcedure, staffProcedure } from "../index";
+import {
+  adminProcedure,
+  getAccessibleBusinesses,
+  type Staff,
+  staffProcedure,
+} from "../index";
+
+// Business filtering helper type
+type Business = "GCMC" | "KAJ";
+
+/**
+ * Validate that staff can access a client's business
+ */
+async function validateClientAccess(
+  staffRecord: Staff | null,
+  clientId: string
+): Promise<boolean> {
+  const accessibleBusinesses = getAccessibleBusinesses(staffRecord);
+  if (accessibleBusinesses.length === 0) {
+    return false;
+  }
+
+  const clientRecord = await db.query.client.findFirst({
+    where: eq(client.id, clientId),
+    columns: { businesses: true },
+  });
+
+  if (!clientRecord) {
+    return false;
+  }
+
+  return clientRecord.businesses.some((b) =>
+    accessibleBusinesses.includes(b as Business)
+  );
+}
+
+/**
+ * Validate that staff can access a service selection (via client)
+ */
+async function validateServiceSelectionAccess(
+  staffRecord: Staff | null,
+  selectionId: string
+): Promise<boolean> {
+  const selection = await db.query.clientServiceSelection.findFirst({
+    where: eq(clientServiceSelection.id, selectionId),
+    columns: { clientId: true },
+  });
+
+  if (!selection) {
+    return false;
+  }
+
+  return validateClientAccess(staffRecord, selection.clientId);
+}
 
 export const clientServicesRouter = {
   /**
@@ -21,8 +75,16 @@ export const clientServicesRouter = {
         serviceIds: z.array(z.string().uuid()),
       })
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       const { clientId, serviceIds } = input;
+
+      // SECURITY: Validate client access
+      const hasAccess = await validateClientAccess(context.staff, clientId);
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
 
       // Verify client exists
       const clientExists = await db.query.client.findFirst({
@@ -30,7 +92,7 @@ export const clientServicesRouter = {
       });
 
       if (!clientExists) {
-        throw new Error("Client not found");
+        throw new ORPCError("NOT_FOUND", { message: "Client not found" });
       }
 
       if (serviceIds.length === 0) {
@@ -81,7 +143,18 @@ export const clientServicesRouter = {
    */
   getByClient: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access
+      const hasAccess = await validateClientAccess(
+        context.staff,
+        input.clientId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
+
       const selections = await db.query.clientServiceSelection.findMany({
         where: eq(clientServiceSelection.clientId, input.clientId),
         orderBy: (t, { desc }) => desc(t.selectedAt),
@@ -118,8 +191,19 @@ export const clientServicesRouter = {
         notes: z.string().optional(),
       })
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       const { selectionId, status, notes } = input;
+
+      // SECURITY: Validate selection access via client
+      const hasAccess = await validateServiceSelectionAccess(
+        context.staff,
+        selectionId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this service selection",
+        });
+      }
 
       // Prepare update data with appropriate timestamp
       const updateData: Record<string, unknown> = {
@@ -160,8 +244,19 @@ export const clientServicesRouter = {
         requirementName: z.string(),
       })
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       const { selectionId, documentId, requirementName } = input;
+
+      // SECURITY: Validate selection access via client
+      const hasAccess = await validateServiceSelectionAccess(
+        context.staff,
+        selectionId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this service selection",
+        });
+      }
 
       // Fetch the service selection
       const selection = await db.query.clientServiceSelection.findFirst({
@@ -206,7 +301,18 @@ export const clientServicesRouter = {
    */
   getFulfillmentProgress: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access
+      const hasAccess = await validateClientAccess(
+        context.staff,
+        input.clientId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
+
       const selections = await db.query.clientServiceSelection.findMany({
         where: eq(clientServiceSelection.clientId, input.clientId),
       });
@@ -411,7 +517,18 @@ export const clientServicesRouter = {
    */
   delete: staffProcedure
     .input(z.object({ selectionId: z.string().uuid() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate selection access via client
+      const hasAccess = await validateServiceSelectionAccess(
+        context.staff,
+        input.selectionId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this service selection",
+        });
+      }
+
       await db
         .delete(clientServiceSelection)
         .where(eq(clientServiceSelection.id, input.selectionId));

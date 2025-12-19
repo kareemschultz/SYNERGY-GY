@@ -1,12 +1,216 @@
 import { client, db, document, documentTemplate, matter } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
-import { and, asc, count, desc, eq, ilike, isNull, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import { z } from "zod";
 import {
   adminProcedure,
   getAccessibleBusinesses,
+  type Staff,
   staffProcedure,
 } from "../index";
+
+// Business filtering helper types
+type Business = "GCMC" | "KAJ";
+
+/**
+ * Validate that staff can access a client's business
+ */
+async function validateClientAccess(
+  staff: Staff | null,
+  clientId: string
+): Promise<boolean> {
+  const accessibleBusinesses = getAccessibleBusinesses(staff);
+  if (accessibleBusinesses.length === 0) {
+    return false;
+  }
+
+  const clientRecord = await db.query.client.findFirst({
+    where: eq(client.id, clientId),
+    columns: { businesses: true },
+  });
+
+  if (!clientRecord) {
+    return false;
+  }
+
+  return clientRecord.businesses.some((b) =>
+    accessibleBusinesses.includes(b as Business)
+  );
+}
+
+/**
+ * Validate that staff can access a matter's business
+ */
+async function validateMatterAccess(
+  staff: Staff | null,
+  matterId: string
+): Promise<boolean> {
+  const accessibleBusinesses = getAccessibleBusinesses(staff);
+  if (accessibleBusinesses.length === 0) {
+    return false;
+  }
+
+  const matterRecord = await db.query.matter.findFirst({
+    where: eq(matter.id, matterId),
+    columns: { business: true },
+  });
+
+  if (!matterRecord) {
+    return false;
+  }
+
+  return accessibleBusinesses.includes(matterRecord.business as Business);
+}
+
+/**
+ * Get client IDs that staff can access
+ */
+async function getAccessibleClientIds(staff: Staff | null): Promise<string[]> {
+  const accessibleBusinesses = getAccessibleBusinesses(staff);
+  if (accessibleBusinesses.length === 0) {
+    return [];
+  }
+
+  const accessibleClients = await db
+    .select({ id: client.id })
+    .from(client)
+    .where(
+      sql`${client.businesses} && ARRAY[${sql.join(
+        accessibleBusinesses.map((b) => sql`${b}`),
+        sql`, `
+      )}]::text[]`
+    );
+
+  return accessibleClients.map((c) => c.id);
+}
+
+/**
+ * Validate that staff can access a document
+ * Access is granted if:
+ * - Document has no client (shared documents)
+ * - Document's client is in staff's accessible businesses
+ */
+async function validateDocumentAccess(
+  staff: Staff | null,
+  docId: string
+): Promise<boolean> {
+  const doc = await db.query.document.findFirst({
+    where: eq(document.id, docId),
+    columns: { clientId: true },
+  });
+
+  if (!doc) {
+    return false;
+  }
+
+  // Documents without a client are accessible to all staff
+  if (!doc.clientId) {
+    return true;
+  }
+
+  return validateClientAccess(staff, doc.clientId);
+}
+
+/**
+ * Validate template business access
+ */
+function validateTemplateBusinessAccess(
+  staff: Staff | null,
+  templateBusiness: string | null
+): boolean {
+  if (!templateBusiness) {
+    return true;
+  }
+  const accessibleBusinesses = getAccessibleBusinesses(staff);
+  return accessibleBusinesses.includes(templateBusiness as Business);
+}
+
+/**
+ * Helper to validate template generation inputs
+ * Throws ORPCError if access is denied
+ */
+async function validateTemplateInputAccess(
+  staff: Staff | null,
+  templateBusiness: string | null,
+  clientId?: string,
+  matterId?: string
+): Promise<void> {
+  // Validate template business access
+  if (!validateTemplateBusinessAccess(staff, templateBusiness)) {
+    throw new ORPCError("FORBIDDEN", {
+      message: "You don't have access to this template",
+    });
+  }
+
+  // Validate client access if provided
+  if (clientId) {
+    const hasClientAccess = await validateClientAccess(staff, clientId);
+    if (!hasClientAccess) {
+      throw new ORPCError("FORBIDDEN", {
+        message: "You don't have access to this client",
+      });
+    }
+  }
+
+  // Validate matter access if provided
+  if (matterId) {
+    const hasMatterAccess = await validateMatterAccess(staff, matterId);
+    if (!hasMatterAccess) {
+      throw new ORPCError("FORBIDDEN", {
+        message: "You don't have access to this matter",
+      });
+    }
+  }
+}
+
+/**
+ * Validate access for multiple document IDs
+ * Returns list of document IDs that staff can access
+ */
+async function validateBulkDocumentAccess(
+  staff: Staff | null,
+  docIds: string[]
+): Promise<{ accessible: string[]; unauthorized: string[] }> {
+  const accessibleClientIds = await getAccessibleClientIds(staff);
+
+  const docs = await db
+    .select({ id: document.id, clientId: document.clientId })
+    .from(document)
+    .where(inArray(document.id, docIds));
+
+  const accessible: string[] = [];
+  const unauthorized: string[] = [];
+
+  for (const doc of docs) {
+    // Documents without a client or with accessible client
+    if (!doc.clientId || accessibleClientIds.includes(doc.clientId)) {
+      accessible.push(doc.id);
+    } else {
+      unauthorized.push(doc.id);
+    }
+  }
+
+  // Also mark IDs not found as unauthorized
+  const foundIds = docs.map((d) => d.id);
+  for (const id of docIds) {
+    if (!(foundIds.includes(id) || unauthorized.includes(id))) {
+      unauthorized.push(id);
+    }
+  }
+
+  return { accessible, unauthorized };
+}
 
 // Template placeholder type
 type TemplatePlaceholder = {
@@ -123,87 +327,138 @@ function getPlaceholderValue(
 // Documents router
 export const documentsRouter = {
   // List documents with pagination and filters
-  list: staffProcedure.input(listDocumentsSchema).handler(async ({ input }) => {
-    // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
-    const conditions = [];
+  list: staffProcedure
+    .input(listDocumentsSchema)
+    .handler(async ({ input, context }) => {
+      // biome-ignore lint/suspicious/noEvolvingTypes: Auto-fix
+      const conditions = [];
 
-    // Status filter
-    conditions.push(eq(document.status, input.status));
+      // SECURITY: Business isolation - only show documents from accessible clients
+      const accessibleClientIds = await getAccessibleClientIds(context.staff);
+      if (accessibleClientIds.length === 0) {
+        return {
+          documents: [],
+          total: 0,
+          page: input.page,
+          limit: input.limit,
+          totalPages: 0,
+        };
+      }
 
-    // Search filter (includes filename, description, and tags)
-    if (input.search) {
-      const searchTerm = `%${input.search}%`;
+      // Filter to only accessible clients' documents (or documents with no client)
       conditions.push(
         or(
-          ilike(document.originalName, searchTerm),
-          ilike(document.description, searchTerm),
-          // Search within tags array - check if any tag contains the search term
-          sql`EXISTS (SELECT 1 FROM unnest(${document.tags}) AS tag WHERE tag ILIKE ${searchTerm})`
+          inArray(document.clientId, accessibleClientIds),
+          isNull(document.clientId)
         )
       );
-    }
 
-    // Category filter
-    if (input.category) {
-      conditions.push(eq(document.category, input.category));
-    }
+      // Status filter
+      conditions.push(eq(document.status, input.status));
 
-    // Client filter
-    if (input.clientId) {
-      conditions.push(eq(document.clientId, input.clientId));
-    }
+      // Search filter (includes filename, description, and tags)
+      if (input.search) {
+        const searchTerm = `%${input.search}%`;
+        conditions.push(
+          or(
+            ilike(document.originalName, searchTerm),
+            ilike(document.description, searchTerm),
+            // Search within tags array - check if any tag contains the search term
+            sql`EXISTS (SELECT 1 FROM unnest(${document.tags}) AS tag WHERE tag ILIKE ${searchTerm})`
+          )
+        );
+      }
 
-    // Matter filter
-    if (input.matterId) {
-      conditions.push(eq(document.matterId, input.matterId));
-    }
+      // Category filter
+      if (input.category) {
+        conditions.push(eq(document.category, input.category));
+      }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+      // Client filter (with access validation)
+      if (input.clientId) {
+        // Verify access to this client
+        const hasAccess = await validateClientAccess(
+          context.staff,
+          input.clientId
+        );
+        if (!hasAccess) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this client's documents",
+          });
+        }
+        conditions.push(eq(document.clientId, input.clientId));
+      }
 
-    // Get total count
-    const countResult = await db
-      .select({ total: count() })
-      .from(document)
-      .where(whereClause);
+      // Matter filter (with access validation)
+      if (input.matterId) {
+        // Verify access to this matter
+        const hasAccess = await validateMatterAccess(
+          context.staff,
+          input.matterId
+        );
+        if (!hasAccess) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this matter's documents",
+          });
+        }
+        conditions.push(eq(document.matterId, input.matterId));
+      }
 
-    const total = countResult[0]?.total ?? 0;
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Get paginated results
-    const offset = (input.page - 1) * input.limit;
-    const orderColumn = document[input.sortBy];
-    const orderDirection = input.sortOrder === "asc" ? asc : desc;
+      // Get total count
+      const countResult = await db
+        .select({ total: count() })
+        .from(document)
+        .where(whereClause);
 
-    const documents = await db.query.document.findMany({
-      where: whereClause,
-      orderBy: [orderDirection(orderColumn)],
-      limit: input.limit,
-      offset,
-      with: {
-        client: {
-          columns: { id: true, displayName: true },
+      const total = countResult[0]?.total ?? 0;
+
+      // Get paginated results
+      const offset = (input.page - 1) * input.limit;
+      const orderColumn = document[input.sortBy];
+      const orderDirection = input.sortOrder === "asc" ? asc : desc;
+
+      const documents = await db.query.document.findMany({
+        where: whereClause,
+        orderBy: [orderDirection(orderColumn)],
+        limit: input.limit,
+        offset,
+        with: {
+          client: {
+            columns: { id: true, displayName: true },
+          },
+          matter: {
+            columns: { id: true, referenceNumber: true, title: true },
+          },
+          uploadedBy: {
+            columns: { id: true, name: true },
+          },
         },
-        matter: {
-          columns: { id: true, referenceNumber: true, title: true },
-        },
-        uploadedBy: {
-          columns: { id: true, name: true },
-        },
-      },
-    });
+      });
 
-    return {
-      documents,
-      total,
-      page: input.page,
-      limit: input.limit,
-      totalPages: Math.ceil(total / input.limit),
-    };
-  }),
+      return {
+        documents,
+        total,
+        page: input.page,
+        limit: input.limit,
+        totalPages: Math.ceil(total / input.limit),
+      };
+    }),
 
   // Get single document by ID
   getById: staffProcedure
     .input(z.object({ id: z.string() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate document access before returning
+      const hasAccess = await validateDocumentAccess(context.staff, input.id);
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this document",
+        });
+      }
+
       const result = await db.query.document.findFirst({
         where: eq(document.id, input.id),
         with: {
@@ -224,6 +479,32 @@ export const documentsRouter = {
   create: staffProcedure
     .input(createDocumentSchema)
     .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access if associating with a client
+      if (input.clientId) {
+        const hasClientAccess = await validateClientAccess(
+          context.staff,
+          input.clientId
+        );
+        if (!hasClientAccess) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this client",
+          });
+        }
+      }
+
+      // SECURITY: Validate matter access if associating with a matter
+      if (input.matterId) {
+        const hasMatterAccess = await validateMatterAccess(
+          context.staff,
+          input.matterId
+        );
+        if (!hasMatterAccess) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this matter",
+          });
+        }
+      }
+
       const [newDoc] = await db
         .insert(document)
         .values({
@@ -238,8 +519,16 @@ export const documentsRouter = {
   // Update document metadata
   update: staffProcedure
     .input(updateDocumentSchema)
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
       const { id, ...updates } = input;
+
+      // SECURITY: Validate access to the document being updated
+      const hasDocAccess = await validateDocumentAccess(context.staff, id);
+      if (!hasDocAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this document",
+        });
+      }
 
       const existing = await db.query.document.findFirst({
         where: eq(document.id, id),
@@ -247,6 +536,32 @@ export const documentsRouter = {
 
       if (!existing) {
         throw new ORPCError("NOT_FOUND", { message: "Document not found" });
+      }
+
+      // SECURITY: Validate access to new client if changing
+      if (updates.clientId && updates.clientId !== existing.clientId) {
+        const hasClientAccess = await validateClientAccess(
+          context.staff,
+          updates.clientId
+        );
+        if (!hasClientAccess) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to the target client",
+          });
+        }
+      }
+
+      // SECURITY: Validate access to new matter if changing
+      if (updates.matterId && updates.matterId !== existing.matterId) {
+        const hasMatterAccess = await validateMatterAccess(
+          context.staff,
+          updates.matterId
+        );
+        if (!hasMatterAccess) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to the target matter",
+          });
+        }
       }
 
       const [updated] = await db
@@ -261,7 +576,15 @@ export const documentsRouter = {
   // Archive document (soft delete)
   archive: staffProcedure
     .input(z.object({ id: z.string() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate document access
+      const hasAccess = await validateDocumentAccess(context.staff, input.id);
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this document",
+        });
+      }
+
       const [updated] = await db
         .update(document)
         .set({
@@ -281,7 +604,15 @@ export const documentsRouter = {
   // Restore archived document
   restore: staffProcedure
     .input(z.object({ id: z.string() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate document access
+      const hasAccess = await validateDocumentAccess(context.staff, input.id);
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this document",
+        });
+      }
+
       const [updated] = await db
         .update(document)
         .set({
@@ -301,13 +632,24 @@ export const documentsRouter = {
   // Get documents expiring soon
   getExpiring: staffProcedure
     .input(z.object({ daysAhead: z.number().default(30) }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Only return expiring documents for accessible clients
+      const accessibleClientIds = await getAccessibleClientIds(context.staff);
+      if (accessibleClientIds.length === 0) {
+        return [];
+      }
+
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + input.daysAhead);
 
       const expiring = await db.query.document.findMany({
         where: and(
           eq(document.status, "ACTIVE"),
+          // SECURITY: Business isolation filter
+          or(
+            inArray(document.clientId, accessibleClientIds),
+            isNull(document.clientId)
+          ),
           sql`${document.expirationDate} IS NOT NULL`,
           sql`${document.expirationDate} <= ${futureDate.toISOString().split("T")[0]}`,
           sql`${document.expirationDate} >= CURRENT_DATE`
@@ -326,7 +668,18 @@ export const documentsRouter = {
   // Get documents by client
   getByClient: staffProcedure
     .input(z.object({ clientId: z.string() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access before returning documents
+      const hasAccess = await validateClientAccess(
+        context.staff,
+        input.clientId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client's documents",
+        });
+      }
+
       const documents = await db.query.document.findMany({
         where: and(
           eq(document.clientId, input.clientId),
@@ -349,7 +702,18 @@ export const documentsRouter = {
   // Get documents by matter
   getByMatter: staffProcedure
     .input(z.object({ matterId: z.string() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate matter access before returning documents
+      const hasAccess = await validateMatterAccess(
+        context.staff,
+        input.matterId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this matter's documents",
+        });
+      }
+
       const documents = await db.query.document.findMany({
         where: and(
           eq(document.matterId, input.matterId),
@@ -426,13 +790,23 @@ export const documentsRouter = {
 
     getById: staffProcedure
       .input(z.object({ id: z.string() }))
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
         const template = await db.query.documentTemplate.findFirst({
           where: eq(documentTemplate.id, input.id),
         });
 
         if (!template) {
           throw new ORPCError("NOT_FOUND", { message: "Template not found" });
+        }
+
+        // SECURITY: Validate business access for business-specific templates
+        if (template.business) {
+          const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+          if (!accessibleBusinesses.includes(template.business as Business)) {
+            throw new ORPCError("FORBIDDEN", {
+              message: "You don't have access to this template",
+            });
+          }
         }
 
         return template;
@@ -563,6 +937,14 @@ export const documentsRouter = {
           throw new ORPCError("NOT_FOUND", { message: "Template not found" });
         }
 
+        // SECURITY: Validate all access in one call
+        await validateTemplateInputAccess(
+          context.staff,
+          template.business,
+          input.clientId,
+          input.matterId
+        );
+
         // Gather data for placeholders
         const data: Record<string, unknown> = {};
 
@@ -654,6 +1036,14 @@ export const documentsRouter = {
           throw new ORPCError("NOT_FOUND", { message: "Template not found" });
         }
 
+        // SECURITY: Validate all access in one call
+        await validateTemplateInputAccess(
+          context.staff,
+          template.business,
+          input.clientId,
+          input.matterId
+        );
+
         // Gather data for placeholders (same as preview)
         const data: Record<string, unknown> = {};
 
@@ -739,6 +1129,32 @@ export const documentsRouter = {
       })
     )
     .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access if associating with a client
+      if (input.clientId) {
+        const hasClientAccess = await validateClientAccess(
+          context.staff,
+          input.clientId
+        );
+        if (!hasClientAccess) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this client",
+          });
+        }
+      }
+
+      // SECURITY: Validate matter access if associating with a matter
+      if (input.matterId) {
+        const hasMatterAccess = await validateMatterAccess(
+          context.staff,
+          input.matterId
+        );
+        if (!hasMatterAccess) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this matter",
+          });
+        }
+      }
+
       // Create document record in PENDING status
       const docResult = await db
         .insert(document)
@@ -774,7 +1190,15 @@ export const documentsRouter = {
   // Get download URL for a document
   getDownloadUrl: staffProcedure
     .input(z.object({ id: z.string() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate document access before providing download URL
+      const hasAccess = await validateDocumentAccess(context.staff, input.id);
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this document",
+        });
+      }
+
       const doc = await db.query.document.findFirst({
         where: eq(document.id, input.id),
       });
@@ -796,14 +1220,29 @@ export const documentsRouter = {
     }),
 
   // Get category statistics
-  getStats: staffProcedure.handler(async () => {
+  getStats: staffProcedure.handler(async ({ context }) => {
+    // SECURITY: Only show stats for accessible documents
+    const accessibleClientIds = await getAccessibleClientIds(context.staff);
+
+    // Build where clause with business isolation
+    const whereClause =
+      accessibleClientIds.length > 0
+        ? and(
+            eq(document.status, "ACTIVE"),
+            or(
+              inArray(document.clientId, accessibleClientIds),
+              isNull(document.clientId)
+            )
+          )
+        : and(eq(document.status, "ACTIVE"), isNull(document.clientId));
+
     const stats = await db
       .select({
         category: document.category,
         count: count(),
       })
       .from(document)
-      .where(eq(document.status, "ACTIVE"))
+      .where(whereClause)
       .groupBy(document.category);
 
     const totalSize = await db
@@ -811,7 +1250,7 @@ export const documentsRouter = {
         total: sql<number>`COALESCE(SUM(${document.fileSize}), 0)`,
       })
       .from(document)
-      .where(eq(document.status, "ACTIVE"));
+      .where(whereClause);
 
     return {
       byCategory: stats.reduce(
@@ -833,18 +1272,32 @@ export const documentsRouter = {
     // Bulk archive documents
     archive: staffProcedure
       .input(z.object({ ids: z.array(z.string()).min(1) }))
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
+        // SECURITY: Validate access to all documents
+        const { accessible, unauthorized } = await validateBulkDocumentAccess(
+          context.staff,
+          input.ids
+        );
+
+        if (unauthorized.length > 0) {
+          throw new ORPCError("FORBIDDEN", {
+            message: `You don't have access to ${unauthorized.length} document(s)`,
+          });
+        }
+
+        if (accessible.length === 0) {
+          return { success: true, count: 0 };
+        }
+
         await db
           .update(document)
           .set({
             status: "ARCHIVED",
             archivedAt: new Date(),
           })
-          .where(
-            sql`${document.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
-          );
+          .where(inArray(document.id, accessible));
 
-        return { success: true, count: input.ids.length };
+        return { success: true, count: accessible.length };
       }),
 
     // Bulk update category
@@ -855,15 +1308,29 @@ export const documentsRouter = {
           category: z.enum(documentCategoryValues),
         })
       )
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
+        // SECURITY: Validate access to all documents
+        const { accessible, unauthorized } = await validateBulkDocumentAccess(
+          context.staff,
+          input.ids
+        );
+
+        if (unauthorized.length > 0) {
+          throw new ORPCError("FORBIDDEN", {
+            message: `You don't have access to ${unauthorized.length} document(s)`,
+          });
+        }
+
+        if (accessible.length === 0) {
+          return { success: true, count: 0 };
+        }
+
         await db
           .update(document)
           .set({ category: input.category })
-          .where(
-            sql`${document.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
-          );
+          .where(inArray(document.id, accessible));
 
-        return { success: true, count: input.ids.length };
+        return { success: true, count: accessible.length };
       }),
 
     // Bulk assign to client
@@ -874,15 +1341,42 @@ export const documentsRouter = {
           clientId: z.string().nullable(),
         })
       )
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
+        // SECURITY: Validate access to all documents
+        const { accessible, unauthorized } = await validateBulkDocumentAccess(
+          context.staff,
+          input.ids
+        );
+
+        if (unauthorized.length > 0) {
+          throw new ORPCError("FORBIDDEN", {
+            message: `You don't have access to ${unauthorized.length} document(s)`,
+          });
+        }
+
+        // SECURITY: Validate access to target client
+        if (input.clientId) {
+          const hasClientAccess = await validateClientAccess(
+            context.staff,
+            input.clientId
+          );
+          if (!hasClientAccess) {
+            throw new ORPCError("FORBIDDEN", {
+              message: "You don't have access to the target client",
+            });
+          }
+        }
+
+        if (accessible.length === 0) {
+          return { success: true, count: 0 };
+        }
+
         await db
           .update(document)
           .set({ clientId: input.clientId })
-          .where(
-            sql`${document.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
-          );
+          .where(inArray(document.id, accessible));
 
-        return { success: true, count: input.ids.length };
+        return { success: true, count: accessible.length };
       }),
 
     // Bulk assign to matter
@@ -893,15 +1387,42 @@ export const documentsRouter = {
           matterId: z.string().nullable(),
         })
       )
-      .handler(async ({ input }) => {
+      .handler(async ({ input, context }) => {
+        // SECURITY: Validate access to all documents
+        const { accessible, unauthorized } = await validateBulkDocumentAccess(
+          context.staff,
+          input.ids
+        );
+
+        if (unauthorized.length > 0) {
+          throw new ORPCError("FORBIDDEN", {
+            message: `You don't have access to ${unauthorized.length} document(s)`,
+          });
+        }
+
+        // SECURITY: Validate access to target matter
+        if (input.matterId) {
+          const hasMatterAccess = await validateMatterAccess(
+            context.staff,
+            input.matterId
+          );
+          if (!hasMatterAccess) {
+            throw new ORPCError("FORBIDDEN", {
+              message: "You don't have access to the target matter",
+            });
+          }
+        }
+
+        if (accessible.length === 0) {
+          return { success: true, count: 0 };
+        }
+
         await db
           .update(document)
           .set({ matterId: input.matterId })
-          .where(
-            sql`${document.id} = ANY(ARRAY[${sql.join(input.ids, sql`, `)}]::text[])`
-          );
+          .where(inArray(document.id, accessible));
 
-        return { success: true, count: input.ids.length };
+        return { success: true, count: accessible.length };
       }),
   },
 };

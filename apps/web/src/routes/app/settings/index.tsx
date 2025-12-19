@@ -1,6 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { Archive, Bell, Calendar, Info, Shield, Sun, User } from "lucide-react";
-import { useState } from "react";
 import { z } from "zod";
 import { PageHeader } from "@/components/layout/page-header";
 import { AboutSettings } from "@/components/settings/about-settings";
@@ -13,7 +16,7 @@ import { SecuritySettings } from "@/components/settings/security-settings";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
-const _searchSchema = z.object({
+const searchSchema = z.object({
   tab: z
     .enum([
       "profile",
@@ -24,11 +27,13 @@ const _searchSchema = z.object({
       "backup",
       "about",
     ])
-    .optional(),
+    .optional()
+    .catch("profile"),
 });
 
 export const Route = createFileRoute("/app/settings/")({
   component: SettingsPage,
+  validateSearch: searchSchema,
 });
 
 type SettingsSection =
@@ -57,8 +62,13 @@ const navItems: NavItem[] = [
 ];
 
 function SettingsPage() {
-  const [activeSection, setActiveSection] =
-    useState<SettingsSection>("profile");
+  const search = useSearch({ from: "/app/settings/" });
+  const navigate = useNavigate({ from: "/app/settings/" });
+  const activeSection = (search.tab || "profile") as SettingsSection;
+
+  const setActiveSection = (section: SettingsSection) => {
+    navigate({ search: { tab: section } });
+  };
 
   const renderSection = () => {
     switch (activeSection) {
@@ -77,7 +87,7 @@ function SettingsPage() {
       case "about":
         return <AboutSettings />;
       default:
-        return null;
+        return <ProfileSettings />;
     }
   };
 
