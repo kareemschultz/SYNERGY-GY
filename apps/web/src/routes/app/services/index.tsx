@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Search, Sparkles } from "lucide-react";
+import { Search, Settings2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { ServiceCard } from "@/components/services/service-card";
@@ -17,10 +17,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app/services/")({
   component: ServicesPage,
 });
+
+const ADMIN_ROLES = ["OWNER", "GCMC_MANAGER", "KAJ_MANAGER"] as const;
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Auto-fix
 function ServicesPage() {
@@ -30,6 +33,23 @@ function ServicesPage() {
     null
   );
   const [page, setPage] = useState(1);
+
+  // Check if user is admin for "Manage" button
+  const { data: staffStatusRaw } = useQuery({
+    queryKey: ["settings", "getStaffStatus"],
+    queryFn: () => client.settings.getStaffStatus(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const staffStatus = unwrapOrpc<{
+    hasStaffProfile: boolean;
+    isActive: boolean;
+    staff: { role: string } | null;
+  }>(staffStatusRaw);
+  const isAdmin =
+    staffStatus?.staff?.role &&
+    ADMIN_ROLES.includes(
+      staffStatus.staff.role as (typeof ADMIN_ROLES)[number]
+    );
 
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
@@ -96,6 +116,16 @@ function ServicesPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        actions={
+          isAdmin ? (
+            <Button asChild variant="outline">
+              <a href="/app/admin/services">
+                <Settings2 className="mr-2 h-4 w-4" />
+                Manage Catalog
+              </a>
+            </Button>
+          ) : null
+        }
         breadcrumbs={[
           { label: "Dashboard", href: "/app" },
           { label: "Services" },
