@@ -6,12 +6,15 @@
  *
  * Usage: DATABASE_URL="..." bun run packages/db/src/seed.ts
  *
- * For individual seeds:
+ * Includes:
+ * - Tags (default tags for clients, matters, documents)
+ * - Service Categories (GCMC & KAJ service structure)
+ * - Knowledge Base (50+ Guyana-specific forms, guides, checklists)
+ *
+ * For individual/additional seeds:
  * - Service Types: bun run packages/db/src/seed-service-types.ts
- * - Knowledge Base: bun run packages/db/src/seed-kb.ts
  * - Document Templates: bun run packages/db/src/seed-document-templates.ts
- * - Service Catalog: bun run packages/db/src/scripts/seed-service-catalog.ts
- * - Tags: bun run packages/db/src/seed-tags.ts
+ * - Service Catalog (full): bun run packages/db/src/scripts/seed-service-catalog.ts
  *
  * Guyana-specific tax rates (hardcoded in calculators):
  * - VAT: 14%
@@ -25,6 +28,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "./index";
 import { serviceCategory } from "./schema/service-catalog";
 import { DEFAULT_TAGS, tag } from "./schema/tags";
+import { seedKnowledgeBase } from "./seed-knowledge-base";
 
 type SeedResult = {
   name: string;
@@ -281,6 +285,10 @@ async function main(): Promise<void> {
   console.log("2️⃣  Seeding service catalog...");
   results.push(await seedServiceCatalog());
 
+  // 3. Knowledge Base (comprehensive Guyana-specific content)
+  console.log("3️⃣  Seeding knowledge base...");
+  await seedKnowledgeBase();
+
   // Display results
   console.log("\n📋 Seed Results:");
   console.log("─".repeat(50));
@@ -305,9 +313,6 @@ async function main(): Promise<void> {
   console.log("\n📝 Additional Seeds Available:");
   console.log(
     "   bun run packages/db/src/seed-service-types.ts  - Legacy service types"
-  );
-  console.log(
-    "   bun run packages/db/src/seed-kb.ts             - Knowledge base items"
   );
   console.log(
     "   bun run packages/db/src/seed-document-templates.ts - Document templates"

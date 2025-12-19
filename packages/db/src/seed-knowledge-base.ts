@@ -2781,10 +2781,16 @@ async function seedKnowledgeBase() {
   console.log(`${"=".repeat(50)}\n`);
 }
 
-// Run the seed
-seedKnowledgeBase()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error("❌ Seed failed:", error);
-    process.exit(1);
-  });
+// Export for use in unified seed script
+export { seedKnowledgeBase };
+
+// Run directly if this script is executed
+const isDirectRun = import.meta.url === `file://${process.argv[1]}`;
+if (isDirectRun) {
+  seedKnowledgeBase()
+    .then(() => process.exit(0))
+    .catch((error) => {
+      console.error("❌ Seed failed:", error);
+      process.exit(1);
+    });
+}
