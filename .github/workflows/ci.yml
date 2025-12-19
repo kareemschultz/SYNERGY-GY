@@ -167,10 +167,10 @@ jobs:
 
       - name: Start container for health check
         run: |
+          # Use --network host on Linux CI to access the PostgreSQL service on localhost
           docker run -d --name gk-nexus-test \
-            --add-host=host.docker.internal:host-gateway \
-            -p 3000:3000 \
-            -e DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:5432/synergy_test \
+            --network host \
+            -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/synergy_test \
             -e BETTER_AUTH_SECRET=test-secret-for-ci-verification-only-minimum-32-chars \
             -e BETTER_AUTH_URL=http://localhost:3000 \
             -e CORS_ORIGIN=http://localhost:3001 \
