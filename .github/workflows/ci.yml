@@ -163,7 +163,8 @@ jobs:
       - name: Push database schema
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/synergy_test
-        run: bun run db:push
+        working-directory: packages/db
+        run: bunx drizzle-kit push
 
       - name: Start container for health check
         run: |
