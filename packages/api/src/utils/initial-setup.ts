@@ -187,12 +187,10 @@ async function handleBootstrapToken(
     )
     .limit(1);
 
-  if (existingToken.length > 0) {
+  const validToken = existingToken[0];
+  if (validToken) {
     console.log("[Setup] ℹ️  A valid bootstrap token already exists");
-    console.log(
-      "[Setup]    Expires:",
-      existingToken[0].expiresAt.toISOString()
-    );
+    console.log("[Setup]    Expires:", validToken.expiresAt.toISOString());
     console.log("[Setup]");
     console.log(
       "[Setup] Use the existing token to create the first OWNER account"
