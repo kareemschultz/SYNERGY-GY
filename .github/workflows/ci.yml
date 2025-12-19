@@ -100,6 +100,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
 
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: synergy_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -137,11 +152,25 @@ jobs:
             echo "⚠️ Warning: Image size ($SIZE_MB MB) exceeds 300MB target"
           fi
 
+      - name: Setup Bun for migrations
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: '1.2'
+
+      - name: Install dependencies for migrations
+        run: bun install --frozen-lockfile
+
+      - name: Push database schema
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/synergy_test
+        run: bun run db:push
+
       - name: Start container for health check
         run: |
           docker run -d --name gk-nexus-test \
+            --add-host=host.docker.internal:host-gateway \
             -p 3000:3000 \
-            -e DATABASE_URL=postgresql://test:test@localhost:5432/test \
+            -e DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:5432/synergy_test \
             -e BETTER_AUTH_SECRET=test-secret-for-ci-verification-only-minimum-32-chars \
             -e BETTER_AUTH_URL=http://localhost:3000 \
             -e CORS_ORIGIN=http://localhost:3001 \
