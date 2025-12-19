@@ -1,17 +1,13 @@
 import { backupSchedule, db, systemBackup } from "@SYNERGY-GY/db";
-import { exec } from "node:child_process";
 import { existsSync } from "node:fs";
 import { readdir, stat, unlink } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
 import { ORPCError } from "@orpc/server";
 import type { SQL } from "drizzle-orm";
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure } from "../index";
-
-const execAsync = promisify(exec);
 
 // Get absolute path to project root (from packages/api/src/routers/)
 const __filename = fileURLToPath(import.meta.url);
@@ -20,14 +16,6 @@ const PROJECT_ROOT = resolve(__dirname, "../../../../..");
 
 // Configuration - use absolute paths to avoid working directory issues
 const BACKUP_DIR = process.env.BACKUP_DIR || join(PROJECT_ROOT, "backups");
-const SCRIPTS_DIR = process.env.SCRIPTS_DIR || join(PROJECT_ROOT, "scripts");
-
-// Top-level regex patterns for backup output parsing (performance: avoid creating in loops)
-const ARCHIVE_REGEX = /Archive:\s*(.+\.(?:tar\.gz|zip))/;
-const SHA256_REGEX = /SHA256:\s*(\w+)/;
-const TABLES_REGEX = /Tables:\s*(\d+)/;
-const RECORDS_REGEX = /Records:\s*(\d+)/;
-const FILES_REGEX = /Files:\s*(\d+)/;
 
 // Zod schemas
 const createBackupSchema = z.object({
@@ -167,7 +155,7 @@ async function listBackupFiles(): Promise<
 }
 
 export const backupRouter = {
-  // Create a new backup
+  // Create a new backup using Node.js utility (Docker-compatible)
   create: adminProcedure
     .input(createBackupSchema)
     .handler(async ({ input, context }) => {
@@ -198,62 +186,27 @@ export const backupRouter = {
       }
 
       try {
-        // Execute backup script
-        const scriptPath = join(SCRIPTS_DIR, "backup.sh");
-        if (!existsSync(scriptPath)) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", {
-            message: "Backup script not found",
-          });
-        }
-
-        const { stdout } = await execAsync(
-          `bash "${scriptPath}" "${backupName}"`,
-          { cwd: process.cwd(), timeout: 300_000 } // 5 minute timeout
+        // Use Node.js backup utility (works inside Docker)
+        const { createBackup: runBackup } = await import(
+          "../utils/backup-utility"
         );
+        const result = await runBackup(backupName);
 
-        // Parse output for file path
-        const outputLines = stdout.split("\n");
-        const archiveLine = outputLines.find((line) =>
-          line.includes("Archive:")
-        );
-        const filePath = archiveLine?.match(ARCHIVE_REGEX)?.[1];
-
-        // Get file info
-        let fileSize = 0;
-        let checksum = "";
-        if (filePath && existsSync(filePath)) {
-          const stats = await stat(filePath);
-          fileSize = stats.size;
-
-          // Get checksum from output
-          const checksumLine = outputLines.find((line) =>
-            line.includes("SHA256:")
-          );
-          checksum = checksumLine?.match(SHA256_REGEX)?.[1] || "";
+        if (!result.success) {
+          throw new Error(result.error || "Backup failed");
         }
-
-        // Parse manifest for stats (from stdout)
-        const tablesMatch = stdout.match(TABLES_REGEX);
-        const recordsMatch = stdout.match(RECORDS_REGEX);
-        const filesMatch = stdout.match(FILES_REGEX);
 
         // Update backup record with success
         const [updated] = await db
           .update(systemBackup)
           .set({
             status: "completed",
-            filePath,
-            fileSize,
-            checksum,
-            tableCount: tablesMatch?.[1]
-              ? Number.parseInt(tablesMatch[1], 10)
-              : null,
-            recordCount: recordsMatch?.[1]
-              ? Number.parseInt(recordsMatch[1], 10)
-              : null,
-            uploadedFilesCount: filesMatch?.[1]
-              ? Number.parseInt(filesMatch[1], 10)
-              : null,
+            filePath: result.archivePath,
+            fileSize: result.fileSize,
+            checksum: result.checksum,
+            tableCount: result.tableCount,
+            recordCount: result.recordCount,
+            uploadedFilesCount: result.uploadedFilesCount,
             completedAt: new Date(),
           })
           .where(eq(systemBackup.id, backup.id))
@@ -263,7 +216,9 @@ export const backupRouter = {
           success: true,
           backup: {
             ...updated,
-            fileSizeFormatted: formatFileSize(fileSize),
+            fileSizeFormatted: result.fileSize
+              ? formatFileSize(result.fileSize)
+              : null,
           },
         };
       } catch (error) {
@@ -435,33 +390,13 @@ export const backupRouter = {
         });
       }
 
-      try {
-        // Execute restore script
-        const scriptPath = join(SCRIPTS_DIR, "restore.sh");
-        if (!existsSync(scriptPath)) {
-          throw new ORPCError("INTERNAL_SERVER_ERROR", {
-            message: "Restore script not found",
-          });
-        }
-
-        const skipFlag = input.skipMigrations ? "--skip-migrations" : "";
-        const { stdout } = await execAsync(
-          `bash "${scriptPath}" "${backup.filePath}" --force ${skipFlag}`,
-          { cwd: process.cwd(), timeout: 600_000 } // 10 minute timeout
-        );
-
-        return {
-          success: true,
-          message: "Restore completed successfully",
-          output: stdout,
-        };
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        throw new ORPCError("INTERNAL_SERVER_ERROR", {
-          message: `Restore failed: ${errorMessage}`,
-        });
-      }
+      // Note: Full restore functionality requires manual intervention
+      // The backup is a compressed JSON file that can be decompressed and used to restore data
+      // TODO: Implement automated restore with proper foreign key handling
+      throw new ORPCError("NOT_IMPLEMENTED", {
+        message:
+          "Automated restore is not yet implemented. Please decompress the backup file and restore manually using the JSON data.",
+      });
     }),
 
   // Get backup statistics
