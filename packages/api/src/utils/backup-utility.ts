@@ -16,15 +16,20 @@ import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 import { createGzip } from "node:zlib";
 
-// Get absolute path to project root
+// Get absolute path to project root (4 levels up from packages/api/src/utils/)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const PROJECT_ROOT = resolve(__dirname, "../../../../..");
+const PROJECT_ROOT = resolve(__dirname, "../../../..");
 
 // Configuration
-const BACKUP_DIR = process.env.BACKUP_DIR || join(PROJECT_ROOT, "backups");
+// In Docker, backups mount at /app/backups; locally, use project root/backups
+const isDocker = existsSync("/app/backups") || existsSync("/.dockerenv");
+const BACKUP_DIR =
+  process.env.BACKUP_DIR ||
+  (isDocker ? "/app/backups" : join(PROJECT_ROOT, "backups"));
 const UPLOADS_DIR =
-  process.env.UPLOADS_DIR || join(PROJECT_ROOT, "data/uploads");
+  process.env.UPLOADS_DIR ||
+  (isDocker ? "/app/data/uploads" : join(PROJECT_ROOT, "data/uploads"));
 
 // Ensure backup directory exists
 if (!existsSync(BACKUP_DIR)) {
