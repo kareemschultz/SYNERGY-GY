@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Download, FileText, Search, Sparkles } from "lucide-react";
+import { Download, FileText, Search, Settings2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
@@ -31,11 +31,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { orpc } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app/knowledge-base/")({
   component: KnowledgeBasePage,
 });
+
+const ADMIN_ROLES = ["OWNER", "GCMC_MANAGER", "KAJ_MANAGER"] as const;
 
 function KnowledgeBasePage() {
   const [search, setSearch] = useState("");
@@ -43,6 +46,23 @@ function KnowledgeBasePage() {
   const [category, setCategory] = useState<string>("ALL");
   const [business, setBusiness] = useState<string>("ALL");
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+
+  // Check if user is admin for "Manage" button
+  const { data: staffStatusRaw } = useQuery({
+    queryKey: ["settings", "getStaffStatus"],
+    queryFn: () => client.settings.getStaffStatus(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const staffStatus = unwrapOrpc<{
+    hasStaffProfile: boolean;
+    isActive: boolean;
+    staff: { role: string } | null;
+  }>(staffStatusRaw);
+  const isAdmin =
+    staffStatus?.staff?.role &&
+    ADMIN_ROLES.includes(
+      staffStatus.staff.role as (typeof ADMIN_ROLES)[number]
+    );
 
   const { data, isLoading } = useQuery(
     orpc.knowledgeBase.list.queryOptions({
@@ -177,6 +197,16 @@ function KnowledgeBasePage() {
   return (
     <div className="flex h-full flex-col">
       <PageHeader
+        actions={
+          isAdmin ? (
+            <Button asChild variant="outline">
+              <a href="/app/admin/knowledge-base">
+                <Settings2 className="mr-2 h-4 w-4" />
+                Manage Resources
+              </a>
+            </Button>
+          ) : null
+        }
         breadcrumbs={[
           { label: "Dashboard", href: "/app" },
           { label: "Knowledge Base" },

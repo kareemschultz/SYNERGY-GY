@@ -45,13 +45,12 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || "./data/uploads";
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 // Rate limiting configuration
-// Auth endpoints: Strict limits to prevent brute force (5 req/min)
+// Auth endpoints: Reasonable limit (30 req/min) - covers session checks, sign-out, etc.
 const authRateLimiter = rateLimiter({
   windowMs: 60 * 1000, // 1 minute
-  limit: 5, // 5 requests per minute
+  limit: 30, // 30 requests per minute (was 5 - too strict for get-session calls)
   standardHeaders: "draft-6",
   keyGenerator: (c) => {
-    // Use IP address as key - in production, consider using X-Forwarded-For behind a proxy
     const forwarded = c.req.header("x-forwarded-for");
     const ip =
       forwarded?.split(",")[0]?.trim() ||
@@ -61,6 +60,24 @@ const authRateLimiter = rateLimiter({
   },
   message: {
     error: "Too many authentication attempts. Please try again later.",
+  },
+});
+
+// Login/Signup: Stricter limit to prevent brute force (10 req/min)
+const loginRateLimiter = rateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 10, // 10 login attempts per minute
+  standardHeaders: "draft-6",
+  keyGenerator: (c) => {
+    const forwarded = c.req.header("x-forwarded-for");
+    const ip =
+      forwarded?.split(",")[0]?.trim() ||
+      c.req.header("x-real-ip") ||
+      "unknown";
+    return `login:${ip}`;
+  },
+  message: {
+    error: "Too many login attempts. Please try again in a minute.",
   },
 });
 
@@ -231,8 +248,12 @@ app.use(
   })
 );
 
-// Rate limiting - Auth endpoints (strict: 5 req/min to prevent brute force)
+// Rate limiting - Auth endpoints (30 req/min for session checks, sign-out, etc.)
 app.use("/api/auth/*", authRateLimiter);
+
+// Rate limiting - Login/Signup (stricter: 10 req/min to prevent brute force)
+app.use("/api/auth/sign-in/*", loginRateLimiter);
+app.use("/api/auth/sign-up/*", loginRateLimiter);
 
 // Signup protection middleware - validates invite tokens before allowing registration
 // This MUST run before the auth handler to intercept signup requests
