@@ -9,9 +9,14 @@
     }
   },
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
   "devDependencies": {
-    "@SYNERGY-GY/config": "workspace:*"
+    "@SYNERGY-GY/config": "workspace:*",
+    "vitest": "^3.2.3"
   },
   "peerDependencies": {
     "typescript": "^5"

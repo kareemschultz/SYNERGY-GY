@@ -662,11 +662,31 @@ export const timeTrackingRouter = {
    */
   getHourlyRates: staffProcedure
     .input(z.object({ staffId: z.string() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Staff can only view their own rates
+      // unless they have manager/admin access to at least one business
+      const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+      const isOwnRates = input.staffId === context.staff.id;
+      const isManager =
+        context.staff.role === "OWNER" ||
+        context.staff.role === "GCMC_MANAGER" ||
+        context.staff.role === "KAJ_MANAGER";
+
+      if (!(isOwnRates || isManager)) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You can only view your own hourly rates",
+        });
+      }
+
       const rates = await db.query.staffHourlyRate.findMany({
         where: eq(staffHourlyRate.staffId, input.staffId),
         orderBy: [desc(staffHourlyRate.effectiveFrom)],
       });
+
+      // If not own rates, filter to only accessible businesses
+      if (!isOwnRates) {
+        return rates.filter((r) => accessibleBusinesses.includes(r.business));
+      }
 
       return rates;
     }),

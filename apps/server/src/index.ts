@@ -1,6 +1,7 @@
 /// <reference types="bun-types" />
 import "dotenv/config";
 import { createContext } from "@SYNERGY-GY/api/context";
+import { getAccessibleBusinesses } from "@SYNERGY-GY/api/index";
 import { appRouter } from "@SYNERGY-GY/api/routers/index";
 import { startBackupScheduler } from "@SYNERGY-GY/api/utils/backup-scheduler";
 import { runInitialSetup } from "@SYNERGY-GY/api/utils/initial-setup";
@@ -8,6 +9,7 @@ import { signupProtectionMiddleware } from "@SYNERGY-GY/api/utils/signup-protect
 import { auth } from "@SYNERGY-GY/auth";
 import {
   and,
+  client,
   db,
   document as documentTable,
   eq,
@@ -15,6 +17,7 @@ import {
   portalDocumentUpload,
   portalSession,
   portalUser,
+  staff,
 } from "@SYNERGY-GY/db";
 import { createReadStream, existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -29,6 +32,7 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 import { stream } from "hono/streaming";
+import { rateLimiter } from "hono-rate-limiter";
 
 // Run initial setup to create first owner account (if needed)
 await runInitialSetup();
@@ -39,6 +43,58 @@ startBackupScheduler();
 // Storage configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./data/uploads";
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+// Rate limiting configuration
+// Auth endpoints: Strict limits to prevent brute force (5 req/min)
+const authRateLimiter = rateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 5, // 5 requests per minute
+  standardHeaders: "draft-6",
+  keyGenerator: (c) => {
+    // Use IP address as key - in production, consider using X-Forwarded-For behind a proxy
+    const forwarded = c.req.header("x-forwarded-for");
+    const ip =
+      forwarded?.split(",")[0]?.trim() ||
+      c.req.header("x-real-ip") ||
+      "unknown";
+    return `auth:${ip}`;
+  },
+  message: {
+    error: "Too many authentication attempts. Please try again later.",
+  },
+});
+
+// API endpoints: Moderate limits (100 req/min)
+const apiRateLimiter = rateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 100, // 100 requests per minute
+  standardHeaders: "draft-6",
+  keyGenerator: (c) => {
+    const forwarded = c.req.header("x-forwarded-for");
+    const ip =
+      forwarded?.split(",")[0]?.trim() ||
+      c.req.header("x-real-ip") ||
+      "unknown";
+    return `api:${ip}`;
+  },
+  message: { error: "Too many requests. Please slow down." },
+});
+
+// File upload: Strict limits (10 req/min)
+const uploadRateLimiter = rateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 10, // 10 uploads per minute
+  standardHeaders: "draft-6",
+  keyGenerator: (c) => {
+    const forwarded = c.req.header("x-forwarded-for");
+    const ip =
+      forwarded?.split(",")[0]?.trim() ||
+      c.req.header("x-real-ip") ||
+      "unknown";
+    return `upload:${ip}`;
+  },
+  message: { error: "Too many upload attempts. Please try again later." },
+});
 
 // Regex patterns (module-level for performance)
 const PORTAL_SESSION_REGEX = /portal_session=([^;]+)/;
@@ -60,6 +116,58 @@ const ALLOWED_MIME_TYPES = new Set([
   "text/plain",
   "text/csv",
 ]);
+
+type Business = "GCMC" | "KAJ";
+
+/**
+ * Validate that a user has business access to a document
+ * Returns null if access is granted, or an error message if denied
+ */
+async function validateDocumentBusinessAccess(
+  userId: string,
+  clientId: string | null
+): Promise<string | null> {
+  // Documents without a client are accessible to all authenticated staff
+  if (!clientId) {
+    return null;
+  }
+
+  // Get user's staff profile
+  const staffProfile = await db.query.staff.findFirst({
+    where: eq(staff.userId, userId),
+  });
+
+  if (!staffProfile) {
+    return "Staff profile not found";
+  }
+
+  // Get accessible businesses
+  const accessibleBusinesses = getAccessibleBusinesses(staffProfile);
+  if (accessibleBusinesses.length === 0) {
+    return "No accessible businesses";
+  }
+
+  // Get client's businesses
+  const clientRecord = await db.query.client.findFirst({
+    where: eq(client.id, clientId),
+    columns: { businesses: true },
+  });
+
+  if (!clientRecord) {
+    return "Client not found";
+  }
+
+  // Check if staff has access to at least one of the client's businesses
+  const hasAccess = clientRecord.businesses.some((b) =>
+    accessibleBusinesses.includes(b as Business)
+  );
+
+  if (!hasAccess) {
+    return "You don't have access to this document";
+  }
+
+  return null;
+}
 
 // Validate CORS_ORIGIN in production
 const CORS_ORIGIN = process.env.CORS_ORIGIN;
@@ -123,11 +231,21 @@ app.use(
   })
 );
 
+// Rate limiting - Auth endpoints (strict: 5 req/min to prevent brute force)
+app.use("/api/auth/*", authRateLimiter);
+
 // Signup protection middleware - validates invite tokens before allowing registration
 // This MUST run before the auth handler to intercept signup requests
 app.use("/api/auth/*", signupProtectionMiddleware());
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+
+// Rate limiting - File uploads (strict: 10 req/min)
+app.use("/api/upload/*", uploadRateLimiter);
+app.use("/api/portal-upload/*", uploadRateLimiter);
+
+// Rate limiting - RPC/API endpoints (moderate: 100 req/min)
+app.use("/rpc/*", apiRateLimiter);
 
 // File upload handler
 app.post("/api/upload/:documentId", async (c) => {
@@ -150,6 +268,15 @@ app.post("/api/upload/:documentId", async (c) => {
 
   if (doc.status !== "PENDING") {
     return c.json({ error: "Document already uploaded" }, 400);
+  }
+
+  // SECURITY: Validate business access to document
+  const accessError = await validateDocumentBusinessAccess(
+    session.user.id,
+    doc.clientId
+  );
+  if (accessError) {
+    return c.json({ error: accessError }, 403);
   }
 
   // Parse multipart form data
@@ -391,6 +518,15 @@ app.get("/api/download/:documentId", async (c) => {
 
   if (doc.status !== "ACTIVE") {
     return c.json({ error: "Document not available" }, 404);
+  }
+
+  // SECURITY: Validate business access to document
+  const accessError = await validateDocumentBusinessAccess(
+    session.user.id,
+    doc.clientId
+  );
+  if (accessError) {
+    return c.json({ error: accessError }, 403);
   }
 
   // Check file exists

@@ -10,17 +10,18 @@
     "start": "bun run dist/index.js"
   },
   "dependencies": {
-    "hono": "catalog:",
-    "@orpc/server": "catalog:",
+    "@SYNERGY-GY/api": "workspace:*",
+    "@SYNERGY-GY/auth": "workspace:*",
+    "@SYNERGY-GY/db": "workspace:*",
     "@orpc/openapi": "catalog:",
+    "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.0",
-    "zod": "catalog:",
-    "@SYNERGY-GY/api": "workspace:*",
-    "@SYNERGY-GY/auth": "workspace:*",
-    "@SYNERGY-GY/db": "workspace:*"
+    "hono": "catalog:",
+    "hono-rate-limiter": "^0.5.1",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@SYNERGY-GY/config": "workspace:*",

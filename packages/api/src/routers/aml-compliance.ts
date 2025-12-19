@@ -2,12 +2,87 @@ import { client, clientAmlAssessment, db, staff } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
 import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
-import { adminProcedure, staffProcedure } from "../index";
+import {
+  adminProcedure,
+  getAccessibleBusinesses,
+  type Staff,
+  staffProcedure,
+} from "../index";
 import {
   calculateNextReviewDate,
   calculateRiskScore,
   type RiskScoreInput,
 } from "../utils/risk-scoring";
+
+// Business filtering helper type
+type Business = "GCMC" | "KAJ";
+
+/**
+ * Validate that staff can access a client's business
+ */
+async function validateClientAccess(
+  staffRecord: Staff | null,
+  clientId: string
+): Promise<boolean> {
+  const accessibleBusinesses = getAccessibleBusinesses(staffRecord);
+  if (accessibleBusinesses.length === 0) {
+    return false;
+  }
+
+  const clientRecord = await db.query.client.findFirst({
+    where: eq(client.id, clientId),
+    columns: { businesses: true },
+  });
+
+  if (!clientRecord) {
+    return false;
+  }
+
+  return clientRecord.businesses.some((b) =>
+    accessibleBusinesses.includes(b as Business)
+  );
+}
+
+/**
+ * Validate that staff can access an AML assessment (via client)
+ */
+async function validateAssessmentAccess(
+  staffRecord: Staff | null,
+  assessmentId: string
+): Promise<boolean> {
+  const assessment = await db.query.clientAmlAssessment.findFirst({
+    where: eq(clientAmlAssessment.id, assessmentId),
+    columns: { clientId: true },
+  });
+
+  if (!assessment) {
+    return false;
+  }
+
+  return validateClientAccess(staffRecord, assessment.clientId);
+}
+
+/**
+ * Get client IDs accessible to staff based on business assignments
+ */
+async function getAccessibleClientIds(
+  staffRecord: Staff | null
+): Promise<string[]> {
+  const accessibleBusinesses = getAccessibleBusinesses(staffRecord);
+  if (accessibleBusinesses.length === 0) {
+    return [];
+  }
+
+  const clients = await db.query.client.findMany({
+    columns: { id: true, businesses: true },
+  });
+
+  return clients
+    .filter((c) =>
+      c.businesses.some((b) => accessibleBusinesses.includes(b as Business))
+    )
+    .map((c) => c.id);
+}
 
 // Enum values
 const riskRatingValues = ["LOW", "MEDIUM", "HIGH", "PROHIBITED"] as const;
@@ -113,6 +188,17 @@ export const amlComplianceRouter = {
   createAssessment: staffProcedure
     .input(createAssessmentSchema)
     .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access
+      const hasAccess = await validateClientAccess(
+        context.staff,
+        input.clientId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
+
       // Verify client exists
       const clientExists = await db.query.client.findFirst({
         where: eq(client.id, input.clientId),
@@ -205,7 +291,18 @@ export const amlComplianceRouter = {
    */
   getAssessment: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access
+      const hasAccess = await validateClientAccess(
+        context.staff,
+        input.clientId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
+
       const assessment = await db.query.clientAmlAssessment.findFirst({
         where: eq(clientAmlAssessment.clientId, input.clientId),
         orderBy: desc(clientAmlAssessment.assessmentDate),
@@ -224,7 +321,18 @@ export const amlComplianceRouter = {
    */
   getAssessmentHistory: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access
+      const hasAccess = await validateClientAccess(
+        context.staff,
+        input.clientId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
+
       const assessments = await db.query.clientAmlAssessment.findMany({
         where: eq(clientAmlAssessment.clientId, input.clientId),
         orderBy: desc(clientAmlAssessment.assessmentDate),
@@ -243,6 +351,14 @@ export const amlComplianceRouter = {
   approveAssessment: adminProcedure
     .input(approveAssessmentSchema)
     .handler(async ({ input, context }) => {
+      // SECURITY: Validate assessment access via client
+      const hasAccess = await validateAssessmentAccess(context.staff, input.id);
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this assessment",
+        });
+      }
+
       const existing = await db.query.clientAmlAssessment.findFirst({
         where: eq(clientAmlAssessment.id, input.id),
       });
@@ -290,34 +406,48 @@ export const amlComplianceRouter = {
    */
   getPendingReviews: adminProcedure
     .input(listPendingReviewsSchema)
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Get accessible client IDs for business filtering
+      const accessibleClientIds = await getAccessibleClientIds(context.staff);
+      if (accessibleClientIds.length === 0) {
+        return {
+          assessments: [],
+          pagination: {
+            page: input.page,
+            limit: input.limit,
+            total: 0,
+            totalPages: 0,
+          },
+        };
+      }
+
       const offset = (input.page - 1) * input.limit;
 
-      const where = input.riskRating
-        ? and(
-            eq(clientAmlAssessment.status, "PENDING"),
-            eq(clientAmlAssessment.riskRating, input.riskRating)
-          )
-        : eq(clientAmlAssessment.status, "PENDING");
+      // Fetch pending assessments
+      const allAssessments = await db.query.clientAmlAssessment.findMany({
+        where: input.riskRating
+          ? and(
+              eq(clientAmlAssessment.status, "PENDING"),
+              eq(clientAmlAssessment.riskRating, input.riskRating)
+            )
+          : eq(clientAmlAssessment.status, "PENDING"),
+        orderBy: desc(clientAmlAssessment.assessmentDate),
+        with: {
+          client: true,
+          assessedBy: true,
+        },
+      });
 
-      const [assessments, countResult] = await Promise.all([
-        db.query.clientAmlAssessment.findMany({
-          where,
-          orderBy: desc(clientAmlAssessment.assessmentDate),
-          limit: input.limit,
-          offset,
-          with: {
-            client: true,
-            assessedBy: true,
-          },
-        }),
-        db
-          .select({ count: db.$count(clientAmlAssessment.id) })
-          .from(clientAmlAssessment)
-          .where(where),
-      ]);
+      // Filter to only accessible clients
+      const filteredAssessments = allAssessments.filter((a) =>
+        accessibleClientIds.includes(a.clientId)
+      );
 
-      const totalCount = countResult[0]?.count ?? 0;
+      const totalCount = filteredAssessments.length;
+      const assessments = filteredAssessments.slice(
+        offset,
+        offset + input.limit
+      );
 
       return {
         assessments,
@@ -339,7 +469,13 @@ export const amlComplianceRouter = {
         daysAhead: z.number().min(1).max(365).default(30),
       })
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Get accessible client IDs for business filtering
+      const accessibleClientIds = await getAccessibleClientIds(context.staff);
+      if (accessibleClientIds.length === 0) {
+        return [];
+      }
+
       const today = new Date();
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + input.daysAhead);
@@ -358,7 +494,10 @@ export const amlComplianceRouter = {
         },
       });
 
-      return assessments;
+      // Filter to only accessible clients
+      return assessments.filter((a) =>
+        accessibleClientIds.includes(a.clientId)
+      );
     }),
 
   /**
@@ -367,7 +506,18 @@ export const amlComplianceRouter = {
    */
   screenSanctions: staffProcedure
     .input(z.object({ clientId: z.string().uuid() }))
-    .handler(async ({ input }) => {
+    .handler(async ({ input, context }) => {
+      // SECURITY: Validate client access
+      const hasAccess = await validateClientAccess(
+        context.staff,
+        input.clientId
+      );
+      if (!hasAccess) {
+        throw new ORPCError("FORBIDDEN", {
+          message: "You don't have access to this client",
+        });
+      }
+
       const clientRecord = await db.query.client.findFirst({
         where: eq(client.id, input.clientId),
       });
