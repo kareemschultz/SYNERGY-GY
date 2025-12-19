@@ -266,6 +266,14 @@ export const reportsRouter = {
 
         case "MATTER_STATUS": {
           // Matter Status Report
+          const matterConditions = [
+            sql`${matter.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`,
+          ];
+
+          if (input.filters?.clientId) {
+            matterConditions.push(eq(matter.clientId, input.filters.clientId));
+          }
+
           const mattersData = await db
             .select({
               status: matter.status,
@@ -273,9 +281,7 @@ export const reportsRouter = {
               count: count(),
             })
             .from(matter)
-            .where(
-              sql`${matter.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
-            )
+            .where(and(...matterConditions))
             .groupBy(matter.status, matter.business);
 
           columns = [
@@ -313,6 +319,11 @@ export const reportsRouter = {
             ),
           ];
 
+          if (input.filters?.clientId) {
+            invoiceConditions.push(
+              eq(invoice.clientId, input.filters.clientId)
+            );
+          }
           if (input.filters?.fromDate) {
             invoiceConditions.push(
               gte(invoice.invoiceDate, input.filters.fromDate)
@@ -373,6 +384,10 @@ export const reportsRouter = {
             or(eq(invoice.status, "SENT"), eq(invoice.status, "OVERDUE")),
             sql`CAST(${invoice.amountDue} AS DECIMAL) > 0`,
           ];
+
+          if (input.filters?.clientId) {
+            arConditions.push(eq(invoice.clientId, input.filters.clientId));
+          }
 
           const arData = await db
             .select({
@@ -455,6 +470,9 @@ export const reportsRouter = {
             sql`${invoice.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`,
           ];
 
+          if (input.filters?.clientId) {
+            invConditions.push(eq(invoice.clientId, input.filters.clientId));
+          }
           if (input.filters?.fromDate) {
             invConditions.push(
               gte(invoice.invoiceDate, input.filters.fromDate)
@@ -534,6 +552,11 @@ export const reportsRouter = {
             sql`${deadline.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`,
           ];
 
+          if (input.filters?.clientId) {
+            deadlineConditions.push(
+              eq(deadline.clientId, input.filters.clientId)
+            );
+          }
           if (input.filters?.fromDate) {
             deadlineConditions.push(
               gte(deadline.dueDate, new Date(input.filters.fromDate))
@@ -808,6 +831,16 @@ export const reportsRouter = {
         }
 
         case "MATTER_STATUS": {
+          const exportMatterConditions = [
+            sql`${matter.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`,
+          ];
+
+          if (input.filters?.clientId) {
+            exportMatterConditions.push(
+              eq(matter.clientId, input.filters.clientId)
+            );
+          }
+
           const mattersData = await db
             .select({
               status: matter.status,
@@ -815,9 +848,7 @@ export const reportsRouter = {
               count: count(),
             })
             .from(matter)
-            .where(
-              sql`${matter.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
-            )
+            .where(and(...exportMatterConditions))
             .groupBy(matter.status, matter.business);
 
           columns = [
@@ -843,6 +874,11 @@ export const reportsRouter = {
             ),
           ];
 
+          if (input.filters?.clientId) {
+            invoiceConditions.push(
+              eq(invoice.clientId, input.filters.clientId)
+            );
+          }
           if (input.filters?.fromDate) {
             invoiceConditions.push(
               gte(invoice.invoiceDate, input.filters.fromDate)
@@ -890,6 +926,10 @@ export const reportsRouter = {
             or(eq(invoice.status, "SENT"), eq(invoice.status, "OVERDUE")),
             sql`CAST(${invoice.amountDue} AS DECIMAL) > 0`,
           ];
+
+          if (input.filters?.clientId) {
+            arConditions.push(eq(invoice.clientId, input.filters.clientId));
+          }
 
           const arData = await db
             .select({
@@ -956,6 +996,9 @@ export const reportsRouter = {
             sql`${invoice.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`,
           ];
 
+          if (input.filters?.clientId) {
+            invConditions.push(eq(invoice.clientId, input.filters.clientId));
+          }
           if (input.filters?.fromDate) {
             invConditions.push(
               gte(invoice.invoiceDate, input.filters.fromDate)
@@ -1016,6 +1059,11 @@ export const reportsRouter = {
             sql`${deadline.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`,
           ];
 
+          if (input.filters?.clientId) {
+            deadlineConditions.push(
+              eq(deadline.clientId, input.filters.clientId)
+            );
+          }
           if (input.filters?.fromDate) {
             deadlineConditions.push(
               gte(deadline.dueDate, new Date(input.filters.fromDate))

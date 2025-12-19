@@ -69,6 +69,7 @@ const categoryColors: Record<string, string> = {
 
 type ReportFilters = {
   business?: "GCMC" | "KAJ";
+  clientId?: string;
   fromDate?: string;
   toDate?: string;
 };
@@ -118,6 +119,18 @@ function ReportsPage() {
   const { data: categoriesData } = useQuery({
     queryKey: ["report-categories"],
     queryFn: () => client.reports.categories(),
+  });
+
+  // Fetch clients for filter dropdown
+  const { data: clientsData } = useQuery({
+    queryKey: ["clients-for-filter"],
+    queryFn: () =>
+      client.clients.list({
+        page: 1,
+        limit: 200,
+        sortBy: "displayName",
+        sortOrder: "asc",
+      }),
   });
 
   // Execute report mutation
@@ -526,20 +539,27 @@ function ReportsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Format</Label>
+                    <Label>Client (Optional)</Label>
                     <Select
-                      onValueChange={(value) =>
-                        setFormat(value as "PDF" | "EXCEL" | "CSV")
-                      }
-                      value={format}
+                      onValueChange={(value) => {
+                        if (value === "all") {
+                          setFilters({ ...filters, clientId: undefined });
+                        } else {
+                          setFilters({ ...filters, clientId: value });
+                        }
+                      }}
+                      value={filters.clientId || "all"}
                     >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="All Clients" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="PDF">PDF</SelectItem>
-                        <SelectItem value="EXCEL">Excel</SelectItem>
-                        <SelectItem value="CSV">CSV</SelectItem>
+                        <SelectItem value="all">All Clients</SelectItem>
+                        {clientsData?.clients.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.displayName}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -564,6 +584,25 @@ function ReportsPage() {
                       type="date"
                       value={filters.toDate || ""}
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Export Format</Label>
+                    <Select
+                      onValueChange={(value) =>
+                        setFormat(value as "PDF" | "EXCEL" | "CSV")
+                      }
+                      value={format}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PDF">PDF</SelectItem>
+                        <SelectItem value="EXCEL">Excel</SelectItem>
+                        <SelectItem value="CSV">CSV</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
