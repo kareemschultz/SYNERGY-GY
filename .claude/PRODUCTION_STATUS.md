@@ -2,9 +2,18 @@
 
 ## Last Deployment
 - **Date**: 2025-12-19
-- **Commit**: 632af5f (fix(ci): run drizzle-kit directly to ensure DATABASE_URL is passed)
+- **Commit**: bd3dbc1 (feat: add unified deployment script)
 - **Status**: Deployed Successfully
 - **GHCR Image**: `ghcr.io/kareemschultz/gk-nexus:latest`
+
+## Recent Changes
+| Commit | Description |
+|--------|-------------|
+| bd3dbc1 | Unified deployment script (Pangolin/Netbird style) |
+| 8f7f6d3 | Unified seed script and production status docs |
+| 632af5f | CI fix: run drizzle-kit directly |
+| f9d5187 | CI fix: use --network host for Docker |
+| 080b90c | CI fix: add PostgreSQL service |
 
 ## Container Status
 | Container | Status | Memory | Port |
@@ -82,6 +91,18 @@
 
 ## Quick Commands
 
+### Using gk-nexus CLI (if installed via deploy.sh)
+```bash
+gk-nexus status      # Show container status
+gk-nexus health      # Check health
+gk-nexus logs        # View logs
+gk-nexus restart     # Restart application
+gk-nexus update      # Update to latest
+gk-nexus backup      # Create backup
+gk-nexus db          # Open PostgreSQL shell
+```
+
+### Manual Docker Commands
 ```bash
 # Check status
 docker compose ps
