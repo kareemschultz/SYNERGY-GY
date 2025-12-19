@@ -2,10 +2,49 @@
 
 > Complete guide for deploying GK-Nexus to production with Docker, SSL, monitoring, and automated backups.
 
-**Version:** 3.1.0 (Bundled Deployment)
-**Last Updated:** December 15, 2024
+**Version:** 3.2.0 (Unified Deployment Script)
+**Last Updated:** December 19, 2024
 **Target Environment:** Production (Linux server with Docker)
 **Deployment Type:** Bundled (180MB image with all code bundled into single 2.5MB server file)
+
+---
+
+## Quick Install (One Command)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kareemschultz/SYNERGY-GY/master/deploy.sh | sudo bash
+```
+
+This single command will:
+- Check and install dependencies (Docker, Docker Compose)
+- Prompt for configuration (domain, ports, admin account)
+- Generate secure passwords and secrets
+- Set up PostgreSQL database
+- Deploy the application
+- Configure automatic backups
+- Set up SSL/TLS (optional)
+- Create systemd service for auto-start
+- Install `gk-nexus` management CLI
+
+### Management Commands (after installation)
+
+```bash
+gk-nexus start       # Start the application
+gk-nexus stop        # Stop the application
+gk-nexus restart     # Restart the application
+gk-nexus status      # Show container status
+gk-nexus logs        # View logs
+gk-nexus update      # Update to latest version
+gk-nexus backup      # Create database backup
+gk-nexus restore     # Restore from backup
+gk-nexus seed        # Seed database
+gk-nexus health      # Check health
+gk-nexus db          # Open PostgreSQL shell
+gk-nexus shell       # Open server shell
+gk-nexus uninstall   # Remove (with confirmation)
+```
+
+> For manual deployment or more control, continue reading below.
 
 ---
 
