@@ -101,7 +101,7 @@ function AppointmentsCalendarPage() {
         fromDate: calendarStart.toISOString(),
         toDate: calendarEnd.toISOString(),
         business: businessFilter === "all" ? undefined : businessFilter,
-        limit: 500,
+        limit: 100, // Max allowed by schema - may need pagination for busy months
       }),
   });
 

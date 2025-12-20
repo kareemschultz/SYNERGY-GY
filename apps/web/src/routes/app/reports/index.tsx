@@ -121,13 +121,13 @@ function ReportsPage() {
     queryFn: () => client.reports.categories(),
   });
 
-  // Fetch clients for filter dropdown
+  // Fetch clients for filter dropdown (limit: 100 is max allowed by schema)
   const { data: clientsData } = useQuery({
     queryKey: ["clients-for-filter"],
     queryFn: () =>
       client.clients.list({
         page: 1,
-        limit: 200,
+        limit: 100,
         sortBy: "displayName",
         sortOrder: "asc",
       }),
