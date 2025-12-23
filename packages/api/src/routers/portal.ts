@@ -684,123 +684,132 @@ export const portalRouter = {
         };
       }),
 
-    login: publicProcedure.input(loginSchema).handler(async ({ input }) => {
-      // Find portal user
-      const [user] = await db
-        .select()
-        .from(portalUser)
-        .where(eq(portalUser.email, input.email))
-        .limit(1);
+    login: publicProcedure
+      .input(loginSchema)
+      .handler(async ({ input, context }) => {
+        // Find portal user
+        const [user] = await db
+          .select()
+          .from(portalUser)
+          .where(eq(portalUser.email, input.email))
+          .limit(1);
 
-      if (!user) {
-        throw new ORPCError("UNAUTHORIZED", {
-          message: "Invalid email or password",
-        });
-      }
-
-      if (!user.isActive) {
-        throw new ORPCError("FORBIDDEN", {
-          message: "Your account has been deactivated",
-        });
-      }
-
-      // Check login attempts (simple rate limiting)
-      const attempts = Number.parseInt(user.loginAttempts, 10);
-      if (attempts >= MAX_LOGIN_ATTEMPTS) {
-        const lastActivity = user.lastActivityAt || user.updatedAt;
-        const lockoutEnd = new Date(
-          lastActivity.getTime() + LOGIN_LOCKOUT_MINUTES * 60 * 1000
-        );
-
-        if (new Date() < lockoutEnd) {
-          throw new ORPCError("TOO_MANY_REQUESTS", {
-            message: `Too many failed login attempts. Try again in ${LOGIN_LOCKOUT_MINUTES} minutes.`,
+        if (!user) {
+          throw new ORPCError("UNAUTHORIZED", {
+            message: "Invalid email or password",
           });
         }
 
-        // Reset attempts after lockout period
-        await db
-          .update(portalUser)
-          .set({ loginAttempts: "0" })
-          .where(eq(portalUser.id, user.id));
-      }
+        if (!user.isActive) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "Your account has been deactivated",
+          });
+        }
 
-      // Verify password
-      const isValidPassword = await verifyPassword(
-        input.password,
-        user.passwordHash
-      );
+        // Check login attempts (simple rate limiting)
+        const attempts = Number.parseInt(user.loginAttempts, 10);
+        if (attempts >= MAX_LOGIN_ATTEMPTS) {
+          const lastActivity = user.lastActivityAt || user.updatedAt;
+          const lockoutEnd = new Date(
+            lastActivity.getTime() + LOGIN_LOCKOUT_MINUTES * 60 * 1000
+          );
 
-      if (!isValidPassword) {
-        // Increment failed attempts
+          if (new Date() < lockoutEnd) {
+            throw new ORPCError("TOO_MANY_REQUESTS", {
+              message: `Too many failed login attempts. Try again in ${LOGIN_LOCKOUT_MINUTES} minutes.`,
+            });
+          }
+
+          // Reset attempts after lockout period
+          await db
+            .update(portalUser)
+            .set({ loginAttempts: "0" })
+            .where(eq(portalUser.id, user.id));
+        }
+
+        // Verify password
+        const isValidPassword = await verifyPassword(
+          input.password,
+          user.passwordHash
+        );
+
+        if (!isValidPassword) {
+          // Increment failed attempts
+          await db
+            .update(portalUser)
+            .set({
+              loginAttempts: String(attempts + 1),
+              lastActivityAt: new Date(),
+            })
+            .where(eq(portalUser.id, user.id));
+
+          throw new ORPCError("UNAUTHORIZED", {
+            message: "Invalid email or password",
+          });
+        }
+
+        // Create session
+        const sessionToken = generateSecureToken();
+        const expiresAt = new Date(
+          Date.now() + SESSION_EXPIRY_MINUTES * 60 * 1000
+        );
+
+        // Extract client info from request headers
+        const ipAddress =
+          context.req?.header("x-forwarded-for")?.split(",")[0]?.trim() ||
+          context.req?.header("x-real-ip") ||
+          context.req?.header("cf-connecting-ip") ||
+          null;
+        const userAgent = context.req?.header("user-agent") || null;
+
+        const sessionResult = await db
+          .insert(portalSession)
+          .values({
+            portalUserId: user.id,
+            token: sessionToken,
+            expiresAt,
+            ipAddress,
+            userAgent,
+          })
+          .returning();
+
+        const session = sessionResult[0];
+        if (!session) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to create session",
+          });
+        }
+
+        // Update user
         await db
           .update(portalUser)
           .set({
-            loginAttempts: String(attempts + 1),
+            lastLoginAt: new Date(),
             lastActivityAt: new Date(),
+            loginAttempts: "0", // Reset on successful login
           })
           .where(eq(portalUser.id, user.id));
 
-        throw new ORPCError("UNAUTHORIZED", {
-          message: "Invalid email or password",
+        // Log activity
+        await logActivity({
+          userId: user.id,
+          action: "LOGIN",
+          entityType: "SESSION",
+          entityId: session.id,
+          description: "Portal user logged in",
         });
-      }
 
-      // Create session
-      const sessionToken = generateSecureToken();
-      const expiresAt = new Date(
-        Date.now() + SESSION_EXPIRY_MINUTES * 60 * 1000
-      );
-
-      const sessionResult = await db
-        .insert(portalSession)
-        .values({
-          portalUserId: user.id,
-          token: sessionToken,
+        return {
+          success: true,
+          sessionToken,
           expiresAt,
-          // TODO: Extract from request headers
-          ipAddress: null,
-          userAgent: null,
-        })
-        .returning();
-
-      const session = sessionResult[0];
-      if (!session) {
-        throw new ORPCError("INTERNAL_SERVER_ERROR", {
-          message: "Failed to create session",
-        });
-      }
-
-      // Update user
-      await db
-        .update(portalUser)
-        .set({
-          lastLoginAt: new Date(),
-          lastActivityAt: new Date(),
-          loginAttempts: "0", // Reset on successful login
-        })
-        .where(eq(portalUser.id, user.id));
-
-      // Log activity
-      await logActivity({
-        userId: user.id,
-        action: "LOGIN",
-        entityType: "SESSION",
-        entityId: session.id,
-        description: "Portal user logged in",
-      });
-
-      return {
-        success: true,
-        sessionToken,
-        expiresAt,
-        user: {
-          id: user.id,
-          email: user.email,
-          clientId: user.clientId,
-        },
-      };
-    }),
+          user: {
+            id: user.id,
+            email: user.email,
+            clientId: user.clientId,
+          },
+        };
+      }),
 
     logout: portalProcedure.handler(async ({ context }) => {
       // Delete session
@@ -1236,8 +1245,8 @@ export const portalRouter = {
           fileName: doc.originalName,
           mimeType: doc.mimeType,
           storagePath: doc.storagePath,
-          // TODO: Generate signed URL or stream file
-          // For now, return metadata
+          // Download URL for the portal - handled by server's document streaming endpoint
+          downloadUrl: `/api/portal/documents/download/${doc.id}`,
         };
       }),
   },

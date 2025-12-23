@@ -577,14 +577,16 @@ export const serviceCatalogRouter = {
         return updated;
       }),
 
-    // Delete service (admin only)
+    // Delete service (admin only) - uses soft-delete
     delete: adminProcedure
       .input(z.object({ id: z.string() }))
       .handler(async ({ input }) => {
-        // TODO: Check if service is referenced in any matters
-        // For now, allow deletion
-
-        await db.delete(serviceCatalog).where(eq(serviceCatalog.id, input.id));
+        // Soft-delete: Set isActive to false instead of hard delete
+        // This preserves data integrity and allows recovery if needed
+        await db
+          .update(serviceCatalog)
+          .set({ isActive: false })
+          .where(eq(serviceCatalog.id, input.id));
 
         return { success: true };
       }),
