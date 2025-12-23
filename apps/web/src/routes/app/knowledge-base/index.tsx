@@ -376,6 +376,70 @@ function AutoFillDialog({
     onClose();
   };
 
+  // Check if item has an uploaded template file
+  const hasUploadedTemplate = Boolean(item?.storagePath);
+  const hasAgencyUrl = Boolean(item?.agencyUrl);
+
+  // If no uploaded template, show agency link info instead
+  if (!hasUploadedTemplate) {
+    return (
+      <Dialog
+        onOpenChange={(openState) => !openState && handleClose()}
+        open={open}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Auto-Fill Not Available</DialogTitle>
+            <DialogDescription>
+              This form does not have an uploaded template for auto-fill.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-4">
+              <p className="font-medium text-amber-700 text-sm dark:text-amber-400">
+                Template Required
+              </p>
+              <p className="mt-1 text-muted-foreground text-sm">
+                Auto-fill requires an uploaded template document. This form
+                currently links to the official agency website where you can
+                download and complete it manually.
+              </p>
+            </div>
+
+            {hasAgencyUrl ? (
+              <div className="rounded-md bg-muted/30 p-3">
+                <p className="text-muted-foreground text-sm">
+                  You can access the official form at the agency website. The
+                  form will need to be filled out manually with client
+                  information.
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          <DialogFooter>
+            <Button onClick={handleClose} variant="outline">
+              Cancel
+            </Button>
+            {hasAgencyUrl ? (
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => {
+                  window.open(item?.agencyUrl ?? "", "_blank", "noopener");
+                  handleClose();
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Open Agency Website
+              </Button>
+            ) : null}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog
       onOpenChange={(openState) => !openState && handleClose()}
