@@ -56,7 +56,10 @@ function VATCalculator() {
       });
       setResult(calculationResult);
     } catch (error) {
-      console.error("Failed to calculate VAT:", error);
+      const { toast } = await import("sonner");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to calculate VAT"
+      );
     }
   };
 
@@ -75,7 +78,10 @@ function VATCalculator() {
         result,
       });
     } catch (error) {
-      console.error("Failed to save calculation:", error);
+      const { toast } = await import("sonner");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save calculation"
+      );
     }
   };
 

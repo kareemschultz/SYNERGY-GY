@@ -70,7 +70,10 @@ function PAYECalculator() {
       });
       setResult(calculationResult);
     } catch (error) {
-      console.error("Failed to calculate PAYE:", error);
+      const { toast } = await import("sonner");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to calculate PAYE"
+      );
     }
   };
 
@@ -92,7 +95,10 @@ function PAYECalculator() {
         result,
       });
     } catch (error) {
-      console.error("Failed to save calculation:", error);
+      const { toast } = await import("sonner");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save calculation"
+      );
     }
   };
 

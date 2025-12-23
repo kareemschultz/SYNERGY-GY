@@ -205,7 +205,8 @@ console.log("SERVER_BOOT_MARKER", new Date().toISOString());
 // This prevents Request mutation issues and provides clear error messages
 const DOT_IN_RPC_PATH = /^\/rpc\/.*\..*$/;
 app.use("/*", async (c, next) => {
-  const path = new URL(c.req.url).pathname;
+  // Use c.req.path directly instead of parsing URL (avoids errors with relative paths)
+  const path = c.req.path;
   if (DOT_IN_RPC_PATH.test(path)) {
     const expectedPath = path.replace(/\./g, "/");
     console.log(
@@ -652,7 +653,8 @@ const FRONTEND_DIST = process.env.FRONTEND_DIST || "/app/apps/web/dist";
 // Only serve static files for non-API routes
 // This prevents serveStatic from intercepting /rpc/* and /api/* requests
 app.use("/*", (c, next) => {
-  const path = new URL(c.req.url).pathname;
+  // Use c.req.path directly instead of parsing URL (avoids errors with relative paths)
+  const path = c.req.path;
 
   // Skip static file serving for API routes
   if (

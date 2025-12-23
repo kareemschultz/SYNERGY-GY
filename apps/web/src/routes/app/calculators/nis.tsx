@@ -63,7 +63,10 @@ function NISCalculator() {
       });
       setResult(calculationResult);
     } catch (error) {
-      console.error("Failed to calculate NIS:", error);
+      const { toast } = await import("sonner");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to calculate NIS"
+      );
     }
   };
 
@@ -82,7 +85,10 @@ function NISCalculator() {
         result,
       });
     } catch (error) {
-      console.error("Failed to save calculation:", error);
+      const { toast } = await import("sonner");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save calculation"
+      );
     }
   };
 
