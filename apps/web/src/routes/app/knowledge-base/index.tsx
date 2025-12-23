@@ -47,6 +47,82 @@ export const Route = createFileRoute("/app/knowledge-base/")({
 
 const ADMIN_ROLES = ["OWNER", "GCMC_MANAGER", "KAJ_MANAGER"] as const;
 
+// Agency color configuration for visual distinction
+const AGENCY_COLORS: Record<
+  string,
+  { border: string; text: string; bg: string }
+> = {
+  GRA: {
+    border: "border-yellow-500",
+    text: "text-yellow-500",
+    bg: "bg-yellow-500/10",
+  },
+  NIS: {
+    border: "border-blue-500",
+    text: "text-blue-500",
+    bg: "bg-blue-500/10",
+  },
+  IMMIGRATION: {
+    border: "border-purple-500",
+    text: "text-purple-500",
+    bg: "bg-purple-500/10",
+  },
+  DCRA: {
+    border: "border-green-500",
+    text: "text-green-500",
+    bg: "bg-green-500/10",
+  },
+  LABOUR: {
+    border: "border-orange-500",
+    text: "text-orange-500",
+    bg: "bg-orange-500/10",
+  },
+  EPA: {
+    border: "border-emerald-500",
+    text: "text-emerald-500",
+    bg: "bg-emerald-500/10",
+  },
+  GNBS: {
+    border: "border-cyan-500",
+    text: "text-cyan-500",
+    bg: "bg-cyan-500/10",
+  },
+  SBB: {
+    border: "border-pink-500",
+    text: "text-pink-500",
+    bg: "bg-pink-500/10",
+  },
+  GENERAL: {
+    border: "border-gray-500",
+    text: "text-gray-500",
+    bg: "bg-gray-500/10",
+  },
+  INTERNAL: {
+    border: "border-slate-500",
+    text: "text-slate-500",
+    bg: "bg-slate-500/10",
+  },
+  TRAINING: {
+    border: "border-indigo-500",
+    text: "text-indigo-500",
+    bg: "bg-indigo-500/10",
+  },
+};
+
+// Helper to get agency styling
+const getAgencyStyle = (category: string) =>
+  AGENCY_COLORS[category] || AGENCY_COLORS.GENERAL;
+
+// Quick filter options for common searches with icons
+const QUICK_FILTERS = [
+  { label: "Tax Forms", category: "GRA", emoji: "💰" },
+  { label: "NIS Registration", category: "NIS", emoji: "🛡️" },
+  { label: "Work Permits", category: "IMMIGRATION", emoji: "🌍" },
+  { label: "Business Reg", category: "DCRA", emoji: "🏢" },
+  { label: "Templates", type: "LETTER_TEMPLATE", emoji: "📝" },
+  { label: "Training", category: "TRAINING", emoji: "🎓" },
+] as const;
+
 // Types for item details
 type KnowledgeBaseItemDetails = {
   id: string;
@@ -540,45 +616,68 @@ function KnowledgeBasePage() {
 
     return (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {data?.items.map((item) => (
-          <Card
-            className="flex cursor-pointer flex-col transition-shadow hover:shadow-md"
-            key={item.id}
-            onClick={() => setSelectedItem(item.id)}
-          >
-            <CardHeader className="pb-2">
-              <div className="mb-2 flex items-start justify-between">
-                <Badge variant={getBusinessBadgeVariant(item.business)}>
-                  {item.business || "General"}
-                </Badge>
-                {item.isStaffOnly ? (
-                  <Badge className="ml-2" variant="destructive">
-                    Staff Only
+        {data?.items.map((item) => {
+          const agencyStyle = getAgencyStyle(item.category);
+          return (
+            <Card
+              className={`group relative flex cursor-pointer flex-col overflow-hidden transition-all hover:border-primary/50 hover:shadow-lg ${agencyStyle.border} border-l-4`}
+              key={item.id}
+              onClick={() => setSelectedItem(item.id)}
+            >
+              <CardHeader className="pb-2">
+                <div className="mb-2 flex items-start justify-between">
+                  {/* Agency badge with color coding */}
+                  <Badge
+                    className={`${agencyStyle.border} ${agencyStyle.text} ${agencyStyle.bg}`}
+                    variant="outline"
+                  >
+                    {item.category}
                   </Badge>
-                ) : null}
-              </div>
-              <CardTitle className="line-clamp-2 text-lg">
-                {item.title}
-              </CardTitle>
-              <CardDescription>{item.category}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pb-2">
-              <p className="line-clamp-3 text-muted-foreground text-sm">
-                {item.shortDescription || item.description}
-              </p>
-            </CardContent>
-            <CardFooter className="border-t bg-muted/5 pt-2">
-              <div className="flex w-full items-center justify-between text-muted-foreground text-xs">
-                <span>{item.type.replace("_", " ")}</span>
-                {item.supportsAutoFill ? (
-                  <span className="flex items-center text-blue-600 dark:text-blue-400">
-                    <Sparkles className="mr-1 h-3 w-3" /> Auto-fill
+                  <div className="flex gap-1">
+                    {item.business ? (
+                      <Badge variant={getBusinessBadgeVariant(item.business)}>
+                        {item.business}
+                      </Badge>
+                    ) : null}
+                    {item.isStaffOnly ? (
+                      <Badge variant="destructive">Staff Only</Badge>
+                    ) : null}
+                  </div>
+                </div>
+                <CardTitle className="line-clamp-2 flex items-start gap-2 text-lg">
+                  <FileText
+                    className={`mt-0.5 h-5 w-5 shrink-0 ${agencyStyle.text}`}
+                  />
+                  <span>{item.title}</span>
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  {item.type.replace("_", " ")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 pb-2">
+                <p className="line-clamp-3 text-muted-foreground text-sm">
+                  {item.shortDescription || item.description}
+                </p>
+              </CardContent>
+              <CardFooter className="border-t bg-muted/5 pt-3">
+                <div className="flex w-full items-center justify-between">
+                  {item.supportsAutoFill ? (
+                    <span className="flex items-center rounded-full bg-purple-500/10 px-2 py-1 font-medium text-purple-500 text-xs">
+                      <Sparkles className="mr-1 h-3 w-3" /> Auto-fill Ready
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">
+                      <Download className="mr-1 inline h-3 w-3" /> Download
+                    </span>
+                  )}
+                  <span className="text-muted-foreground text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                    Click to view →
                   </span>
-                ) : null}
-              </div>
-            </CardFooter>
-          </Card>
-        ))}
+                </div>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
     );
   };
@@ -627,13 +726,13 @@ function KnowledgeBasePage() {
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Types</SelectItem>
-                <SelectItem value="AGENCY_FORM">Agency Forms</SelectItem>
+                <SelectItem value="ALL">📋 All Types</SelectItem>
+                <SelectItem value="AGENCY_FORM">📄 Agency Forms</SelectItem>
                 <SelectItem value="LETTER_TEMPLATE">
-                  Letter Templates
+                  📝 Letter Templates
                 </SelectItem>
-                <SelectItem value="GUIDE">Guides</SelectItem>
-                <SelectItem value="CHECKLIST">Checklists</SelectItem>
+                <SelectItem value="GUIDE">📖 Guides</SelectItem>
+                <SelectItem value="CHECKLIST">✅ Checklists</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -645,14 +744,14 @@ function KnowledgeBasePage() {
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Categories</SelectItem>
-                <SelectItem value="GRA">GRA (Tax)</SelectItem>
-                <SelectItem value="NIS">NIS</SelectItem>
-                <SelectItem value="IMMIGRATION">Immigration</SelectItem>
-                <SelectItem value="DCRA">DCRA (Business)</SelectItem>
-                <SelectItem value="GENERAL">General</SelectItem>
-                <SelectItem value="TRAINING">Training</SelectItem>
-                <SelectItem value="INTERNAL">Internal</SelectItem>
+                <SelectItem value="ALL">📋 All Categories</SelectItem>
+                <SelectItem value="GRA">💰 GRA (Tax)</SelectItem>
+                <SelectItem value="NIS">🛡️ NIS</SelectItem>
+                <SelectItem value="IMMIGRATION">🌍 Immigration</SelectItem>
+                <SelectItem value="DCRA">🏢 DCRA (Business)</SelectItem>
+                <SelectItem value="GENERAL">📁 General</SelectItem>
+                <SelectItem value="TRAINING">🎓 Training</SelectItem>
+                <SelectItem value="INTERNAL">🔒 Internal</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -688,7 +787,68 @@ function KnowledgeBasePage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-6">{renderMainContent()}</div>
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Quick Filter Chips */}
+          <div className="mb-6 flex flex-wrap gap-2">
+            <span className="mr-2 flex items-center text-muted-foreground text-sm">
+              Quick filters:
+            </span>
+            {QUICK_FILTERS.map((filter) => {
+              const hasCategory = "category" in filter;
+              const hasType = "type" in filter;
+              const matchesCategory = hasCategory
+                ? category === filter.category
+                : false;
+              const matchesType = hasType ? type === filter.type : false;
+              const isActive = matchesCategory || matchesType;
+              const filterStyle =
+                "category" in filter
+                  ? getAgencyStyle(filter.category)
+                  : {
+                      border: "border-slate-500",
+                      text: "text-slate-500",
+                      bg: "bg-slate-500/10",
+                    };
+
+              return (
+                <button
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-medium text-xs transition-all hover:scale-105 ${
+                    isActive
+                      ? `${filterStyle.border} ${filterStyle.bg} ${filterStyle.text}`
+                      : "border-muted-foreground/20 text-muted-foreground hover:border-muted-foreground/40"
+                  }`}
+                  key={filter.label}
+                  onClick={() => {
+                    if ("category" in filter) {
+                      setCategory(filter.category);
+                      setType("ALL");
+                    } else if ("type" in filter) {
+                      setType(filter.type);
+                      setCategory("ALL");
+                    }
+                  }}
+                  type="button"
+                >
+                  <span>{filter.emoji}</span>
+                  {filter.label}
+                </button>
+              );
+            })}
+            {category !== "ALL" || type !== "ALL" ? (
+              <button
+                className="inline-flex items-center gap-1 rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1.5 font-medium text-destructive text-xs transition-all hover:bg-destructive/20"
+                onClick={() => {
+                  setCategory("ALL");
+                  setType("ALL");
+                }}
+                type="button"
+              >
+                ✕ Clear
+              </button>
+            ) : null}
+          </div>
+          {renderMainContent()}
+        </div>
       </div>
 
       {/* Item Details Dialog */}

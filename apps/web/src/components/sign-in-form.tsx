@@ -1,6 +1,18 @@
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
-import { Building2, Loader2, Shield } from "lucide-react";
+import {
+  BadgeCheck,
+  Briefcase,
+  Building2,
+  Calculator,
+  FileText,
+  Globe,
+  GraduationCap,
+  Loader2,
+  Scale,
+  Shield,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import z from "zod";
 import { authClient } from "@/lib/auth-client";
@@ -8,6 +20,25 @@ import Loader from "./loader";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+
+// Service tags for GCMC
+const GCMC_SERVICES = [
+  { label: "HR Management", icon: Users },
+  { label: "Immigration", icon: Globe },
+  { label: "Work Permits", icon: FileText },
+  { label: "Business Visas", icon: Briefcase },
+  { label: "Training", icon: GraduationCap },
+  { label: "Paralegal", icon: Scale },
+] as const;
+
+// Service tags for KAJ
+const KAJ_SERVICES = [
+  { label: "Tax Returns", icon: Calculator },
+  { label: "PAYE", icon: FileText },
+  { label: "NIS Services", icon: Shield },
+  { label: "Audits", icon: BadgeCheck },
+  { label: "Compliance", icon: Scale },
+] as const;
 
 export default function SignInForm() {
   const navigate = useNavigate({
@@ -54,65 +85,110 @@ export default function SignInForm() {
   return (
     <div className="flex min-h-screen">
       {/* Left Side - Branding */}
-      <div className="hidden flex-col justify-between bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-12 lg:flex lg:w-1/2">
-        <div>
-          <div className="flex items-center gap-3 text-white">
-            <Building2 className="h-10 w-10" />
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-10 lg:flex lg:w-1/2">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTRWMjhIMjR2MmgxMnptLTEyIDh2LTJoMTJ2MkgyNHptMTItMTB2LTJIMjR2MmgxMnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50" />
+
+        {/* Logo */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
+              <Building2 className="h-8 w-8 text-white" />
+            </div>
             <div>
-              <h1 className="font-bold text-2xl">GK-Nexus</h1>
-              <p className="text-blue-200 text-sm">
+              <h1 className="font-bold text-2xl text-white tracking-tight">
+                GK-Nexus
+              </h1>
+              <p className="font-medium text-blue-300 text-sm">
                 Business Management System
               </p>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Company Cards */}
-          <div className="space-y-4">
-            <div className="rounded-lg bg-white/10 p-4 backdrop-blur-sm">
-              <h3 className="mb-1 font-semibold text-white">
-                GREEN CRESCENT MANAGEMENT CONSULTANCY
-              </h3>
-              <p className="mb-2 text-blue-200 text-xs uppercase tracking-wide">
-                Trainings | Consulting | Immigration | Paralegal | Business
-                Proposals | Networking
-              </p>
-              <p className="text-blue-100 text-sm">
-                HR Management, Customer Relations, Co-operatives Training,
-                Company Incorporation, Work Permits, Citizenship, Business
-                Visas, and Professional Networking.
-              </p>
+        {/* Company Cards */}
+        <div className="relative z-10 space-y-5">
+          {/* GCMC Card */}
+          <div className="group rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-5 backdrop-blur-sm transition-all hover:border-emerald-500/50 hover:shadow-emerald-500/10 hover:shadow-lg">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20">
+                <Globe className="h-5 w-5 text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white">
+                  Green Crescent Management
+                </h3>
+                <p className="text-emerald-300/80 text-xs">
+                  Consulting & Immigration Services
+                </p>
+              </div>
             </div>
-
-            <div className="rounded-lg bg-white/10 p-4 backdrop-blur-sm">
-              <h3 className="mb-1 font-semibold text-white">
-                KAJ FINANCIAL SERVICES
-              </h3>
-              <p className="mb-2 text-blue-200 text-xs uppercase tracking-wide">
-                GRA Licence to Practice as an Accountant
-              </p>
-              <p className="text-blue-100 text-sm">
-                Income Tax Returns, All Compliances, PAYE Returns,
-                Income/Expenditure Statements, NGO & Co-operative Audits,
-                National Insurance Scheme Services.
-              </p>
+            <div className="flex flex-wrap gap-2">
+              {GCMC_SERVICES.map((service) => (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-200 text-xs transition-colors hover:bg-emerald-500/20"
+                  key={service.label}
+                >
+                  <service.icon className="h-3 w-3" />
+                  {service.label}
+                </span>
+              ))}
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-white/80">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              <span className="text-xs">GRA Compliant</span>
+          {/* KAJ Card */}
+          <div className="group rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-5 backdrop-blur-sm transition-all hover:border-amber-500/50 hover:shadow-amber-500/10 hover:shadow-lg">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/20">
+                <Calculator className="h-5 w-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-white">
+                  KAJ Financial Services
+                </h3>
+                <p className="text-amber-300/80 text-xs">
+                  GRA Licensed Accountancy
+                </p>
+              </div>
             </div>
-            <div className="h-3 w-px bg-white/30" />
-            <span className="text-xs">NIS Registered</span>
-            <div className="h-3 w-px bg-white/30" />
-            <span className="text-xs">Immigration Services</span>
+            <div className="flex flex-wrap gap-2">
+              {KAJ_SERVICES.map((service) => (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 font-medium text-amber-200 text-xs transition-colors hover:bg-amber-500/20"
+                  key={service.label}
+                >
+                  <service.icon className="h-3 w-3" />
+                  {service.label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Compliance Badges */}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <div className="flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1.5">
+              <Shield className="h-4 w-4 text-yellow-400" />
+              <span className="font-medium text-white text-xs">
+                GRA Compliant
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1.5">
+              <BadgeCheck className="h-4 w-4 text-blue-400" />
+              <span className="font-medium text-white text-xs">
+                NIS Registered
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1.5">
+              <Globe className="h-4 w-4 text-purple-400" />
+              <span className="font-medium text-white text-xs">
+                Immigration
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="text-white/60 text-xs">
+        {/* Footer */}
+        <div className="relative z-10 text-white/50 text-xs">
           © {new Date().getFullYear()} Green Crescent Management Consultancy &
           KAJ Financial Services
         </div>
@@ -123,7 +199,9 @@ export default function SignInForm() {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile Logo */}
           <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
-            <Building2 className="h-10 w-10 text-blue-600" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600">
+              <Building2 className="h-7 w-7 text-white" />
+            </div>
             <div>
               <h1 className="font-bold text-2xl">GK-Nexus</h1>
               <p className="text-muted-foreground text-sm">
