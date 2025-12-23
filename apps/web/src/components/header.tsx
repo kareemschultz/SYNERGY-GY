@@ -5,10 +5,13 @@ import UserMenu from "./user-menu";
 export default function Header() {
   const location = useLocation();
 
-  // Hide header on /app/* routes and /portal/* routes - they have their own layouts
+  // Hide header on /app/*, /portal/*, and auth routes - they have their own layouts
   if (
     location.pathname.startsWith("/app") ||
-    location.pathname.startsWith("/portal")
+    location.pathname.startsWith("/portal") ||
+    location.pathname === "/login" ||
+    location.pathname === "/forgot-password" ||
+    location.pathname === "/reset-password"
   ) {
     return null;
   }
