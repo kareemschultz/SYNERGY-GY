@@ -64,6 +64,7 @@ type Backup = {
   uploadedFilesCount: number | null;
 };
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Backup settings page with multiple modals and state management
 export function BackupSettings() {
   const queryClient = useQueryClient();
   const [backupInProgress, setBackupInProgress] = useState(false);
@@ -134,6 +135,22 @@ export function BackupSettings() {
     },
     onError: (error) => {
       toast.error("Delete failed", {
+        description: error.message,
+      });
+    },
+  });
+
+  // Cleanup failed backups mutation
+  const cleanupFailedMutation = useMutation({
+    mutationFn: () => client.backup.cleanupFailed(),
+    onSuccess: (data) => {
+      toast.success("Cleanup complete", {
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ["backup"] });
+    },
+    onError: (error) => {
+      toast.error("Cleanup failed", {
         description: error.message,
       });
     },
@@ -238,6 +255,7 @@ export function BackupSettings() {
                       <>
                         <Button
                           asChild
+                          className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
                           size="sm"
                           title="Download backup file"
                           variant="ghost"
@@ -247,9 +265,11 @@ export function BackupSettings() {
                             href={`/api/backup/download/${backup.id}`}
                           >
                             <Download className="h-4 w-4" />
+                            <span className="sr-only">Download</span>
                           </a>
                         </Button>
                         <Button
+                          className="text-amber-600 hover:bg-amber-50 hover:text-amber-700"
                           onClick={() => {
                             setSelectedBackup(backup);
                             setRestoreDialogOpen(true);
@@ -259,19 +279,22 @@ export function BackupSettings() {
                           variant="ghost"
                         >
                           <RotateCcw className="h-4 w-4" />
+                          <span className="sr-only">Restore</span>
                         </Button>
                       </>
                     )}
                     <Button
+                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
                       onClick={() => {
                         setSelectedBackup(backup);
                         setDeleteDialogOpen(true);
                       }}
                       size="sm"
-                      title="Delete"
+                      title="Delete backup"
                       variant="ghost"
                     >
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
                     </Button>
                   </div>
                 </TableCell>
@@ -414,16 +437,34 @@ export function BackupSettings() {
                 View and manage previous backups
               </CardDescription>
             </div>
-            <Button
-              onClick={() =>
-                queryClient.invalidateQueries({ queryKey: ["backup"] })
-              }
-              size="sm"
-              variant="outline"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              {(stats?.counts.failed ?? 0) > 0 && (
+                <Button
+                  className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                  disabled={cleanupFailedMutation.isPending}
+                  onClick={() => cleanupFailedMutation.mutate()}
+                  size="sm"
+                  variant="outline"
+                >
+                  {cleanupFailedMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-4 w-4" />
+                  )}
+                  Clean Up Failed ({stats?.counts.failed})
+                </Button>
+              )}
+              <Button
+                onClick={() =>
+                  queryClient.invalidateQueries({ queryKey: ["backup"] })
+                }
+                size="sm"
+                variant="outline"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

@@ -461,6 +461,38 @@ export const backupRouter = {
     };
   }),
 
+  // Cleanup failed backups
+  cleanupFailed: adminProcedure.handler(async () => {
+    // Get all failed backups
+    const failedBackups = await db
+      .select()
+      .from(systemBackup)
+      .where(eq(systemBackup.status, "failed"));
+
+    // Delete any associated files
+    for (const backup of failedBackups) {
+      if (backup.filePath && existsSync(backup.filePath)) {
+        try {
+          await unlink(backup.filePath);
+        } catch {
+          // Ignore file deletion errors
+        }
+      }
+    }
+
+    // Delete all failed backup records
+    const result = await db
+      .delete(systemBackup)
+      .where(eq(systemBackup.status, "failed"))
+      .returning({ id: systemBackup.id });
+
+    return {
+      success: true,
+      deletedCount: result.length,
+      message: `Cleaned up ${result.length} failed backup records`,
+    };
+  }),
+
   // Backup schedules
   schedules: {
     // List schedules
