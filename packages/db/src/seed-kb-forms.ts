@@ -820,8 +820,13 @@ async function seedKnowledgeBaseForms(): Promise<void> {
     process.exit(1);
   }
 
-  const createdById = owners[0].id;
-  console.log(`✅ Using owner: ${owners[0].name} (${createdById})`);
+  const owner = owners[0];
+  if (!owner) {
+    console.error("❌ No owner found.");
+    process.exit(1);
+  }
+  const createdById = owner.id;
+  console.log(`✅ Using owner: ${owner.name} (${createdById})`);
 
   // Create letter templates
   await createLetterTemplates();
@@ -879,7 +884,8 @@ async function seedKnowledgeBaseForms(): Promise<void> {
       .where(eq(knowledgeBaseItem.title, item.title))
       .limit(1);
 
-    if (existing.length > 0) {
+    const existingItem = existing[0];
+    if (existingItem) {
       // Update existing item with file path and size
       await db
         .update(knowledgeBaseItem)
@@ -891,7 +897,7 @@ async function seedKnowledgeBaseForms(): Promise<void> {
           agencyUrl: item.agencyUrl,
           updatedAt: new Date(),
         })
-        .where(eq(knowledgeBaseItem.id, existing[0].id));
+        .where(eq(knowledgeBaseItem.id, existingItem.id));
 
       console.log(`📝 Updated: ${item.title}`);
       updated += 1;

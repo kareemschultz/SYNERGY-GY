@@ -2714,8 +2714,13 @@ async function seedKnowledgeBase() {
     process.exit(1);
   }
 
-  const createdById = owners[0].id;
-  console.log(`✅ Using owner: ${owners[0].name} (${createdById})\n`);
+  const owner = owners[0];
+  if (!owner) {
+    console.error("❌ No owner found.");
+    process.exit(1);
+  }
+  const createdById = owner.id;
+  console.log(`✅ Using owner: ${owner.name} (${createdById})\n`);
 
   // Combine all items
   const allItems = [

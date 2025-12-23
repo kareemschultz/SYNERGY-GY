@@ -399,6 +399,30 @@ Always verify schema fields match before using in queries:
   - `notes` vs `riskNotes` (use actual schema field)
   - `business` vs `businesses` (use actual schema field)
   - Missing fields like `city`, `country` that don't exist
+  - `matterNumber` doesn't exist - use `referenceNumber`
+  - `salutation` doesn't exist on client - use `firstName`
+  - `nisNumber` doesn't exist on client - only `tinNumber` exists
+
+### Matter Table Fields
+
+**Valid fields:**
+- `referenceNumber` - Auto-generated like "GCMC-2024-0001"
+- `title`, `description`, `status`, `priority`
+- `clientId`, `serviceTypeId`, `business`
+
+**Invalid fields (DO NOT USE):**
+- `matterNumber` - Use `referenceNumber`
+
+### Client Table Fields
+
+**Valid fields:**
+- `displayName`, `firstName`, `lastName`
+- `email`, `phone`, `address`, `city`, `country`
+- `tinNumber`, `nationalId`, `passportNumber`
+
+**Invalid fields (DO NOT USE):**
+- `salutation` - Use `firstName` instead
+- `nisNumber` - Use `tinNumber` (only TIN is stored)
 
 ### Enum Values in Zod
 
@@ -693,6 +717,26 @@ type WizardStepProps = {
 **Props that DO NOT exist:**
 - `icon` - Removed, do not pass
 
+### API Response Structure - List Endpoints
+
+List endpoints return arrays with their entity name, NOT `items`:
+
+```typescript
+// clients.list returns: { clients: Client[], total, page, limit }
+const { data } = useQuery({ queryKey: ["clients"], queryFn: () => client.clients.list({}) });
+data?.clients?.map(c => ...)  // ✅ Correct
+data?.items?.map(c => ...)    // ❌ WRONG - "items" doesn't exist
+
+// matters.list returns: { matters: Matter[], total, page, limit }
+data?.matters?.map(m => ...)  // ✅ Correct
+data?.items?.map(m => ...)    // ❌ WRONG
+
+// documents.list returns: { documents: Document[], total, page, limit }
+data?.documents?.map(d => ...) // ✅ Correct
+
+// Pattern: endpoint returns { [entityName]: Entity[], ... }
+```
+
 ### oRPC Direct Calls vs Query Hooks
 
 ```typescript
@@ -777,6 +821,29 @@ When imports fail with "Export not found", check the actual export location:
 - `staff` is in `packages/db/src/schema/core.ts`, NOT `auth.ts`
 - `user` is in `packages/db/src/schema/auth.ts`
 
+### TypeScript Array Access After Length Check
+
+TypeScript doesn't narrow array access after length checks. Always extract and check:
+
+```typescript
+// ❌ WRONG - TypeScript error: "Object is possibly undefined"
+if (owners.length === 0) process.exit(1);
+const createdById = owners[0].id;  // Error!
+
+// ✅ CORRECT - Extract and check explicitly
+if (owners.length === 0) process.exit(1);
+const owner = owners[0];
+if (!owner) process.exit(1);
+const createdById = owner.id;  // Works!
+
+// Same pattern for query results
+const existing = await db.select().from(table).where(...).limit(1);
+const existingItem = existing[0];
+if (existingItem) {
+  // Safe to use existingItem.id here
+}
+```
+
 ---
 
 ## API Schema vs Implementation
@@ -828,3 +895,8 @@ if (input.filters?.clientId) {
 | Ternary in callbacks (noLeakedRender) | Use if/else statements |
 | `import { staff } from "./schema/auth"` | `import { staff } from "./schema/core"` |
 | Schema accepts filter but query ignores | Add filter logic to actual query |
+| `data?.items?.map(...)` on list response | `data?.clients?.map(...)` (use entity name) |
+| `matterData.matterNumber` | `matterData.referenceNumber` |
+| `clientData.salutation` | `clientData.firstName` |
+| `clientData.nisNumber` | `clientData.tinNumber` (NIS number not stored) |
+| `if (arr.length > 0) arr[0].id` | Extract first: `const item = arr[0]; if (item) item.id` |

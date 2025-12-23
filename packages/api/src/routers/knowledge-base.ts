@@ -277,17 +277,15 @@ export const knowledgeBaseRouter = {
         placeholderValues.client_name =
           clientData.displayName ||
           `${clientData.firstName} ${clientData.lastName}`;
-        placeholderValues.client_salutation =
-          clientData.salutation || clientData.firstName || "Client";
+        placeholderValues.client_salutation = clientData.firstName || "Client";
         placeholderValues.client_address = clientData.address || "";
         placeholderValues.client_email = clientData.email || "";
         placeholderValues.client_phone = clientData.phone || "";
         placeholderValues.tin_number = clientData.tinNumber || "";
-        placeholderValues.nis_number = clientData.nisNumber || "";
       }
 
       if (matterData) {
-        placeholderValues.matter_number = matterData.matterNumber;
+        placeholderValues.matter_number = matterData.referenceNumber;
         placeholderValues.matter_title = matterData.title;
         placeholderValues.service_description =
           matterData.description || matterData.title;

@@ -281,7 +281,7 @@ function AutoFillDialog({
                 <SelectValue placeholder="Select a client..." />
               </SelectTrigger>
               <SelectContent>
-                {clientsData?.items?.map((c) => (
+                {clientsData?.clients?.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.displayName || `${c.firstName} ${c.lastName}`}
                   </SelectItem>
@@ -308,9 +308,9 @@ function AutoFillDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">No matter selected</SelectItem>
-                {mattersData?.items?.map((m) => (
+                {mattersData?.matters?.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
-                    {m.title} ({m.matterNumber})
+                    {m.title} ({m.referenceNumber})
                   </SelectItem>
                 ))}
               </SelectContent>
