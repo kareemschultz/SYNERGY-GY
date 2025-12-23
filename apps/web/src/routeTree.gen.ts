@@ -68,6 +68,7 @@ import { Route as AppAnalyticsAuditRouteImport } from './routes/app/analytics/au
 import { Route as AppAdminSettingsRouteImport } from './routes/app/admin/settings'
 import { Route as AppAdminRolesRouteImport } from './routes/app/admin/roles'
 import { Route as AppAdminPortalInvitesRouteImport } from './routes/app/admin/portal-invites'
+import { Route as AppAdminKnowledgeBaseFormsRouteImport } from './routes/app/admin/knowledge-base-forms'
 import { Route as AppAdminKnowledgeBaseRouteImport } from './routes/app/admin/knowledge-base'
 import { Route as AppTrainingEnrollmentsIndexRouteImport } from './routes/app/training/enrollments/index'
 import { Route as AppTrainingCoursesIndexRouteImport } from './routes/app/training/courses/index'
@@ -380,6 +381,12 @@ const AppAdminPortalInvitesRoute = AppAdminPortalInvitesRouteImport.update({
   path: '/admin/portal-invites',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminKnowledgeBaseFormsRoute =
+  AppAdminKnowledgeBaseFormsRouteImport.update({
+    id: '/admin/knowledge-base-forms',
+    path: '/admin/knowledge-base-forms',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAdminKnowledgeBaseRoute = AppAdminKnowledgeBaseRouteImport.update({
   id: '/admin/knowledge-base',
   path: '/admin/knowledge-base',
@@ -485,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/portal': typeof PortalIndexRoute
   '/app/admin/knowledge-base': typeof AppAdminKnowledgeBaseRoute
+  '/app/admin/knowledge-base-forms': typeof AppAdminKnowledgeBaseFormsRoute
   '/app/admin/portal-invites': typeof AppAdminPortalInvitesRoute
   '/app/admin/roles': typeof AppAdminRolesRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
@@ -560,6 +568,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/portal': typeof PortalIndexRoute
   '/app/admin/knowledge-base': typeof AppAdminKnowledgeBaseRoute
+  '/app/admin/knowledge-base-forms': typeof AppAdminKnowledgeBaseFormsRoute
   '/app/admin/portal-invites': typeof AppAdminPortalInvitesRoute
   '/app/admin/roles': typeof AppAdminRolesRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
@@ -637,6 +646,7 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/app/admin/knowledge-base': typeof AppAdminKnowledgeBaseRoute
+  '/app/admin/knowledge-base-forms': typeof AppAdminKnowledgeBaseFormsRoute
   '/app/admin/portal-invites': typeof AppAdminPortalInvitesRoute
   '/app/admin/roles': typeof AppAdminRolesRoute
   '/app/admin/settings': typeof AppAdminSettingsRoute
@@ -715,6 +725,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/portal'
     | '/app/admin/knowledge-base'
+    | '/app/admin/knowledge-base-forms'
     | '/app/admin/portal-invites'
     | '/app/admin/roles'
     | '/app/admin/settings'
@@ -790,6 +801,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/portal'
     | '/app/admin/knowledge-base'
+    | '/app/admin/knowledge-base-forms'
     | '/app/admin/portal-invites'
     | '/app/admin/roles'
     | '/app/admin/settings'
@@ -866,6 +878,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/portal/'
     | '/app/admin/knowledge-base'
+    | '/app/admin/knowledge-base-forms'
     | '/app/admin/portal-invites'
     | '/app/admin/roles'
     | '/app/admin/settings'
@@ -1359,6 +1372,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminPortalInvitesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin/knowledge-base-forms': {
+      id: '/app/admin/knowledge-base-forms'
+      path: '/admin/knowledge-base-forms'
+      fullPath: '/app/admin/knowledge-base-forms'
+      preLoaderRoute: typeof AppAdminKnowledgeBaseFormsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin/knowledge-base': {
       id: '/app/admin/knowledge-base'
       path: '/admin/knowledge-base'
@@ -1484,6 +1504,7 @@ const AppClientsClientIdRouteWithChildren =
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppAdminKnowledgeBaseRoute: typeof AppAdminKnowledgeBaseRoute
+  AppAdminKnowledgeBaseFormsRoute: typeof AppAdminKnowledgeBaseFormsRoute
   AppAdminPortalInvitesRoute: typeof AppAdminPortalInvitesRoute
   AppAdminRolesRoute: typeof AppAdminRolesRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
@@ -1541,6 +1562,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppAdminKnowledgeBaseRoute: AppAdminKnowledgeBaseRoute,
+  AppAdminKnowledgeBaseFormsRoute: AppAdminKnowledgeBaseFormsRoute,
   AppAdminPortalInvitesRoute: AppAdminPortalInvitesRoute,
   AppAdminRolesRoute: AppAdminRolesRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,
