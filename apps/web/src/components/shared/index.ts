@@ -9,4 +9,10 @@ export {
   LoadingState,
   TableLoadingState,
 } from "./loading-state";
+export {
+  CardSkeleton,
+  PageSkeleton,
+  StatCardSkeleton,
+  TableSkeleton,
+} from "./loading-skeleton";
 export { NotFound } from "./not-found";
