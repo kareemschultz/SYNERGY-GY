@@ -1,6 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Download, FileText, Search, Settings2, Sparkles } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Loader2,
+  Search,
+  Settings2,
+  Sparkles,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
@@ -62,11 +69,13 @@ function ItemDetailsDialog({
   open,
   onClose,
   onDownload,
+  onAutoFill,
 }: {
   item: KnowledgeBaseItemDetails | null | undefined;
   open: boolean;
   onClose: () => void;
   onDownload: (id: string, fileName?: string | null) => void;
+  onAutoFill: (item: KnowledgeBaseItemDetails) => void;
 }) {
   const getDownloadButtonText = (): string => {
     if (item?.storagePath) {
@@ -152,7 +161,14 @@ function ItemDetailsDialog({
             Close
           </Button>
           {item?.supportsAutoFill ? (
-            <Button className="w-full bg-purple-600 hover:bg-purple-700 sm:w-auto">
+            <Button
+              className="w-full bg-purple-600 hover:bg-purple-700 sm:w-auto"
+              onClick={() => {
+                if (item) {
+                  onAutoFill(item);
+                }
+              }}
+            >
               <Sparkles className="mr-2 h-4 w-4" />
               Auto-Fill & Download
             </Button>
@@ -176,12 +192,177 @@ function ItemDetailsDialog({
   );
 }
 
+// Auto-Fill Dialog for selecting client/matter and generating document
+function AutoFillDialog({
+  item,
+  open,
+  onClose,
+}: {
+  item: KnowledgeBaseItemDetails | null | undefined;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [selectedMatterId, setSelectedMatterId] = useState<string>("");
+
+  // Fetch clients list
+  const { data: clientsData } = useQuery({
+    queryKey: ["clients", "list", "autoFill"],
+    queryFn: () => client.clients.list({ limit: 100 }),
+    enabled: open,
+  });
+
+  // Fetch matters for selected client
+  const { data: mattersData } = useQuery({
+    queryKey: ["matters", "list", selectedClientId],
+    queryFn: () =>
+      client.matters.list({
+        clientId: selectedClientId,
+        limit: 50,
+      }),
+    enabled: open && !!selectedClientId,
+  });
+
+  // Auto-fill mutation
+  const autoFillMutation = useMutation({
+    mutationFn: () =>
+      client.knowledgeBase.autoFill({
+        id: item?.id ?? "",
+        clientId: selectedClientId || undefined,
+        matterId: selectedMatterId || undefined,
+      }),
+    onSuccess: () => {
+      toast.success("Document generated successfully");
+      onClose();
+    },
+    onError: (error: Error) => {
+      toast.error(`Auto-fill failed: ${error.message}`);
+    },
+  });
+
+  const handleGenerate = () => {
+    if (!item?.id) {
+      toast.error("No item selected");
+      return;
+    }
+    autoFillMutation.mutate();
+  };
+
+  const handleClose = () => {
+    setSelectedClientId("");
+    setSelectedMatterId("");
+    onClose();
+  };
+
+  return (
+    <Dialog
+      onOpenChange={(openState) => !openState && handleClose()}
+      open={open}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Auto-Fill Document</DialogTitle>
+          <DialogDescription>
+            Select a client and matter to auto-fill {item?.title}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="client-select">Client</Label>
+            <Select
+              onValueChange={(value) => {
+                setSelectedClientId(value);
+                setSelectedMatterId("");
+              }}
+              value={selectedClientId}
+            >
+              <SelectTrigger id="client-select">
+                <SelectValue placeholder="Select a client..." />
+              </SelectTrigger>
+              <SelectContent>
+                {clientsData?.items?.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.displayName || `${c.firstName} ${c.lastName}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="matter-select">Matter (Optional)</Label>
+            <Select
+              disabled={!selectedClientId}
+              onValueChange={setSelectedMatterId}
+              value={selectedMatterId}
+            >
+              <SelectTrigger id="matter-select">
+                <SelectValue
+                  placeholder={
+                    selectedClientId
+                      ? "Select a matter..."
+                      : "Select a client first"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No matter selected</SelectItem>
+                {mattersData?.items?.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.title} ({m.matterNumber})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedClientId ? (
+            <div className="rounded-md bg-muted/30 p-3">
+              <p className="text-muted-foreground text-sm">
+                The document will be auto-filled with client information
+                {selectedMatterId ? " and matter details" : ""}.
+              </p>
+            </div>
+          ) : null}
+        </div>
+
+        <DialogFooter>
+          <Button onClick={handleClose} variant="outline">
+            Cancel
+          </Button>
+          <Button
+            className="bg-purple-600 hover:bg-purple-700"
+            disabled={!selectedClientId || autoFillMutation.isPending}
+            onClick={handleGenerate}
+          >
+            {autoFillMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate Document
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function KnowledgeBasePage() {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<string>("ALL");
   const [category, setCategory] = useState<string>("ALL");
   const [business, setBusiness] = useState<string>("ALL");
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [autoFillOpen, setAutoFillOpen] = useState(false);
+  const [autoFillItem, setAutoFillItem] =
+    useState<KnowledgeBaseItemDetails | null>(null);
 
   // Check if user is admin for "Manage" button
   const { data: staffStatusRaw } = useQuery({
@@ -438,9 +619,24 @@ function KnowledgeBasePage() {
       {/* Item Details Dialog */}
       <ItemDetailsDialog
         item={itemDetails as KnowledgeBaseItemDetails | undefined}
+        onAutoFill={(item) => {
+          setAutoFillItem(item);
+          setAutoFillOpen(true);
+          setSelectedItem(null);
+        }}
         onClose={() => setSelectedItem(null)}
         onDownload={handleDownload}
         open={!!selectedItem}
+      />
+
+      {/* Auto-Fill Dialog */}
+      <AutoFillDialog
+        item={autoFillItem}
+        onClose={() => {
+          setAutoFillOpen(false);
+          setAutoFillItem(null);
+        }}
+        open={autoFillOpen}
       />
     </div>
   );

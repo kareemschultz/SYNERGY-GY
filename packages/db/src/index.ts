@@ -26,3 +26,7 @@ export {
 } from "drizzle-orm";
 // Re-export schema for convenience
 export * from "./schema";
+
+// Re-export seed functions for Knowledge Base (used by API routers)
+export { seedKnowledgeBaseForms } from "./seed-kb-forms";
+export { seedKnowledgeBase } from "./seed-knowledge-base";

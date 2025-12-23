@@ -1,6 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Edit, MoreVertical, Plus, Search, Trash } from "lucide-react";
+import {
+  Download,
+  Edit,
+  Loader2,
+  MoreVertical,
+  Plus,
+  Search,
+  Trash,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
@@ -74,6 +82,18 @@ function AdminKnowledgeBasePage() {
       queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
     },
     onError: (error: Error) => toast.error(error.message),
+  });
+
+  const seedFormsMutation = useMutation({
+    mutationFn: () => client.knowledgeBase.seedForms(),
+    onSuccess: () => {
+      toast.success(
+        "Government forms and letter templates seeded successfully"
+      );
+      queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
+    },
+    onError: (error: Error) =>
+      toast.error(`Failed to seed forms: ${error.message}`),
   });
 
   const handleDelete = (id: string) => {
@@ -186,10 +206,29 @@ function AdminKnowledgeBasePage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         actions={
-          <Button onClick={handleCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Resource
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              disabled={seedFormsMutation.isPending}
+              onClick={() => seedFormsMutation.mutate()}
+              variant="outline"
+            >
+              {seedFormsMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Seeding...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Fetch Government Forms
+                </>
+              )}
+            </Button>
+            <Button onClick={handleCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Resource
+            </Button>
+          </div>
         }
         breadcrumbs={[
           { label: "Dashboard", href: "/app" },

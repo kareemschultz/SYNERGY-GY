@@ -226,6 +226,7 @@ export const knowledgeBaseRouter = {
 
   /**
    * Auto-fill form with client/matter data (staff only)
+   * Returns placeholder mappings for document generation
    */
   autoFill: staffProcedure
     .input(
@@ -269,16 +270,48 @@ export const knowledgeBaseRouter = {
         });
       }
 
-      // In real implementation, call document template generation here
-      // using the templateId and the client/matter data
+      // Build placeholder replacements for document generation
+      const placeholderValues: Record<string, string> = {};
+
+      if (clientData) {
+        placeholderValues.client_name =
+          clientData.displayName ||
+          `${clientData.firstName} ${clientData.lastName}`;
+        placeholderValues.client_salutation =
+          clientData.salutation || clientData.firstName || "Client";
+        placeholderValues.client_address = clientData.address || "";
+        placeholderValues.client_email = clientData.email || "";
+        placeholderValues.client_phone = clientData.phone || "";
+        placeholderValues.tin_number = clientData.tinNumber || "";
+        placeholderValues.nis_number = clientData.nisNumber || "";
+      }
+
+      if (matterData) {
+        placeholderValues.matter_number = matterData.matterNumber;
+        placeholderValues.matter_title = matterData.title;
+        placeholderValues.service_description =
+          matterData.description || matterData.title;
+      }
+
+      // Add date placeholders
+      const now = new Date();
+      placeholderValues.current_date = now.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+      placeholderValues.tax_year = String(now.getFullYear() - 1);
 
       return {
         success: true,
         itemId: item.id,
         templateId: item.templateId,
+        storagePath: item.storagePath,
+        fileName: item.fileName,
         clientData,
         matterData,
-        // generatedContent: ... (from template engine)
+        placeholderValues,
+        downloadUrl: `/api/knowledge-base/download/${item.id}?clientId=${input.clientId || ""}`,
       };
     }),
 
@@ -485,4 +518,16 @@ export const knowledgeBaseRouter = {
 
       return items.filter((item) => item !== null);
     }),
+
+  /**
+   * Admin: Seed government forms and letter templates
+   */
+  seedForms: adminProcedure.handler(async () => {
+    const { seedKnowledgeBaseForms } = await import("@SYNERGY-GY/db");
+    await seedKnowledgeBaseForms();
+    return {
+      success: true,
+      message: "Government forms and letter templates seeded successfully",
+    };
+  }),
 };
