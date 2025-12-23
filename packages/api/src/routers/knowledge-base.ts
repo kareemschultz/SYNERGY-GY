@@ -10,9 +10,80 @@ import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure, publicProcedure, staffProcedure } from "../index";
 import {
+  downloadPdfFromUrl,
+  fileExists,
+  generateFileName,
+  sleep,
+} from "../utils/kb-form-downloader";
+import {
   getSeederStaffId,
   seedKnowledgeBaseForms,
 } from "../utils/kb-seed-data";
+
+// Category enum for validation
+const categoryEnum = z.enum([
+  "GRA",
+  "NIS",
+  "IMMIGRATION",
+  "DCRA",
+  "GENERAL",
+  "TRAINING",
+  "INTERNAL",
+]);
+
+// Helper type for batch download item
+type KbItem = {
+  id: string;
+  title: string;
+  category: string;
+  directPdfUrl: string | null;
+  storagePath: string | null;
+};
+
+// Helper function to process a single form download
+async function processFormDownload(
+  item: KbItem
+): Promise<{ status: "downloaded" | "failed"; error?: string }> {
+  if (!item.directPdfUrl) {
+    return { status: "failed", error: "No direct PDF URL" };
+  }
+
+  // Update last download attempt
+  await db
+    .update(knowledgeBaseItem)
+    .set({ lastDownloadAttempt: new Date(), lastDownloadError: null })
+    .where(eq(knowledgeBaseItem.id, item.id));
+
+  // Generate filename and download
+  const fileName = generateFileName(item.title, item.category);
+  const result = await downloadPdfFromUrl(
+    item.directPdfUrl,
+    item.category,
+    fileName
+  );
+
+  if (!result.success) {
+    await db
+      .update(knowledgeBaseItem)
+      .set({ lastDownloadError: result.error || "Unknown error" })
+      .where(eq(knowledgeBaseItem.id, item.id));
+    return { status: "failed", error: result.error };
+  }
+
+  // Update KB item with file info
+  await db
+    .update(knowledgeBaseItem)
+    .set({
+      fileName: result.fileName,
+      storagePath: result.storagePath,
+      mimeType: result.mimeType,
+      fileSize: result.fileSize,
+      lastDownloadError: null,
+    })
+    .where(eq(knowledgeBaseItem.id, item.id));
+
+  return { status: "downloaded" };
+}
 
 export const knowledgeBaseRouter = {
   /**
@@ -572,4 +643,296 @@ export const knowledgeBaseRouter = {
       total: result.total,
     };
   }),
+
+  /**
+   * Admin: Download a single form from its direct PDF URL
+   */
+  downloadFormFromAgency: adminProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        forceRedownload: z.boolean().default(false),
+      })
+    )
+    .handler(async ({ input }) => {
+      const item = await db.query.knowledgeBaseItem.findFirst({
+        where: eq(knowledgeBaseItem.id, input.id),
+      });
+
+      if (!item) {
+        throw new ORPCError("NOT_FOUND", {
+          message: "Knowledge base item not found",
+        });
+      }
+
+      if (!item.directPdfUrl) {
+        throw new ORPCError("BAD_REQUEST", {
+          message:
+            "This item does not have a direct PDF URL. Set the directPdfUrl first.",
+        });
+      }
+
+      // Check if already downloaded (unless force redownload)
+      if (item.storagePath && !input.forceRedownload) {
+        const exists = fileExists(item.storagePath);
+        if (exists) {
+          return {
+            success: true,
+            message: "File already exists",
+            alreadyExists: true,
+            storagePath: item.storagePath,
+            fileName: item.fileName,
+          };
+        }
+      }
+
+      // Update last download attempt
+      await db
+        .update(knowledgeBaseItem)
+        .set({
+          lastDownloadAttempt: new Date(),
+          lastDownloadError: null,
+        })
+        .where(eq(knowledgeBaseItem.id, input.id));
+
+      // Generate filename from title and category
+      const fileName = generateFileName(item.title, item.category);
+
+      // Attempt download
+      const result = await downloadPdfFromUrl(
+        item.directPdfUrl,
+        item.category,
+        fileName
+      );
+
+      if (!result.success) {
+        // Record the error
+        await db
+          .update(knowledgeBaseItem)
+          .set({
+            lastDownloadError: result.error || "Unknown error",
+          })
+          .where(eq(knowledgeBaseItem.id, input.id));
+
+        return {
+          success: false,
+          error: result.error,
+          errorCode: result.errorCode,
+        };
+      }
+
+      // Update the KB item with file info
+      await db
+        .update(knowledgeBaseItem)
+        .set({
+          fileName: result.fileName,
+          storagePath: result.storagePath,
+          mimeType: result.mimeType,
+          fileSize: result.fileSize,
+          lastDownloadError: null,
+        })
+        .where(eq(knowledgeBaseItem.id, input.id));
+
+      return {
+        success: true,
+        message: "File downloaded successfully",
+        fileName: result.fileName,
+        storagePath: result.storagePath,
+        fileSize: result.fileSize,
+      };
+    }),
+
+  /**
+   * Admin: Batch download all forms with direct PDF URLs
+   */
+  downloadAllFormsFromAgencies: adminProcedure
+    .input(
+      z.object({
+        category: categoryEnum.optional(),
+        skipExisting: z.boolean().default(true),
+        dryRun: z.boolean().default(false),
+      })
+    )
+    .handler(async ({ input }) => {
+      const conditions: ReturnType<typeof eq>[] = [
+        eq(knowledgeBaseItem.isActive, true),
+        sql`${knowledgeBaseItem.directPdfUrl} IS NOT NULL`,
+      ];
+
+      if (input.category) {
+        conditions.push(eq(knowledgeBaseItem.category, input.category));
+      }
+
+      const items = await db.query.knowledgeBaseItem.findMany({
+        where: and(...conditions),
+        orderBy: [desc(knowledgeBaseItem.category)],
+      });
+
+      const result = {
+        processed: 0,
+        downloaded: 0,
+        skipped: 0,
+        failed: 0,
+        errors: [] as { id: string; title: string; error: string }[],
+      };
+
+      for (const item of items) {
+        result.processed += 1;
+
+        // Skip if file exists and skipExisting is true
+        const shouldSkip =
+          input.skipExisting &&
+          item.storagePath &&
+          fileExists(item.storagePath);
+        if (shouldSkip) {
+          result.skipped += 1;
+          continue;
+        }
+
+        // Dry run - just count
+        if (input.dryRun) {
+          result.downloaded += 1;
+          continue;
+        }
+
+        // Rate limiting between actual downloads
+        const needsDelay = result.downloaded > 0 || result.failed > 0;
+        if (needsDelay) {
+          await sleep(2000);
+        }
+
+        // Process the download using helper function
+        const downloadResult = await processFormDownload(item);
+
+        if (downloadResult.status === "failed") {
+          result.failed += 1;
+          result.errors.push({
+            id: item.id,
+            title: item.title,
+            error: downloadResult.error || "Unknown error",
+          });
+          continue;
+        }
+
+        result.downloaded += 1;
+      }
+
+      return {
+        success: result.failed === 0,
+        message: input.dryRun
+          ? `Dry run complete: ${result.downloaded} forms would be downloaded`
+          : `Downloaded ${result.downloaded} forms, skipped ${result.skipped}, failed ${result.failed}`,
+        ...result,
+      };
+    }),
+
+  /**
+   * Admin: Get download status statistics
+   */
+  getFormDownloadStatus: adminProcedure.handler(async () => {
+    // Get counts for different states
+    const allItems = await db
+      .select({
+        id: knowledgeBaseItem.id,
+        category: knowledgeBaseItem.category,
+        directPdfUrl: knowledgeBaseItem.directPdfUrl,
+        storagePath: knowledgeBaseItem.storagePath,
+        lastDownloadError: knowledgeBaseItem.lastDownloadError,
+      })
+      .from(knowledgeBaseItem)
+      .where(
+        and(
+          eq(knowledgeBaseItem.isActive, true),
+          eq(knowledgeBaseItem.type, "AGENCY_FORM")
+        )
+      );
+
+    const stats = {
+      total: allItems.length,
+      withDirectUrl: 0,
+      downloaded: 0,
+      pending: 0,
+      failed: 0,
+      byCategory: {} as Record<
+        string,
+        { total: number; downloaded: number; pending: number; failed: number }
+      >,
+    };
+
+    for (const item of allItems) {
+      // Initialize category stats if not exists
+      if (!stats.byCategory[item.category]) {
+        stats.byCategory[item.category] = {
+          total: 0,
+          downloaded: 0,
+          pending: 0,
+          failed: 0,
+        };
+      }
+
+      stats.byCategory[item.category].total += 1;
+
+      if (item.directPdfUrl) {
+        stats.withDirectUrl += 1;
+
+        if (item.storagePath && fileExists(item.storagePath)) {
+          stats.downloaded += 1;
+          stats.byCategory[item.category].downloaded += 1;
+        } else if (item.lastDownloadError) {
+          stats.failed += 1;
+          stats.byCategory[item.category].failed += 1;
+        } else {
+          stats.pending += 1;
+          stats.byCategory[item.category].pending += 1;
+        }
+      } else {
+        stats.pending += 1;
+        stats.byCategory[item.category].pending += 1;
+      }
+    }
+
+    return stats;
+  }),
+
+  /**
+   * Admin: Update the direct PDF URL for a KB item
+   */
+  updateDirectPdfUrl: adminProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        directPdfUrl: z.string().url().nullable(),
+      })
+    )
+    .handler(async ({ input, context }) => {
+      const staffId = context.staff?.id;
+      if (!staffId) {
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "Staff profile not found",
+        });
+      }
+
+      const [updated] = await db
+        .update(knowledgeBaseItem)
+        .set({
+          directPdfUrl: input.directPdfUrl,
+          lastUpdatedById: staffId,
+          // Clear download error when URL changes
+          lastDownloadError: null,
+        })
+        .where(eq(knowledgeBaseItem.id, input.id))
+        .returning();
+
+      if (!updated) {
+        throw new ORPCError("NOT_FOUND", {
+          message: "Knowledge base item not found",
+        });
+      }
+
+      return {
+        success: true,
+        id: updated.id,
+        directPdfUrl: updated.directPdfUrl,
+      };
+    }),
 };

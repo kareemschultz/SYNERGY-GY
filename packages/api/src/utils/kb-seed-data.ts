@@ -39,6 +39,7 @@ type KnowledgeBaseItemData = {
   relatedServices: string[];
   requiredFor: string[];
   agencyUrl?: string;
+  directPdfUrl?: string; // Direct link to PDF for auto-download
   governmentFees?: string;
   isStaffOnly: boolean;
   isFeatured: boolean;
@@ -521,7 +522,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     supportsAutoFill: true,
     relatedServices: ["Work Permit Application", "Immigration Services"],
     requiredFor: ["Foreign Worker Employment"],
-    agencyUrl:
+    agencyUrl: "https://mofa.gov.gy/",
+    directPdfUrl:
       "https://www.oldminfor.minfor.gov.gy/sites/default/files/2022-02/WORK_PERMIT_APPLICATION_FORM.pdf",
     governmentFees: "GYD 50,000 - 150,000 depending on duration",
     isStaffOnly: false,
@@ -1291,6 +1293,7 @@ export async function seedKnowledgeBaseForms(
             description: item.description,
             shortDescription: item.shortDescription,
             agencyUrl: item.agencyUrl,
+            directPdfUrl: item.directPdfUrl,
             governmentFees: item.governmentFees,
             relatedServices: item.relatedServices,
             requiredFor: item.requiredFor,
@@ -1320,6 +1323,7 @@ export async function seedKnowledgeBaseForms(
         relatedServices: item.relatedServices,
         requiredFor: item.requiredFor,
         agencyUrl: item.agencyUrl,
+        directPdfUrl: item.directPdfUrl,
         governmentFees: item.governmentFees,
         isActive: true,
         isStaffOnly: item.isStaffOnly,

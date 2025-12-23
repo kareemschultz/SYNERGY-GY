@@ -73,6 +73,11 @@ export const knowledgeBaseItem = pgTable(
     agencyUrl: text("agency_url"),
     governmentFees: text("government_fees"),
 
+    // Auto-download tracking
+    directPdfUrl: text("direct_pdf_url"), // Direct link to PDF (when available)
+    lastDownloadAttempt: timestamp("last_download_attempt"), // When last attempted
+    lastDownloadError: text("last_download_error"), // Error message if failed
+
     // Access control
     isActive: boolean("is_active").default(true).notNull(),
     isStaffOnly: boolean("is_staff_only").default(true).notNull(),

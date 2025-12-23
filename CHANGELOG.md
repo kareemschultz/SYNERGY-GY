@@ -38,6 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Knowledge Base Form Auto-Download System** - December 23, 2024
+  - New admin page to manage government form downloads at `/app/admin/knowledge-base-forms`
+  - Added `directPdfUrl` field to distinguish direct PDF links from portal URLs
+  - Download tracking with `lastDownloadAttempt` and `lastDownloadError` fields
+  - Four new API endpoints: `downloadFormFromAgency`, `downloadAllFormsFromAgencies`, `getFormDownloadStatus`, `updateDirectPdfUrl`
+  - PDF download utility with browser-like headers, PDF validation, and error handling
+  - Admin UI features: status dashboard, filterable table, download/retry actions, URL management dialog
+  - Organized storage at `/data/uploads/knowledge-base/{category}/`
+  - **Files**: `packages/db/src/schema/knowledge-base.ts`, `packages/api/src/utils/kb-form-downloader.ts`, `packages/api/src/routers/knowledge-base.ts`, `packages/api/src/utils/kb-seed-data.ts`, `apps/web/src/routes/app/admin/knowledge-base-forms.tsx`
+
 - **73+ Guyanese Government Forms** - December 23, 2024
   - Comprehensive Knowledge Base seed with government forms and templates
   - **GRA Forms** (12): ITR, VAT, PAYE, withholding taxes, employer registration
