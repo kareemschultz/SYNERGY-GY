@@ -416,8 +416,14 @@ function AutoFillDialog({
             <Label htmlFor="matter-select">Matter (Optional)</Label>
             <Select
               disabled={!selectedClientId}
-              onValueChange={setSelectedMatterId}
-              value={selectedMatterId}
+              onValueChange={(value) => {
+                if (value === "none") {
+                  setSelectedMatterId("");
+                } else {
+                  setSelectedMatterId(value);
+                }
+              }}
+              value={selectedMatterId || "none"}
             >
               <SelectTrigger id="matter-select">
                 <SelectValue
@@ -429,7 +435,7 @@ function AutoFillDialog({
                 />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No matter selected</SelectItem>
+                <SelectItem value="none">No matter selected</SelectItem>
                 {mattersData?.matters?.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
                     {m.title} ({m.referenceNumber})
