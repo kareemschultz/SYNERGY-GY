@@ -85,6 +85,29 @@ async function processFormDownload(
   return { status: "downloaded" };
 }
 
+// Helper type for stats calculation
+type StatsItem = {
+  directPdfUrl: string | null;
+  storagePath: string | null;
+  lastDownloadError: string | null;
+};
+
+// Helper function to classify a form item's download status
+function classifyFormStatus(
+  item: StatsItem
+): "downloaded" | "pending" | "failed" {
+  if (!item.directPdfUrl) {
+    return "pending";
+  }
+  if (item.storagePath && fileExists(item.storagePath)) {
+    return "downloaded";
+  }
+  if (item.lastDownloadError) {
+    return "failed";
+  }
+  return "pending";
+}
+
 export const knowledgeBaseRouter = {
   /**
    * List KB items with filters (accessible to staff and clients)
@@ -870,25 +893,22 @@ export const knowledgeBaseRouter = {
         };
       }
 
-      stats.byCategory[item.category].total += 1;
+      const categoryStats = stats.byCategory[item.category];
+      if (!categoryStats) {
+        continue;
+      }
 
+      categoryStats.total += 1;
+
+      // Count items with direct URL
       if (item.directPdfUrl) {
         stats.withDirectUrl += 1;
-
-        if (item.storagePath && fileExists(item.storagePath)) {
-          stats.downloaded += 1;
-          stats.byCategory[item.category].downloaded += 1;
-        } else if (item.lastDownloadError) {
-          stats.failed += 1;
-          stats.byCategory[item.category].failed += 1;
-        } else {
-          stats.pending += 1;
-          stats.byCategory[item.category].pending += 1;
-        }
-      } else {
-        stats.pending += 1;
-        stats.byCategory[item.category].pending += 1;
       }
+
+      // Classify and update stats using helper
+      const status = classifyFormStatus(item);
+      stats[status] += 1;
+      categoryStats[status] += 1;
     }
 
     return stats;

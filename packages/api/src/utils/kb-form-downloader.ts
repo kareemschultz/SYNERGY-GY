@@ -261,8 +261,11 @@ export async function downloadPdfFromUrl(
   const sanitizedFileName = sanitizeFileName(fileName);
   const filePath = join(destDir, sanitizedFileName);
 
-  // Select a random User-Agent
-  const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+  // Select a random User-Agent (with fallback)
+  const randomIndex = Math.floor(Math.random() * USER_AGENTS.length);
+  const userAgent =
+    USER_AGENTS[randomIndex] ??
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
 
   try {
     // Create AbortController for timeout
