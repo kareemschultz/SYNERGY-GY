@@ -9,6 +9,10 @@ import { ORPCError } from "@orpc/server";
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure, publicProcedure, staffProcedure } from "../index";
+import {
+  getSeederStaffId,
+  seedKnowledgeBaseForms,
+} from "../utils/kb-seed-data";
 
 export const knowledgeBaseRouter = {
   /**
@@ -520,15 +524,52 @@ export const knowledgeBaseRouter = {
 
   /**
    * Admin: Seed government forms and letter templates
-   * NOTE: This endpoint is temporarily disabled. Run seeding via CLI instead:
-   * bun run packages/db/src/seed-kb-forms.ts
+   * Seeds 70+ government forms and 6 letter templates into the Knowledge Base.
    */
-  seedForms: adminProcedure.handler(() => {
-    // Seed functions are not exported from @SYNERGY-GY/db to avoid circular deps
-    // For now, return instructions to run manually
-    throw new ORPCError("NOT_IMPLEMENTED", {
-      message:
-        "Seeding via API is temporarily disabled. Please run from CLI: bun run packages/db/src/seed-kb-forms.ts",
-    });
+  seedForms: adminProcedure.handler(async ({ context }) => {
+    // Get the staff ID to use as the creator
+    const staffId = context.staff?.id;
+    if (!staffId) {
+      // Try to find an owner staff ID as fallback
+      const fallbackStaffId = await getSeederStaffId();
+      if (!fallbackStaffId) {
+        throw new ORPCError("BAD_REQUEST", {
+          message:
+            "No staff member found to use as creator. Please ensure at least one staff member exists.",
+        });
+      }
+    }
+
+    const creatorId = staffId || (await getSeederStaffId());
+    if (!creatorId) {
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Could not determine a valid staff ID for seeding.",
+      });
+    }
+
+    // Perform the seeding
+    const result = await seedKnowledgeBaseForms(creatorId);
+
+    if (!result.success && result.errors.length > 0) {
+      // Return partial success with error details
+      return {
+        success: false,
+        message: `Seeding completed with ${result.errors.length} errors`,
+        inserted: result.inserted,
+        updated: result.updated,
+        skipped: result.skipped,
+        total: result.total,
+        errors: result.errors.slice(0, 10), // Limit to first 10 errors
+      };
+    }
+
+    return {
+      success: true,
+      message: `Successfully seeded Knowledge Base with ${result.inserted} new items and updated ${result.updated} existing items.`,
+      inserted: result.inserted,
+      updated: result.updated,
+      skipped: result.skipped,
+      total: result.total,
+    };
   }),
 };
