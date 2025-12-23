@@ -199,6 +199,51 @@ DATABASE_URL="postgresql://..." bun run db:push
 
 ---
 
+## Environment Configuration
+
+> **SIMPLE SETUP** - We use a single `.env` file for all configuration (linuxserver.io style).
+
+### Single .env File Pattern
+
+**DO NOT use:**
+- `.env.production` - OBSOLETE
+- `.env.development` - Not used
+- Multiple env files - Confusing
+
+**DO use:**
+- `.env` - Single source of truth
+- `.env.example` - Template for creating `.env`
+
+### Critical: PASSWORD MATCHING
+
+`DATABASE_URL` must have the **same password** as `POSTGRES_PASSWORD`:
+
+```env
+# These passwords MUST match!
+POSTGRES_PASSWORD=ugRKL8EZvGzjA81crf40WP1CYkpg9Rxj
+DATABASE_URL=postgresql://gknexus:ugRKL8EZvGzjA81crf40WP1CYkpg9Rxj@postgres:5432/gknexus
+#                         ↑ same password here ↑
+```
+
+### Changing Database Password
+
+If you need to change the database password:
+1. Update `POSTGRES_PASSWORD` in `.env`
+2. Update the password in `DATABASE_URL` to match (or run `./scripts/sync-database-url.sh`)
+3. Update PostgreSQL: `docker exec -it gk-nexus-postgres psql -U gknexus -c "ALTER USER gknexus WITH PASSWORD 'newpassword';"`
+4. Recreate containers: `docker compose down && docker compose up -d`
+
+### Helper Script
+
+Run `./scripts/sync-database-url.sh` to automatically sync DATABASE_URL with POSTGRES_PASSWORD:
+
+```bash
+./scripts/sync-database-url.sh
+# Checks if passwords match and updates DATABASE_URL if needed
+```
+
+---
+
 ## oRPC + TanStack Query Patterns
 
 > **CRITICAL KNOWLEDGE** - This project uses oRPC with TanStack Query. These patterns are essential.

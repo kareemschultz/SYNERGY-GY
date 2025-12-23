@@ -295,7 +295,7 @@ Before deploying to production:
 
 ## Security Best Practices
 
-1. **Never commit secrets** - use .env.production (gitignored)
+1. **Never commit secrets** - use .env (gitignored)
 2. **Use strong passwords** - min 32 chars for BETTER_AUTH_SECRET
 3. **Enable SSL/TLS** - use Let's Encrypt or cloud provider
 4. **Regular updates** - keep base images updated

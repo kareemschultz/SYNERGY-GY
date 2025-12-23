@@ -192,19 +192,19 @@ git tag -l
 ### 2. Create Production Environment File
 
 ```bash
-# Create .env.production from example
-cp apps/server/.env.example .env.production
+# Create .env from example
+cp .env.example .env
 
 # Secure the file (readable only by owner)
-chmod 600 .env.production
+chmod 600 .env
 ```
 
 ### 3. Configure Environment Variables
 
-Edit `.env.production` with your production values:
+Edit `.env` with your production values:
 
 ```bash
-nano .env.production
+nano .env
 ```
 
 **Complete Production Configuration:**
@@ -340,7 +340,7 @@ echo "POSTGRES_PASSWORD=$(openssl rand -base64 24)"
 echo "INITIAL_OWNER_PASSWORD=$(openssl rand -base64 16)"
 ```
 
-**Copy the generated values into `.env.production`**
+**Copy the generated values into `.env`**
 
 ### 5. Create Required Directories
 
@@ -359,14 +359,14 @@ ls -la data/ backups/ logs/
 
 ```bash
 # Check environment file exists and is secured
-ls -l .env.production
+ls -l .env
 # Expected: -rw------- (permissions 600)
 
 # Test environment variable loading (without exposing secrets)
-grep -v '^#' .env.production | grep -v '^ #PROTECTED' | head -n 5
+grep -v '^#' .env | grep -v '^ #PROTECTED' | head -n 5
 
 # Verify required variables are set
-grep -E '^(POSTGRES_PASSWORD|BETTER_AUTH_SECRET|BETTER_AUTH_URL)=' .env.production | wc -l
+grep -E '^(POSTGRES_PASSWORD|BETTER_AUTH_SECRET|BETTER_AUTH_URL)=' .env | wc -l
 # Expected: 3 (all critical variables present)
 ```
 
@@ -512,7 +512,7 @@ The `docker-compose.yml` file is pre-configured with:
 ```bash
 # Load environment variables
 set -a
-source .env.production
+source .env
 set +a
 
 # Start all services in detached mode
@@ -723,12 +723,12 @@ ls -lh backups/
 tar czf backups/uploads-$(date +%Y%m%d-%H%M%S).tar.gz data/uploads/
 
 # Backup environment configuration (SECURE THIS FILE!)
-cp .env.production backups/env-backup-$(date +%Y%m%d-%H%M%S)
+cp .env backups/env-backup-$(date +%Y%m%d-%H%M%S)
 chmod 600 backups/env-backup-*
 
 # Create complete backup (database + uploads + config)
 tar czf backups/complete-backup-$(date +%Y%m%d-%H%M%S).tar.gz \
-  .env.production \
+  .env \
   data/uploads/ \
   backups/db-$(date +%Y%m%d-%H%M%S).sql.gz
 ```
@@ -748,7 +748,7 @@ crontab -e
 0 3 * * * find /opt/gk-nexus/backups -name "db-*.sql.gz" -mtime +30 -delete
 
 # Add weekly full backup (database + uploads) - Sunday 3:00 AM
-0 3 * * 0 cd /opt/gk-nexus && tar czf backups/full-backup-$(date +\%Y\%m\%d).tar.gz .env.production data/uploads/ backups/db-$(date +\%Y\%m\%d-\%H\%M\%S).sql.gz
+0 3 * * 0 cd /opt/gk-nexus && tar czf backups/full-backup-$(date +\%Y\%m\%d).tar.gz .env data/uploads/ backups/db-$(date +\%Y\%m\%d-\%H\%M\%S).sql.gz
 
 # Verify cron jobs
 crontab -l
@@ -788,8 +788,8 @@ curl -f http://localhost:3000/health
 docker compose down
 
 # Restore environment configuration
-cp backups/env-backup-20250115-020000 .env.production
-chmod 600 .env.production
+cp backups/env-backup-20250115-020000 .env
+chmod 600 .env
 
 # Restore database
 gunzip -c backups/db-20250115-020000.sql.gz | \
@@ -830,7 +830,7 @@ Cloudflare R2 is S3-compatible with **zero egress fees**.
 
 **Step 2: Configure Environment Variables**
 
-Add to `.env.production`:
+Add to `.env`:
 
 ```bash
 BACKUP_S3_ENDPOINT=https://[account-id].r2.cloudflarestorage.com
@@ -1694,7 +1694,7 @@ docker compose exec -T postgres \
 tar czf backups/uploads-pre-update-$(date +%Y%m%d-%H%M%S).tar.gz data/uploads/
 
 # Backup environment configuration
-cp .env.production backups/env-pre-update-$(date +%Y%m%d-%H%M%S)
+cp .env backups/env-pre-update-$(date +%Y%m%d-%H%M%S)
 
 # Verify backups were created
 ls -lh backups/pre-update-*
@@ -1879,7 +1879,7 @@ rm -rf data/uploads/*
 tar xzf backups/uploads-pre-update-*.tar.gz
 
 # Step 4: Restore environment configuration (if changed)
-cp backups/env-pre-update-* .env.production
+cp backups/env-pre-update-* .env
 
 # Step 5: Checkout previous code version
 git log --oneline  # Find previous commit hash
@@ -2096,7 +2096,7 @@ docker compose logs postgres | tail -50
 docker compose exec postgres \
   psql -U gknexus -d synergy_gy -c "SELECT 1;"
 
-# Verify DATABASE_URL format in .env.production
+# Verify DATABASE_URL format in .env
 # ✓ Correct: postgresql://gknexus:password@postgres:5432/synergy_gy
 # ✗ Wrong:   postgresql://gknexus:password@localhost:5432/synergy_gy
 #                                           ^^^^^^^^^ Use 'postgres' (service name)
@@ -2109,7 +2109,7 @@ docker compose exec postgres \
 docker compose restart postgres
 
 # 2. Check DATABASE_URL uses 'postgres' hostname (not 'localhost')
-grep DATABASE_URL .env.production
+grep DATABASE_URL .env
 
 # 3. Verify database exists
 docker compose exec postgres \
@@ -2320,7 +2320,7 @@ docker compose exec app sh -c 'echo $CORS_ORIGIN'
 
 ```bash
 # 1. Verify environment variables
-grep -E '^(BETTER_AUTH_SECRET|BETTER_AUTH_URL|CORS_ORIGIN)=' .env.production
+grep -E '^(BETTER_AUTH_SECRET|BETTER_AUTH_URL|CORS_ORIGIN)=' .env
 
 # 2. Clear browser cookies and cache
 
@@ -2407,7 +2407,7 @@ Use this comprehensive checklist before going live:
 ### Configuration
 
 #### Environment Setup
-- [ ] `.env.production` created from example
+- [ ] `.env` created from example
 - [ ] `BETTER_AUTH_SECRET` generated with `openssl rand -base64 32`
 - [ ] `POSTGRES_PASSWORD` set to strong random password (20+ chars)
 - [ ] `BETTER_AUTH_URL` set to production domain (https://)
@@ -2416,7 +2416,7 @@ Use this comprehensive checklist before going live:
 - [ ] `RESEND_API_KEY` configured if using email features
 - [ ] `EMAIL_FROM` set to verified domain in Resend
 - [ ] `INITIAL_OWNER_EMAIL` and `INITIAL_OWNER_PASSWORD` set
-- [ ] Environment file permissions set to 600 (`chmod 600 .env.production`)
+- [ ] Environment file permissions set to 600 (`chmod 600 .env`)
 - [ ] Required directories created (`data/uploads`, `backups`, `logs`)
 
 #### Security Configuration
@@ -2527,7 +2527,7 @@ Use this comprehensive checklist before going live:
 
 #### Immediate Tasks (First 24 Hours)
 - [ ] Monitor logs for errors continuously
-- [ ] Remove `INITIAL_OWNER_*` variables from `.env.production`
+- [ ] Remove `INITIAL_OWNER_*` variables from `.env`
 - [ ] Change initial owner password via UI
 - [ ] Create additional staff accounts
 - [ ] Configure user roles and permissions
@@ -2796,8 +2796,8 @@ sudo netstat -tuln | grep 5432
 # Rotate BETTER_AUTH_SECRET every 90 days
 echo "BETTER_AUTH_SECRET=$(openssl rand -base64 32)"
 
-# Update .env.production with new secret
-nano .env.production
+# Update .env with new secret
+nano .env
 
 # Restart application to apply
 docker compose restart app

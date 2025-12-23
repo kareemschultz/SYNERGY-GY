@@ -439,7 +439,7 @@ grep -r "debugger" src/
 ```
 .env                  # Local development (gitignored)
 .env.example          # Template (committed)
-.env.production       # Production (never committed)
+.env       # Production (never committed)
 .env.test             # Test environment
 ```
 

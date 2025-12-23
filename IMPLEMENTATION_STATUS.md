@@ -123,7 +123,7 @@ The current image is larger than the 300MB target. This is likely due to:
 
 1. **`DEPLOYMENT.md`** (998 lines) - Comprehensive production deployment guide
    - Prerequisites and system requirements
-   - Environment configuration (.env.production)
+   - Environment configuration (.env)
    - Docker image deployment (GHCR pull + local build)
    - PostgreSQL database setup and migrations
    - Production deployment steps
