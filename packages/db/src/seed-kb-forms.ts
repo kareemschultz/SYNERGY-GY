@@ -18,16 +18,25 @@ import { user } from "./schema/auth";
 import { staff } from "./schema/core";
 import { knowledgeBaseItem } from "./schema/knowledge-base";
 
-// Get project root
+// Get project root (computed lazily in functions to avoid side effects at import time)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const PROJECT_ROOT = resolve(__dirname, "../../..");
-const KB_UPLOADS_DIR = join(PROJECT_ROOT, "data/uploads/knowledge-base");
-const TEMPLATES_DIR = join(KB_UPLOADS_DIR, "templates");
 
-// Ensure templates directory exists
-if (!existsSync(TEMPLATES_DIR)) {
-  mkdirSync(TEMPLATES_DIR, { recursive: true });
+// Helper to get paths - called inside functions to avoid top-level side effects
+function getKbPaths() {
+  const KB_UPLOADS_DIR = join(PROJECT_ROOT, "data/uploads/knowledge-base");
+  const TEMPLATES_DIR = join(KB_UPLOADS_DIR, "templates");
+  return { KB_UPLOADS_DIR, TEMPLATES_DIR };
+}
+
+// Helper to ensure templates directory exists - called only when seeding
+function ensureTemplatesDirExists() {
+  const { TEMPLATES_DIR } = getKbPaths();
+  if (!existsSync(TEMPLATES_DIR)) {
+    mkdirSync(TEMPLATES_DIR, { recursive: true });
+  }
+  return TEMPLATES_DIR;
 }
 
 type KnowledgeBaseType =
@@ -750,6 +759,7 @@ async function generateLetterTemplate(
 async function createLetterTemplates(): Promise<void> {
   console.log("\n📝 Generating letter templates...\n");
 
+  const TEMPLATES_DIR = ensureTemplatesDirExists();
   for (const config of letterTemplateConfigs) {
     const filePath = join(TEMPLATES_DIR, config.fileName);
 
@@ -772,6 +782,7 @@ async function createLetterTemplates(): Promise<void> {
 
 async function getFileSizes(): Promise<Map<string, number>> {
   const sizes = new Map<string, number>();
+  const { KB_UPLOADS_DIR } = getKbPaths();
 
   async function scanDir(dir: string): Promise<void> {
     if (!existsSync(dir)) {
