@@ -7,7 +7,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, Plus, Search } from "lucide-react";
+import { Calendar, Loader2, Plus, Search, Users } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { CourseCard } from "@/components/training/course-card";
@@ -116,12 +116,26 @@ function TrainingPage() {
             Manage GCMC training catalog and schedules
           </p>
         </div>
-        <Button asChild>
-          <Link to="/app/training/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Course
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link to="/app/training/enrollments">
+              <Users className="mr-2 h-4 w-4" />
+              Enrollments
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/app/training/calendar">
+              <Calendar className="mr-2 h-4 w-4" />
+              Calendar
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/app/training/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Course
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">

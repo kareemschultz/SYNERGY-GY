@@ -1,7 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  BookOpen,
+  Briefcase,
+  Download,
   Loader2,
+  Mail,
   Shield,
   UserCheck,
   UserCog,
@@ -119,9 +123,9 @@ function AdminDashboardPage() {
       />
 
       <div className="p-6">
-        {/* Quick Actions */}
+        {/* Quick Actions - Staff Management */}
         <div className="mb-8">
-          <h2 className="mb-4 font-semibold text-lg">Quick Actions</h2>
+          <h2 className="mb-4 font-semibold text-lg">Staff Management</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <QuickActionCard
               description="View and manage all staff members"
@@ -146,6 +150,37 @@ function AdminDashboardPage() {
               href="/app/admin/settings"
               icon={UserCog}
               title="System Settings"
+            />
+          </div>
+        </div>
+
+        {/* Quick Actions - Content & Services */}
+        <div className="mb-8">
+          <h2 className="mb-4 font-semibold text-lg">Content & Services</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <QuickActionCard
+              description="Manage knowledge base entries and guides"
+              href="/app/admin/knowledge-base"
+              icon={BookOpen}
+              title="Knowledge Base"
+            />
+            <QuickActionCard
+              description="Download government forms and manage PDFs"
+              href="/app/admin/knowledge-base-forms"
+              icon={Download}
+              title="Form Downloads"
+            />
+            <QuickActionCard
+              description="Configure service offerings and pricing"
+              href="/app/admin/services"
+              icon={Briefcase}
+              title="Services Management"
+            />
+            <QuickActionCard
+              description="Manage client portal access invitations"
+              href="/app/admin/portal-invites"
+              icon={Mail}
+              title="Portal Invites"
             />
           </div>
         </div>

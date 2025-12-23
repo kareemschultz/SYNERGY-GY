@@ -495,12 +495,20 @@ function DocumentsPage() {
     <div className="flex flex-col">
       <PageHeader
         actions={
-          <Button asChild>
-            <Link to="/app/documents/upload">
-              <Upload className="mr-2 h-4 w-4" />
-              Upload Document
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app/documents/templates">
+                <FileText className="mr-2 h-4 w-4" />
+                Templates
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/app/documents/upload">
+                <Upload className="mr-2 h-4 w-4" />
+                Upload Document
+              </Link>
+            </Button>
+          </div>
         }
         breadcrumbs={[
           { label: "Dashboard", href: "/app" },

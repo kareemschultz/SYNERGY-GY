@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **NODE_ENV Showing Development in Production** - December 23, 2025
+  - Fixed docker-compose.yml to hardcode `NODE_ENV: production` instead of allowing .env override
+  - Settings > About page now correctly shows "Production" environment
+  - **Files**: `docker-compose.yml`
+
 - **Knowledge Base Page Crash** - December 23, 2024
   - Fixed "Something went wrong!" error on Knowledge Base page
   - Root cause: oRPC v1.12+ wraps responses in `{ json: T }` envelope
@@ -37,6 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Files**: `packages/api/src/routers/knowledge-base.ts`, `apps/web/src/routes/app/knowledge-base/index.tsx`
 
 ### Added
+
+- **Improved Navigation Discoverability** - December 23, 2025
+  - Admin Panel: Added quick actions for Knowledge Base, Form Downloads, Services Management, Portal Invites
+  - Reports: Added action buttons for Invoice Aging and Custom Reports pages
+  - Documents: Added Templates button in page header
+  - Training: Added Enrollments and Calendar buttons in page header
+  - **Files**: `apps/web/src/routes/app/admin/index.tsx`, `apps/web/src/routes/app/reports/index.tsx`, `apps/web/src/routes/app/documents/index.tsx`, `apps/web/src/routes/app/training/index.tsx`
 
 - **Knowledge Base Form Auto-Download System** - December 23, 2024
   - New admin page to manage government form downloads at `/app/admin/knowledge-base-forms`

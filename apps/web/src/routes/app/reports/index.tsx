@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BarChart3,
   Calendar,
@@ -273,6 +273,22 @@ function ReportsPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        actions={
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline">
+              <Link to="/app/reports/aging">
+                <Calendar className="mr-2 h-4 w-4" />
+                Invoice Aging
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/app/reports/custom">
+                <FileText className="mr-2 h-4 w-4" />
+                Custom Reports
+              </Link>
+            </Button>
+          </div>
+        }
         breadcrumbs={[
           { label: "Dashboard", href: "/app" },
           { label: "Reports" },
