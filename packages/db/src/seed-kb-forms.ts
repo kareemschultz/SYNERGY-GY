@@ -955,13 +955,8 @@ async function seedKnowledgeBaseForms(): Promise<void> {
 // Export for use in other scripts
 export { seedKnowledgeBaseForms };
 
-// Run directly if executed
-const isDirectRun = import.meta.url === `file://${process.argv[1]}`;
-if (isDirectRun) {
-  seedKnowledgeBaseForms()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error("❌ Seed failed:", error);
-      process.exit(1);
-    });
-}
+// NOTE: This file should be run directly via CLI, not auto-executed in bundled code
+// Run with: bun run packages/db/src/seed-kb-forms.ts
+// The old isDirectRun check fails in bundled environments where import.meta.url
+// matches process.argv[1], causing unintended execution at server startup.
+// To run manually, use the CLI command above.

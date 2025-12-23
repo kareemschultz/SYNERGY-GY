@@ -5,6 +5,7 @@ import {
   knowledgeBaseItem,
   matter,
 } from "@SYNERGY-GY/db";
+import { ORPCError } from "@orpc/server";
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure, publicProcedure, staffProcedure } from "../index";
@@ -519,13 +520,15 @@ export const knowledgeBaseRouter = {
 
   /**
    * Admin: Seed government forms and letter templates
+   * NOTE: This endpoint is temporarily disabled. Run seeding via CLI instead:
+   * bun run packages/db/src/seed-kb-forms.ts
    */
-  seedForms: adminProcedure.handler(async () => {
-    const { seedKnowledgeBaseForms } = await import("@SYNERGY-GY/db");
-    await seedKnowledgeBaseForms();
-    return {
-      success: true,
-      message: "Government forms and letter templates seeded successfully",
-    };
+  seedForms: adminProcedure.handler(() => {
+    // Seed functions are not exported from @SYNERGY-GY/db to avoid circular deps
+    // For now, return instructions to run manually
+    throw new ORPCError("NOT_IMPLEMENTED", {
+      message:
+        "Seeding via API is temporarily disabled. Please run from CLI: bun run packages/db/src/seed-kb-forms.ts",
+    });
   }),
 };

@@ -2789,13 +2789,8 @@ async function seedKnowledgeBase() {
 // Export for use in unified seed script
 export { seedKnowledgeBase };
 
-// Run directly if this script is executed
-const isDirectRun = import.meta.url === `file://${process.argv[1]}`;
-if (isDirectRun) {
-  seedKnowledgeBase()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error("❌ Seed failed:", error);
-      process.exit(1);
-    });
-}
+// NOTE: This file should be run directly via CLI, not auto-executed in bundled code
+// Run with: bun run packages/db/src/seed-knowledge-base.ts
+// The old isDirectRun check fails in bundled environments where import.meta.url
+// matches process.argv[1], causing unintended execution at server startup.
+// To run manually, use the CLI command above.

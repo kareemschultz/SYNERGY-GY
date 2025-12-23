@@ -27,6 +27,6 @@ export {
 // Re-export schema for convenience
 export * from "./schema";
 
-// Re-export seed functions for Knowledge Base (used by API routers)
-export { seedKnowledgeBaseForms } from "./seed-kb-forms";
-export { seedKnowledgeBase } from "./seed-knowledge-base";
+// NOTE: Seed functions are NOT exported here to avoid circular dependencies
+// They create a circular import: seed -> db -> seed
+// Run seed scripts directly: bun run packages/db/src/seed-kb-forms.ts
