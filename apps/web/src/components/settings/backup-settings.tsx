@@ -11,6 +11,7 @@ import {
   Loader2,
   Play,
   RefreshCw,
+  RotateCcw,
   Settings2,
   Trash2,
   XCircle,
@@ -234,17 +235,32 @@ export function BackupSettings() {
                 <TableCell>
                   <div className="flex items-center justify-end gap-1">
                     {backup.status === "completed" && backup.fileExists && (
-                      <Button
-                        onClick={() => {
-                          setSelectedBackup(backup);
-                          setRestoreDialogOpen(true);
-                        }}
-                        size="sm"
-                        title="Restore"
-                        variant="ghost"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      <>
+                        <Button
+                          asChild
+                          size="sm"
+                          title="Download backup file"
+                          variant="ghost"
+                        >
+                          <a
+                            download
+                            href={`/api/backup/download/${backup.id}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setSelectedBackup(backup);
+                            setRestoreDialogOpen(true);
+                          }}
+                          size="sm"
+                          title="Restore from this backup"
+                          variant="ghost"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </>
                     )}
                     <Button
                       onClick={() => {

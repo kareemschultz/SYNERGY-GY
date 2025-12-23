@@ -98,9 +98,36 @@ function SettingsPage() {
         title="Settings"
       />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+        {/* Mobile Navigation - horizontal scrollable tabs */}
+        <div className="shrink-0 overflow-x-auto border-b md:hidden">
+          <div className="flex gap-1 p-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeSection === item.id;
+
+              return (
+                <button
+                  className={cn(
+                    "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 font-medium text-sm transition-colors",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  type="button"
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Desktop Sidebar Navigation */}
-        <aside className="hidden w-64 border-r bg-card md:block">
+        <aside className="hidden w-64 shrink-0 border-r bg-card md:block">
           <ScrollArea className="h-full py-4">
             <nav className="space-y-1 px-3">
               {navItems.map((item) => {
@@ -128,38 +155,9 @@ function SettingsPage() {
           </ScrollArea>
         </aside>
 
-        {/* Mobile Navigation */}
-        <div className="block border-b md:hidden">
-          <ScrollArea className="w-full">
-            <div className="flex gap-1 p-2">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeSection === item.id;
-
-                return (
-                  <button
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 font-medium text-sm transition-colors",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    type="button"
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </button>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        </div>
-
         {/* Content Area */}
-        <div className="flex-1 overflow-auto">
-          <div className="mx-auto max-w-4xl p-6">{renderSection()}</div>
+        <div className="min-h-0 flex-1 overflow-auto">
+          <div className="mx-auto max-w-4xl p-4 md:p-6">{renderSection()}</div>
         </div>
       </div>
     </div>

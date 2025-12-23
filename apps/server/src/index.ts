@@ -18,6 +18,7 @@ import {
   portalSession,
   portalUser,
   staff,
+  systemBackup,
 } from "@SYNERGY-GY/db";
 import { createReadStream, existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -566,6 +567,73 @@ app.get("/api/download/:documentId", async (c) => {
     c.header(
       "Content-Disposition",
       `attachment; filename="${encodeURIComponent(doc.originalName)}"`
+    );
+
+    const readable = Readable.toWeb(fileStream) as ReadableStream<Uint8Array>;
+    const reader = readable.getReader();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      await streamInstance.write(value);
+    }
+  });
+});
+
+// Backup file download handler (admin only)
+app.get("/api/backup/download/:backupId", async (c) => {
+  const backupId = c.req.param("backupId");
+
+  // Get session from auth
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session?.user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  // Check if user has admin role
+  const staffRecord = await db.query.staff.findFirst({
+    where: eq(staff.userId, session.user.id),
+  });
+
+  const ADMIN_ROLES = ["OWNER", "GCMC_MANAGER", "KAJ_MANAGER"];
+  if (!(staffRecord && ADMIN_ROLES.includes(staffRecord.role))) {
+    return c.json({ error: "Admin access required" }, 403);
+  }
+
+  // Get backup record
+  const backup = await db.query.systemBackup.findFirst({
+    where: eq(systemBackup.id, backupId),
+  });
+
+  if (!backup) {
+    return c.json({ error: "Backup not found" }, 404);
+  }
+
+  if (!backup.filePath) {
+    return c.json({ error: "Backup file path not available" }, 404);
+  }
+
+  // Check file exists
+  if (!existsSync(backup.filePath)) {
+    return c.json({ error: "Backup file not found on disk" }, 404);
+  }
+
+  // Stream the file
+  const fileStream = createReadStream(backup.filePath);
+  const fileName = backup.name.endsWith(".zip")
+    ? backup.name
+    : `${backup.name}.zip`;
+
+  return stream(c, async (streamInstance) => {
+    c.header("Content-Type", "application/zip");
+    if (backup.fileSize) {
+      c.header("Content-Length", backup.fileSize.toString());
+    }
+    c.header(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(fileName)}"`
     );
 
     const readable = Readable.toWeb(fileStream) as ReadableStream<Uint8Array>;
