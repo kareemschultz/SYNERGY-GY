@@ -129,6 +129,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     relatedServices: ["Business Registration", "Tax Registration"],
     requiredFor: ["New Business Setup", "Tax Compliance"],
     agencyUrl: "https://www.gra.gov.gy/optimal/forms-and-guides/",
+    directPdfUrl:
+      "https://www.gra.gov.gy/wp-content/uploads/2020/10/G0016-Taxpayer-Registration-Form-Organisation-v1.pdf",
     governmentFees: "Free",
     isStaffOnly: false,
     isFeatured: true,
@@ -193,6 +195,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     relatedServices: ["Tax Registration", "Individual Tax Services"],
     requiredFor: ["Employment", "Self-Employment", "Tax Compliance"],
     agencyUrl: "https://www.gra.gov.gy",
+    directPdfUrl:
+      "https://www.gra.gov.gy/wp-content/uploads/2020/10/Taxpayer-Registration-Form-Individual-v5.pdf",
     governmentFees: "Free",
     isStaffOnly: false,
     isFeatured: true,
@@ -295,6 +299,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     relatedServices: ["NIS Registration", "Payroll Setup"],
     requiredFor: ["Employer NIS Compliance", "New Business Setup"],
     agencyUrl: "https://www.nis.org.gy/downloads",
+    directPdfUrl:
+      "https://www.nis.org.gy/pdf/iso/FORM_R400F1_R1_Application_for_Registration_as_Employer.pdf",
     governmentFees: "Free",
     isStaffOnly: false,
     isFeatured: true,
@@ -303,7 +309,7 @@ const governmentForms: KnowledgeBaseItemData[] = [
     type: "AGENCY_FORM",
     category: "NIS",
     business: "GCMC",
-    title: "NIS Employee Registration (Form R400F4)",
+    title: "NIS Employee Registration (Form R4)",
     description:
       "Official NIS form for registering employees. Must be completed for each new employee. NIS number is required for all formal employment and accessing NIS benefits. ISO 9001 certified form.",
     shortDescription: "Register employee for NIS benefits",
@@ -311,6 +317,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     relatedServices: ["NIS Registration", "Employee Onboarding"],
     requiredFor: ["Employee Registration", "NIS Compliance"],
     agencyUrl: "https://www.nis.org.gy/downloads",
+    directPdfUrl:
+      "https://nis.org.gy/pdf/FORM%20R4%20Employed%20Person%27s%20Application%20Form%20-%2017-02-2006.pdf",
     governmentFees: "Free",
     isStaffOnly: false,
     isFeatured: true,
@@ -319,7 +327,7 @@ const governmentForms: KnowledgeBaseItemData[] = [
     type: "AGENCY_FORM",
     category: "NIS",
     business: "GCMC",
-    title: "NIS Self-Employed Registration (Form R400F4A)",
+    title: "NIS Self-Employed Registration (Form R4A)",
     description:
       "Official NIS form for self-employed persons to register and make voluntary contributions. Enables access to NIS benefits including sickness, maternity, and old age pension.",
     shortDescription: "Self-employed NIS registration",
@@ -327,6 +335,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     relatedServices: ["NIS Registration", "Self-Employment"],
     requiredFor: ["Self-Employed NIS Coverage"],
     agencyUrl: "https://www.nis.org.gy/downloads",
+    directPdfUrl:
+      "https://www.nis.org.gy/pdf/R4A%20-%20Self-Employed%20Person%27s%20Application%20for%20Registration%202017.pdf",
     governmentFees: "Free (contributions based on declared income)",
     isStaffOnly: false,
     isFeatured: false,
@@ -409,6 +419,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     relatedServices: ["NIS Compliance", "Government Contracts"],
     requiredFor: ["Tender Submissions", "Business Licenses"],
     agencyUrl: "https://www.nis.org.gy/downloads",
+    directPdfUrl:
+      "https://nis.org.gy/pdf/iso/FORM_C100F72_R0_Application_for_Compliance_Certificate_Employers.pdf",
     governmentFees: "Free (if compliant)",
     isStaffOnly: false,
     isFeatured: true,
@@ -507,6 +519,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     relatedServices: ["Work Permit Application", "Immigration Services"],
     requiredFor: ["Foreign Worker Employment", "Work Authorization"],
     agencyUrl: "https://moha.gov.gy/",
+    directPdfUrl:
+      "https://moha.gov.gy/wp-content/uploads/2021/04/Employment-Visa.pdf",
     governmentFees: "GYD 50,000 - 150,000 depending on duration",
     isStaffOnly: false,
     isFeatured: true,
@@ -557,6 +571,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     relatedServices: ["Visa Services", "Immigration Consulting"],
     requiredFor: ["Tourist Entry", "Family Visit"],
     agencyUrl: "https://moha.gov.gy/",
+    directPdfUrl:
+      "https://moha.gov.gy/wp-content/uploads/2021/04/Visitor-Visa.pdf",
     governmentFees: "USD 50 - 100",
     isStaffOnly: false,
     isFeatured: false,
@@ -703,6 +719,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     relatedServices: ["Business Registration", "Sole Proprietorship"],
     requiredFor: ["Business Name Registration", "Trading Name"],
     agencyUrl: "https://dcra.gov.gy",
+    directPdfUrl:
+      "https://sbb.gov.gy/wp-content/uploads/2021/06/Business-Names-Form.pdf",
     governmentFees: "GYD 5,000 - 10,000",
     isStaffOnly: false,
     isFeatured: true,
@@ -881,6 +899,8 @@ const governmentForms: KnowledgeBaseItemData[] = [
     relatedServices: ["Small Business Support", "Business Development"],
     requiredFor: ["SBB Programs", "Small Business Financing"],
     agencyUrl: "https://sbb.gov.gy",
+    directPdfUrl:
+      "https://sbb.gov.gy/wp-content/uploads/2020/04/SBB-Registration-Form.pdf",
     governmentFees: "Free",
     isStaffOnly: false,
     isFeatured: true,
@@ -989,12 +1009,14 @@ const governmentForms: KnowledgeBaseItemData[] = [
     business: "GCMC",
     title: "Severance Pay Calculation Worksheet",
     description:
-      "Worksheet for calculating severance pay per Guyana labour laws. Based on years of service and last drawn salary.",
+      "Worksheet for calculating severance pay per Guyana labour laws. Based on years of service and last drawn salary. Reference: Termination of Employment and Severance Pay Act 1997.",
     shortDescription: "Calculate severance payments",
     supportsAutoFill: true,
     relatedServices: ["HR Services", "Payroll"],
     requiredFor: ["Severance Calculation", "Termination Processing"],
     agencyUrl: "https://mol.gov.gy",
+    directPdfUrl:
+      "https://labour.gov.gy/wp-content/uploads/2024/07/Termination-and-severance.pdf",
     governmentFees: "Free",
     isStaffOnly: true,
     isFeatured: false,
