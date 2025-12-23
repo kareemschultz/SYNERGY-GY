@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Loader2,
@@ -10,6 +10,7 @@ import {
   UserX,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { ErrorState } from "@/components/shared/error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,10 +21,83 @@ export const Route = createFileRoute("/app/admin/")({
 });
 
 function AdminDashboardPage() {
-  const { data: stats, isLoading } = useQuery({
+  const queryClient = useQueryClient();
+  const {
+    data: stats,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["admin", "staff", "stats"],
     queryFn: () => client.admin.staff.stats(),
   });
+
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin", "staff", "stats"] });
+  };
+
+  // Render staff overview section with loading/error/data states
+  const renderStaffOverview = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Loading statistics...
+        </div>
+      );
+    }
+
+    if (isError) {
+      return (
+        <ErrorState
+          action={{ label: "Try Again", onClick: handleRetry }}
+          message={
+            error instanceof Error
+              ? error.message
+              : "Failed to load staff statistics. Please try again."
+          }
+          title="Could not load statistics"
+        />
+      );
+    }
+
+    if (!stats) {
+      return null;
+    }
+
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          icon={Users}
+          title="Total Staff"
+          value={stats.totalStaff}
+          variant="default"
+        />
+        <StatCard
+          icon={UserCheck}
+          title="Active Staff"
+          value={stats.activeStaff}
+          variant="success"
+        />
+        <StatCard
+          icon={UserX}
+          title="Inactive Staff"
+          value={stats.inactiveStaff}
+          variant="warning"
+        />
+        <StatCard
+          icon={Shield}
+          title="Admin Roles"
+          value={stats.byRole
+            .filter((r) =>
+              ["OWNER", "GCMC_MANAGER", "KAJ_MANAGER"].includes(r.role)
+            )
+            .reduce((sum, r) => sum + r.count, 0)}
+          variant="info"
+        />
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col">
@@ -79,45 +153,7 @@ function AdminDashboardPage() {
         {/* Staff Statistics */}
         <div className="mb-8">
           <h2 className="mb-4 font-semibold text-lg">Staff Overview</h2>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Loading statistics...
-            </div>
-            // biome-ignore lint/style/noNestedTernary: Auto-fix
-          ) : stats ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                icon={Users}
-                title="Total Staff"
-                value={stats.totalStaff}
-                variant="default"
-              />
-              <StatCard
-                icon={UserCheck}
-                title="Active Staff"
-                value={stats.activeStaff}
-                variant="success"
-              />
-              <StatCard
-                icon={UserX}
-                title="Inactive Staff"
-                value={stats.inactiveStaff}
-                variant="warning"
-              />
-              <StatCard
-                icon={Shield}
-                title="Admin Roles"
-                value={stats.byRole
-                  .filter((r) =>
-                    ["OWNER", "GCMC_MANAGER", "KAJ_MANAGER"].includes(r.role)
-                  )
-                  .reduce((sum, r) => sum + r.count, 0)}
-                variant="info"
-              />
-            </div>
-          ) : null}
+          {renderStaffOverview()}
         </div>
 
         {/* Business Distribution */}

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, FileText, Search, Settings2, Sparkles } from "lucide-react";
 import { useState } from "react";
@@ -39,6 +39,142 @@ export const Route = createFileRoute("/app/knowledge-base/")({
 });
 
 const ADMIN_ROLES = ["OWNER", "GCMC_MANAGER", "KAJ_MANAGER"] as const;
+
+// Types for item details
+type KnowledgeBaseItemDetails = {
+  id: string;
+  title: string;
+  category: string;
+  type: string;
+  description: string;
+  fileName?: string | null;
+  fileSize?: number | null;
+  storagePath?: string | null;
+  agencyUrl?: string | null;
+  updatedAt: string | Date;
+  requiredFor?: string[];
+  supportsAutoFill: boolean;
+};
+
+// Extracted Dialog Component to reduce complexity
+function ItemDetailsDialog({
+  item,
+  open,
+  onClose,
+  onDownload,
+}: {
+  item: KnowledgeBaseItemDetails | null | undefined;
+  open: boolean;
+  onClose: () => void;
+  onDownload: (id: string, fileName?: string | null) => void;
+}) {
+  const getDownloadButtonText = (): string => {
+    if (item?.storagePath) {
+      return "Download";
+    }
+    if (item?.agencyUrl) {
+      return "Open Link";
+    }
+    return "No File";
+  };
+
+  const isDownloadAvailable = Boolean(
+    item?.id && (item?.storagePath || item?.agencyUrl)
+  );
+
+  return (
+    <Dialog onOpenChange={(openState) => !openState && onClose()} open={open}>
+      <DialogContent className="sm:max-w-md md:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{item?.title}</DialogTitle>
+          <DialogDescription>
+            {item?.category} • {item?.type.replace("_", " ")}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="space-y-2 text-foreground text-sm">
+            <p>{item?.description}</p>
+          </div>
+
+          {Array.isArray(item?.requiredFor) && item.requiredFor.length > 0 ? (
+            <div className="space-y-1">
+              <span className="font-semibold text-muted-foreground text-xs uppercase">
+                Required For
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {item.requiredFor.map((req) => (
+                  <Badge className="text-xs" key={req} variant="outline">
+                    {req}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-2 gap-4 rounded-md bg-muted/20 p-3 text-muted-foreground text-xs">
+            <div>
+              <span className="block font-medium">File Name</span>
+              <span className="block truncate">{item?.fileName || "N/A"}</span>
+            </div>
+            <div>
+              <span className="block font-medium">Size</span>
+              <span>
+                {item?.fileSize
+                  ? `${(item.fileSize / 1024).toFixed(1)} KB`
+                  : "N/A"}
+              </span>
+            </div>
+            <div>
+              <span className="block font-medium">Last Updated</span>
+              <span>
+                {new Date(item?.updatedAt || "").toLocaleDateString()}
+              </span>
+            </div>
+            {item?.agencyUrl ? (
+              <div>
+                <span className="block font-medium">Agency Link</span>
+                <a
+                  className="block truncate text-blue-500 hover:underline"
+                  href={item.agencyUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  Visit Website
+                </a>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <Button onClick={onClose} variant="outline">
+            Close
+          </Button>
+          {item?.supportsAutoFill ? (
+            <Button className="w-full bg-purple-600 hover:bg-purple-700 sm:w-auto">
+              <Sparkles className="mr-2 h-4 w-4" />
+              Auto-Fill & Download
+            </Button>
+          ) : (
+            <Button
+              className="w-full sm:w-auto"
+              disabled={!isDownloadAvailable}
+              onClick={() => {
+                if (item?.id) {
+                  onDownload(item.id, item.fileName);
+                }
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {getDownloadButtonText()}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function KnowledgeBasePage() {
   const [search, setSearch] = useState("");
@@ -98,18 +234,15 @@ function KnowledgeBasePage() {
     enabled: !!selectedItem,
   });
 
-  const downloadMutation = useMutation({
-    ...orpc.knowledgeBase.download.mutationOptions(),
-    onSuccess: () => {
-      toast.success("Download started");
-    },
-    onError: (error: Error) => {
-      toast.error(error.message);
-    },
-  });
-
-  const handleDownload = (id: string) => {
-    downloadMutation.mutate({ id });
+  const handleDownload = (id: string, fileName?: string | null) => {
+    // Trigger download via the new streaming endpoint
+    const link = document.createElement("a");
+    link.href = `/api/knowledge-base/download/${id}`;
+    link.download = fileName || "download";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Download started");
   };
 
   // Helper function to get badge variant based on business
@@ -303,102 +436,12 @@ function KnowledgeBasePage() {
       </div>
 
       {/* Item Details Dialog */}
-      <Dialog
-        onOpenChange={(open) => !open && setSelectedItem(null)}
+      <ItemDetailsDialog
+        item={itemDetails as KnowledgeBaseItemDetails | undefined}
+        onClose={() => setSelectedItem(null)}
+        onDownload={handleDownload}
         open={!!selectedItem}
-      >
-        <DialogContent className="sm:max-w-md md:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{itemDetails?.title}</DialogTitle>
-            <DialogDescription>
-              {itemDetails?.category} • {itemDetails?.type.replace("_", " ")}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2 text-foreground text-sm">
-              <p>{itemDetails?.description}</p>
-            </div>
-
-            {itemDetails?.requiredFor !== undefined &&
-            itemDetails.requiredFor.length > 0 ? (
-              <div className="space-y-1">
-                <span className="font-semibold text-muted-foreground text-xs uppercase">
-                  Required For
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {itemDetails.requiredFor.map((req) => (
-                    <Badge className="text-xs" key={req} variant="outline">
-                      {req}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="grid grid-cols-2 gap-4 rounded-md bg-muted/20 p-3 text-muted-foreground text-xs">
-              <div>
-                <span className="block font-medium">File Name</span>
-                <span className="block truncate">
-                  {itemDetails?.fileName || "N/A"}
-                </span>
-              </div>
-              <div>
-                <span className="block font-medium">Size</span>
-                <span>
-                  {itemDetails?.fileSize
-                    ? `${(itemDetails.fileSize / 1024).toFixed(1)} KB`
-                    : "N/A"}
-                </span>
-              </div>
-              <div>
-                <span className="block font-medium">Last Updated</span>
-                <span>
-                  {new Date(itemDetails?.updatedAt || "").toLocaleDateString()}
-                </span>
-              </div>
-              {itemDetails?.agencyUrl ? (
-                <div>
-                  <span className="block font-medium">Agency Link</span>
-                  <a
-                    className="block truncate text-blue-500 hover:underline"
-                    href={itemDetails.agencyUrl}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Visit Website
-                  </a>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <DialogFooter className="flex-col gap-2 sm:flex-row">
-            <Button onClick={() => setSelectedItem(null)} variant="outline">
-              Close
-            </Button>
-            {itemDetails?.supportsAutoFill ? (
-              <Button className="w-full bg-purple-600 hover:bg-purple-700 sm:w-auto">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Auto-Fill & Download
-              </Button>
-            ) : (
-              <Button
-                className="w-full sm:w-auto"
-                disabled={!itemDetails?.id}
-                onClick={() => {
-                  if (itemDetails?.id) {
-                    handleDownload(itemDetails.id);
-                  }
-                }}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      />
     </div>
   );
 }

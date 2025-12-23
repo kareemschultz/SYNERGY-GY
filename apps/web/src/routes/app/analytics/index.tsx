@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowDown,
@@ -27,6 +27,7 @@ import {
   YAxis,
 } from "recharts";
 import { PageHeader } from "@/components/layout/page-header";
+import { ErrorState } from "@/components/shared/error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,8 +70,15 @@ function formatCurrency(value: number): string {
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Analytics dashboard aggregates KPIs, monthly trends, matter distribution, and revenue charts from multiple data sources
 function AnalyticsPage() {
+  const queryClient = useQueryClient();
+
   // Fetch KPIs
-  const { data: kpis, isLoading: kpisLoading } = useQuery({
+  const {
+    data: kpis,
+    isLoading: kpisLoading,
+    isError: kpisError,
+    error: kpisErrorDetails,
+  } = useQuery({
     queryKey: ["analytics", "getKPIs"],
     queryFn: () => client.analytics.getKPIs(),
   });
@@ -86,6 +94,11 @@ function AnalyticsPage() {
     queryKey: ["dashboard", "getMattersByStatus"],
     queryFn: () => client.dashboard.getMattersByStatus(),
   });
+
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+  };
 
   // Fetch matters by business
   const { data: mattersByBusiness } = useQuery({
@@ -139,6 +152,32 @@ function AnalyticsPage() {
     return (
       <div className="flex h-96 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (kpisError) {
+    return (
+      <div className="flex flex-col">
+        <PageHeader
+          breadcrumbs={[
+            { label: "Dashboard", href: "/app" },
+            { label: "Analytics" },
+          ]}
+          description="Business performance insights and visualizations"
+          title="Analytics Dashboard"
+        />
+        <div className="p-6">
+          <ErrorState
+            action={{ label: "Try Again", onClick: handleRetry }}
+            message={
+              kpisErrorDetails instanceof Error
+                ? kpisErrorDetails.message
+                : "Failed to load analytics data. Please try again."
+            }
+            title="Could not load analytics"
+          />
+        </div>
       </div>
     );
   }

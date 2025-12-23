@@ -14,6 +14,8 @@ import {
   document as documentTable,
   eq,
   gte,
+  knowledgeBaseDownload,
+  knowledgeBaseItem,
   portalDocumentUpload,
   portalSession,
   portalUser,
@@ -32,6 +34,7 @@ import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 import { stream } from "hono/streaming";
 import { rateLimiter } from "hono-rate-limiter";
 
@@ -247,6 +250,19 @@ app.use(
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
+  })
+);
+
+// Security headers - protect against common web vulnerabilities
+app.use(
+  "/*",
+  secureHeaders({
+    xFrameOptions: "DENY",
+    xContentTypeOptions: "nosniff",
+    referrerPolicy: "strict-origin-when-cross-origin",
+    strictTransportSecurity: "max-age=31536000; includeSubDomains",
+    crossOriginOpenerPolicy: "same-origin",
+    crossOriginResourcePolicy: "same-origin",
   })
 );
 
@@ -631,6 +647,78 @@ app.get("/api/backup/download/:backupId", async (c) => {
     if (backup.fileSize) {
       c.header("Content-Length", backup.fileSize.toString());
     }
+    c.header(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(fileName)}"`
+    );
+
+    const readable = Readable.toWeb(fileStream) as ReadableStream<Uint8Array>;
+    const reader = readable.getReader();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      await streamInstance.write(value);
+    }
+  });
+});
+
+// Knowledge Base file download handler
+app.get("/api/knowledge-base/download/:itemId", async (c) => {
+  const itemId = c.req.param("itemId");
+
+  // Get session from auth (optional - some KB items are public)
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+
+  // Get KB item
+  const item = await db.query.knowledgeBaseItem.findFirst({
+    where: and(
+      eq(knowledgeBaseItem.id, itemId),
+      eq(knowledgeBaseItem.isActive, true)
+    ),
+  });
+
+  if (!item) {
+    return c.json({ error: "Resource not found" }, 404);
+  }
+
+  // Check if staff-only and user is authenticated
+  if (item.isStaffOnly && !session?.user) {
+    return c.json({ error: "This resource is only available to staff" }, 403);
+  }
+
+  if (!item.storagePath) {
+    // If no file but has agency URL, redirect to official source
+    if (item.agencyUrl) {
+      return c.redirect(item.agencyUrl);
+    }
+    return c.json({ error: "No file attached to this resource" }, 404);
+  }
+
+  // Check file exists
+  const fullPath = join(UPLOAD_DIR, item.storagePath);
+  if (!existsSync(fullPath)) {
+    return c.json({ error: "File not found on disk" }, 404);
+  }
+
+  // Log download if user is authenticated
+  if (session?.user) {
+    await db.insert(knowledgeBaseDownload).values({
+      knowledgeBaseItemId: item.id,
+      downloadedById: session.user.id,
+      downloadedByType: "STAFF",
+    });
+  }
+
+  // Stream the file
+  const fileStream = createReadStream(fullPath);
+  const fileName = item.fileName || item.title.replace(/[^a-zA-Z0-9.-]/g, "_");
+  const mimeType = item.mimeType || "application/octet-stream";
+
+  return stream(c, async (streamInstance) => {
+    c.header("Content-Type", mimeType);
     c.header(
       "Content-Disposition",
       `attachment; filename="${encodeURIComponent(fileName)}"`
