@@ -192,6 +192,33 @@ function ItemDetailsDialog({
   );
 }
 
+// Type for auto-fill response
+type AutoFillResponse = {
+  success: boolean;
+  itemId: string;
+  downloadUrl: string;
+  fileName?: string | null;
+};
+
+// Type for clients list response
+type ClientsListResponse = {
+  clients: Array<{
+    id: string;
+    displayName?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+  }>;
+};
+
+// Type for matters list response
+type MattersListResponse = {
+  matters: Array<{
+    id: string;
+    title: string;
+    referenceNumber: string;
+  }>;
+};
+
 // Auto-Fill Dialog for selecting client/matter and generating document
 function AutoFillDialog({
   item,
@@ -206,14 +233,17 @@ function AutoFillDialog({
   const [selectedMatterId, setSelectedMatterId] = useState<string>("");
 
   // Fetch clients list
-  const { data: clientsData } = useQuery({
+  const { data: clientsDataRaw } = useQuery({
     queryKey: ["clients", "list", "autoFill"],
     queryFn: () => client.clients.list({ limit: 100 }),
     enabled: open,
   });
+  const clientsData = unwrapOrpc<ClientsListResponse | undefined>(
+    clientsDataRaw
+  );
 
   // Fetch matters for selected client
-  const { data: mattersData } = useQuery({
+  const { data: mattersDataRaw } = useQuery({
     queryKey: ["matters", "list", selectedClientId],
     queryFn: () =>
       client.matters.list({
@@ -222,17 +252,33 @@ function AutoFillDialog({
       }),
     enabled: open && !!selectedClientId,
   });
+  const mattersData = unwrapOrpc<MattersListResponse | undefined>(
+    mattersDataRaw
+  );
 
   // Auto-fill mutation
   const autoFillMutation = useMutation({
-    mutationFn: () =>
-      client.knowledgeBase.autoFill({
+    mutationFn: async () => {
+      const response = await client.knowledgeBase.autoFill({
         id: item?.id ?? "",
         clientId: selectedClientId || undefined,
         matterId: selectedMatterId || undefined,
-      }),
-    onSuccess: () => {
+      });
+      return unwrapOrpc<AutoFillResponse>(response);
+    },
+    onSuccess: (data) => {
       toast.success("Document generated successfully");
+
+      // Trigger download using the returned download URL
+      if (data?.downloadUrl) {
+        const link = document.createElement("a");
+        link.href = data.downloadUrl;
+        link.download = data.fileName || item?.fileName || "document";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
       onClose();
     },
     onError: (error: Error) => {
@@ -354,6 +400,27 @@ function AutoFillDialog({
   );
 }
 
+// Type for the list response
+type KnowledgeBaseListResponse = {
+  items: Array<{
+    id: string;
+    title: string;
+    category: string;
+    type: string;
+    description: string;
+    shortDescription?: string | null;
+    business: string | null;
+    isStaffOnly: boolean;
+    supportsAutoFill: boolean;
+  }>;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
 function KnowledgeBasePage() {
   const [search, setSearch] = useState("");
   const [type, setType] = useState<string>("ALL");
@@ -381,7 +448,7 @@ function KnowledgeBasePage() {
       staffStatus.staff.role as (typeof ADMIN_ROLES)[number]
     );
 
-  const { data, isLoading } = useQuery(
+  const { data: dataRaw, isLoading } = useQuery(
     orpc.knowledgeBase.list.queryOptions({
       input: {
         search: search || undefined,
@@ -408,12 +475,20 @@ function KnowledgeBasePage() {
     })
   );
 
-  const { data: itemDetails } = useQuery({
+  // Unwrap oRPC response envelope
+  const data = unwrapOrpc<KnowledgeBaseListResponse | undefined>(dataRaw);
+
+  const { data: itemDetailsRaw } = useQuery({
     ...orpc.knowledgeBase.getById.queryOptions({
       input: { id: selectedItem ?? "" },
     }),
     enabled: !!selectedItem,
   });
+
+  // Unwrap oRPC response envelope for item details
+  const itemDetails = unwrapOrpc<KnowledgeBaseItemDetails | undefined>(
+    itemDetailsRaw
+  );
 
   const handleDownload = (id: string, fileName?: string | null) => {
     // Trigger download via the new streaming endpoint
@@ -618,7 +693,7 @@ function KnowledgeBasePage() {
 
       {/* Item Details Dialog */}
       <ItemDetailsDialog
-        item={itemDetails as KnowledgeBaseItemDetails | undefined}
+        item={itemDetails}
         onAutoFill={(item) => {
           setAutoFillItem(item);
           setAutoFillOpen(true);

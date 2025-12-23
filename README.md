@@ -112,6 +112,13 @@ Built as a modern, type-safe monorepo application, GK-Nexus combines the power o
 - **📚 Training Management** - Course schedules, enrollment tracking, certificates
 - **📅 Appointment Scheduling** - Booking system with availability management
 - **🧮 Tax Calculators** - PAYE, VAT, NIS calculations for Guyana
+- **📖 Knowledge Base** - 73+ Guyanese government forms and templates with auto-fill
+  - GRA tax forms (ITR, VAT, PAYE, withholding)
+  - NIS registration and compliance forms
+  - Immigration forms (visas, permits, passports)
+  - DCRA business registration documents
+  - Ministry of Labour, EPA, GNBS, SBB forms
+  - Auto-fill with client/matter data and one-click download
 
 ### 🔮 Phase 3: External Integrations 📅 FUTURE
 
@@ -125,7 +132,18 @@ Built as a modern, type-safe monorepo application, GK-Nexus combines the power o
 
 ## 📸 Screenshots
 
-> 🎨 **Coming Soon**: Screenshots of Dashboard, Client Management, Invoicing, and Client Portal
+> 🎨 **Screenshot Gallery** (Dark Mode UI)
+
+| Feature | Description |
+|---------|-------------|
+| **Dashboard** | Real-time metrics, recent activities, upcoming deadlines |
+| **Client Management** | Advanced client profiles with search and filtering |
+| **Matter Tracking** | Case management with status workflow |
+| **Knowledge Base** | 73+ government forms with auto-fill support |
+| **Invoice Generation** | Professional invoices with PDF export |
+| **Client Portal** | Self-service access for clients |
+
+*Screenshots will be added in the `docs/screenshots/` directory.*
 
 ---
 

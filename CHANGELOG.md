@@ -7,7 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Knowledge Base Page Crash** - December 23, 2024
+  - Fixed "Something went wrong!" error on Knowledge Base page
+  - Root cause: oRPC v1.12+ wraps responses in `{ json: T }` envelope
+  - Added `unwrapOrpc<T>()` calls to extract actual response data
+  - Updated type definitions for list response and item details
+  - **Files**: `apps/web/src/routes/app/knowledge-base/index.tsx`
+
+- **Auto-Fill Buttons Not Downloading** - December 23, 2024
+  - Fixed mutation completing but not triggering file download
+  - Added response unwrapping in `mutationFn` to access `downloadUrl`
+  - Implemented download trigger in `onSuccess` callback
+  - Fixed client/matter dropdown data unwrapping in AutoFillDialog
+  - **Files**: `apps/web/src/routes/app/knowledge-base/index.tsx`
+
+- **Docker Startup Crash** - December 23, 2024
+  - Fixed circular dependency in seed files causing server crash at startup
+  - Removed auto-execution code from `seed-kb-forms.ts` and `seed-knowledge-base.ts`
+  - Moved directory creation from import-time to function call time
+  - Seed scripts now require manual CLI execution: `bun run packages/db/src/seed-kb-forms.ts`
+  - **Files**: `packages/db/src/index.ts`, `packages/db/src/seed-kb-forms.ts`, `packages/db/src/seed-knowledge-base.ts`
+
+- **API Schema Validation Errors** - December 23, 2024
+  - Fixed TypeScript errors in knowledge-base router (removed non-existent schema fields)
+  - Fixed null safety in seed files for array access
+  - Corrected field names: `matterNumber` → `referenceNumber`
+  - **Files**: `packages/api/src/routers/knowledge-base.ts`, `apps/web/src/routes/app/knowledge-base/index.tsx`
+
 ### Added
+
+- **73+ Guyanese Government Forms** - December 23, 2024
+  - Comprehensive Knowledge Base seed with government forms and templates
+  - **GRA Forms** (12): ITR, VAT, PAYE, withholding taxes, employer registration
+  - **NIS Forms** (10): Registration, contribution, medical, maternity, pension
+  - **Immigration Forms** (10): Visa applications, work permits, passport renewal
+  - **DCRA Forms** (12): Business registration, name search, annual returns
+  - **Ministry of Labour** (6): Work permits, employment contracts, complaints
+  - **EPA Forms** (3): Environmental permits and assessments
+  - **GNBS Forms** (3): Standards certification, calibration
+  - **SBB Forms** (5): Small business registration, loans, training
+  - **Letter Templates** (6): Professional templates for common correspondence
+  - Auto-fill support for populating client/matter data
+  - **File**: `packages/db/src/seed-kb-forms.ts`
 
 - **Comprehensive E2E Test Suite** - December 23, 2024
   - 13 new test files covering all major features

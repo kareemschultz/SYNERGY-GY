@@ -338,6 +338,60 @@ import { client, queryClient } from "@/utils/orpc";
    const data = unwrapOrpc<MyType>(dataRaw);
    ```
 
+### oRPC Response Envelope - CRITICAL BUG PATTERN
+
+oRPC v1.12+ wraps **ALL** responses in a `{ json: T }` envelope. This is the **#1 cause of "Something went wrong" page crashes**.
+
+**The Problem:**
+```typescript
+// ❌ WRONG - This causes crashes! Data is wrapped!
+const { data } = useQuery({ queryKey: ["kb"], queryFn: () => client.knowledgeBase.list({}) });
+data?.items?.map(...)  // undefined! Actual data is at data?.json?.items
+
+// What the response actually looks like:
+// { json: { items: [...], pagination: {...} }, meta: [...] }
+```
+
+**The Solution:**
+```typescript
+// ✅ CORRECT - Always unwrap oRPC responses
+import { unwrapOrpc } from "@/utils/orpc-response";
+
+const { data: dataRaw } = useQuery({
+  queryKey: ["kb"],
+  queryFn: () => client.knowledgeBase.list({}),
+});
+const data = unwrapOrpc<KnowledgeBaseListResponse>(dataRaw);
+data?.items?.map(...)  // Works! unwrapOrpc extracts from { json: T }
+```
+
+**For mutations with download URLs:**
+```typescript
+// ✅ CORRECT - Unwrap mutation response before using return values
+const mutation = useMutation({
+  mutationFn: async () => {
+    const response = await client.knowledgeBase.autoFill({ id, clientId });
+    return unwrapOrpc<{ downloadUrl: string }>(response);
+  },
+  onSuccess: (data) => {
+    // Now data.downloadUrl is accessible!
+    if (data?.downloadUrl) {
+      triggerDownload(data.downloadUrl);
+    }
+  },
+});
+```
+
+**When to use `unwrapOrpc`:**
+- After **every** `useQuery` that calls `client.xxx()`
+- Inside **every** `mutationFn` before returning
+- Before accessing response properties like `items`, `pagination`, `downloadUrl`
+
+**Common symptoms of missing unwrap:**
+- "Something went wrong!" error boundary
+- `undefined` when accessing response properties
+- Silently failing operations (mutation completes but download doesn't happen)
+
 ---
 
 ## API & Backend Patterns
@@ -900,3 +954,5 @@ if (input.filters?.clientId) {
 | `clientData.salutation` | `clientData.firstName` |
 | `clientData.nisNumber` | `clientData.tinNumber` (NIS number not stored) |
 | `if (arr.length > 0) arr[0].id` | Extract first: `const item = arr[0]; if (item) item.id` |
+| `data?.items` after `client.xxx()` | `unwrapOrpc<T>(dataRaw)?.items` - always unwrap oRPC responses |
+| Mutation `onSuccess` ignoring return value | Unwrap in `mutationFn` and use return value in `onSuccess` |
