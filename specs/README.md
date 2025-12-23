@@ -4,6 +4,8 @@ Unified business management platform for GCMC (training, consulting, paralegal, 
 
 **Developed by:** Kareem Schultz, Karetech Solutions
 
+> 📋 **[View Complete Feature Inventory](./FEATURE_INVENTORY.md)** - Auto-generated comprehensive feature list with routes and API endpoints.
+
 ## Project Overview
 
 | Attribute | Value |
@@ -43,7 +45,7 @@ Foundation modules for managing clients, matters, documents, and deadlines.
 | Deadline Calendar | ✅ Complete | [Spec](./phase-1/04-deadline-calendar.md) |
 | Dashboard | ✅ Complete | [Spec](./phase-1/05-dashboard.md) |
 
-### [Phase 2: Advanced Features](./phase-2/00-overview.md) - IN PROGRESS
+### [Phase 2: Advanced Features](./phase-2/00-overview.md) - **COMPLETE**
 Extended functionality for client self-service and business operations.
 
 | Module | Status | Documentation |
@@ -55,20 +57,23 @@ Extended functionality for client self-service and business operations.
 | Email Integration | ✅ Complete | Resend API with templates |
 | Service Catalog | ✅ Complete | Backend + Frontend routes |
 | Invoicing & Payments | ✅ Complete | [Spec](./phase-2/02-invoicing.md) |
-| Client Portal | 🚧 In Progress | [Spec](./phase-2/01-client-portal.md) |
-| Tax Calculators | Planned | [Spec](./phase-2/03-tax-calculators.md) |
-| Training Management | Planned | [Spec](./phase-2/04-training-management.md) |
-| Appointments | Planned | [Spec](./phase-2/05-appointments.md) |
+| Client Portal | ✅ Complete | [Spec](./phase-2/01-client-portal.md) |
+| Tax Calculators | ✅ Complete | [Spec](./phase-2/03-tax-calculators.md) |
+| Training Management | ✅ Complete | [Spec](./phase-2/04-training-management.md) |
+| Appointments | ✅ Complete | [Spec](./phase-2/05-appointments.md) |
+| Knowledge Base | ✅ Complete | [Spec](./phase-2/knowledge-base-system.md) |
+| Reports & Analytics | ✅ Complete | [Spec](./phase-3/04-reporting.md) |
+| AML Compliance | ✅ Complete | Client onboarding wizard |
 
-### [Phase 3: Integrations](./phase-3/00-overview.md) - FUTURE
-External service integrations and advanced reporting.
+### [Phase 3: External Integrations](./phase-3/00-overview.md) - FUTURE
+External service integrations for government agencies and communication.
 
 | Module | Status | Documentation |
 |--------|--------|---------------|
-| Email Integration | Future | [Spec](./phase-3/01-email-integration.md) |
 | WhatsApp Integration | Future | [Spec](./phase-3/02-whatsapp-integration.md) |
 | GRA Integration | Future | [Spec](./phase-3/03-gra-integration.md) |
-| Reporting & Analytics | Future | [Spec](./phase-3/04-reporting.md) |
+| NIS Integration | Future | Direct filing capabilities |
+| DCRA Integration | Future | Company registration automation |
 
 ---
 

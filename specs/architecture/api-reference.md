@@ -31,16 +31,38 @@ function getAccessibleBusinesses(staff: Staff): string[] {
 
 ## Router Index
 
+> 📋 See **[FEATURE_INVENTORY.md](../FEATURE_INVENTORY.md)** for complete API endpoint documentation.
+
 ```typescript
-// /packages/api/src/routers/index.ts
+// /packages/api/src/routers/index.ts - 26 routers, 200+ endpoints
 export const appRouter = {
+  // Core
   healthCheck: publicProcedure.handler(() => "OK"),
-  privateData: protectedProcedure.handler(...),
   clients: clientsRouter,
   matters: mattersRouter,
   documents: documentsRouter,
   deadlines: deadlinesRouter,
   dashboard: dashboardRouter,
+
+  // Phase 2 - Complete
+  admin: adminRouter,
+  invoices: invoicesRouter,
+  appointments: appointmentsRouter,
+  training: trainingRouter,
+  portal: portalRouter,
+  settings: settingsRouter,
+  serviceCatalog: serviceCatalogRouter,
+  taxCalculators: taxCalculatorsRouter,
+  knowledgeBase: knowledgeBaseRouter,
+  reports: reportsRouter,
+  analytics: analyticsRouter,
+  activity: activityRouter,
+  notifications: notificationsRouter,
+  beneficialOwners: beneficialOwnersRouter,
+  amlCompliance: amlComplianceRouter,
+  clientServices: clientServicesRouter,
+  staffSetup: staffSetupRouter,
+  timeTracking: timeTrackingRouter,
 };
 ```
 

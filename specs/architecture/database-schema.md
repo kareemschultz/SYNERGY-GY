@@ -6,18 +6,32 @@
 
 ## Overview
 
-The database consists of 19+ tables organized into logical groups supporting client management, matter tracking, documents, deadlines, and system administration.
+The database consists of **70+ tables** organized into logical groups supporting client management, matter tracking, documents, deadlines, invoicing, appointments, training, client portal, and system administration.
+
+> 📋 See **[FEATURE_INVENTORY.md](../FEATURE_INVENTORY.md)** for complete feature-to-table mapping.
 
 ## Schema Files
 
 | File | Description |
 |------|-------------|
 | `core.ts` | Enums, staff, and shared types |
+| `auth.ts` | Authentication tables (user, session, account, verification) |
 | `clients.ts` | Client management tables |
 | `services.ts` | Matter and service type tables |
-| `documents.ts` | Document storage tables |
+| `documents.ts` | Document storage and templates |
 | `deadlines.ts` | Deadline and reminder tables |
 | `activity.ts` | Audit logging |
+| `invoices.ts` | Invoicing and payments |
+| `appointments.ts` | Appointment scheduling and availability |
+| `training.ts` | Courses, schedules, enrollments |
+| `portal.ts` | Client portal users and sessions |
+| `knowledgeBase.ts` | Knowledge base resources |
+| `serviceCatalog.ts` | Service catalog and categories |
+| `taxCalculators.ts` | Saved tax calculations |
+| `notifications.ts` | Notification preferences |
+| `settings.ts` | System settings |
+| `amlCompliance.ts` | AML/KYC compliance |
+| `beneficialOwners.ts` | Beneficial ownership tracking |
 
 ## Enums
 
