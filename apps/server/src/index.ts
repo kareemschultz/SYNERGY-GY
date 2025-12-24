@@ -49,10 +49,28 @@ const UPLOAD_DIR = process.env.UPLOAD_DIR || "./data/uploads";
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 // Rate limiting configuration
-// Auth endpoints: Reasonable limit (30 req/min) - covers session checks, sign-out, etc.
+// Session checks: Very lenient (100 req/min) - called frequently during navigation
+const sessionRateLimiter = rateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  limit: 100, // 100 requests per minute - session checks happen on every route
+  standardHeaders: "draft-6",
+  keyGenerator: (c) => {
+    const forwarded = c.req.header("x-forwarded-for");
+    const ip =
+      forwarded?.split(",")[0]?.trim() ||
+      c.req.header("x-real-ip") ||
+      "unknown";
+    return `session:${ip}`;
+  },
+  message: {
+    error: "Too many session requests. Please slow down.",
+  },
+});
+
+// Auth endpoints: Moderate limit (50 req/min) - covers sign-out, password ops, etc.
 const authRateLimiter = rateLimiter({
   windowMs: 60 * 1000, // 1 minute
-  limit: 30, // 30 requests per minute (was 5 - too strict for get-session calls)
+  limit: 50, // 50 requests per minute for other auth operations
   standardHeaders: "draft-6",
   keyGenerator: (c) => {
     const forwarded = c.req.header("x-forwarded-for");
@@ -266,12 +284,15 @@ app.use(
   })
 );
 
-// Rate limiting - Auth endpoints (30 req/min for session checks, sign-out, etc.)
-app.use("/api/auth/*", authRateLimiter);
+// Rate limiting - Session checks (most lenient: 100 req/min - called on every navigation)
+app.use("/api/auth/get-session", sessionRateLimiter);
 
-// Rate limiting - Login/Signup (stricter: 10 req/min to prevent brute force)
+// Rate limiting - Login/Signup (strictest: 10 req/min to prevent brute force)
 app.use("/api/auth/sign-in/*", loginRateLimiter);
 app.use("/api/auth/sign-up/*", loginRateLimiter);
+
+// Rate limiting - Other auth endpoints (moderate: 50 req/min)
+app.use("/api/auth/*", authRateLimiter);
 
 // Signup protection middleware - validates invite tokens before allowing registration
 // This MUST run before the auth handler to intercept signup requests
