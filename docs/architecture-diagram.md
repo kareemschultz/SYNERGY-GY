@@ -284,12 +284,48 @@ graph LR
 
 ## Backup Strategy
 
-1. **Database Backups**: Automated daily backups to S3 (retention: 30 days)
-2. **Document Backups**: Asynchronous sync to Cloudflare R2
-3. **Manual Backups**: Staff-initiated backups before major changes
-4. **Restore**: Complete system restore from backup archives
+### Backup Utilities (packages/api/src/utils/)
+
+1. **backup-utility.ts**: Creates compressed JSON backups
+   - Exports all database tables with relationships
+   - Uses Node.js zlib for compression
+   - Works inside Docker containers (no external dependencies)
+   - Generates backup metadata (timestamp, size, table counts)
+
+2. **backup-restore.ts**: Restores from backups
+   - Validates backup integrity before restoration
+   - Preview mode to inspect contents before applying
+   - Selective restoration by table/scope
+   - Transaction-based with rollback on error
+
+3. **backup-scheduler.ts**: Automated scheduling
+   - Daily, weekly, monthly schedules
+   - Configurable retention policies
+   - Background execution with logging
+
+4. **google-drive-storage.ts**: Cloud backup (foundation)
+   - OAuth2 authentication flow
+   - Upload/download methods
+
+### Backup Types
+
+| Type | Contents | Frequency |
+|------|----------|-----------|
+| Full | All database tables | Weekly |
+| Clients | Clients, contacts, linked clients | On demand |
+| Matters | Matters, documents, notes | On demand |
+| Documents | Document metadata, files | On demand |
+| Invoices | Invoices, line items, payments | Monthly |
+| Custom | User-selected tables | On demand |
+
+### Backup Flow
+
+1. **Creation**: API → backup-utility.ts → Compressed JSON → Local storage
+2. **Scheduling**: backup-scheduler.ts → Cron-like execution → Automatic backups
+3. **Restoration**: API → backup-restore.ts → Validation → Transaction-based restore
+4. **Cloud Sync**: Local backup → google-drive-storage.ts → Google Drive (optional)
 
 ---
 
-**Last Updated**: 2025-01-15
+**Last Updated**: 2024-12-24
 **Maintained By**: Development Team

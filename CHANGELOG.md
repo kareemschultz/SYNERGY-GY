@@ -7,7 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Comprehensive Backup/Restore System** - December 24, 2024
+  - Full backup utility with compressed JSON exports using Node.js zlib
+  - Restore functionality with validation and preview before applying
+  - Backup scheduler for automated scheduled backups (daily, weekly, monthly)
+  - Google Drive storage utility for cloud backup support (foundation)
+  - Scope-based backups: full, clients, matters, documents, invoices, or custom
+  - Backup estimation endpoint for predicting backup size
+  - **New Files**: `packages/api/src/utils/backup-restore.ts`, `packages/api/src/utils/backup-utility.ts`, `packages/api/src/utils/backup-scheduler.ts`, `packages/api/src/utils/google-drive-storage.ts`
+  - **Modified**: `packages/api/src/routers/backup.ts`, `packages/db/src/schema/system.ts`, `apps/web/src/components/settings/backup-settings.tsx`
+
+- **E2E Test Shared Login Helper** - December 24, 2024
+  - Created shared login helper with TanStack Form compatibility
+  - Uses `pressSequentially()` for proper controlled input handling
+  - Handles both logged-in and logged-out scenarios gracefully
+  - **File**: `apps/web/e2e/helpers/auth.ts`
+
 ### Fixed
+
+- **E2E Test Network Stability** - December 24, 2024
+  - Fixed `net::ERR_NETWORK_CHANGED` errors causing blank pages in Playwright tests
+  - Added Chromium launch args: `--disable-dev-shm-usage`, `--no-sandbox`, `--dns-prefetch-disable`
+  - Moved regex literals to top-level constants for Biome compliance
+  - Updated all 18 E2E spec files to use shared login helper
+  - **Files**: `apps/web/playwright.config.ts`, `apps/web/e2e/helpers/auth.ts`, all `apps/web/e2e/*.spec.ts`
+
+- **Database Schema - system_backup.scope Column** - December 24, 2024
+  - Added missing `scope` column to `system_backup` table
+  - Enables granular backup scoping (full, clients, matters, etc.)
+  - **File**: `packages/db/src/schema/system.ts`
+
+### Changed
+
+- **Vite Proxy Configuration** - December 24, 2024
+  - Added proxy configuration for API routing in development
+  - **File**: `apps/web/vite.config.ts`
 
 - **NODE_ENV Showing Development in Production** - December 23, 2025
   - Fixed docker-compose.yml to hardcode `NODE_ENV: production` instead of allowing .env override

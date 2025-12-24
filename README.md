@@ -105,6 +105,11 @@ Built as a modern, type-safe monorepo application, GK-Nexus combines the power o
 ### 🚀 Phase 2: Enhanced Features ✅ COMPLETE
 
 - **👤 Admin Panel** - Staff management, user roles, system configuration
+- **💾 Backup & Restore** - Comprehensive data backup with scheduling
+  - Full and scoped backups (clients, matters, documents, invoices)
+  - Automated scheduling (daily, weekly, monthly)
+  - Preview and validate before restore
+  - Compressed JSON format with transaction-based restoration
 - **🌐 Client Portal** - Self-service portal for clients to view matters and documents
 - **⚙️ Settings Page** - Application configuration and preferences
 - **💰 Service Catalog** - GCMC and KAJ service offerings with pricing
