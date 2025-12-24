@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { login } from "./helpers/auth";
 
 /**
  * E2E Tests for Admin Panel
@@ -16,13 +17,7 @@ const NEW_STAFF_BUTTON_REGEX = /New Staff|Add Staff/i;
 test.describe("Admin Panel", () => {
   test.beforeEach(async ({ page }) => {
     // Login as owner (admin access)
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("owner@gcmc.gy");
-    await page.getByLabel("Password").fill("password");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(
-      page.getByText("Overview of your business operations")
-    ).toBeVisible();
+    await login(page);
   });
 
   test("should navigate to admin panel", async ({ page }) => {

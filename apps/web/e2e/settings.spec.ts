@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { login } from "./helpers/auth";
 
 /**
  * E2E Tests for Settings
@@ -12,13 +13,7 @@ const NOTIFICATION_REGEX = /Notification/i;
 test.describe("User Settings", () => {
   test.beforeEach(async ({ page }) => {
     // Login
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("owner@gcmc.gy");
-    await page.getByLabel("Password").fill("password");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(
-      page.getByText("Overview of your business operations")
-    ).toBeVisible();
+    await login(page);
   });
 
   test("should navigate to settings page", async ({ page }) => {

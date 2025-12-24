@@ -3,32 +3,21 @@
  *
  * Uses a simple interval-based approach that checks every minute
  * for schedules that need to run based on their cron expressions.
+ *
+ * Uses Node.js backup utility for Docker compatibility.
  */
 
 import { backupSchedule, db, systemBackup } from "@SYNERGY-GY/db";
-import { exec } from "node:child_process";
 import { existsSync } from "node:fs";
-import { stat, unlink } from "node:fs/promises";
-import { join } from "node:path";
-import { promisify } from "node:util";
+import { unlink } from "node:fs/promises";
 import { and, eq, lte } from "drizzle-orm";
 
-const execAsync = promisify(exec);
-
-// @ts-expect-error Reserved for future use - will be used for backup file path resolution
-const _BACKUP_DIR = process.env.BACKUP_DIR || "./backups";
-const SCRIPTS_DIR = process.env.SCRIPTS_DIR || "./scripts";
 const CHECK_INTERVAL_MS = 60_000; // Check every minute
 
 // Regex patterns (module-level for performance)
 const WHITESPACE_REGEX = /\s+/;
 const WHITESPACE_GLOBAL_REGEX = /\s+/g;
 const TIMESTAMP_CHARS_REGEX = /[:.]/g;
-const ARCHIVE_PATH_REGEX = /Archive:\s*(.+\.zip)/;
-const SHA256_REGEX = /SHA256:\s*(\w+)/;
-const TABLES_COUNT_REGEX = /Tables:\s*(\d+)/;
-const RECORDS_COUNT_REGEX = /Records:\s*(\d+)/;
-const FILES_COUNT_REGEX = /Files:\s*(\d+)/;
 
 // Simple cron parser - supports basic patterns
 // Format: minute hour day-of-month month day-of-week
@@ -209,15 +198,25 @@ async function executeBackup(
     .slice(0, 19);
   const backupName = `scheduled-${schedule.name.toLowerCase().replace(WHITESPACE_GLOBAL_REGEX, "-")}-${timestamp}`;
 
-  console.log(`[BackupScheduler] Starting scheduled backup: ${backupName}`);
+  // Use the schedule's scope (defaults to "full" for scheduled backups)
+  const scope = (schedule.scope ?? "full") as
+    | "settings"
+    | "data"
+    | "database"
+    | "full";
 
-  // Create backup record
+  console.log(
+    `[BackupScheduler] Starting scheduled backup: ${backupName} (scope: ${scope})`
+  );
+
+  // Create backup record with scope
   const [backup] = await db
     .insert(systemBackup)
     .values({
       name: backupName,
       description: `Scheduled backup from "${schedule.name}"`,
       type: "scheduled",
+      scope,
       status: "in_progress",
       startedAt: new Date(),
       createdById: schedule.createdById,
@@ -232,70 +231,43 @@ async function executeBackup(
   }
 
   try {
-    // Execute backup script
-    const scriptPath = join(SCRIPTS_DIR, "backup.sh");
-    if (!existsSync(scriptPath)) {
-      throw new Error("Backup script not found");
+    // Use Node.js backup utility (works inside Docker containers)
+    const { createBackup } = await import("./backup-utility");
+    const result = await createBackup(backupName, { scope });
+
+    if (!result.success) {
+      throw new Error(result.error ?? "Backup failed");
     }
-
-    const { stdout } = await execAsync(`bash "${scriptPath}" "${backupName}"`, {
-      cwd: process.cwd(),
-      timeout: 300_000, // 5 minute timeout
-    });
-
-    // Parse output for file path
-    const outputLines = stdout.split("\n");
-    const archiveLine = outputLines.find((line) => line.includes("Archive:"));
-    const filePath = archiveLine?.match(ARCHIVE_PATH_REGEX)?.[1];
-
-    // Get file info
-    let fileSize = 0;
-    let checksum = "";
-    if (filePath && existsSync(filePath)) {
-      const stats = await stat(filePath);
-      fileSize = stats.size;
-
-      const checksumLine = outputLines.find((line) => line.includes("SHA256:"));
-      checksum = checksumLine?.match(SHA256_REGEX)?.[1] || "";
-    }
-
-    // Parse manifest for stats
-    const tablesMatch = stdout.match(TABLES_COUNT_REGEX);
-    const recordsMatch = stdout.match(RECORDS_COUNT_REGEX);
-    const filesMatch = stdout.match(FILES_COUNT_REGEX);
 
     // Update backup record with success
     await db
       .update(systemBackup)
       .set({
         status: "completed",
-        filePath,
-        fileSize,
-        checksum,
-        tableCount: tablesMatch?.[1]
-          ? Number.parseInt(tablesMatch[1], 10)
-          : null,
-        recordCount: recordsMatch?.[1]
-          ? Number.parseInt(recordsMatch[1], 10)
-          : null,
-        uploadedFilesCount: filesMatch?.[1]
-          ? Number.parseInt(filesMatch[1], 10)
-          : null,
+        filePath: result.archivePath,
+        fileSize: result.fileSize,
+        checksum: result.checksum,
+        tableCount: result.tableCount,
+        recordCount: result.recordCount,
+        uploadedFilesCount: result.uploadedFilesCount,
+        uploadedFilesSize: result.uploadedFilesSize,
+        includesFiles: result.includesFiles,
         completedAt: new Date(),
       })
       .where(eq(systemBackup.id, backup.id));
 
-    // Update schedule success count
+    // Update schedule with last backup reference and success count
     await db
       .update(backupSchedule)
       .set({
         lastRunAt: new Date(),
+        lastBackupId: backup.id,
         successCount: (schedule.successCount || 0) + 1,
       })
       .where(eq(backupSchedule.id, schedule.id));
 
     console.log(
-      `[BackupScheduler] Backup completed: ${backupName} (${formatFileSize(fileSize)})`
+      `[BackupScheduler] Backup completed: ${backupName} (${formatFileSize(result.fileSize ?? 0)})`
     );
   } catch (error) {
     const errorMessage =

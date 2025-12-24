@@ -665,6 +665,51 @@ app.get("/api/backup/download/:backupId", async (c) => {
   });
 });
 
+// Google Drive OAuth callback handler
+app.get("/api/auth/google-drive/callback", async (c) => {
+  const code = c.req.query("code");
+  // Note: state param available via c.req.query("state") for future CSRF protection
+  const error = c.req.query("error");
+
+  // Build redirect URL for frontend
+  const frontendUrl = process.env.VITE_APP_URL || "http://localhost:3000";
+  const redirectUrl = new URL("/app/settings/backup", frontendUrl);
+
+  if (error) {
+    redirectUrl.searchParams.set("google_drive_error", error);
+    return c.redirect(redirectUrl.toString());
+  }
+
+  if (!code) {
+    redirectUrl.searchParams.set("google_drive_error", "no_code");
+    return c.redirect(redirectUrl.toString());
+  }
+
+  try {
+    // Exchange code for tokens
+    const { exchangeCodeForTokens } = await import(
+      "@SYNERGY-GY/api/utils/google-drive-storage"
+    );
+
+    const result = await exchangeCodeForTokens(code);
+    if (!result.success) {
+      redirectUrl.searchParams.set(
+        "google_drive_error",
+        result.error || "token_exchange_failed"
+      );
+      return c.redirect(redirectUrl.toString());
+    }
+
+    // Success - redirect back to backup settings
+    redirectUrl.searchParams.set("google_drive_connected", "true");
+    return c.redirect(redirectUrl.toString());
+  } catch (err) {
+    console.error("[GoogleDrive] OAuth callback error:", err);
+    redirectUrl.searchParams.set("google_drive_error", "callback_failed");
+    return c.redirect(redirectUrl.toString());
+  }
+});
+
 // Knowledge Base file download handler
 app.get("/api/knowledge-base/download/:itemId", async (c) => {
   const itemId = c.req.param("itemId");

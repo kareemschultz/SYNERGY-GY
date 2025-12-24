@@ -29,6 +29,9 @@ const searchSchema = z.object({
     ])
     .optional()
     .catch("profile"),
+  // Google Drive OAuth callback params
+  google_drive_connected: z.string().optional(),
+  google_drive_error: z.string().optional(),
 });
 
 export const Route = createFileRoute("/app/settings/")({

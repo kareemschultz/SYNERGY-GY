@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { login } from "./helpers/auth";
 
 /**
  * E2E Tests for Appointment Management
@@ -13,13 +14,7 @@ const NEW_APPOINTMENT_REGEX = /New Appointment/i;
 test.describe("Appointment Management", () => {
   test.beforeEach(async ({ page }) => {
     // Login
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("owner@gcmc.gy");
-    await page.getByLabel("Password").fill("password");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(
-      page.getByText("Overview of your business operations")
-    ).toBeVisible();
+    await login(page);
   });
 
   test("should navigate to appointments page", async ({ page }) => {

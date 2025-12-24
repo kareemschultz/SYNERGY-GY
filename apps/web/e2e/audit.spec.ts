@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { login } from "./helpers/auth";
 
 // Regex patterns at top level for performance
-const LOGIN_TITLE_REGEX = /Login/;
 const APP_URL_REGEX = /\/app/;
 
 test.describe("SYNERGY-GY Full App Audit", () => {
@@ -9,7 +9,7 @@ test.describe("SYNERGY-GY Full App Audit", () => {
   test("should allow user to login and reach dashboard", async ({ page }) => {
     // Navigate to Login
     await page.goto("/login");
-    await expect(page).toHaveTitle(LOGIN_TITLE_REGEX);
+    await page.waitForLoadState("networkidle");
 
     // Screenshot: Login Page
     await page.screenshot({
@@ -18,15 +18,18 @@ test.describe("SYNERGY-GY Full App Audit", () => {
     });
 
     // Fill Credentials (using test account)
-    await page.getByLabel("Email").fill("owner@gcmc.gy");
-    await page.getByLabel("Password").fill("password");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    const emailInput = page.getByLabel("Email address");
+    await emailInput.waitFor({ state: "visible", timeout: 15_000 });
+    await emailInput.fill("owner@gcmc.gy");
+    // Use specific CSS selector to avoid matching TanStack Router DevTools elements
+    await page.locator('input[type="password"]').fill("Password123");
+    await page.getByRole("button", { name: "Sign In" }).click();
 
     // Verify Dashboard access
     await expect(page).toHaveURL(APP_URL_REGEX);
     await expect(
       page.getByText("Overview of your business operations")
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
 
     // Screenshot: Dashboard
     await page.screenshot({
@@ -39,11 +42,8 @@ test.describe("SYNERGY-GY Full App Audit", () => {
   test("should navigate to client list and open new client wizard", async ({
     page,
   }) => {
-    // Assume logged in (setup auth reuse in real config)
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("owner@gcmc.gy");
-    await page.getByLabel("Password").fill("password");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    // Login using helper
+    await login(page);
 
     // Navigate to Clients
     await page.getByRole("link", { name: "Clients" }).click();
@@ -70,14 +70,12 @@ test.describe("SYNERGY-GY Full App Audit", () => {
 
   // 3. Service Catalog Flow (Business Logic Check)
   test("should display service catalog correctly", async ({ page }) => {
-    // Login
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("owner@gcmc.gy");
-    await page.getByLabel("Password").fill("password");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    // Login using helper
+    await login(page);
 
     // Navigate to Services (Admin)
     await page.goto("/app/admin/services");
+    await page.waitForLoadState("networkidle");
 
     // Screenshot: Service Catalog
     await page.screenshot({

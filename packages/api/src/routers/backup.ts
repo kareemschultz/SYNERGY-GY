@@ -1,4 +1,9 @@
-import { backupSchedule, db, systemBackup } from "@SYNERGY-GY/db";
+import {
+  BACKUP_SCOPES,
+  backupSchedule,
+  db,
+  systemBackup,
+} from "@SYNERGY-GY/db";
 import { existsSync } from "node:fs";
 import { readdir, stat, unlink } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -18,12 +23,16 @@ const PROJECT_ROOT = resolve(__dirname, "../../../../..");
 const BACKUP_DIR = process.env.BACKUP_DIR || join(PROJECT_ROOT, "backups");
 
 // Zod schemas
+const backupScopeSchema = z.enum(BACKUP_SCOPES);
+
 const createBackupSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
   type: z
     .enum(["manual", "scheduled", "pre_update", "pre_restore"])
     .default("manual"),
+  scope: backupScopeSchema.default("database"),
+  syncToCloud: z.boolean().default(false),
 });
 
 const listBackupsSchema = z.object({
@@ -31,6 +40,7 @@ const listBackupsSchema = z.object({
   limit: z.number().min(1).max(100).default(20),
   status: z.enum(["pending", "in_progress", "completed", "failed"]).optional(),
   type: z.enum(["manual", "scheduled", "pre_update", "pre_restore"]).optional(),
+  scope: backupScopeSchema.optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 });
@@ -46,13 +56,27 @@ const deleteBackupSchema = z.object({
 
 const restoreBackupSchema = z.object({
   id: z.string(),
-  skipMigrations: z.boolean().default(false),
+  scope: z.enum(["settings", "data", "all"]).default("all"),
+  strategy: z.enum(["replace", "merge"]).default("replace"),
+  restoreFiles: z.boolean().default(false),
+  dryRun: z.boolean().default(false),
+  createPreRestoreBackup: z.boolean().default(true),
+});
+
+const previewRestoreSchema = z.object({
+  id: z.string(),
+  scope: z.enum(["settings", "data", "all"]).default("all"),
+});
+
+const getBackupStatsSchema = z.object({
+  scope: backupScopeSchema.optional(),
 });
 
 const createScheduleSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   cronExpression: z.string().min(1, "Cron expression is required"),
+  scope: backupScopeSchema.default("full"),
   retentionDays: z.number().min(1).max(365).default(30),
   syncToCloud: z.boolean().default(false),
 });
@@ -62,6 +86,7 @@ const updateScheduleSchema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
   cronExpression: z.string().optional(),
+  scope: backupScopeSchema.optional(),
   retentionDays: z.number().min(1).max(365).optional(),
   syncToCloud: z.boolean().optional(),
 });
@@ -113,6 +138,7 @@ async function listBackupFiles(): Promise<
     path: string;
     size: number;
     createdAt: Date;
+    isFullBackup: boolean;
   }>
 > {
   try {
@@ -125,15 +151,15 @@ async function listBackupFiles(): Promise<
       path: string;
       size: number;
       createdAt: Date;
+      isFullBackup: boolean;
     }[] = [];
 
     for (const file of files) {
-      // Support both tar.gz and zip formats
+      // Support tar.gz (full), json.gz (database/settings/data), and legacy zip
       const isBackupFile =
-        (file.endsWith(".tar.gz") || file.endsWith(".zip")) &&
-        (file.startsWith("gk-nexus-backup-") ||
-          file.startsWith("test-backup") ||
-          file.startsWith("scheduled-"));
+        file.endsWith(".tar.gz") ||
+        file.endsWith(".json.gz") ||
+        file.endsWith(".zip");
       if (isBackupFile) {
         const fullPath = join(BACKUP_DIR, file);
         const stats = await stat(fullPath);
@@ -142,6 +168,7 @@ async function listBackupFiles(): Promise<
           path: fullPath,
           size: stats.size,
           createdAt: stats.birthtime,
+          isFullBackup: file.endsWith(".tar.gz"),
         });
       }
     }
@@ -155,7 +182,7 @@ async function listBackupFiles(): Promise<
 }
 
 export const backupRouter = {
-  // Create a new backup using Node.js utility (Docker-compatible)
+  // Create a new backup with scope selection
   create: adminProcedure
     .input(createBackupSchema)
     .handler(async ({ input, context }) => {
@@ -172,6 +199,7 @@ export const backupRouter = {
           name: backupName,
           description: input.description,
           type: input.type,
+          scope: input.scope,
           status: "in_progress",
           startedAt: new Date(),
           createdById: context.session.user.id,
@@ -186,11 +214,15 @@ export const backupRouter = {
       }
 
       try {
-        // Use Node.js backup utility (works inside Docker)
+        // Use Node.js backup utility with scope
         const { createBackup: runBackup } = await import(
           "../utils/backup-utility"
         );
-        const result = await runBackup(backupName);
+        const result = await runBackup(backupName, {
+          scope: input.scope,
+          description: input.description,
+          syncToCloud: input.syncToCloud,
+        });
 
         if (!result.success) {
           throw new Error(result.error || "Backup failed");
@@ -207,6 +239,8 @@ export const backupRouter = {
             tableCount: result.tableCount,
             recordCount: result.recordCount,
             uploadedFilesCount: result.uploadedFilesCount,
+            uploadedFilesSize: result.uploadedFilesSize,
+            includesFiles: result.includesFiles,
             completedAt: new Date(),
           })
           .where(eq(systemBackup.id, backup.id))
@@ -240,9 +274,33 @@ export const backupRouter = {
       }
     }),
 
+  // Estimate backup size before creating
+  estimateSize: adminProcedure
+    .input(z.object({ scope: backupScopeSchema }))
+    .handler(async ({ input }) => {
+      const { getBackupStats } = await import("../utils/backup-utility");
+      const stats = await getBackupStats(input.scope);
+
+      return {
+        scope: input.scope,
+        tableCount: stats.tableCount,
+        recordCount: stats.recordCount,
+        estimatedDatabaseSize: stats.estimatedDatabaseSize,
+        estimatedDatabaseSizeFormatted: formatFileSize(
+          stats.estimatedDatabaseSize
+        ),
+        uploadedFilesCount: stats.uploadedFilesCount,
+        uploadedFilesSize: stats.uploadedFilesSize,
+        uploadedFilesSizeFormatted: formatFileSize(stats.uploadedFilesSize),
+        estimatedTotalSize: stats.estimatedTotalSize,
+        estimatedTotalSizeFormatted: formatFileSize(stats.estimatedTotalSize),
+        includesFiles: input.scope === "full",
+      };
+    }),
+
   // List all backups
   list: adminProcedure.input(listBackupsSchema).handler(async ({ input }) => {
-    const { page, limit, status, type, startDate, endDate } = input;
+    const { page, limit, status, type, scope, startDate, endDate } = input;
     const offset = (page - 1) * limit;
 
     // Build where conditions
@@ -252,6 +310,9 @@ export const backupRouter = {
     }
     if (type) {
       conditions.push(eq(systemBackup.type, type));
+    }
+    if (scope) {
+      conditions.push(eq(systemBackup.scope, scope));
     }
     if (startDate) {
       conditions.push(gte(systemBackup.createdAt, new Date(startDate)));
@@ -370,9 +431,9 @@ export const backupRouter = {
       return { success: true };
     }),
 
-  // Restore from backup
-  restore: adminProcedure
-    .input(restoreBackupSchema)
+  // Preview restore (dry run)
+  previewRestore: adminProcedure
+    .input(previewRestoreSchema)
     .handler(async ({ input }) => {
       const backup = await db.query.systemBackup.findFirst({
         where: eq(systemBackup.id, input.id),
@@ -390,76 +451,175 @@ export const backupRouter = {
         });
       }
 
-      // Note: Full restore functionality requires manual intervention
-      // The backup is a compressed JSON file that can be decompressed and used to restore data
-      // TODO: Implement automated restore with proper foreign key handling
-      throw new ORPCError("NOT_IMPLEMENTED", {
-        message:
-          "Automated restore is not yet implemented. Please decompress the backup file and restore manually using the JSON data.",
+      const { previewRestore } = await import("../utils/backup-restore");
+      const preview = await previewRestore(backup.filePath, input.scope);
+
+      if (!preview.valid) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: `Invalid backup: ${preview.errors.join(", ")}`,
+        });
+      }
+
+      return {
+        backupId: backup.id,
+        backupName: backup.name,
+        scope: input.scope,
+        tables: preview.tables,
+        totalRecords: preview.totalRecords,
+        filesCount: preview.filesCount,
+        hasFiles: preview.hasFiles,
+        canRestoreFiles: preview.hasFiles && backup.includesFiles === true,
+      };
+    }),
+
+  // Restore from backup
+  restore: adminProcedure
+    .input(restoreBackupSchema)
+    .handler(async ({ input, context }) => {
+      const backup = await db.query.systemBackup.findFirst({
+        where: eq(systemBackup.id, input.id),
       });
+
+      if (!backup) {
+        throw new ORPCError("NOT_FOUND", {
+          message: "Backup not found",
+        });
+      }
+
+      if (!(backup.filePath && existsSync(backup.filePath))) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Backup file not found on disk",
+        });
+      }
+
+      // Validate file restoration request
+      if (input.restoreFiles && backup.includesFiles !== true) {
+        throw new ORPCError("BAD_REQUEST", {
+          message:
+            "This backup does not include uploaded files. Create a backup with 'full' scope to include files.",
+        });
+      }
+
+      const { restoreBackup: doRestore } = await import(
+        "../utils/backup-restore"
+      );
+      const result = await doRestore(backup.filePath, {
+        scope: input.scope,
+        strategy: input.strategy,
+        restoreFiles: input.restoreFiles,
+        dryRun: input.dryRun,
+        createPreRestoreBackup: input.createPreRestoreBackup,
+      });
+
+      if (!result.success) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: `Restore failed: ${result.error}`,
+        });
+      }
+
+      // Update backup record with restore info (if not dry run)
+      if (!input.dryRun) {
+        await db
+          .update(systemBackup)
+          .set({
+            restoredAt: new Date(),
+            restoredById: context.session.user.id,
+          })
+          .where(eq(systemBackup.id, backup.id));
+      }
+
+      return {
+        success: true,
+        dryRun: input.dryRun,
+        tablesRestored: result.tablesRestored,
+        recordsRestored: result.recordsRestored,
+        filesRestored: result.filesRestored,
+        preRestoreBackupPath: result.preRestoreBackupId,
+        details: result.details,
+      };
     }),
 
   // Get backup statistics
-  getStats: adminProcedure.handler(async () => {
-    // Get counts by status
-    const statusCounts = await db
-      .select({
-        status: systemBackup.status,
-        count: count(),
-      })
-      .from(systemBackup)
-      .groupBy(systemBackup.status);
+  getStats: adminProcedure
+    .input(getBackupStatsSchema.optional())
+    .handler(async () => {
+      // Get counts by status
+      const statusCounts = await db
+        .select({
+          status: systemBackup.status,
+          count: count(),
+        })
+        .from(systemBackup)
+        .groupBy(systemBackup.status);
 
-    // Get latest backup
-    const [latestBackup] = await db
-      .select()
-      .from(systemBackup)
-      .where(eq(systemBackup.status, "completed"))
-      .orderBy(desc(systemBackup.completedAt))
-      .limit(1);
+      // Get counts by scope
+      const scopeCounts = await db
+        .select({
+          scope: systemBackup.scope,
+          count: count(),
+        })
+        .from(systemBackup)
+        .where(eq(systemBackup.status, "completed"))
+        .groupBy(systemBackup.scope);
 
-    // Get total storage used
-    const sizeResult = await db
-      .select({
-        totalSize: sql<number>`COALESCE(SUM(${systemBackup.fileSize}), 0)`,
-      })
-      .from(systemBackup)
-      .where(eq(systemBackup.status, "completed"));
-    const totalSize = sizeResult[0]?.totalSize ?? 0;
+      // Get latest backup
+      const [latestBackup] = await db
+        .select()
+        .from(systemBackup)
+        .where(eq(systemBackup.status, "completed"))
+        .orderBy(desc(systemBackup.completedAt))
+        .limit(1);
 
-    // List files from disk
-    const diskFiles = await listBackupFiles();
-    const diskTotalSize = diskFiles.reduce((sum, f) => sum + f.size, 0);
+      // Get total storage used
+      const sizeResult = await db
+        .select({
+          totalSize: sql<number>`COALESCE(SUM(${systemBackup.fileSize}), 0)`,
+        })
+        .from(systemBackup)
+        .where(eq(systemBackup.status, "completed"));
+      const totalSize = sizeResult[0]?.totalSize ?? 0;
 
-    return {
-      counts: {
-        total: statusCounts.reduce((sum, s) => sum + s.count, 0),
-        completed:
-          statusCounts.find((s) => s.status === "completed")?.count || 0,
-        failed: statusCounts.find((s) => s.status === "failed")?.count || 0,
-        inProgress:
-          statusCounts.find((s) => s.status === "in_progress")?.count || 0,
-      },
-      latestBackup: latestBackup
-        ? {
-            id: latestBackup.id,
-            name: latestBackup.name,
-            completedAt: latestBackup.completedAt,
-            fileSize: latestBackup.fileSize,
-            fileSizeFormatted: latestBackup.fileSize
-              ? formatFileSize(latestBackup.fileSize)
-              : null,
-          }
-        : null,
-      storage: {
-        databaseRecords: Number(totalSize),
-        databaseRecordsFormatted: formatFileSize(Number(totalSize)),
-        diskFiles: diskFiles.length,
-        diskTotalSize,
-        diskTotalSizeFormatted: formatFileSize(diskTotalSize),
-      },
-    };
-  }),
+      // List files from disk
+      const diskFiles = await listBackupFiles();
+      const diskTotalSize = diskFiles.reduce((sum, f) => sum + f.size, 0);
+
+      return {
+        counts: {
+          total: statusCounts.reduce((sum, s) => sum + s.count, 0),
+          completed:
+            statusCounts.find((s) => s.status === "completed")?.count || 0,
+          failed: statusCounts.find((s) => s.status === "failed")?.count || 0,
+          inProgress:
+            statusCounts.find((s) => s.status === "in_progress")?.count || 0,
+        },
+        byScope: {
+          settings: scopeCounts.find((s) => s.scope === "settings")?.count || 0,
+          data: scopeCounts.find((s) => s.scope === "data")?.count || 0,
+          database: scopeCounts.find((s) => s.scope === "database")?.count || 0,
+          full: scopeCounts.find((s) => s.scope === "full")?.count || 0,
+        },
+        latestBackup: latestBackup
+          ? {
+              id: latestBackup.id,
+              name: latestBackup.name,
+              scope: latestBackup.scope,
+              completedAt: latestBackup.completedAt,
+              fileSize: latestBackup.fileSize,
+              fileSizeFormatted: latestBackup.fileSize
+                ? formatFileSize(latestBackup.fileSize)
+                : null,
+              includesFiles: latestBackup.includesFiles,
+            }
+          : null,
+        storage: {
+          databaseRecords: Number(totalSize),
+          databaseRecordsFormatted: formatFileSize(Number(totalSize)),
+          diskFiles: diskFiles.length,
+          diskTotalSize,
+          diskTotalSizeFormatted: formatFileSize(diskTotalSize),
+        },
+      };
+    }),
 
   // Cleanup failed backups
   cleanupFailed: adminProcedure.handler(async () => {
@@ -505,7 +665,7 @@ export const backupRouter = {
       return schedules;
     }),
 
-    // Create schedule
+    // Create schedule with scope
     create: adminProcedure
       .input(createScheduleSchema)
       .handler(async ({ input, context }) => {
@@ -515,6 +675,7 @@ export const backupRouter = {
             name: input.name,
             description: input.description,
             cronExpression: input.cronExpression,
+            scope: input.scope,
             retentionDays: input.retentionDays,
             syncToCloud: input.syncToCloud,
             createdById: context.session.user.id,
@@ -600,4 +761,227 @@ export const backupRouter = {
       sizeFormatted: formatFileSize(f.size),
     }));
   }),
+
+  // Google Drive cloud storage
+  googleDrive: {
+    // Get Google Drive connection status
+    getStatus: adminProcedure.handler(async () => {
+      const {
+        isGoogleDriveConfigured,
+        getGoogleDriveInfo,
+        testGoogleDriveConnection,
+      } = await import("../utils/google-drive-storage");
+
+      const configured = isGoogleDriveConfigured();
+      if (!configured) {
+        return {
+          configured: false,
+          connected: false,
+          email: null,
+          storageUsed: null,
+          storageTotal: null,
+          folderId: null,
+        };
+      }
+
+      const info = getGoogleDriveInfo();
+      if (!info.hasValidTokens) {
+        return {
+          configured: true,
+          connected: false,
+          email: null,
+          storageUsed: null,
+          storageTotal: null,
+          folderId: info.folderId,
+        };
+      }
+
+      // Test connection to get user info
+      const connectionTest = await testGoogleDriveConnection();
+      return {
+        configured: true,
+        connected: connectionTest.success,
+        email: connectionTest.email ?? null,
+        storageUsed: connectionTest.storageUsed ?? null,
+        storageTotal: connectionTest.storageTotal ?? null,
+        folderId: info.folderId,
+      };
+    }),
+
+    // Get OAuth authorization URL
+    getAuthUrl: adminProcedure.handler(async () => {
+      const { isGoogleDriveConfigured, getAuthorizationUrl } = await import(
+        "../utils/google-drive-storage"
+      );
+
+      if (!isGoogleDriveConfigured()) {
+        throw new ORPCError("BAD_REQUEST", {
+          message:
+            "Google Drive not configured. Set GOOGLE_DRIVE_CLIENT_ID and GOOGLE_DRIVE_CLIENT_SECRET environment variables.",
+        });
+      }
+
+      const state = crypto.randomUUID();
+      const authUrl = getAuthorizationUrl(state);
+
+      return { authUrl, state };
+    }),
+
+    // Exchange OAuth code for tokens
+    exchangeCode: adminProcedure
+      .input(z.object({ code: z.string() }))
+      .handler(async ({ input }) => {
+        const { exchangeCodeForTokens } = await import(
+          "../utils/google-drive-storage"
+        );
+
+        const result = await exchangeCodeForTokens(input.code);
+        if (!result.success) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: result.error ?? "Failed to exchange OAuth code",
+          });
+        }
+
+        return { success: true };
+      }),
+
+    // Disconnect Google Drive
+    disconnect: adminProcedure.handler(async () => {
+      const { disconnectGoogleDrive } = await import(
+        "../utils/google-drive-storage"
+      );
+
+      await disconnectGoogleDrive();
+      return { success: true };
+    }),
+
+    // Create backup folder in Google Drive
+    createFolder: adminProcedure
+      .input(z.object({ folderName: z.string().optional() }))
+      .handler(async ({ input }) => {
+        const { createBackupFolder } = await import(
+          "../utils/google-drive-storage"
+        );
+
+        const result = await createBackupFolder(input.folderName);
+        if (!result.success) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: result.error ?? "Failed to create folder",
+          });
+        }
+
+        return { success: true, folderId: result.folderId };
+      }),
+
+    // Upload a backup to Google Drive
+    upload: adminProcedure
+      .input(z.object({ backupId: z.string() }))
+      .handler(async ({ input }) => {
+        const backup = await db.query.systemBackup.findFirst({
+          where: eq(systemBackup.id, input.backupId),
+        });
+
+        if (!backup) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Backup not found",
+          });
+        }
+
+        if (!(backup.filePath && existsSync(backup.filePath))) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Backup file not found on disk",
+          });
+        }
+
+        const { uploadToGoogleDrive } = await import(
+          "../utils/google-drive-storage"
+        );
+
+        const result = await uploadToGoogleDrive(backup.filePath);
+        if (!result.success) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: result.error ?? "Failed to upload to Google Drive",
+          });
+        }
+
+        // Update backup record with cloud info
+        await db
+          .update(systemBackup)
+          .set({
+            cloudPath: result.fileId,
+            cloudProvider: "google_drive" as never, // Will need schema update
+            isCloudSynced: true,
+            cloudSyncedAt: new Date(),
+          })
+          .where(eq(systemBackup.id, backup.id));
+
+        return {
+          success: true,
+          fileId: result.fileId,
+          fileName: result.fileName,
+        };
+      }),
+
+    // List backups in Google Drive
+    list: adminProcedure.handler(async () => {
+      const { listGoogleDriveBackups } = await import(
+        "../utils/google-drive-storage"
+      );
+
+      const result = await listGoogleDriveBackups();
+      if (!result.success) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: result.error ?? "Failed to list Google Drive backups",
+        });
+      }
+
+      return {
+        backups: result.backups.map((b) => ({
+          ...b,
+          sizeFormatted: formatFileSize(b.size),
+        })),
+      };
+    }),
+
+    // Download a backup from Google Drive
+    download: adminProcedure
+      .input(z.object({ fileId: z.string(), fileName: z.string() }))
+      .handler(async ({ input }) => {
+        const { downloadFromGoogleDrive } = await import(
+          "../utils/google-drive-storage"
+        );
+
+        const localPath = join(BACKUP_DIR, input.fileName);
+        const result = await downloadFromGoogleDrive(input.fileId, localPath);
+
+        if (!result.success) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: result.error ?? "Failed to download from Google Drive",
+          });
+        }
+
+        return {
+          success: true,
+          localPath: result.localPath,
+        };
+      }),
+
+    // Delete a backup from Google Drive
+    delete: adminProcedure
+      .input(z.object({ fileId: z.string() }))
+      .handler(async ({ input }) => {
+        const { deleteFromGoogleDrive } = await import(
+          "../utils/google-drive-storage"
+        );
+
+        const result = await deleteFromGoogleDrive(input.fileId);
+        if (!result.success) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: result.error ?? "Failed to delete from Google Drive",
+          });
+        }
+
+        return { success: true };
+      }),
+  },
 };

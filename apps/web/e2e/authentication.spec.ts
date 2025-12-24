@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { login } from "./helpers/auth";
 
 /**
  * E2E Regression Test for Access Pending Bug (#PROD-007)
@@ -17,7 +18,6 @@ import { expect, test } from "@playwright/test";
  */
 
 // Regex patterns at top level for performance
-const LOGIN_TITLE_REGEX = /Login/;
 const APP_URL_REGEX = /\/app/;
 const CLIENTS_URL_REGEX = /\/app\/clients/;
 const CLIENT_DETAIL_URL_REGEX = /\/app\/clients\//;
@@ -31,17 +31,8 @@ test.describe("Authentication & Staff Access", () => {
   test("should allow authenticated owner to access dashboard without Access Pending", async ({
     page,
   }) => {
-    // Navigate to login page
-    await page.goto("/login");
-    await expect(page).toHaveTitle(LOGIN_TITLE_REGEX);
-
-    // Login with owner credentials (from INITIAL_OWNER_* env vars)
-    await page.getByLabel("Email").fill("test@example.com");
-    await page.getByLabel("Password").fill("TestPassword123!");
-    await page.getByRole("button", { name: "Sign in" }).click();
-
-    // Wait for navigation to complete
-    await page.waitForLoadState("networkidle");
+    // Use shared login helper for reliable TanStack Form interaction
+    await login(page);
 
     // CRITICAL: Verify we're on the dashboard, NOT stuck at Access Pending
     await expect(page).toHaveURL(APP_URL_REGEX);
@@ -57,26 +48,26 @@ test.describe("Authentication & Staff Access", () => {
       timeout: 10_000,
     });
 
-    // Verify welcome message with user name
-    await expect(page.getByText(WELCOME_BACK_REGEX)).toBeVisible();
+    // Verify welcome message with user name (use .first() due to toast and header both matching)
+    await expect(page.getByText(WELCOME_BACK_REGEX).first()).toBeVisible();
 
     // Verify navigation menu is accessible (indicates full staff access)
-    await expect(page.getByRole("link", { name: "Clients" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Matters" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Documents" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Clients" }).first()
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Matters" }).first()
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Documents" }).first()
+    ).toBeVisible();
   });
 
   test("should handle staff status check correctly on dashboard load", async ({
     page,
   }) => {
-    // Login
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("test@example.com");
-    await page.getByLabel("Password").fill("TestPassword123!");
-    await page.getByRole("button", { name: "Sign in" }).click();
-
-    // Wait for dashboard to load
-    await expect(page).toHaveURL(APP_URL_REGEX);
+    // Use shared login helper
+    await login(page);
 
     // Navigate directly to dashboard (tests loader logic)
     await page.goto("/app");
@@ -96,16 +87,11 @@ test.describe("Authentication & Staff Access", () => {
   test("should load client detail page with correct financial access", async ({
     page,
   }) => {
-    // Login
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("test@example.com");
-    await page.getByLabel("Password").fill("TestPassword123!");
-    await page.getByRole("button", { name: "Sign in" }).click();
-
-    await expect(page).toHaveURL(APP_URL_REGEX);
+    // Use shared login helper
+    await login(page);
 
     // Navigate to Clients page
-    await page.getByRole("link", { name: "Clients" }).click();
+    await page.getByRole("link", { name: "Clients" }).first().click();
     await expect(page).toHaveURL(CLIENTS_URL_REGEX);
 
     // If there are clients, check one (this tests the $client-id.tsx fix)
@@ -133,13 +119,9 @@ test.describe("Authentication & Staff Access", () => {
   test("should handle page refresh without losing authentication", async ({
     page,
   }) => {
-    // Login
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("test@example.com");
-    await page.getByLabel("Password").fill("TestPassword123!");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    // Use shared login helper
+    await login(page);
 
-    await expect(page).toHaveURL(APP_URL_REGEX);
     await expect(page.getByText(DASHBOARD_INDICATOR)).toBeVisible();
 
     // Refresh the page

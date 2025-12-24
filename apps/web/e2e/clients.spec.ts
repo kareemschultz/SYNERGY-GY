@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { login } from "./helpers/auth";
 
 // Regex patterns at top level for performance
 const CLIENT_DETAIL_URL_REGEX = /\/app\/clients\//;
@@ -6,13 +7,7 @@ const CLIENT_DETAIL_URL_REGEX = /\/app\/clients\//;
 test.describe("Client Management", () => {
   test.beforeEach(async ({ page }) => {
     // Login
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("owner@gcmc.gy");
-    await page.getByLabel("Password").fill("password");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(
-      page.getByText("Overview of your business operations")
-    ).toBeVisible();
+    await login(page);
   });
 
   test("should create a new client via wizard", async ({ page }) => {

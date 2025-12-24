@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@SYNERGY-GY/config": "workspace:*",
+    "@types/tar": "^6.1.13",
     "vitest": "^3.2.3"
   },
   "peerDependencies": {
@@ -33,6 +34,7 @@
     "hono": "catalog:",
     "pdf-lib": "^1.17.1",
     "resend": "^6.6.0",
+    "tar": "^7.5.2",
     "xlsx": "^0.18.5",
     "zod": "catalog:"
   }

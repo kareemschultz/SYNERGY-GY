@@ -9,6 +9,10 @@ import {
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 
+// Backup scope types
+export const BACKUP_SCOPES = ["settings", "data", "database", "full"] as const;
+export type BackupScope = (typeof BACKUP_SCOPES)[number];
+
 // System backup records
 export const systemBackup = pgTable(
   "system_backup",
@@ -24,6 +28,12 @@ export const systemBackup = pgTable(
     })
       .notNull()
       .default("manual"),
+    // Scope of backup: settings, data, database (all tables), full (all + files)
+    scope: text("scope", {
+      enum: ["settings", "data", "database", "full"],
+    })
+      .notNull()
+      .default("database"),
     // Status of backup operation
     status: text("status", {
       enum: ["pending", "in_progress", "completed", "failed"],
@@ -36,7 +46,9 @@ export const systemBackup = pgTable(
     checksum: text("checksum"),
     // Cloud sync information
     cloudPath: text("cloud_path"),
-    cloudProvider: text("cloud_provider", { enum: ["s3", "r2"] }),
+    cloudProvider: text("cloud_provider", {
+      enum: ["s3", "r2", "google_drive"],
+    }),
     isCloudSynced: boolean("is_cloud_synced").default(false),
     cloudSyncedAt: timestamp("cloud_synced_at"),
     // Backup statistics
@@ -44,6 +56,10 @@ export const systemBackup = pgTable(
     recordCount: integer("record_count"),
     uploadedFilesCount: integer("uploaded_files_count"),
     uploadedFilesSize: integer("uploaded_files_size"),
+    // Whether backup includes actual uploaded files (not just metadata)
+    includesFiles: boolean("includes_files").default(false),
+    // Path to file manifest (for full backups)
+    fileManifestPath: text("file_manifest_path"),
     // Version information for restore compatibility
     appVersion: text("app_version"),
     schemaVersion: text("schema_version"),
@@ -52,6 +68,11 @@ export const systemBackup = pgTable(
     // Timing
     startedAt: timestamp("started_at"),
     completedAt: timestamp("completed_at"),
+    // Restore tracking
+    restoredAt: timestamp("restored_at"),
+    restoredById: text("restored_by_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
     // Audit
     createdById: text("created_by_id").references(() => user.id, {
       onDelete: "set null",
@@ -75,6 +96,12 @@ export const backupSchedule = pgTable("backup_schedule", {
   // Cron expression for scheduling
   // Examples: "0 2 * * *" (daily at 2am), "0 0 * * 0" (weekly Sunday midnight)
   cronExpression: text("cron_expression").notNull(),
+  // Scope of scheduled backups: settings, data, database, full (default: full with files)
+  scope: text("scope", {
+    enum: ["settings", "data", "database", "full"],
+  })
+    .notNull()
+    .default("full"),
   // Whether schedule is enabled
   isEnabled: boolean("is_enabled").default(true).notNull(),
   // Retention: how many days to keep backups before auto-deleting
