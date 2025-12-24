@@ -3,6 +3,7 @@ import { login } from "./helpers/auth";
 
 // Regex patterns at top level for performance
 const APP_URL_REGEX = /\/app/;
+const CLIENT_WIZARD_REGEX = /wizard|client wizard/i;
 
 test.describe("SYNERGY-GY Full App Audit", () => {
   // 1. Authentication Flow
@@ -17,16 +18,30 @@ test.describe("SYNERGY-GY Full App Audit", () => {
       fullPage: true,
     });
 
-    // Fill Credentials (using test account)
+    // Fill Credentials using pressSequentially for TanStack Form compatibility
     const emailInput = page.getByLabel("Email address");
     await emailInput.waitFor({ state: "visible", timeout: 15_000 });
-    await emailInput.fill("owner@gcmc.gy");
-    // Use specific CSS selector to avoid matching TanStack Router DevTools elements
-    await page.locator('input[type="password"]').fill("Password123");
-    await page.getByRole("button", { name: "Sign In" }).click();
+    await emailInput.click();
+    await emailInput.clear();
+    await emailInput.pressSequentially("owner@gcmc.gy", { delay: 10 });
+
+    const passwordInput = page.locator('input[type="password"]');
+    await passwordInput.click();
+    await passwordInput.clear();
+    await passwordInput.pressSequentially("Password123", { delay: 10 });
+
+    // Blur to trigger validation
+    await passwordInput.blur();
+    await page.waitForTimeout(200);
+
+    // Wait for button to be enabled
+    const signInButton = page.getByRole("button", { name: "Sign In" });
+    await expect(signInButton).toBeEnabled({ timeout: 5000 });
+
+    await signInButton.click();
 
     // Verify Dashboard access
-    await expect(page).toHaveURL(APP_URL_REGEX);
+    await expect(page).toHaveURL(APP_URL_REGEX, { timeout: 20_000 });
     await expect(
       page.getByText("Overview of your business operations")
     ).toBeVisible({ timeout: 15_000 });
@@ -55,8 +70,14 @@ test.describe("SYNERGY-GY Full App Audit", () => {
       fullPage: true,
     });
 
-    // Open New Client Wizard
-    await page.getByRole("button", { name: "New Client" }).click();
+    // Open New Client Wizard - use data-testid or link role (buttons with asChild render as links)
+    const wizardButton = page.getByTestId("clients-wizard-btn");
+    if (await wizardButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await wizardButton.click();
+    } else {
+      // Fallback to link role
+      await page.getByRole("link", { name: CLIENT_WIZARD_REGEX }).click();
+    }
     await expect(
       page.getByRole("heading", { name: "New Client" })
     ).toBeVisible();

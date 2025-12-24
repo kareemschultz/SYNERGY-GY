@@ -1,13 +1,25 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
+
+// Type for impersonation start response
+type ImpersonationStartResponse = {
+  token: string;
+  expiresAt: Date;
+  portalUserId: string;
+  clientId: string;
+};
 
 export function useImpersonation() {
   const _navigate = useNavigate();
 
   const startImpersonationMutation = useMutation({
-    mutationFn: (input: { clientId: string; reason: string }) =>
-      client.portal.impersonation.start(input),
+    mutationFn: async (input: { clientId: string; reason: string }) => {
+      const response = await client.portal.impersonation.start(input);
+      // Unwrap oRPC response envelope
+      return unwrapOrpc<ImpersonationStartResponse>(response);
+    },
   });
   const endImpersonationMutation = useMutation({
     mutationFn: (input: { token: string }) =>
