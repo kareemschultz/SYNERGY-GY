@@ -956,3 +956,47 @@ if (input.filters?.clientId) {
 | `if (arr.length > 0) arr[0].id` | Extract first: `const item = arr[0]; if (item) item.id` |
 | `data?.items` after `client.xxx()` | `unwrapOrpc<T>(dataRaw)?.items` - always unwrap oRPC responses |
 | Mutation `onSuccess` ignoring return value | Unwrap in `mutationFn` and use return value in `onSuccess` |
+| `cn(condition && "class")` | `cn(condition ? "class" : "")` - Biome requires explicit empty string |
+| Nested ternary for loading/error/data | Extract to helper function with early returns (see below) |
+
+### Avoiding Nested Ternaries with Helper Functions
+
+When rendering loading/error/data states, avoid nested ternaries by extracting to a helper function with early returns:
+
+```typescript
+// ❌ WRONG - nested ternary causes noNestedTernary lint error
+{isLoading ? (
+  <TableSkeleton rows={5} />
+) : error ? (
+  <ErrorState message={error.message} />
+) : data.length === 0 ? (
+  <EmptyState icon={Calendar} title="No items" />
+) : (
+  <div>{data.map(item => ...)}</div>
+)}
+
+// ✅ CORRECT - extract to helper function with early returns
+const renderContent = () => {
+  if (isLoading) {
+    return <TableSkeleton rows={5} />;
+  }
+  if (error) {
+    return <ErrorState message={error.message} />;
+  }
+  if (data.length === 0) {
+    return <EmptyState icon={Calendar} title="No items" />;
+  }
+  return <div>{data.map(item => ...)}</div>;
+};
+
+// Then in JSX:
+{renderContent()}
+```
+
+For complex map callbacks with many conditionals, add a biome-ignore comment:
+```typescript
+{/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complex card rendering */}
+{items.map((item) => (
+  // complex JSX with many conditionals
+))}
+```
