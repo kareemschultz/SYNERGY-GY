@@ -20,6 +20,7 @@ import { mattersRouter } from "./matters";
 import { notificationsRouter } from "./notifications";
 import { portalRouter } from "./portal";
 import { publicBookingRouter } from "./public-booking";
+import { publicPaymentRouter } from "./public-payment";
 import { reportsRouter } from "./reports";
 import { serviceCatalogRouter } from "./service-catalog";
 import { settingsRouter } from "./settings";
@@ -54,6 +55,7 @@ export const appRouter = {
   matters: mattersRouter,
   portal: portalRouter,
   publicBooking: publicBookingRouter,
+  publicPayment: publicPaymentRouter,
   reports: reportsRouter,
   serviceCatalog: serviceCatalogRouter,
   settings: settingsRouter,

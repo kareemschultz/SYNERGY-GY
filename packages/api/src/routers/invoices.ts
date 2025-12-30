@@ -44,6 +44,7 @@ const paymentMethodValues = [
   "CREDIT_CARD",
   "DEBIT_CARD",
   "MOBILE_MONEY",
+  "STRIPE",
   "OTHER",
 ] as const;
 
@@ -1234,5 +1235,178 @@ export const invoicesRouter = {
           ids: updated.map((inv) => inv.id),
         };
       }),
+  },
+
+  // Stripe payment endpoints
+  payments: {
+    /**
+     * Create a Stripe payment link for an invoice
+     */
+    createPaymentLink: staffProcedure
+      .input(z.object({ invoiceId: z.string() }))
+      .handler(async ({ input, context }) => {
+        const { isStripeConfigured, createPaymentLink } = await import(
+          "../utils/stripe"
+        );
+
+        if (!isStripeConfigured()) {
+          throw new ORPCError("BAD_REQUEST", {
+            message:
+              "Stripe is not configured. Set STRIPE_SECRET_KEY environment variable.",
+          });
+        }
+
+        // Get invoice details
+        const inv = await db.query.invoice.findFirst({
+          where: eq(invoice.id, input.invoiceId),
+          with: {
+            client: {
+              columns: { id: true, displayName: true, email: true },
+            },
+          },
+        });
+
+        if (!inv) {
+          throw new ORPCError("NOT_FOUND", { message: "Invoice not found" });
+        }
+
+        // Check access
+        if (!canAccessBusiness(context.staff, inv.business)) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this invoice",
+          });
+        }
+
+        // Invoice must be SENT or OVERDUE to generate payment link
+        if (!["SENT", "OVERDUE"].includes(inv.status)) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Invoice must be sent before generating a payment link",
+          });
+        }
+
+        // Check if there's an amount due
+        const amountDue = Number.parseFloat(inv.amountDue);
+        if (amountDue <= 0) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Invoice has no outstanding balance",
+          });
+        }
+
+        // Generate a payment token if not exists
+        let paymentToken = inv.paymentToken;
+        if (!paymentToken) {
+          paymentToken = crypto.randomUUID();
+          await db
+            .update(invoice)
+            .set({ paymentToken })
+            .where(eq(invoice.id, input.invoiceId));
+        }
+
+        // Amount in smallest currency unit (GYD doesn't have cents, so amount = amount)
+        const amountInSmallestUnit = Math.round(amountDue * 100);
+
+        const result = await createPaymentLink({
+          invoiceId: inv.id,
+          invoiceNumber: inv.invoiceNumber,
+          clientId: inv.clientId,
+          amount: amountInSmallestUnit,
+          description: `Payment for Invoice ${inv.invoiceNumber}`,
+        });
+
+        // Update invoice with payment link
+        await db
+          .update(invoice)
+          .set({
+            stripePaymentLinkId: result.paymentLinkId,
+            stripePaymentLinkUrl: result.url,
+          })
+          .where(eq(invoice.id, input.invoiceId));
+
+        return {
+          paymentLinkId: result.paymentLinkId,
+          paymentUrl: result.url,
+          paymentToken,
+        };
+      }),
+
+    /**
+     * Create a Stripe checkout session for invoice payment
+     */
+    createCheckoutSession: staffProcedure
+      .input(z.object({ invoiceId: z.string() }))
+      .handler(async ({ input, context }) => {
+        const { isStripeConfigured, createInvoiceCheckoutSession } =
+          await import("../utils/stripe");
+
+        if (!isStripeConfigured()) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Stripe is not configured",
+          });
+        }
+
+        // Get invoice details
+        const inv = await db.query.invoice.findFirst({
+          where: eq(invoice.id, input.invoiceId),
+          with: {
+            client: true,
+          },
+        });
+
+        if (!inv) {
+          throw new ORPCError("NOT_FOUND", { message: "Invoice not found" });
+        }
+
+        // Check access
+        if (!canAccessBusiness(context.staff, inv.business)) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this invoice",
+          });
+        }
+
+        const clientData = inv.client as {
+          id: string;
+          displayName: string;
+          email: string | null;
+        };
+
+        if (!clientData?.email) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Client email is required for online payment",
+          });
+        }
+
+        const amountDue = Number.parseFloat(inv.amountDue);
+        if (amountDue <= 0) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "Invoice has no outstanding balance",
+          });
+        }
+
+        const result = await createInvoiceCheckoutSession({
+          invoiceId: inv.id,
+          invoiceNumber: inv.invoiceNumber,
+          clientId: inv.clientId,
+          clientEmail: clientData.email,
+          clientName: clientData.displayName,
+          amountDue: Math.round(amountDue * 100),
+          description: `Invoice ${inv.invoiceNumber} - ${inv.business}`,
+        });
+
+        return {
+          sessionId: result.sessionId,
+          checkoutUrl: result.url,
+        };
+      }),
+
+    /**
+     * Check if Stripe payments are available
+     */
+    checkAvailability: staffProcedure.handler(async () => {
+      const { isStripeConfigured } = await import("../utils/stripe");
+      return {
+        available: isStripeConfigured(),
+        currency: process.env.STRIPE_CURRENCY || "gyd",
+      };
+    }),
   },
 };

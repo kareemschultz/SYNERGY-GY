@@ -3,6 +3,9 @@ import type { Context, Staff } from "./context";
 
 export const o = os.$context<Context>();
 
+// Base procedure without any middleware (for truly public endpoints)
+export const baseProcedure = o;
+
 export const publicProcedure = o;
 
 // Middleware: Require authenticated user

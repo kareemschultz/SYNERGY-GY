@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Stripe Payment Integration** - December 30, 2024
+  - Complete Stripe payment integration for online invoice payments
+  - New `/pay/:token` public route for clients to pay invoices without logging in
+  - New `/pay/success` route for payment confirmation after successful checkout
+  - Stripe checkout session creation with invoice metadata
+  - Stripe webhook handler for payment confirmations and subscription events
+  - Payment token generation for secure public invoice access
+  - Database schema updates: `stripePaymentIntentId`, `stripePaymentLinkId`, `stripePaymentLinkUrl`, `paymentToken` fields
+  - New recurring invoice schema: `recurringInvoice` and `recurringInvoiceLineItem` tables
+  - New payment method: `STRIPE` added to payment methods enum
+  - Support for checkout.session.completed, invoice.payment_succeeded, payment_intent.payment_failed, customer.subscription.deleted webhook events
+  - Automatic invoice status update to PAID when full amount received
+  - Payment recording with Stripe payment intent reference
+  - **New Files**: `packages/api/src/utils/stripe.ts`, `packages/api/src/routers/stripe-webhook.ts`, `packages/api/src/routers/public-payment.ts`, `apps/web/src/routes/pay/$token.tsx`, `apps/web/src/routes/pay/success.tsx`
+  - **Modified**: `packages/db/src/schema/invoices.ts`, `packages/api/src/routers/invoices.ts`, `packages/api/src/routers/index.ts`, `apps/server/src/index.ts`
+  - **Environment**: Requires `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, optionally `STRIPE_CURRENCY` (defaults to gyd)
+
 - **Public Booking System** - December 30, 2024
   - Complete public booking workflow for clients without accounts
   - New `/book/:token` route with multi-step wizard (Date → Time → Details → Confirmation)

@@ -858,6 +858,14 @@ app.use("/*", async (c, next) => {
   await next();
 });
 
+// Stripe webhook endpoint (must be before body parsing middleware)
+app.post("/api/stripe/webhook", async (c) => {
+  const { handleStripeWebhook } = await import(
+    "@SYNERGY-GY/api/routers/stripe-webhook"
+  );
+  return handleStripeWebhook(c);
+});
+
 // Health check endpoint for Docker
 app.get("/health", async (c) => {
   try {

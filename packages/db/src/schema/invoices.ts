@@ -49,7 +49,19 @@ export const paymentMethodEnum = pgEnum("payment_method", [
   "CREDIT_CARD",
   "DEBIT_CARD",
   "MOBILE_MONEY",
+  "STRIPE",
   "OTHER",
+]);
+
+/**
+ * Recurring interval enum
+ */
+export const recurringIntervalEnum = pgEnum("recurring_interval", [
+  "WEEKLY",
+  "BIWEEKLY",
+  "MONTHLY",
+  "QUARTERLY",
+  "YEARLY",
 ]);
 
 /**
@@ -111,6 +123,12 @@ export const invoice = pgTable(
 
     // PDF generation
     pdfUrl: text("pdf_url"), // URL to generated PDF in storage
+
+    // Stripe payment integration
+    stripePaymentIntentId: text("stripe_payment_intent_id"), // Stripe PaymentIntent ID
+    stripePaymentLinkId: text("stripe_payment_link_id"), // Stripe Payment Link ID
+    stripePaymentLinkUrl: text("stripe_payment_link_url"), // Shareable payment URL
+    paymentToken: text("payment_token"), // Token for public payment page access
 
     // Tracking
     sentAt: timestamp("sent_at"), // When invoice was sent to client
@@ -258,3 +276,135 @@ export const invoicePaymentRelations = relations(invoicePayment, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+/**
+ * Recurring invoice status enum
+ */
+export const recurringInvoiceStatusEnum = pgEnum("recurring_invoice_status", [
+  "ACTIVE",
+  "PAUSED",
+  "CANCELLED",
+  "COMPLETED",
+]);
+
+/**
+ * Recurring invoice templates
+ * Defines templates for automatically generated recurring invoices
+ */
+export const recurringInvoice = pgTable(
+  "recurring_invoice",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    // Business and client
+    business: businessEnum("business").notNull(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "restrict" }),
+    matterId: text("matter_id").references(() => matter.id, {
+      onDelete: "set null",
+    }),
+
+    // Recurring schedule
+    interval: recurringIntervalEnum("interval").notNull(),
+    dayOfMonth: integer("day_of_month"), // For monthly (1-28)
+    dayOfWeek: integer("day_of_week"), // For weekly (0-6, Sunday = 0)
+    nextInvoiceDate: date("next_invoice_date").notNull(),
+    endDate: date("end_date"), // Optional end date for recurring
+
+    // Invoice template
+    description: text("description").notNull(), // Description for line items
+    amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+    taxAmount: decimal("tax_amount", { precision: 10, scale: 2 })
+      .default("0")
+      .notNull(),
+    notes: text("notes"),
+    terms: text("terms"),
+
+    // Status
+    status: recurringInvoiceStatusEnum("status").default("ACTIVE").notNull(),
+    invoicesGenerated: integer("invoices_generated").default(0).notNull(),
+    lastInvoiceId: text("last_invoice_id"), // Reference to last generated invoice
+    lastGeneratedAt: timestamp("last_generated_at"),
+
+    // Stripe subscription (optional)
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    stripeCustomerId: text("stripe_customer_id"),
+
+    // Tracking
+    createdById: text("created_by_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("recurring_invoice_business_idx").on(table.business),
+    index("recurring_invoice_client_id_idx").on(table.clientId),
+    index("recurring_invoice_status_idx").on(table.status),
+    index("recurring_invoice_next_date_idx").on(table.nextInvoiceDate),
+  ]
+);
+
+/**
+ * Recurring invoice line items template
+ */
+export const recurringInvoiceLineItem = pgTable(
+  "recurring_invoice_line_item",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+
+    recurringInvoiceId: text("recurring_invoice_id")
+      .notNull()
+      .references(() => recurringInvoice.id, { onDelete: "cascade" }),
+
+    description: text("description").notNull(),
+    quantity: decimal("quantity", { precision: 10, scale: 2 })
+      .default("1")
+      .notNull(),
+    unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+    amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+    serviceTypeId: text("service_type_id"),
+    sortOrder: integer("sort_order").default(0).notNull(),
+  },
+  (table) => [
+    index("recurring_line_item_recurring_id_idx").on(table.recurringInvoiceId),
+  ]
+);
+
+// Recurring invoice relations
+export const recurringInvoiceRelations = relations(
+  recurringInvoice,
+  ({ one, many }) => ({
+    client: one(client, {
+      fields: [recurringInvoice.clientId],
+      references: [client.id],
+    }),
+    matter: one(matter, {
+      fields: [recurringInvoice.matterId],
+      references: [matter.id],
+    }),
+    createdBy: one(user, {
+      fields: [recurringInvoice.createdById],
+      references: [user.id],
+    }),
+    lineItems: many(recurringInvoiceLineItem),
+  })
+);
+
+export const recurringInvoiceLineItemRelations = relations(
+  recurringInvoiceLineItem,
+  ({ one }) => ({
+    recurringInvoice: one(recurringInvoice, {
+      fields: [recurringInvoiceLineItem.recurringInvoiceId],
+      references: [recurringInvoice.id],
+    }),
+  })
+);

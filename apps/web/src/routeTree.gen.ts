@@ -27,6 +27,8 @@ import { Route as PortalForgotPasswordRouteImport } from './routes/portal/forgot
 import { Route as PortalFinancialsRouteImport } from './routes/portal/financials'
 import { Route as PortalDocumentsRouteImport } from './routes/portal/documents'
 import { Route as PortalAppointmentsRouteImport } from './routes/portal/appointments'
+import { Route as PaySuccessRouteImport } from './routes/pay/success'
+import { Route as PayTokenRouteImport } from './routes/pay/$token'
 import { Route as BookManageRouteImport } from './routes/book/manage'
 import { Route as BookTokenRouteImport } from './routes/book/$token'
 import { Route as AppTrainingIndexRouteImport } from './routes/app/training/index'
@@ -175,6 +177,16 @@ const PortalDocumentsRoute = PortalDocumentsRouteImport.update({
 const PortalAppointmentsRoute = PortalAppointmentsRouteImport.update({
   id: '/portal/appointments',
   path: '/portal/appointments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaySuccessRoute = PaySuccessRouteImport.update({
+  id: '/pay/success',
+  path: '/pay/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayTokenRoute = PayTokenRouteImport.update({
+  id: '/pay/$token',
+  path: '/pay/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookManageRoute = BookManageRouteImport.update({
@@ -491,6 +503,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/book/$token': typeof BookTokenRoute
   '/book/manage': typeof BookManageRoute
+  '/pay/$token': typeof PayTokenRoute
+  '/pay/success': typeof PaySuccessRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/financials': typeof PortalFinancialsRoute
@@ -569,6 +583,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/book/$token': typeof BookTokenRoute
   '/book/manage': typeof BookManageRoute
+  '/pay/$token': typeof PayTokenRoute
+  '/pay/success': typeof PaySuccessRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/financials': typeof PortalFinancialsRoute
@@ -649,6 +665,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/book/$token': typeof BookTokenRoute
   '/book/manage': typeof BookManageRoute
+  '/pay/$token': typeof PayTokenRoute
+  '/pay/success': typeof PaySuccessRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/financials': typeof PortalFinancialsRoute
@@ -730,6 +748,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/book/$token'
     | '/book/manage'
+    | '/pay/$token'
+    | '/pay/success'
     | '/portal/appointments'
     | '/portal/documents'
     | '/portal/financials'
@@ -808,6 +828,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/book/$token'
     | '/book/manage'
+    | '/pay/$token'
+    | '/pay/success'
     | '/portal/appointments'
     | '/portal/documents'
     | '/portal/financials'
@@ -887,6 +909,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/book/$token'
     | '/book/manage'
+    | '/pay/$token'
+    | '/pay/success'
     | '/portal/appointments'
     | '/portal/documents'
     | '/portal/financials'
@@ -967,6 +991,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   BookTokenRoute: typeof BookTokenRoute
   BookManageRoute: typeof BookManageRoute
+  PayTokenRoute: typeof PayTokenRoute
+  PaySuccessRoute: typeof PaySuccessRoute
   PortalAppointmentsRoute: typeof PortalAppointmentsRoute
   PortalDocumentsRoute: typeof PortalDocumentsRoute
   PortalFinancialsRoute: typeof PortalFinancialsRoute
@@ -1109,6 +1135,20 @@ declare module '@tanstack/react-router' {
       path: '/portal/appointments'
       fullPath: '/portal/appointments'
       preLoaderRoute: typeof PortalAppointmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/success': {
+      id: '/pay/success'
+      path: '/pay/success'
+      fullPath: '/pay/success'
+      preLoaderRoute: typeof PaySuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/$token': {
+      id: '/pay/$token'
+      path: '/pay/$token'
+      fullPath: '/pay/$token'
+      preLoaderRoute: typeof PayTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/book/manage': {
@@ -1666,6 +1706,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   BookTokenRoute: BookTokenRoute,
   BookManageRoute: BookManageRoute,
+  PayTokenRoute: PayTokenRoute,
+  PaySuccessRoute: PaySuccessRoute,
   PortalAppointmentsRoute: PortalAppointmentsRoute,
   PortalDocumentsRoute: PortalDocumentsRoute,
   PortalFinancialsRoute: PortalFinancialsRoute,
