@@ -4,6 +4,7 @@ import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure } from "../index";
+import { getAppUrl } from "../utils/app-url";
 import { sendStaffPasswordSetup } from "../utils/email";
 import { generateSecureToken, hashPassword } from "../utils/password";
 
@@ -314,8 +315,7 @@ export const adminRouter = {
             expiresAt,
           });
 
-          const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
-          const setupUrl = `${appUrl}/staff/setup-password?token=${setupToken}`;
+          const setupUrl = `${getAppUrl()}/staff/setup-password?token=${setupToken}`;
 
           // Get the name of the admin who created this staff member
           const invitedByName = context.session.user.name || "GK-Nexus Admin";
@@ -580,8 +580,7 @@ export const adminRouter = {
           expiresAt,
         });
 
-        const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
-        const setupUrl = `${appUrl}/staff/setup-password?token=${setupToken}`;
+        const setupUrl = `${getAppUrl()}/staff/setup-password?token=${setupToken}`;
 
         const invitedByName = context.session.user.name || "GK-Nexus Admin";
 
@@ -640,8 +639,8 @@ export const adminRouter = {
           expiresAt,
         });
 
-        const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
-        const setupUrl = `${appUrl}/staff/setup-password?token=${setupToken}`;
+        // Use getAppUrl() to avoid invalid URLs when CORS_ORIGIN is "*"
+        const setupUrl = `${getAppUrl()}/staff/setup-password?token=${setupToken}`;
 
         const invitedByName = context.session.user.name || "GK-Nexus Admin";
 

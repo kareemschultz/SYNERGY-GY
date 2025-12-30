@@ -1,6 +1,7 @@
 import { account, bootstrapToken, db, staff, user } from "@SYNERGY-GY/db";
 import { randomUUID } from "node:crypto";
 import { and, eq, gte, isNull } from "drizzle-orm";
+import { getAppUrl } from "./app-url";
 import { hashPassword, validatePasswordStrength } from "./password";
 
 /**
@@ -207,8 +208,7 @@ async function handleBootstrapToken(
     expiresAt,
   });
 
-  const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
-  const bootstrapUrl = `${appUrl}/register?bootstrap=${token}`;
+  const bootstrapUrl = `${getAppUrl()}/register?bootstrap=${token}`;
 
   console.log("[Setup] 🔐 Bootstrap token created!");
   console.log("[Setup]");

@@ -29,6 +29,7 @@ import {
 import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { ownerProcedure, publicProcedure } from "../index";
+import { getAppUrl } from "../utils/app-url";
 import { generateSecureToken } from "../utils/signup-protection";
 
 // Staff role values (must match database enum)
@@ -167,9 +168,8 @@ export const invitesRouter = {
         })
         .returning();
 
-      // Generate invite URL
-      const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
-      const inviteUrl = `${appUrl}/register?invite=${token}`;
+      // Generate invite URL using getAppUrl() to avoid invalid "*" URLs
+      const inviteUrl = `${getAppUrl()}/register?invite=${token}`;
 
       return {
         invite: newInvite,
@@ -333,8 +333,7 @@ export const invitesRouter = {
         .where(eq(staffInvite.id, input.id))
         .returning();
 
-      const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
-      const inviteUrl = `${appUrl}/register?invite=${newToken}`;
+      const inviteUrl = `${getAppUrl()}/register?invite=${newToken}`;
 
       return {
         invite: updatedInvite,
