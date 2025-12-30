@@ -1,11 +1,11 @@
-import { db, passwordSetupToken, staff, user } from "@SYNERGY-GY/db";
+import { account, db, passwordSetupToken, staff, user } from "@SYNERGY-GY/db";
 import { randomUUID } from "node:crypto";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { adminProcedure } from "../index";
 import { sendStaffPasswordSetup } from "../utils/email";
-import { generateSecureToken } from "../utils/password";
+import { generateSecureToken, hashPassword } from "../utils/password";
 
 // Staff role values
 const staffRoleValues = [
@@ -31,6 +31,12 @@ const createStaffSchema = z.object({
   phone: z.string().optional(),
   jobTitle: z.string().optional(),
   canViewFinancials: z.boolean().optional(),
+  // Account setup options
+  sendInviteEmail: z.boolean().default(true),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .optional(),
 });
 
 const updateStaffSchema = z.object({
@@ -227,6 +233,8 @@ export const adminRouter = {
           phone,
           jobTitle,
           canViewFinancials,
+          sendInviteEmail = true,
+          password,
         } = input;
 
         // Check if email already exists
@@ -279,36 +287,54 @@ export const adminRouter = {
           })
           .returning();
 
-        // Generate password setup token and store in database
-        const setupToken = generateSecureToken();
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24); // 24-hour expiry
+        // Handle account setup based on method chosen
+        let setupMethod: "email" | "local";
 
-        await db.insert(passwordSetupToken).values({
-          id: randomUUID(),
-          userId: newUser.id,
-          token: setupToken,
-          expiresAt,
-        });
+        if (!sendInviteEmail && password) {
+          // LOCAL PASSWORD: Admin set password directly
+          const hashedPassword = await hashPassword(password);
+          await db.insert(account).values({
+            id: randomUUID(),
+            accountId: newUser.id,
+            providerId: "credential",
+            userId: newUser.id,
+            password: hashedPassword,
+          });
+          setupMethod = "local";
+        } else {
+          // EMAIL INVITE: Send setup email (default behavior)
+          const setupToken = generateSecureToken();
+          const expiresAt = new Date();
+          expiresAt.setHours(expiresAt.getHours() + 24); // 24-hour expiry
 
-        const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
-        const setupUrl = `${appUrl}/staff/setup-password?token=${setupToken}`;
+          await db.insert(passwordSetupToken).values({
+            id: randomUUID(),
+            userId: newUser.id,
+            token: setupToken,
+            expiresAt,
+          });
 
-        // Get the name of the admin who created this staff member
-        const invitedByName = context.session.user.name || "GK-Nexus Admin";
+          const appUrl = process.env.CORS_ORIGIN || "http://localhost:5173";
+          const setupUrl = `${appUrl}/staff/setup-password?token=${setupToken}`;
 
-        // Send password setup email
-        await sendStaffPasswordSetup({
-          staffName: name,
-          email,
-          setupUrl,
-          expiresInHours: 24,
-          invitedBy: invitedByName,
-        });
+          // Get the name of the admin who created this staff member
+          const invitedByName = context.session.user.name || "GK-Nexus Admin";
+
+          // Send password setup email
+          await sendStaffPasswordSetup({
+            staffName: name,
+            email,
+            setupUrl,
+            expiresInHours: 24,
+            invitedBy: invitedByName,
+          });
+          setupMethod = "email";
+        }
 
         return {
           ...newStaff,
           user: newUser,
+          setupMethod,
         };
       }),
 
@@ -526,7 +552,6 @@ export const adminRouter = {
         }
 
         // Check if user already has credentials (account exists)
-        const { account } = await import("@SYNERGY-GY/db/schema/auth");
         const existingAccount = await db.query.account.findFirst({
           where: eq(account.userId, staffMember.userId),
         });
@@ -596,7 +621,6 @@ export const adminRouter = {
         }
 
         // Delete any existing account credentials
-        const { account } = await import("@SYNERGY-GY/db/schema/auth");
         await db.delete(account).where(eq(account.userId, staffMember.userId));
 
         // Delete any existing setup tokens
@@ -659,7 +683,6 @@ export const adminRouter = {
         }
 
         // Check if user has credentials
-        const { account } = await import("@SYNERGY-GY/db/schema/auth");
         const existingAccount = await db.query.account.findFirst({
           where: eq(account.userId, staffMember.userId),
         });

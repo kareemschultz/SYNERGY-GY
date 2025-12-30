@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -51,12 +52,29 @@ const createStaffSchema = z
     phone: z.string().optional(),
     jobTitle: z.string().optional(),
     canViewFinancials: z.boolean().optional(),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
+    // Account setup method (default handled in defaultValues)
+    sendInviteEmail: z.boolean(),
+    password: z.string().optional(),
+    confirmPassword: z.string().optional(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
+  .superRefine((data, ctx) => {
+    // Only validate password if local setup is chosen
+    if (!data.sendInviteEmail) {
+      if (!data.password || data.password.length < 8) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Password must be at least 8 characters",
+          path: ["password"],
+        });
+      }
+      if (data.password !== data.confirmPassword) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Passwords don't match",
+          path: ["confirmPassword"],
+        });
+      }
+    }
   });
 
 type CreateStaffFormValues = z.infer<typeof createStaffSchema>;
@@ -116,10 +134,13 @@ function NewStaffPage() {
       phone: "",
       jobTitle: "",
       canViewFinancials: false,
+      sendInviteEmail: true,
       password: "",
       confirmPassword: "",
     },
   });
+
+  const sendInviteEmail = form.watch("sendInviteEmail");
 
   const selectedRole = form.watch("role");
 
@@ -137,14 +158,16 @@ function NewStaffPage() {
 
   const createMutation = useMutation({
     mutationFn: (values: CreateStaffFormValues) => {
-      // biome-ignore lint/correctness/noUnusedVariables: Auto-fix
-      const { confirmPassword, ...data } = values;
+      const { confirmPassword: _confirmPassword, ...data } = values;
       return client.admin.staff.create(data);
     },
     onSuccess: (data) => {
+      const isEmailInvite = data.setupMethod === "email";
       toast({
         title: "Staff created successfully",
-        description: `${data.user.name} has been added to the system.`,
+        description: isEmailInvite
+          ? `Setup email sent to ${data.user.email}. They can set their password using the link.`
+          : `${data.user.name} can now log in with the password you set.`,
       });
       navigate({ to: "/app/admin/staff" });
     },
@@ -467,72 +490,129 @@ function NewStaffPage() {
                   />
                 </div>
 
-                {/* Security */}
+                {/* Account Setup Method */}
                 <div className="space-y-4 border-t pt-6">
-                  <h3 className="font-medium text-sm">Security</h3>
+                  <h3 className="font-medium text-sm">Account Setup</h3>
 
-                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                    <div className="flex gap-2">
-                      <AlertCircle className="h-5 w-5 text-blue-600" />
-                      <div className="text-blue-900 text-sm">
-                        <p className="font-medium">Initial Password</p>
-                        <p className="mt-1">
-                          Set a temporary password for the staff member. They
-                          should change it on first login.
+                  <FormField
+                    control={form.control}
+                    name="sendInviteEmail"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>
+                          How should this staff member set up their account?
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            className="flex flex-col space-y-2"
+                            defaultValue="true"
+                            onValueChange={(value) =>
+                              field.onChange(value === "true")
+                            }
+                            value={field.value ? "true" : "false"}
+                          >
+                            <div className="flex items-start space-x-3 rounded-lg border p-4">
+                              <RadioGroupItem id="email-invite" value="true" />
+                              <div className="space-y-1">
+                                <label
+                                  className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  htmlFor="email-invite"
+                                >
+                                  Send email invite (Recommended)
+                                </label>
+                                <p className="text-muted-foreground text-sm">
+                                  Staff member will receive an email with a
+                                  secure link to set their own password.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-start space-x-3 rounded-lg border p-4">
+                              <RadioGroupItem
+                                id="local-password"
+                                value="false"
+                              />
+                              <div className="space-y-1">
+                                <label
+                                  className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  htmlFor="local-password"
+                                >
+                                  Set password now
+                                </label>
+                                <p className="text-muted-foreground text-sm">
+                                  You set a temporary password for immediate
+                                  access. Staff should change it on first login.
+                                </p>
+                              </div>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Password fields - only show when local password is selected */}
+                  {!sendInviteEmail && (
+                    <div className="space-y-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                      <div className="flex gap-2">
+                        <AlertCircle className="h-5 w-5 text-amber-600" />
+                        <p className="text-amber-900 text-sm">
+                          Set a temporary password. The staff member should
+                          change it after first login.
                         </p>
                       </div>
+
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({
+                          field,
+                        }: {
+                          field: ControllerRenderProps<
+                            CreateStaffFormValues,
+                            "password"
+                          >;
+                        }) => (
+                          <FormItem>
+                            <FormLabel>Password *</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Minimum 8 characters"
+                                type="password"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({
+                          field,
+                        }: {
+                          field: ControllerRenderProps<
+                            CreateStaffFormValues,
+                            "confirmPassword"
+                          >;
+                        }) => (
+                          <FormItem>
+                            <FormLabel>Confirm Password *</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Re-enter password"
+                                type="password"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({
-                      field,
-                    }: {
-                      field: ControllerRenderProps<
-                        CreateStaffFormValues,
-                        "password"
-                      >;
-                    }) => (
-                      <FormItem>
-                        <FormLabel>Initial Password *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Minimum 8 characters"
-                            type="password"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({
-                      field,
-                    }: {
-                      field: ControllerRenderProps<
-                        CreateStaffFormValues,
-                        "confirmPassword"
-                      >;
-                    }) => (
-                      <FormItem>
-                        <FormLabel>Confirm Password *</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Re-enter password"
-                            type="password"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  )}
                 </div>
 
                 {/* Actions */}

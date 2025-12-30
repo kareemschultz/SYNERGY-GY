@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Staff Account Setup Toggle** - December 29, 2024
+  - Added toggle to choose between "Send email invite" and "Set password now" when creating staff
+  - Email invite (default): Staff receives secure link to set their own password
+  - Local password: Admin sets temporary password for immediate access
+  - Password fields now only shown when "Set password now" is selected
+  - Different success messages based on chosen method
+  - **Files**: `packages/api/src/routers/admin.ts`, `apps/web/src/routes/app/admin/staff/new.tsx`
+
 - **Comprehensive Backup/Restore System** - December 24, 2024
   - Full backup utility with compressed JSON exports using Node.js zlib
   - Restore functionality with validation and preview before applying
