@@ -49,6 +49,11 @@ import("@SYNERGY-GY/api/utils/reminder-processor").then(
   ({ startReminderProcessor }) => startReminderProcessor()
 );
 
+// Start scheduled report processor for automated report generation
+import("@SYNERGY-GY/api/utils/scheduled-report-processor").then(
+  ({ startScheduledReportProcessor }) => startScheduledReportProcessor()
+);
+
 // Storage configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./data/uploads";
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB

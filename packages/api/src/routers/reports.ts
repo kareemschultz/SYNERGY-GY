@@ -1905,26 +1905,29 @@ export const reportsRouter = {
         });
       }
 
-      // Execute the report (reuse export logic)
-      // For now, return success - actual execution would go through a job queue
-      // Update last run time
-      await db
-        .update(scheduledReport)
-        .set({
-          lastRunAt: new Date(),
-          nextRunAt: calculateNextRun(
-            schedule.frequency,
-            schedule.time,
-            schedule.dayOfWeek ?? undefined,
-            schedule.dayOfMonth ?? undefined
-          ),
-        })
-        .where(eq(scheduledReport.id, input.id));
+      // Execute the report using the scheduled report processor
+      const { executeScheduledReport } = await import(
+        "../utils/scheduled-report-processor"
+      );
 
-      return {
-        success: true,
-        message: "Report execution started",
-      };
+      try {
+        const success = await executeScheduledReport(schedule);
+        if (!success) {
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to execute scheduled report",
+          });
+        }
+        return {
+          success: true,
+          message: "Report generated and emailed to recipients",
+        };
+      } catch (error) {
+        console.error("[runScheduleNow] Error:", error);
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message:
+            error instanceof Error ? error.message : "Failed to execute report",
+        });
+      }
     }),
 };
 

@@ -10,6 +10,12 @@
 import { Resend } from "resend";
 
 // Types
+export type EmailAttachment = {
+  filename: string;
+  content: Buffer | Uint8Array;
+  contentType?: string;
+};
+
 export type EmailConfig = {
   to: string | string[];
   subject: string;
@@ -17,6 +23,20 @@ export type EmailConfig = {
   text?: string;
   from?: string;
   replyTo?: string;
+  attachments?: EmailAttachment[];
+};
+
+export type ScheduledReportEmailData = {
+  recipientEmails: string[];
+  reportName: string;
+  scheduleName: string;
+  generatedAt: string;
+  rowCount: number;
+  attachment: {
+    filename: string;
+    content: Buffer | Uint8Array;
+    contentType: string;
+  };
 };
 
 export type PortalInviteData = {
@@ -166,6 +186,12 @@ class EmailService {
       console.log("To:", emailConfig.to);
       console.log("From:", emailConfig.from);
       console.log("Subject:", emailConfig.subject);
+      if (emailConfig.attachments?.length) {
+        console.log(
+          "Attachments:",
+          emailConfig.attachments.map((a) => a.filename).join(", ")
+        );
+      }
       console.log("---");
       console.log(emailConfig.text || "No plain text version");
       console.log("================================\n");
@@ -177,6 +203,12 @@ class EmailService {
         throw new Error("Email service not initialized");
       }
 
+      // Prepare attachments for Resend API
+      const resendAttachments = emailConfig.attachments?.map((att) => ({
+        filename: att.filename,
+        content: Buffer.from(att.content),
+      }));
+
       await this.resend.emails.send({
         from: emailConfig.from,
         to: Array.isArray(emailConfig.to) ? emailConfig.to : [emailConfig.to],
@@ -184,6 +216,7 @@ class EmailService {
         html: emailConfig.html,
         text: emailConfig.text,
         replyTo: emailConfig.replyTo,
+        attachments: resendAttachments,
       });
 
       console.log(
@@ -370,6 +403,28 @@ class EmailService {
       subject: `Appointment Reminder (${reminderLabel}): ${data.appointmentTitle}`,
       html,
       text,
+    });
+  }
+
+  /**
+   * Send scheduled report with attachment
+   */
+  async sendScheduledReport(data: ScheduledReportEmailData): Promise<void> {
+    const html = this.getScheduledReportTemplate(data);
+    const text = this.getScheduledReportTextTemplate(data);
+
+    await this.sendEmail({
+      to: data.recipientEmails,
+      subject: `Scheduled Report: ${data.reportName}`,
+      html,
+      text,
+      attachments: [
+        {
+          filename: data.attachment.filename,
+          content: data.attachment.content,
+          contentType: data.attachment.contentType,
+        },
+      ],
     });
   }
 
@@ -743,6 +798,22 @@ class EmailService {
     return this.getEmailLayout(content, "Appointment Reminder");
   }
 
+  private getScheduledReportTemplate(data: ScheduledReportEmailData): string {
+    const content = `
+      <h2>Scheduled Report Ready</h2>
+      <p>Your scheduled report has been generated and is attached to this email.</p>
+      <div class="info-box">
+        <p><strong>Report:</strong> ${data.reportName}</p>
+        <p><strong>Schedule:</strong> ${data.scheduleName}</p>
+        <p><strong>Generated:</strong> ${data.generatedAt}</p>
+        <p><strong>Records:</strong> ${data.rowCount} rows</p>
+      </div>
+      <p>The report file is attached to this email: <strong>${data.attachment.filename}</strong></p>
+      <p>If you have any questions about this report, please contact our team.</p>
+    `;
+    return this.getEmailLayout(content, "Scheduled Report");
+  }
+
   // ===========================
   // Plain Text Email Templates
   // ===========================
@@ -1043,6 +1114,30 @@ Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
+
+  private getScheduledReportTextTemplate(
+    data: ScheduledReportEmailData
+  ): string {
+    return `
+Scheduled Report Ready
+
+Your scheduled report has been generated and is attached to this email.
+
+Report: ${data.reportName}
+Schedule: ${data.scheduleName}
+Generated: ${data.generatedAt}
+Records: ${data.rowCount} rows
+
+The report file is attached to this email: ${data.attachment.filename}
+
+If you have any questions about this report, please contact our team.
+
+---
+GK-Nexus
+Green Crescent Management Consultancy & KAJ Accountancy Services
+${this.appUrl}
+    `;
+  }
 }
 
 // Export singleton instance
@@ -1073,3 +1168,5 @@ export const sendDeadlineApproaching = (data: DeadlineApproachingData) =>
   emailService.sendDeadlineApproaching(data);
 export const sendAppointmentReminder = (data: AppointmentReminderData) =>
   emailService.sendAppointmentReminder(data);
+export const sendScheduledReport = (data: ScheduledReportEmailData) =>
+  emailService.sendScheduledReport(data);
