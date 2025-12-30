@@ -84,7 +84,10 @@ function NewInvoicePage() {
       client.invoices.create({
         business: values.business,
         clientId: values.clientId,
-        matterId: values.matterId || undefined,
+        matterId:
+          values.matterId && values.matterId !== "__none__"
+            ? values.matterId
+            : undefined,
         invoiceDate: values.invoiceDate,
         dueDate: values.dueDate,
         lineItems: values.lineItems,
@@ -325,7 +328,7 @@ function NewInvoicePage() {
                             <SelectValue placeholder="Select a matter (optional)" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value="__none__">None</SelectItem>
                             {clientMatters.matters.map((matter) => (
                               <SelectItem key={matter.id} value={matter.id}>
                                 {matter.referenceNumber} - {matter.title}

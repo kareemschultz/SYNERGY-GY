@@ -114,7 +114,7 @@ function DeadlinesPage() {
     dueDate: "",
     priority: "NORMAL" as DeadlinePriority,
     recurrencePattern: "NONE" as RecurrencePattern,
-    business: "" as "" | "GCMC" | "KAJ",
+    business: "__none__" as "__none__" | "GCMC" | "KAJ",
   });
 
   // Query for stats
@@ -185,7 +185,7 @@ function DeadlinesPage() {
         dueDate: "",
         priority: "NORMAL",
         recurrencePattern: "NONE",
-        business: "",
+        business: "__none__",
       });
     },
     onError: (err: Error) => {
@@ -239,7 +239,10 @@ function DeadlinesPage() {
       dueDate: newDeadline.dueDate,
       priority: newDeadline.priority,
       recurrencePattern: newDeadline.recurrencePattern,
-      business: newDeadline.business || undefined,
+      business:
+        newDeadline.business && newDeadline.business !== "__none__"
+          ? newDeadline.business
+          : undefined,
     });
   };
 
@@ -258,7 +261,7 @@ function DeadlinesPage() {
       dueDate: "",
       priority: template.priority,
       recurrencePattern: template.recurrencePattern,
-      business: template.business || "",
+      business: template.business || "__none__",
     });
     setIsCreateDialogOpen(true);
   };
@@ -793,7 +796,7 @@ function DeadlinesPage() {
                   onValueChange={(v) =>
                     setNewDeadline({
                       ...newDeadline,
-                      business: v as "" | "GCMC" | "KAJ",
+                      business: v as "__none__" | "GCMC" | "KAJ",
                     })
                   }
                   value={newDeadline.business}
@@ -802,7 +805,7 @@ function DeadlinesPage() {
                     <SelectValue placeholder="Select business" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     <SelectItem value="GCMC">GCMC</SelectItem>
                     <SelectItem value="KAJ">KAJ</SelectItem>
                   </SelectContent>

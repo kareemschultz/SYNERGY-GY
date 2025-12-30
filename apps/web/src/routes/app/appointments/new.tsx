@@ -104,7 +104,10 @@ function NewAppointmentPage() {
       return client.appointments.create({
         clientId: values.clientId,
         appointmentTypeId: values.appointmentTypeId,
-        matterId: values.matterId || undefined,
+        matterId:
+          values.matterId && values.matterId !== "__none__"
+            ? values.matterId
+            : undefined,
         business: values.business,
         title: values.title,
         description: values.description || undefined,
@@ -364,7 +367,9 @@ function NewAppointmentPage() {
                           <SelectValue placeholder="Select a matter to link" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">No matter linked</SelectItem>
+                          <SelectItem value="__none__">
+                            No matter linked
+                          </SelectItem>
                           {clientMatters?.matters?.map((m) => (
                             <SelectItem key={m.id} value={m.id}>
                               {m.title} ({m.referenceNumber})

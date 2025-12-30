@@ -98,7 +98,7 @@ const defaultFormData: TemplateFormData = {
 function EmailTemplatesPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [editTemplate, setEditTemplate] = useState<EmailTemplate | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -117,7 +117,7 @@ function EmailTemplatesPage() {
     queryFn: () =>
       client.emailTemplates.list({
         search: search || undefined,
-        type: (typeFilter as never) || undefined,
+        type: typeFilter === "all" ? undefined : (typeFilter as never),
         limit: 100,
       }),
   });
@@ -290,7 +290,7 @@ function EmailTemplatesPage() {
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
                   {templateTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
                       {type.label}
