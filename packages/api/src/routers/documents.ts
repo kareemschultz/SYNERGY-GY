@@ -766,7 +766,10 @@ export const documentsRouter = {
           // Build business filter - show templates with null business or accessible businesses
           const businessFilter = or(
             isNull(documentTemplate.business),
-            sql`${documentTemplate.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+            sql`${documentTemplate.business}::text = ANY(ARRAY[${sql.join(
+              accessibleBusinesses.map((b) => sql`${b}`),
+              sql`, `
+            )}]::text[])`
           );
           if (businessFilter) {
             conditions.push(businessFilter);

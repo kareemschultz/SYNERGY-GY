@@ -120,7 +120,10 @@ export const mattersRouter = {
         conditions.push(eq(matter.business, input.business));
       } else {
         conditions.push(
-          sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+          sql`${matter.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[])`
         );
       }
 
@@ -461,7 +464,10 @@ export const mattersRouter = {
       })
       .from(matter)
       .where(
-        sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+        sql`${matter.business}::text = ANY(ARRAY[${sql.join(
+          accessibleBusinesses.map((b) => sql`${b}`),
+          sql`, `
+        )}]::text[])`
       )
       .groupBy(matter.status);
 

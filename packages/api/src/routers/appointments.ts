@@ -215,7 +215,10 @@ export const appointmentsRouter = {
         conditions.push(eq(appointment.business, input.business));
       } else {
         conditions.push(
-          sql`${appointment.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+          sql`${appointment.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[])`
         );
       }
 
@@ -774,7 +777,10 @@ export const appointmentsRouter = {
       const accessibleBusinesses = getAccessibleBusinesses(context.staff);
 
       const conditions = [
-        sql`${appointment.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+        sql`${appointment.business}::text = ANY(ARRAY[${sql.join(
+          accessibleBusinesses.map((b) => sql`${b}`),
+          sql`, `
+        )}]::text[])`,
         gte(appointment.scheduledAt, new Date()),
         or(
           eq(appointment.status, "REQUESTED"),
@@ -820,7 +826,10 @@ export const appointmentsRouter = {
 
     const appointments = await db.query.appointment.findMany({
       where: and(
-        sql`${appointment.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+        sql`${appointment.business}::text = ANY(ARRAY[${sql.join(
+          accessibleBusinesses.map((b) => sql`${b}`),
+          sql`, `
+        )}]::text[])`,
         gte(appointment.scheduledAt, today),
         lte(appointment.scheduledAt, tomorrow),
         or(

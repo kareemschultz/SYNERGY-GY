@@ -197,7 +197,10 @@ export const clientsRouter = {
         );
       } else {
         conditions.push(
-          sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`
+          sql`${client.businesses} && ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[]`
         );
       }
 
@@ -294,7 +297,10 @@ export const clientsRouter = {
           .map((b) => `'${b}'`)
           .join(", ");
         conditions.push(
-          sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`
+          sql`${client.businesses} && ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[]`
         );
         rawSqlConditions.push(`c.businesses && ARRAY[${businessList}]::text[]`);
       }
@@ -625,7 +631,10 @@ export const clientsRouter = {
         .from(client)
         .where(
           and(
-            sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`,
+            sql`${client.businesses} && ARRAY[${sql.join(
+              accessibleBusinesses.map((b) => sql`${b}`),
+              sql`, `
+            )}]::text[]`,
             eq(client.status, "ACTIVE"),
             or(
               ilike(client.displayName, searchTerm),

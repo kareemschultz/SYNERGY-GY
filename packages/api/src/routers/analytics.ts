@@ -50,7 +50,10 @@ export const analyticsRouter = {
       .select({ count: count() })
       .from(client)
       .where(
-        sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`
+        sql`${client.businesses} && ARRAY[${sql.join(
+          accessibleBusinesses.map((b) => sql`${b}`),
+          sql`, `
+        )}]::text[]`
       );
 
     const newClientsThisMonthResult = await db
@@ -58,7 +61,10 @@ export const analyticsRouter = {
       .from(client)
       .where(
         and(
-          sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`,
+          sql`${client.businesses} && ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[]`,
           gte(client.createdAt, startOfMonth)
         )
       );
@@ -68,7 +74,10 @@ export const analyticsRouter = {
       .from(client)
       .where(
         and(
-          sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`,
+          sql`${client.businesses} && ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[]`,
           gte(client.createdAt, startOfLastMonth),
           lte(client.createdAt, endOfLastMonth)
         )
@@ -79,7 +88,10 @@ export const analyticsRouter = {
       .select({ count: count() })
       .from(matter)
       .where(
-        sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+        sql`${matter.business}::text = ANY(ARRAY[${sql.join(
+          accessibleBusinesses.map((b) => sql`${b}`),
+          sql`, `
+        )}]::text[])`
       );
 
     const completedMattersThisMonthResult = await db
@@ -87,7 +99,10 @@ export const analyticsRouter = {
       .from(matter)
       .where(
         and(
-          sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+          sql`${matter.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[])`,
           eq(matter.status, "COMPLETE"),
           gte(matter.updatedAt, startOfMonth)
         )
@@ -101,7 +116,10 @@ export const analyticsRouter = {
         and(
           eq(deadline.isCompleted, false),
           lte(deadline.dueDate, now),
-          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`
+          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[]))`
         )
       );
 
@@ -112,7 +130,10 @@ export const analyticsRouter = {
         and(
           eq(deadline.isCompleted, true),
           gte(deadline.completedAt, startOfMonth),
-          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`
+          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[]))`
         )
       );
 
@@ -123,7 +144,10 @@ export const analyticsRouter = {
         and(
           gte(deadline.dueDate, startOfMonth),
           lte(deadline.dueDate, now),
-          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`
+          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[]))`
         )
       );
 
@@ -137,7 +161,10 @@ export const analyticsRouter = {
       .from(invoice)
       .where(
         and(
-          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[])`,
           eq(invoice.status, "PAID"),
           sql`${invoice.paidDate} >= ${formatDate(startOfMonth)}`
         )
@@ -150,7 +177,10 @@ export const analyticsRouter = {
       .from(invoice)
       .where(
         and(
-          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[])`,
           eq(invoice.status, "PAID"),
           sql`${invoice.paidDate} >= ${formatDate(startOfLastMonth)}`,
           sql`${invoice.paidDate} <= ${formatDate(endOfLastMonth)}`
@@ -164,7 +194,10 @@ export const analyticsRouter = {
       .from(invoice)
       .where(
         and(
-          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[])`,
           eq(invoice.status, "PAID"),
           sql`${invoice.paidDate} >= ${formatDate(startOfYear)}`
         )
@@ -246,7 +279,10 @@ export const analyticsRouter = {
           .from(client)
           .where(
             and(
-              sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`,
+              sql`${client.businesses} && ARRAY[${sql.join(
+                accessibleBusinesses.map((b) => sql`${b}`),
+                sql`, `
+              )}]::text[]`,
               gte(client.createdAt, monthStart),
               lte(client.createdAt, monthEnd)
             )
@@ -258,7 +294,10 @@ export const analyticsRouter = {
           .from(matter)
           .where(
             and(
-              sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+              sql`${matter.business}::text = ANY(ARRAY[${sql.join(
+                accessibleBusinesses.map((b) => sql`${b}`),
+                sql`, `
+              )}]::text[])`,
               gte(matter.createdAt, monthStart),
               lte(matter.createdAt, monthEnd)
             )
@@ -273,7 +312,10 @@ export const analyticsRouter = {
           .from(invoice)
           .where(
             and(
-              sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+              sql`${invoice.business}::text = ANY(ARRAY[${sql.join(
+                accessibleBusinesses.map((b) => sql`${b}`),
+                sql`, `
+              )}]::text[])`,
               eq(invoice.status, "PAID"),
               sql`${invoice.paidDate} >= ${formatDate(monthStart)}`,
               sql`${invoice.paidDate} <= ${formatDate(monthEnd)}`
@@ -289,7 +331,10 @@ export const analyticsRouter = {
               eq(deadline.isCompleted, true),
               gte(deadline.completedAt, monthStart),
               lte(deadline.completedAt, monthEnd),
-              sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`
+              sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(
+                accessibleBusinesses.map((b) => sql`${b}`),
+                sql`, `
+              )}]::text[]))`
             )
           );
 
@@ -315,7 +360,10 @@ export const analyticsRouter = {
 
     // Get matters grouped by service type, then aggregate by category
     const matters = await db.query.matter.findMany({
-      where: sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+      where: sql`${matter.business}::text = ANY(ARRAY[${sql.join(
+        accessibleBusinesses.map((b) => sql`${b}`),
+        sql`, `
+      )}]::text[])`,
       with: {
         serviceType: {
           columns: {
@@ -350,7 +398,10 @@ export const analyticsRouter = {
       .from(invoice)
       .where(
         and(
-          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[])`,
           eq(invoice.status, "PAID")
         )
       )
@@ -391,7 +442,10 @@ export const analyticsRouter = {
           and(
             eq(matter.assignedStaffId, s.staffId),
             sql`${matter.status} NOT IN ('COMPLETE', 'CANCELLED')`,
-            sql`${matter.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+            sql`${matter.business}::text = ANY(ARRAY[${sql.join(
+              accessibleBusinesses.map((b) => sql`${b}`),
+              sql`, `
+            )}]::text[])`
           )
         );
 
@@ -423,7 +477,10 @@ export const analyticsRouter = {
     const weekFromNow = new Date();
     weekFromNow.setDate(now.getDate() + 7);
 
-    const businessFilter = sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`;
+    const businessFilter = sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(
+      accessibleBusinesses.map((b) => sql`${b}`),
+      sql`, `
+    )}]::text[]))`;
 
     // Overdue
     const overdueResult = await db
@@ -499,7 +556,10 @@ export const analyticsRouter = {
       })
       .from(client)
       .where(
-        sql`${client.businesses} && ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]`
+        sql`${client.businesses} && ARRAY[${sql.join(
+          accessibleBusinesses.map((b) => sql`${b}`),
+          sql`, `
+        )}]::text[]`
       )
       .groupBy(client.type);
 

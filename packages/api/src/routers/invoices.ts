@@ -265,7 +265,10 @@ export const invoicesRouter = {
         conditions.push(eq(invoice.business, input.business));
       } else {
         conditions.push(
-          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+          sql`${invoice.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[])`
         );
       }
 
@@ -736,7 +739,10 @@ export const invoicesRouter = {
       };
     }
 
-    const whereClause = sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`;
+    const whereClause = sql`${invoice.business}::text = ANY(ARRAY[${sql.join(
+      accessibleBusinesses.map((b) => sql`${b}`),
+      sql`, `
+    )}]::text[])`;
 
     // Get counts by status
     const statusCounts = await db
@@ -822,7 +828,10 @@ export const invoicesRouter = {
         .where(
           and(
             eq(invoice.clientId, input.clientId),
-            sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+            sql`${invoice.business}::text = ANY(ARRAY[${sql.join(
+              accessibleBusinesses.map((b) => sql`${b}`),
+              sql`, `
+            )}]::text[])`,
             or(
               eq(invoice.status, "SENT"),
               eq(invoice.status, "OVERDUE"),
@@ -841,7 +850,10 @@ export const invoicesRouter = {
         .where(
           and(
             eq(invoice.clientId, input.clientId),
-            sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+            sql`${invoice.business}::text = ANY(ARRAY[${sql.join(
+              accessibleBusinesses.map((b) => sql`${b}`),
+              sql`, `
+            )}]::text[])`,
             eq(invoice.status, "OVERDUE")
           )
         );
@@ -882,7 +894,10 @@ export const invoicesRouter = {
       }
 
       const conditions = [
-        sql`${invoice.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`,
+        sql`${invoice.business}::text = ANY(ARRAY[${sql.join(
+          accessibleBusinesses.map((b) => sql`${b}`),
+          sql`, `
+        )}]::text[])`,
         or(eq(invoice.status, "SENT"), eq(invoice.status, "OVERDUE")),
         sql`CAST(${invoice.amountDue} AS DECIMAL) > 0`,
       ];

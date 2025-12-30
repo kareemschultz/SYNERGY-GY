@@ -102,7 +102,10 @@ export const timeTrackingRouter = {
         conditions.push(eq(timeEntry.business, input.business));
       } else {
         conditions.push(
-          sql`${timeEntry.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+          sql`${timeEntry.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[])`
         );
       }
 
@@ -618,7 +621,10 @@ export const timeTrackingRouter = {
         conditions.push(eq(timeEntry.business, input.business));
       } else {
         conditions.push(
-          sql`${timeEntry.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[])`
+          sql`${timeEntry.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[])`
         );
       }
 

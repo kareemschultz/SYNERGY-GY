@@ -248,7 +248,10 @@ export const deadlinesRouter = {
         conditions.push(eq(deadline.business, input.business));
       } else {
         conditions.push(
-          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`
+          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[]))`
         );
       }
 
@@ -357,7 +360,10 @@ export const deadlinesRouter = {
         conditions.push(eq(deadline.business, input.business));
       } else {
         conditions.push(
-          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`
+          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[]))`
         );
       }
 
@@ -618,7 +624,10 @@ export const deadlinesRouter = {
           eq(deadline.isCompleted, false),
           gte(deadline.dueDate, new Date()),
           lte(deadline.dueDate, endDate),
-          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`
+          sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(
+            accessibleBusinesses.map((b) => sql`${b}`),
+            sql`, `
+          )}]::text[]))`
         ),
         orderBy: [asc(deadline.dueDate)],
         limit: input.limit,
@@ -643,7 +652,10 @@ export const deadlinesRouter = {
       where: and(
         eq(deadline.isCompleted, false),
         lte(deadline.dueDate, new Date()),
-        sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`
+        sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(
+          accessibleBusinesses.map((b) => sql`${b}`),
+          sql`, `
+        )}]::text[]))`
       ),
       orderBy: [asc(deadline.dueDate)],
       with: {
@@ -662,7 +674,10 @@ export const deadlinesRouter = {
   // Get deadline statistics
   getStats: staffProcedure.handler(async ({ context }) => {
     const accessibleBusinesses = getAccessibleBusinesses(context.staff);
-    const businessFilter = sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(accessibleBusinesses, sql`, `)}]::text[]))`;
+    const businessFilter = sql`(${deadline.business} IS NULL OR ${deadline.business}::text = ANY(ARRAY[${sql.join(
+      accessibleBusinesses.map((b) => sql`${b}`),
+      sql`, `
+    )}]::text[]))`;
 
     const now = new Date();
     const weekFromNow = new Date();
