@@ -13,6 +13,7 @@ import {
   downloadPdfFromUrl,
   fileExists,
   generateFileName,
+  saveUploadedPdf,
   sleep,
 } from "../utils/kb-form-downloader";
 import {
@@ -969,6 +970,89 @@ export const knowledgeBaseRouter = {
         success: true,
         id: updated.id,
         directPdfUrl: updated.directPdfUrl,
+      };
+    }),
+
+  /**
+   * Admin: Upload a PDF file for a KB item (base64 encoded)
+   */
+  uploadFormPdf: adminProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        fileData: z.string(), // Base64 encoded PDF
+        fileName: z.string().optional(),
+      })
+    )
+    .handler(async ({ input, context }) => {
+      const staffId = context.staff?.id;
+      if (!staffId) {
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "Staff profile not found",
+        });
+      }
+
+      // Find the KB item
+      const item = await db.query.knowledgeBaseItem.findFirst({
+        where: eq(knowledgeBaseItem.id, input.id),
+      });
+
+      if (!item) {
+        throw new ORPCError("NOT_FOUND", {
+          message: "Knowledge base item not found",
+        });
+      }
+
+      // Decode base64 to buffer
+      let fileBuffer: Buffer;
+      try {
+        fileBuffer = Buffer.from(input.fileData, "base64");
+      } catch {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Invalid base64 file data",
+        });
+      }
+
+      // Validate file size (max 10MB)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      if (fileBuffer.length > MAX_FILE_SIZE) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "File size exceeds 10MB limit",
+        });
+      }
+
+      // Generate filename if not provided
+      const fileName =
+        input.fileName || generateFileName(item.title, item.category);
+
+      // Save the uploaded file
+      const result = await saveUploadedPdf(fileBuffer, item.category, fileName);
+
+      if (!result.success) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: result.error || "Failed to save uploaded file",
+        });
+      }
+
+      // Update the KB item with file info
+      await db
+        .update(knowledgeBaseItem)
+        .set({
+          fileName: result.fileName,
+          storagePath: result.storagePath,
+          mimeType: result.mimeType,
+          fileSize: result.fileSize,
+          lastDownloadError: null,
+          lastUpdatedById: staffId,
+        })
+        .where(eq(knowledgeBaseItem.id, input.id));
+
+      return {
+        success: true,
+        message: "File uploaded successfully",
+        fileName: result.fileName,
+        storagePath: result.storagePath,
+        fileSize: result.fileSize,
       };
     }),
 };

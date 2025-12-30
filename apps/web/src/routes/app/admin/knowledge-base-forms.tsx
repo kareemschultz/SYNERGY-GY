@@ -12,7 +12,7 @@ import {
   RefreshCw,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -148,6 +148,12 @@ function KnowledgeBaseFormsPage() {
   const [selectedItem, setSelectedItem] = useState<FormItem | null>(null);
   const [newPdfUrl, setNewPdfUrl] = useState("");
 
+  // Upload dialog state
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploadItem, setUploadItem] = useState<FormItem | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Fetch download status statistics
   const { data: statusData, isLoading: isLoadingStatus } = useQuery({
     queryKey: ["knowledgeBase", "formDownloadStatus"],
@@ -241,6 +247,33 @@ function KnowledgeBaseFormsPage() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  // Upload PDF mutation
+  const uploadMutation = useMutation({
+    mutationFn: async (input: { id: string; file: File }) => {
+      // Convert file to base64
+      const buffer = await input.file.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(buffer).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ""
+        )
+      );
+      return client.knowledgeBase.uploadFormPdf({
+        id: input.id,
+        fileData: base64,
+        fileName: input.file.name,
+      });
+    },
+    onSuccess: () => {
+      toast.success("PDF uploaded successfully");
+      queryClient.invalidateQueries({ queryKey: ["knowledgeBase"] });
+      setUploadDialogOpen(false);
+      setUploadItem(null);
+      setSelectedFile(null);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const getItemStatus = (item: FormItem): DownloadStatus => {
     if (item.storagePath && item.fileName) {
       return "downloaded";
@@ -280,6 +313,36 @@ function KnowledgeBaseFormsPage() {
       category: categoryFilter === "all" ? undefined : categoryFilter,
       skipExisting: true,
     });
+  };
+
+  const handleUpload = (item: FormItem) => {
+    setUploadItem(item);
+    setSelectedFile(null);
+    setUploadDialogOpen(true);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (file.type !== "application/pdf") {
+        toast.error("Please select a PDF file");
+        return;
+      }
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB");
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleUploadSubmit = () => {
+    if (!(uploadItem && selectedFile)) {
+      return;
+    }
+    uploadMutation.mutate({ id: uploadItem.id, file: selectedFile });
   };
 
   // Filter items by status
@@ -489,9 +552,10 @@ function KnowledgeBaseFormsPage() {
 
                           {status === "pending" && !formItem.directPdfUrl && (
                             <Button
-                              disabled
+                              disabled={uploadMutation.isPending}
+                              onClick={() => handleUpload(formItem)}
                               size="sm"
-                              title="Upload (coming soon)"
+                              title="Upload PDF"
                               variant="outline"
                             >
                               <Upload className="h-4 w-4" />
@@ -560,6 +624,71 @@ function KnowledgeBaseFormsPage() {
                 </>
               ) : (
                 "Save URL"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload PDF Dialog */}
+      <Dialog onOpenChange={setUploadDialogOpen} open={uploadDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload PDF Form</DialogTitle>
+            <DialogDescription>
+              {uploadItem?.title}
+              <br />
+              Select a PDF file to upload for this form.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="pdfFile">PDF File</Label>
+              <Input
+                accept="application/pdf"
+                id="pdfFile"
+                onChange={handleFileSelect}
+                ref={fileInputRef}
+                type="file"
+              />
+              <p className="text-muted-foreground text-xs">
+                Maximum file size: 10MB. Only PDF files are accepted.
+              </p>
+              {selectedFile ? (
+                <p className="flex items-center gap-2 text-green-600 text-sm">
+                  <CheckCircle className="h-4 w-4" />
+                  {selectedFile.name} (
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setUploadDialogOpen(false);
+                setSelectedFile(null);
+              }}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={!selectedFile || uploadMutation.isPending}
+              onClick={handleUploadSubmit}
+            >
+              {uploadMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload
+                </>
               )}
             </Button>
           </DialogFooter>

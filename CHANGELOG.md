@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Knowledge Base Form Upload** - December 29, 2024
+  - Enabled the previously disabled Upload button for Knowledge Base forms
+  - New upload dialog for selecting and uploading PDF files
+  - File validation: PDF only, max 10MB size
+  - Base64 encoding for file transfer to API
+  - PDF magic byte validation on server side
+  - Auto-generates filename from title and category if not provided
+  - **New Files**: `saveUploadedPdf()` function in `packages/api/src/utils/kb-form-downloader.ts`
+  - **Modified**: `packages/api/src/routers/knowledge-base.ts`, `apps/web/src/routes/app/admin/knowledge-base-forms.tsx`
+
 - **Enhanced Dashboard Widgets** - December 29, 2024
   - Added Quick Actions Bar with buttons for New Client, New Matter, Schedule, and notification badge
   - Added Revenue KPIs section with 4 cards: Revenue (this month), YTD Revenue, Client Growth, Deadlines completion rate

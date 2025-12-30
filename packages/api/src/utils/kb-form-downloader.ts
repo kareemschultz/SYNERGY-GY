@@ -398,3 +398,95 @@ export function fileExists(storagePath: string): boolean {
   const fullPath = join(UPLOADS_DIR, storagePath);
   return existsSync(fullPath);
 }
+
+/**
+ * Upload result type
+ */
+export type UploadResult = {
+  success: boolean;
+  filePath?: string;
+  fileName?: string;
+  storagePath?: string;
+  mimeType?: string;
+  fileSize?: number;
+  error?: string;
+};
+
+/**
+ * Validate that the buffer is a valid PDF
+ */
+function validatePdfBuffer(buffer: Buffer): { valid: boolean; error?: string } {
+  // Check magic bytes (%PDF-)
+  const magicBytes = buffer.subarray(0, 5).toString("utf8");
+  if (magicBytes !== "%PDF-") {
+    return {
+      valid: false,
+      error: `File is not a valid PDF. Magic bytes: ${magicBytes}`,
+    };
+  }
+  return { valid: true };
+}
+
+/**
+ * Save an uploaded PDF file to the knowledge base storage
+ */
+export async function saveUploadedPdf(
+  fileBuffer: Buffer,
+  category: string,
+  fileName: string
+): Promise<UploadResult> {
+  // Validate it's a PDF
+  const validation = validatePdfBuffer(fileBuffer);
+  if (!validation.valid) {
+    return {
+      success: false,
+      error: validation.error,
+    };
+  }
+
+  // Ensure destination directory exists
+  const destDir = ensureCategoryDir(category);
+  const sanitizedFileName = sanitizeFileName(fileName);
+
+  // Ensure filename ends with .pdf
+  const finalFileName = sanitizedFileName.endsWith(".pdf")
+    ? sanitizedFileName
+    : `${sanitizedFileName}.pdf`;
+
+  const filePath = join(destDir, finalFileName);
+
+  try {
+    // Write the file
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(filePath, fileBuffer);
+
+    // Get file stats
+    const stats = await stat(filePath);
+
+    // Calculate storage path (relative to uploads dir)
+    const storagePath = `knowledge-base/${getCategoryDir(category)}/${finalFileName}`;
+
+    return {
+      success: true,
+      filePath,
+      fileName: finalFileName,
+      storagePath,
+      mimeType: "application/pdf",
+      fileSize: stats.size,
+    };
+  } catch (error) {
+    // Clean up partial file if it exists
+    if (existsSync(filePath)) {
+      try {
+        await unlink(filePath);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Unknown error during upload",
+    };
+  }
+}
