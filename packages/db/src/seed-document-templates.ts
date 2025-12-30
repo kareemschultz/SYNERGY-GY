@@ -682,6 +682,846 @@ Date: _______________________`,
   // Shared Templates (Both Businesses)
   // ===============================
 
+  // ===============================
+  // GRA Forms (Tax Authority)
+  // ===============================
+
+  {
+    name: "GRA Form 2 - Income Tax Return (Individual)",
+    description:
+      "Individual income tax return form for Guyana Revenue Authority",
+    category: "FORM",
+    business: "KAJ",
+    content: `GUYANA REVENUE AUTHORITY
+INCOME TAX RETURN - FORM 2
+Tax Year: {{date.year}}
+
+SECTION A: TAXPAYER INFORMATION
+TIN: {{client.tinNumber}}
+Full Name: {{client.displayName}}
+Address: {{client.address}}
+Contact: {{client.phone}}
+Email: {{client.email}}
+
+SECTION B: EMPLOYMENT INCOME
+Employer 1: _______________________
+  Gross Salary: $_______________
+  PAYE Deducted: $_______________
+  NIS Deducted: $_______________
+  Net Pay: $_______________
+
+Employer 2 (if applicable): _______________________
+  Gross Salary: $_______________
+  PAYE Deducted: $_______________
+
+Total Employment Income: $_______________
+
+SECTION C: OTHER INCOME
+Rental Income: $_______________
+Interest Income: $_______________
+Dividend Income: $_______________
+Business Income: $_______________
+Other Income: $_______________
+Total Other Income: $_______________
+
+SECTION D: ALLOWABLE DEDUCTIONS
+NIS Contributions: $_______________
+Medical Expenses: $_______________
+Education Expenses: $_______________
+Mortgage Interest: $_______________
+Other Deductions: $_______________
+Total Deductions: $_______________
+
+SECTION E: TAX CALCULATION
+Gross Income (B + C): $_______________
+Less: Deductions (D): $_______________
+Taxable Income: $_______________
+Tax Payable (28%/40%): $_______________
+Less: Tax Credits: $_______________
+Less: PAYE Already Paid: $_______________
+Balance Due / (Refund): $_______________
+
+DECLARATION
+I declare that the information provided is true and correct.
+
+Signature: _______________________
+Date: {{date.today}}
+
+Prepared by: {{staff.name}}
+KAJ Accountancy Services`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 100,
+  },
+  {
+    name: "GRA Form 5 - Corporate Income Tax Return",
+    description: "Corporate income tax return form for companies",
+    category: "FORM",
+    business: "KAJ",
+    content: `GUYANA REVENUE AUTHORITY
+CORPORATE INCOME TAX RETURN - FORM 5
+Tax Year: {{date.year}}
+
+SECTION A: COMPANY INFORMATION
+TIN: {{client.tinNumber}}
+Company Name: {{client.displayName}}
+Registered Address: {{client.address}}
+Business Nature: _______________________
+Incorporation Date: _______________________
+
+SECTION B: INCOME STATEMENT
+Revenue
+  Gross Sales/Services: $_______________
+  Less: Sales Returns: $_______________
+  Net Sales: $_______________
+  Other Operating Income: $_______________
+  Interest Income: $_______________
+  Dividend Income: $_______________
+  Total Revenue: $_______________
+
+Cost of Goods Sold
+  Opening Inventory: $_______________
+  Add: Purchases: $_______________
+  Less: Closing Inventory: $_______________
+  Cost of Goods Sold: $_______________
+
+Gross Profit: $_______________
+
+SECTION C: OPERATING EXPENSES
+  Salaries & Wages: $_______________
+  Rent: $_______________
+  Utilities: $_______________
+  Insurance: $_______________
+  Depreciation: $_______________
+  Professional Fees: $_______________
+  Advertising: $_______________
+  Travel & Entertainment: $_______________
+  Office Supplies: $_______________
+  Other Expenses: $_______________
+  Total Operating Expenses: $_______________
+
+Net Operating Income: $_______________
+
+SECTION D: TAX ADJUSTMENTS
+Add Back:
+  Entertainment (50%): $_______________
+  Non-Deductible Expenses: $_______________
+  Depreciation Adjustment: $_______________
+Deduct:
+  Capital Allowances: $_______________
+  Investment Allowances: $_______________
+Adjusted Taxable Income: $_______________
+
+SECTION E: TAX COMPUTATION
+Taxable Income: $_______________
+Corporate Tax Rate: 25% / 40%
+Tax Payable: $_______________
+Less: Advance Tax Paid: $_______________
+Balance Due / (Refund): $_______________
+
+DIRECTOR'S DECLARATION
+I certify that this return is correct and complete.
+
+Director's Signature: _______________________
+Name: _______________________
+Date: {{date.today}}
+
+Prepared by: {{staff.name}}
+KAJ Accountancy Services`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 101,
+  },
+  {
+    name: "GRA Form 7B - VAT Return",
+    description: "Value Added Tax return form",
+    category: "FORM",
+    business: "KAJ",
+    content: `GUYANA REVENUE AUTHORITY
+VAT RETURN - FORM 7B
+Tax Period: _______________________
+
+SECTION A: REGISTRANT INFORMATION
+TIN: {{client.tinNumber}}
+VAT Registration Number: _______________________
+Business Name: {{client.displayName}}
+Address: {{client.address}}
+
+SECTION B: OUTPUT TAX (Tax Collected on Sales)
+Standard Rated Supplies (14%)
+  Total Value: $_______________
+  VAT Collected: $_______________
+
+Zero Rated Supplies (0%)
+  Total Value: $_______________
+  VAT: $0.00
+
+Exempt Supplies
+  Total Value: $_______________
+  VAT: N/A
+
+Total Output Tax: $_______________
+
+SECTION C: INPUT TAX (Tax Paid on Purchases)
+Taxable Purchases (14%)
+  Total Value: $_______________
+  VAT Paid: $_______________
+
+Capital Goods Purchases
+  Total Value: $_______________
+  VAT Paid: $_______________
+
+Import VAT Paid: $_______________
+
+Total Input Tax: $_______________
+
+SECTION D: TAT CALCULATION
+Output Tax (B): $_______________
+Less: Input Tax (C): $_______________
+Net VAT Payable / (Refundable): $_______________
+
+SECTION E: PAYMENT DETAILS
+Amount Due: $_______________
+Payment Method: [ ] Cash [ ] Cheque [ ] Bank Transfer
+Receipt Number: _______________________
+
+DECLARATION
+I declare that this return is true and complete.
+
+Signature: _______________________
+Date: {{date.today}}
+
+Prepared by: {{staff.name}}
+KAJ Accountancy Services`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 102,
+  },
+
+  // ===============================
+  // NIS Forms (National Insurance)
+  // ===============================
+
+  {
+    name: "NIS CS3 - Contributions Statement",
+    description: "Employee contribution statement request form",
+    category: "FORM",
+    business: "KAJ",
+    content: `NATIONAL INSURANCE SCHEME
+CONTRIBUTION STATEMENT REQUEST - FORM CS3
+
+Date: {{date.today}}
+
+SECTION A: EMPLOYEE INFORMATION
+NIS Number: _______________________
+Full Name: {{client.displayName}}
+Date of Birth: _______________________
+National ID: _______________________
+Address: {{client.address}}
+Phone: {{client.phone}}
+Email: {{client.email}}
+
+SECTION B: REQUEST DETAILS
+Statement Period Requested:
+  From: _______________________ To: _______________________
+
+Purpose of Request:
+[ ] Retirement/Pension Claim
+[ ] Sickness Benefit Application
+[ ] Maternity Benefit Application
+[ ] Funeral Grant Application
+[ ] Loan Application
+[ ] Employment Verification
+[ ] Immigration Purpose
+[ ] Other: _______________________
+
+SECTION C: EMPLOYMENT HISTORY
+Current/Most Recent Employer: _______________________
+  Employer NIS Number: _______________________
+  Employment Period: From _______ To _______
+
+Previous Employer (if applicable): _______________________
+  Employer NIS Number: _______________________
+  Employment Period: From _______ To _______
+
+SECTION D: COLLECTION PREFERENCE
+[ ] Collect at NIS Office
+[ ] Mail to Address Above
+[ ] Email (if available)
+
+DECLARATION
+I hereby request a statement of my NIS contributions for the period specified above. I confirm that I am the account holder or authorized representative.
+
+Signature: _______________________
+Date: {{date.today}}
+
+FOR OFFICE USE ONLY
+Verified by: _____________ Date: _____________
+Statement Issued: [ ] Yes [ ] No
+Contribution Weeks: _____________`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 110,
+  },
+  {
+    name: "NIS Employee Registration Form",
+    description: "New employee registration with National Insurance Scheme",
+    category: "FORM",
+    business: "KAJ",
+    content: `NATIONAL INSURANCE SCHEME
+NEW EMPLOYEE REGISTRATION FORM
+
+Date: {{date.today}}
+
+SECTION A: EMPLOYEE INFORMATION
+Full Name: {{client.displayName}}
+Date of Birth: _______________________
+Place of Birth: _______________________
+Gender: [ ] Male [ ] Female
+Marital Status: [ ] Single [ ] Married [ ] Divorced [ ] Widowed
+National ID Number: _______________________
+Address: {{client.address}}
+Phone: {{client.phone}}
+Email: {{client.email}}
+
+SECTION B: EMPLOYMENT DETAILS
+Employer Name: _______________________
+Employer NIS Number: _______________________
+Job Title/Occupation: _______________________
+Date of Employment: _______________________
+Employment Type: [ ] Full-Time [ ] Part-Time [ ] Seasonal
+Monthly Gross Salary: $_______________
+
+SECTION C: NEXT OF KIN
+Name: _______________________
+Relationship: _______________________
+Address: _______________________
+Phone: _______________________
+
+SECTION D: BANK DETAILS (For Benefit Payments)
+Bank Name: _______________________
+Branch: _______________________
+Account Number: _______________________
+Account Type: [ ] Savings [ ] Checking
+
+SECTION E: DECLARATION
+I declare that all information provided is true and correct. I understand that false information may result in denial of benefits.
+
+Employee Signature: _______________________
+Date: {{date.today}}
+
+EMPLOYER CERTIFICATION
+I certify that the above-named person is employed by our organization.
+
+Employer Signature: _______________________
+Name: _______________________
+Position: _______________________
+Date: _______________________
+Company Stamp: [STAMP]
+
+Submitted by: {{staff.name}}
+KAJ Accountancy Services`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 111,
+  },
+  {
+    name: "NIS Monthly Contribution Schedule",
+    description: "Monthly NIS contribution schedule for employers",
+    category: "FORM",
+    business: "KAJ",
+    content: `NATIONAL INSURANCE SCHEME
+MONTHLY CONTRIBUTION SCHEDULE
+
+Employer Name: {{client.displayName}}
+Employer NIS Number: _______________________
+TIN: {{client.tinNumber}}
+Contribution Period: _______________
+
+EMPLOYEE CONTRIBUTIONS
+
+| No. | Employee Name | NIS Number | Gross Earnings | Employee Share (5.6%) | Employer Share (8.4%) | Total |
+|-----|--------------|------------|----------------|----------------------|----------------------|-------|
+| 1   |              |            | $              | $                    | $                    | $     |
+| 2   |              |            | $              | $                    | $                    | $     |
+| 3   |              |            | $              | $                    | $                    | $     |
+| 4   |              |            | $              | $                    | $                    | $     |
+| 5   |              |            | $              | $                    | $                    | $     |
+| 6   |              |            | $              | $                    | $                    | $     |
+| 7   |              |            | $              | $                    | $                    | $     |
+| 8   |              |            | $              | $                    | $                    | $     |
+| 9   |              |            | $              | $                    | $                    | $     |
+| 10  |              |            | $              | $                    | $                    | $     |
+
+SUMMARY
+Total Employees: _______
+Total Gross Earnings: $_______________
+Total Employee Contributions (5.6%): $_______________
+Total Employer Contributions (8.4%): $_______________
+Grand Total Contributions (14%): $_______________
+
+PAYMENT DETAILS
+Due Date: _______________________
+Payment Method: [ ] Cash [ ] Cheque [ ] Bank Transfer
+Receipt Number: _______________________
+
+EMPLOYER DECLARATION
+I certify that the information contained herein is true and correct.
+
+Authorized Signature: _______________________
+Name: _______________________
+Date: {{date.today}}
+
+Prepared by: {{staff.name}}
+KAJ Accountancy Services`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 112,
+  },
+
+  // ===============================
+  // Legal Templates
+  // ===============================
+
+  {
+    name: "General Affidavit",
+    description: "Standard affidavit template for sworn statements",
+    category: "FORM",
+    business: null,
+    content: `AFFIDAVIT
+
+BEFORE ME, the undersigned authority, personally appeared:
+
+DEPONENT INFORMATION
+Name: {{client.displayName}}
+Address: {{client.address}}
+Occupation: _______________________
+National ID/Passport: _______________________
+
+Who being duly sworn, deposes and says:
+
+1. I am the Deponent named above and I make this affidavit of my own free will and accord.
+
+2. I am [relationship/capacity] and I have personal knowledge of the facts stated herein.
+
+3. [STATEMENT OF FACTS]
+   _________________________________________________________________
+   _________________________________________________________________
+   _________________________________________________________________
+   _________________________________________________________________
+   _________________________________________________________________
+
+4. [ADDITIONAL STATEMENTS IF REQUIRED]
+   _________________________________________________________________
+   _________________________________________________________________
+   _________________________________________________________________
+
+5. I make this solemn declaration conscientiously believing it to be true and knowing that it is of the same force and effect as if made under oath.
+
+SWORN to at Georgetown, Guyana
+this _____ day of ____________, {{date.year}}
+
+BEFORE ME:
+
+_______________________
+Justice of the Peace/Commissioner of Oaths/Notary Public
+
+_______________________
+Deponent: {{client.displayName}}
+
+Witness:
+1. Name: _______________________ Signature: _______________________
+2. Name: _______________________ Signature: _______________________`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 120,
+  },
+  {
+    name: "Statutory Declaration",
+    description: "Formal statutory declaration for legal purposes",
+    category: "FORM",
+    business: null,
+    content: `STATUTORY DECLARATION
+(Made pursuant to the Statutory Declarations Act, Chapter 5:09)
+
+I, {{client.displayName}}, of {{client.address}}, do solemnly and sincerely declare as follows:
+
+1. I am the declarant and I am [age] years of age.
+
+2. I am making this declaration for the purpose of:
+   _________________________________________________________________
+
+3. I declare and affirm that:
+
+   (a) _________________________________________________________________
+
+   (b) _________________________________________________________________
+
+   (c) _________________________________________________________________
+
+   (d) _________________________________________________________________
+
+4. I am fully aware that making a false statutory declaration is a criminal offence punishable under the laws of Guyana.
+
+5. I make this solemn declaration conscientiously believing it to be true and correct, and knowing that it has the same force and effect as if made under oath.
+
+AND I make this solemn declaration conscientiously believing it to be true and by virtue of the provisions of the Statutory Declarations Act.
+
+DECLARED at Georgetown, Guyana
+this _____ day of ____________, {{date.year}}
+
+_______________________
+{{client.displayName}}
+(Declarant)
+
+BEFORE ME:
+
+_______________________
+Justice of the Peace/Commissioner of Oaths
+Name: _______________________
+Registration No.: _______________________`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 121,
+  },
+  {
+    name: "Non-Disclosure Agreement (NDA)",
+    description:
+      "Confidentiality agreement for protecting sensitive information",
+    category: "AGREEMENT",
+    business: null,
+    content: `NON-DISCLOSURE AGREEMENT
+
+This Non-Disclosure Agreement ("Agreement") is made effective as of {{date.today}}
+
+BETWEEN:
+Disclosing Party: _______________________
+Address: _______________________
+("Disclosing Party")
+
+AND:
+Receiving Party: {{client.displayName}}
+Address: {{client.address}}
+("Receiving Party")
+
+RECITALS
+WHEREAS, the Disclosing Party possesses certain confidential and proprietary information; and
+WHEREAS, the Receiving Party desires to receive certain confidential information for the purpose of [PURPOSE];
+
+NOW, THEREFORE, in consideration of the mutual covenants contained herein, the parties agree:
+
+1. DEFINITION OF CONFIDENTIAL INFORMATION
+"Confidential Information" includes all information disclosed by the Disclosing Party, whether orally, in writing, or by inspection, including but not limited to:
+- Business plans and strategies
+- Financial information
+- Client lists and data
+- Technical data and know-how
+- Trade secrets
+
+2. OBLIGATIONS OF RECEIVING PARTY
+The Receiving Party agrees to:
+(a) Hold all Confidential Information in strict confidence
+(b) Not disclose Confidential Information to any third party
+(c) Use Confidential Information only for the stated purpose
+(d) Protect Confidential Information with reasonable care
+
+3. EXCLUSIONS
+This Agreement does not apply to information that:
+(a) Is or becomes publicly available through no fault of the Receiving Party
+(b) Was known to the Receiving Party prior to disclosure
+(c) Is independently developed by the Receiving Party
+(d) Is required to be disclosed by law
+
+4. TERM
+This Agreement shall remain in effect for [NUMBER] years from the date of execution.
+
+5. RETURN OF INFORMATION
+Upon request or termination, the Receiving Party shall return or destroy all Confidential Information.
+
+6. REMEDIES
+The Receiving Party acknowledges that breach may cause irreparable harm and the Disclosing Party shall be entitled to seek injunctive relief.
+
+7. GOVERNING LAW
+This Agreement shall be governed by the laws of the Co-operative Republic of Guyana.
+
+IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.
+
+DISCLOSING PARTY:
+Signature: _______________________
+Name: _______________________
+Date: _______________________
+
+RECEIVING PARTY:
+Signature: _______________________
+Name: {{client.displayName}}
+Date: {{date.today}}`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 122,
+  },
+
+  // ===============================
+  // Correspondence Templates
+  // ===============================
+
+  {
+    name: "Engagement Letter - Professional Services",
+    description: "Initial engagement letter outlining service terms",
+    category: "LETTER",
+    business: null,
+    content: `[COMPANY LETTERHEAD]
+
+{{date.today}}
+
+{{client.displayName}}
+{{client.address}}
+
+RE: ENGAGEMENT FOR PROFESSIONAL SERVICES
+
+Dear {{client.displayName}},
+
+Thank you for selecting [Company Name] to provide professional services. This letter confirms the terms of our engagement.
+
+1. SCOPE OF SERVICES
+We have been engaged to provide the following services:
+[ ] Tax Return Preparation
+[ ] Bookkeeping Services
+[ ] Immigration Services
+[ ] Business Registration
+[ ] Financial Consulting
+[ ] Other: _______________________
+
+Specific services include:
+- _______________________
+- _______________________
+- _______________________
+
+2. OUR RESPONSIBILITIES
+We will:
+- Perform services with professional competence and due care
+- Maintain confidentiality of your information
+- Provide regular progress updates
+- Meet agreed-upon deadlines
+
+3. YOUR RESPONSIBILITIES
+You agree to:
+- Provide accurate and complete information
+- Submit required documents by specified deadlines
+- Pay fees in accordance with the payment schedule
+- Respond promptly to our inquiries
+
+4. FEES AND PAYMENT
+Professional Fees: $_______________
+Payment Schedule: [ ] Due on completion [ ] 50% deposit required [ ] Monthly billing
+
+Additional costs (filing fees, courier, etc.) will be billed separately at cost.
+
+5. TIMELINE
+Estimated completion: _______________________
+(Subject to timely receipt of required information)
+
+6. LIMITATIONS
+Our engagement does not include:
+- Legal advice (unless specifically engaged for legal services)
+- Audit or assurance services
+- Representation in court proceedings
+
+7. CONFIDENTIALITY
+All information provided will be treated as confidential and used solely for the purposes of this engagement.
+
+8. TERMINATION
+Either party may terminate this engagement with 14 days written notice.
+
+Please confirm your acceptance by signing and returning a copy of this letter.
+
+Sincerely,
+
+{{staff.name}}
+{{staff.title}}
+[Company Name]
+
+ACCEPTANCE
+I have read and agree to the terms of this engagement letter.
+
+_______________________
+{{client.displayName}}
+Date: _______________________`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 130,
+  },
+  {
+    name: "Payment Reminder - First Notice",
+    description: "Friendly payment reminder for overdue invoices",
+    category: "LETTER",
+    business: null,
+    content: `[COMPANY LETTERHEAD]
+
+{{date.today}}
+
+{{client.displayName}}
+{{client.address}}
+
+RE: PAYMENT REMINDER - Invoice #[INVOICE NUMBER]
+
+Dear {{client.displayName}},
+
+I hope this letter finds you well.
+
+This is a friendly reminder that payment for the following invoice is now overdue:
+
+Invoice Number: [INVOICE NUMBER]
+Invoice Date: [INVOICE DATE]
+Amount Due: $[AMOUNT]
+Due Date: [DUE DATE]
+Days Overdue: [DAYS]
+
+We understand that oversights can happen. If you have already made this payment, please disregard this notice and accept our thanks.
+
+If payment has not yet been made, we kindly request that you remit the outstanding amount at your earliest convenience.
+
+Payment Methods:
+- Bank Transfer: [Bank Details]
+- Cheque payable to: [Company Name]
+- Cash at our office
+
+If you are experiencing any difficulties or have questions regarding this invoice, please do not hesitate to contact us to discuss alternative arrangements.
+
+Thank you for your prompt attention to this matter.
+
+Best regards,
+
+{{staff.name}}
+{{staff.title}}
+[Company Name]
+Tel: [Phone]
+Email: [Email]`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 131,
+  },
+  {
+    name: "Payment Reminder - Final Notice",
+    description: "Final payment reminder before collection action",
+    category: "LETTER",
+    business: null,
+    content: `[COMPANY LETTERHEAD]
+
+{{date.today}}
+
+{{client.displayName}}
+{{client.address}}
+
+RE: FINAL NOTICE - OVERDUE PAYMENT
+Invoice #[INVOICE NUMBER]
+
+Dear {{client.displayName}},
+
+FINAL NOTICE BEFORE FURTHER ACTION
+
+Despite previous reminders, our records indicate that the following amount remains outstanding:
+
+Invoice Number: [INVOICE NUMBER]
+Original Amount: $[AMOUNT]
+Amount Due: $[AMOUNT]
+Due Date: [DUE DATE]
+Days Overdue: [DAYS]
+
+We have attempted to contact you regarding this matter but have not received a response or payment.
+
+THIS IS YOUR FINAL NOTICE
+
+If payment is not received within 7 DAYS of the date of this letter, we will have no alternative but to:
+1. Suspend all current services
+2. Apply late payment interest charges
+3. Refer the matter to our collections department
+4. Consider legal action to recover the debt
+
+To avoid these actions, please:
+- Make immediate payment of the full amount due, OR
+- Contact us within 3 days to discuss a payment arrangement
+
+Payment must be made by: [DEADLINE DATE]
+
+We strongly urge you to resolve this matter immediately to avoid additional costs and damage to your credit standing.
+
+Contact our office immediately at [Phone] to discuss this matter.
+
+This letter serves as formal notice of our intent to pursue collection if payment is not received.
+
+Yours sincerely,
+
+{{staff.name}}
+{{staff.title}}
+[Company Name]
+
+cc: Accounts Department`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 132,
+  },
+  {
+    name: "Status Update Letter",
+    description: "Letter providing status update on ongoing matters",
+    category: "LETTER",
+    business: null,
+    content: `[COMPANY LETTERHEAD]
+
+{{date.today}}
+
+{{client.displayName}}
+{{client.address}}
+
+RE: STATUS UPDATE - [MATTER/SERVICE TYPE]
+Reference: [REFERENCE NUMBER]
+
+Dear {{client.displayName}},
+
+I am writing to provide you with an update on the progress of your [service type].
+
+CURRENT STATUS: [In Progress / Under Review / Pending Documents / Awaiting Response]
+
+PROGRESS SUMMARY:
+
+Steps Completed:
+✓ [Completed step 1]
+✓ [Completed step 2]
+✓ [Completed step 3]
+
+Currently In Progress:
+→ [Current action being taken]
+
+Pending Items:
+○ [Next step awaiting completion]
+○ [Additional pending items]
+
+TIMELINE:
+Submitted: [Date]
+Expected Response: [Date/Timeframe]
+Estimated Completion: [Date/Timeframe]
+
+DOCUMENTS RECEIVED:
+[ ] [Document 1]
+[ ] [Document 2]
+[ ] [Document 3]
+
+OUTSTANDING REQUIREMENTS:
+If applicable, please provide:
+• [Outstanding document/information]
+• [Outstanding document/information]
+
+NEXT STEPS:
+1. [Next action we will take]
+2. [What we are waiting for]
+3. [Expected milestone]
+
+We will continue to monitor the progress and keep you informed of any developments. If you have any questions or concerns, please do not hesitate to contact us.
+
+Thank you for your continued patience and trust in our services.
+
+Best regards,
+
+{{staff.name}}
+{{staff.title}}
+[Company Name]
+Tel: [Phone]
+Email: [Email]`,
+    placeholders: [...commonPlaceholders],
+    sortOrder: 133,
+  },
+
+  // ===============================
+  // Shared Templates (Both Businesses)
+  // ===============================
+
   {
     name: "Client Welcome Letter",
     description: "Welcome letter for new clients",

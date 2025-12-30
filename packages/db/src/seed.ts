@@ -10,6 +10,7 @@
  * - Tags (default tags for clients, matters, documents)
  * - Service Categories (GCMC & KAJ service structure)
  * - Knowledge Base (50+ Guyana-specific forms, guides, checklists)
+ * - Email Templates (15+ default email templates for notifications)
  *
  * For individual/additional seeds:
  * - Service Types: bun run packages/db/src/seed-service-types.ts
@@ -289,6 +290,12 @@ async function main(): Promise<void> {
   console.log("3️⃣  Seeding knowledge base...");
   await seedKnowledgeBase();
 
+  // 4. Email Templates
+  console.log("4️⃣  Seeding email templates...");
+  // Dynamic import to avoid circular dependencies
+  const { seedEmailTemplates } = await import("./seed-email-templates");
+  await seedEmailTemplates();
+
   // Display results
   console.log("\n📋 Seed Results:");
   console.log("─".repeat(50));
@@ -316,6 +323,9 @@ async function main(): Promise<void> {
   );
   console.log(
     "   bun run packages/db/src/seed-document-templates.ts - Document templates"
+  );
+  console.log(
+    "   bun run packages/db/src/seed-email-templates.ts - Email templates"
   );
   console.log(
     "   bun run packages/db/src/scripts/seed-service-catalog.ts - Full service catalog"
