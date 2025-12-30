@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Enhanced Dashboard Widgets** - December 29, 2024
+  - Added Quick Actions Bar with buttons for New Client, New Matter, Schedule, and notification badge
+  - Added Revenue KPIs section with 4 cards: Revenue (this month), YTD Revenue, Client Growth, Deadlines completion rate
+  - Added Today's Appointments widget showing scheduled appointments with status badges
+  - New `RevenueCard` component with currency formatting and growth indicators
+  - New `KpiCard` component for numeric metrics with optional suffix and growth
+  - New `AppointmentCard` component showing appointment details, time, location type, and assigned staff
+  - **Files**: `apps/web/src/routes/app/index.tsx`
+
 - **Appointment Reminder Processor** - December 29, 2024
   - Automated reminder processor that checks every 5 minutes for scheduled reminders
   - Sends email reminders to clients 24h, 2h, and 1h before appointments
