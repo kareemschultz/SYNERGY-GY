@@ -806,13 +806,20 @@ export const mattersRouter = {
                 columns: {
                   id: true,
                   name: true,
-                  code: true,
+                  category: true,
                 },
               },
               assignedStaff: {
                 columns: {
                   id: true,
-                  name: true,
+                  jobTitle: true,
+                },
+                with: {
+                  user: {
+                    columns: {
+                      name: true,
+                    },
+                  },
                 },
               },
             },
@@ -966,7 +973,7 @@ export const mattersRouter = {
                 )
                   .toISOString()
                   .split("T")[0]
-              : null, // Start 30 days before due
+              : undefined, // Start 30 days before due
             dueDate: newDueDate,
             assignedStaffId: parentMatter.assignedStaffId,
             estimatedFee: parentMatter.estimatedFee,
@@ -1085,7 +1092,7 @@ export const mattersRouter = {
               columns: {
                 id: true,
                 name: true,
-                code: true,
+                category: true,
               },
             },
           },
