@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { RecurringMatterCard } from "@/components/matters/recurring-matter-dialog";
 import { TimeEntriesList } from "@/components/time-tracking/time-entries-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,12 @@ type MatterData = {
   isPaid: boolean;
   taxYear: number | null;
   createdAt: Date;
+  // Recurring matter fields
+  isRecurring: boolean;
+  recurrencePattern: string | null;
+  nextRecurrenceDate: string | null;
+  parentMatterId: string | null;
+  recurrenceCount: number | null;
   client: {
     id: string;
     displayName: string;
@@ -392,6 +399,16 @@ function OverviewTab({ matter }: { matter: MatterData }) {
           </CardContent>
         </Card>
       ) : null}
+
+      {/* Recurring Matter Management */}
+      <RecurringMatterCard
+        isRecurring={matter.isRecurring}
+        matterId={matter.id}
+        nextRecurrenceDate={matter.nextRecurrenceDate}
+        parentMatterId={matter.parentMatterId}
+        recurrenceCount={matter.recurrenceCount}
+        recurrencePattern={matter.recurrencePattern}
+      />
     </div>
   );
 }

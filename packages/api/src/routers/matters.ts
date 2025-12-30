@@ -28,6 +28,13 @@ const matterPriorityValues = ["LOW", "NORMAL", "HIGH", "URGENT"] as const;
 
 const businessValues = ["GCMC", "KAJ"] as const;
 
+const recurrencePatternValues = [
+  "MONTHLY",
+  "QUARTERLY",
+  "SEMI_ANNUALLY",
+  "ANNUALLY",
+] as const;
+
 const listMattersSchema = z.object({
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20),
@@ -54,6 +61,10 @@ const createMatterSchema = z.object({
   assignedStaffId: z.string().optional(),
   estimatedFee: z.string().optional(),
   taxYear: z.number().optional(),
+  // Recurring matter fields
+  isRecurring: z.boolean().default(false),
+  recurrencePattern: z.enum(recurrencePatternValues).optional(),
+  nextRecurrenceDate: z.string().optional(),
 });
 
 const updateMatterSchema = z.object({
@@ -68,6 +79,10 @@ const updateMatterSchema = z.object({
   actualFee: z.string().optional(),
   isPaid: z.boolean().optional(),
   taxYear: z.number().optional(),
+  // Recurring matter fields
+  isRecurring: z.boolean().optional(),
+  recurrencePattern: z.enum(recurrencePatternValues).nullable().optional(),
+  nextRecurrenceDate: z.string().nullable().optional(),
 });
 
 // Helper to generate reference number
@@ -93,6 +108,55 @@ async function generateReferenceNumber(
   }
 
   return `${prefix}-${nextNumber.toString().padStart(4, "0")}`;
+}
+
+/**
+ * Calculate the next recurrence date based on pattern
+ */
+function calculateNextRecurrenceDate(
+  currentDate: Date,
+  pattern: "MONTHLY" | "QUARTERLY" | "SEMI_ANNUALLY" | "ANNUALLY"
+): string {
+  const nextDate = new Date(currentDate);
+
+  switch (pattern) {
+    case "MONTHLY":
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+    case "QUARTERLY":
+      nextDate.setMonth(nextDate.getMonth() + 3);
+      break;
+    case "SEMI_ANNUALLY":
+      nextDate.setMonth(nextDate.getMonth() + 6);
+      break;
+    case "ANNUALLY":
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      break;
+    default:
+      // Exhaustive check - TypeScript ensures all patterns are handled
+      break;
+  }
+
+  return nextDate.toISOString().split("T")[0] as string;
+}
+
+/**
+ * Calculate tax year based on due date
+ */
+function calculateTaxYear(dueDate: string | null): number | null {
+  if (!dueDate) {
+    return null;
+  }
+  const date = new Date(dueDate);
+  // If before April 30, it's for the previous year
+  const month = date.getMonth(); // 0-indexed
+  const day = date.getDate();
+  const year = date.getFullYear();
+
+  if (month < 3 || (month === 3 && day <= 30)) {
+    return year - 1;
+  }
+  return year;
 }
 
 // Matters router
@@ -672,6 +736,363 @@ export const mattersRouter = {
           );
 
         return { success: true, count: input.ids.length };
+      }),
+  },
+
+  // Recurring matters management
+  recurring: {
+    // List all recurring matters
+    list: staffProcedure
+      .input(
+        z.object({
+          page: z.number().min(1).default(1),
+          limit: z.number().min(1).max(100).default(20),
+          business: z.enum(businessValues).optional(),
+          includeCompleted: z.boolean().default(false),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        if (accessibleBusinesses.length === 0) {
+          return {
+            matters: [],
+            total: 0,
+            page: input.page,
+            limit: input.limit,
+          };
+        }
+
+        const conditions = [eq(matter.isRecurring, true)];
+
+        // Filter by business
+        if (input.business) {
+          if (!accessibleBusinesses.includes(input.business)) {
+            throw new ORPCError("FORBIDDEN", {
+              message: "You don't have access to this business",
+            });
+          }
+          conditions.push(eq(matter.business, input.business));
+        } else {
+          conditions.push(
+            sql`${matter.business}::text = ANY(ARRAY[${sql.join(
+              accessibleBusinesses.map((b) => sql`${b}`),
+              sql`, `
+            )}]::text[])`
+          );
+        }
+
+        // Exclude completed unless requested
+        if (!input.includeCompleted) {
+          conditions.push(
+            sql`${matter.status} NOT IN ('COMPLETE', 'CANCELLED')`
+          );
+        }
+
+        const offset = (input.page - 1) * input.limit;
+
+        const [matters, totalResult] = await Promise.all([
+          db.query.matter.findMany({
+            where: and(...conditions),
+            with: {
+              client: {
+                columns: {
+                  id: true,
+                  displayName: true,
+                  email: true,
+                },
+              },
+              serviceType: {
+                columns: {
+                  id: true,
+                  name: true,
+                  code: true,
+                },
+              },
+              assignedStaff: {
+                columns: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+            orderBy: [asc(matter.nextRecurrenceDate), desc(matter.createdAt)],
+            limit: input.limit,
+            offset,
+          }),
+          db
+            .select({ count: count() })
+            .from(matter)
+            .where(and(...conditions)),
+        ]);
+
+        const totalCount = totalResult[0]?.count ?? 0;
+
+        return {
+          matters,
+          total: totalCount,
+          page: input.page,
+          limit: input.limit,
+        };
+      }),
+
+    // Set up recurrence on an existing matter
+    setup: staffProcedure
+      .input(
+        z.object({
+          matterId: z.string(),
+          recurrencePattern: z.enum(recurrencePatternValues),
+          startDate: z.string().optional(), // Date to start recurrence from
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Get the matter
+        const existingMatter = await db.query.matter.findFirst({
+          where: eq(matter.id, input.matterId),
+        });
+
+        if (!existingMatter) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Matter not found",
+          });
+        }
+
+        if (!accessibleBusinesses.includes(existingMatter.business)) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this matter",
+          });
+        }
+
+        // Calculate next recurrence date - determine base date
+        let baseDate: Date;
+        if (input.startDate) {
+          baseDate = new Date(input.startDate);
+        } else if (existingMatter.dueDate) {
+          baseDate = new Date(existingMatter.dueDate);
+        } else {
+          baseDate = new Date();
+        }
+
+        const nextRecurrenceDate = calculateNextRecurrenceDate(
+          baseDate,
+          input.recurrencePattern
+        );
+
+        // Update the matter
+        const [updated] = await db
+          .update(matter)
+          .set({
+            isRecurring: true,
+            recurrencePattern: input.recurrencePattern,
+            nextRecurrenceDate,
+            updatedAt: new Date(),
+          })
+          .where(eq(matter.id, input.matterId))
+          .returning();
+
+        return updated;
+      }),
+
+    // Create the next occurrence of a recurring matter
+    createNext: staffProcedure
+      .input(
+        z.object({
+          matterId: z.string(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+        const staffId = context.staff.id;
+
+        // Get the parent matter
+        const parentMatter = await db.query.matter.findFirst({
+          where: eq(matter.id, input.matterId),
+        });
+
+        if (!parentMatter) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Matter not found",
+          });
+        }
+
+        if (!accessibleBusinesses.includes(parentMatter.business)) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this matter",
+          });
+        }
+
+        if (!(parentMatter.isRecurring && parentMatter.recurrencePattern)) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "This matter is not set up for recurrence",
+          });
+        }
+
+        // Generate new reference number
+        const referenceNumber = await generateReferenceNumber(
+          parentMatter.business as "GCMC" | "KAJ"
+        );
+
+        // Calculate new dates based on recurrence pattern
+        const newDueDate = parentMatter.dueDate
+          ? calculateNextRecurrenceDate(
+              new Date(parentMatter.dueDate),
+              parentMatter.recurrencePattern as
+                | "MONTHLY"
+                | "QUARTERLY"
+                | "SEMI_ANNUALLY"
+                | "ANNUALLY"
+            )
+          : null;
+
+        const newTaxYear = newDueDate ? calculateTaxYear(newDueDate) : null;
+
+        // Create the new matter
+        const [newMatter] = await db
+          .insert(matter)
+          .values({
+            referenceNumber,
+            clientId: parentMatter.clientId,
+            serviceTypeId: parentMatter.serviceTypeId,
+            business: parentMatter.business,
+            title: parentMatter.title,
+            description: parentMatter.description,
+            priority: parentMatter.priority,
+            status: "NEW",
+            startDate: newDueDate
+              ? new Date(
+                  new Date(newDueDate).getTime() - 30 * 24 * 60 * 60 * 1000
+                )
+                  .toISOString()
+                  .split("T")[0]
+              : null, // Start 30 days before due
+            dueDate: newDueDate,
+            assignedStaffId: parentMatter.assignedStaffId,
+            estimatedFee: parentMatter.estimatedFee,
+            taxYear: newTaxYear,
+            isRecurring: true,
+            recurrencePattern: parentMatter.recurrencePattern,
+            parentMatterId: parentMatter.parentMatterId || parentMatter.id, // Link to original parent
+            recurrenceCount: (parentMatter.recurrenceCount || 0) + 1,
+            createdById: staffId,
+          })
+          .returning();
+
+        // Update the parent matter's next recurrence date
+        const nextRecurrence = calculateNextRecurrenceDate(
+          new Date(newDueDate || new Date()),
+          parentMatter.recurrencePattern as
+            | "MONTHLY"
+            | "QUARTERLY"
+            | "SEMI_ANNUALLY"
+            | "ANNUALLY"
+        );
+
+        await db
+          .update(matter)
+          .set({
+            nextRecurrenceDate: nextRecurrence,
+            updatedAt: new Date(),
+          })
+          .where(eq(matter.id, input.matterId));
+
+        return {
+          newMatter,
+          nextRecurrenceDate: nextRecurrence,
+        };
+      }),
+
+    // Cancel recurrence on a matter
+    cancel: staffProcedure
+      .input(
+        z.object({
+          matterId: z.string(),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        // Get the matter
+        const existingMatter = await db.query.matter.findFirst({
+          where: eq(matter.id, input.matterId),
+        });
+
+        if (!existingMatter) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Matter not found",
+          });
+        }
+
+        if (!accessibleBusinesses.includes(existingMatter.business)) {
+          throw new ORPCError("FORBIDDEN", {
+            message: "You don't have access to this matter",
+          });
+        }
+
+        // Update the matter to remove recurrence
+        const [updated] = await db
+          .update(matter)
+          .set({
+            isRecurring: false,
+            recurrencePattern: null,
+            nextRecurrenceDate: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(matter.id, input.matterId))
+          .returning();
+
+        return updated;
+      }),
+
+    // Get matters due for recurrence (for background processing)
+    getDue: staffProcedure
+      .input(
+        z.object({
+          daysAhead: z.number().min(0).max(30).default(0),
+        })
+      )
+      .handler(async ({ input, context }) => {
+        const accessibleBusinesses = getAccessibleBusinesses(context.staff);
+
+        if (accessibleBusinesses.length === 0) {
+          return { matters: [] };
+        }
+
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + input.daysAhead);
+        const targetDateStr = targetDate.toISOString().split("T")[0];
+
+        const dueMatters = await db.query.matter.findMany({
+          where: and(
+            eq(matter.isRecurring, true),
+            sql`${matter.nextRecurrenceDate} <= ${targetDateStr}`,
+            sql`${matter.status} NOT IN ('COMPLETE', 'CANCELLED')`,
+            sql`${matter.business}::text = ANY(ARRAY[${sql.join(
+              accessibleBusinesses.map((b) => sql`${b}`),
+              sql`, `
+            )}]::text[])`
+          ),
+          with: {
+            client: {
+              columns: {
+                id: true,
+                displayName: true,
+                email: true,
+              },
+            },
+            serviceType: {
+              columns: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
+          },
+          orderBy: [asc(matter.nextRecurrenceDate)],
+        });
+
+        return { matters: dueMatters };
       }),
   },
 };

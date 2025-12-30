@@ -36,6 +36,13 @@
       "when": 1767066076843,
       "tag": "0004_blushing_black_cat",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1767101329834,
+      "tag": "0005_square_morlun",
+      "breakpoints": true
     }
   ]
 }

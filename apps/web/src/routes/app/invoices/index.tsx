@@ -8,7 +8,6 @@ import {
   Clock,
   Download,
   FileText,
-  Loader2,
   MoreHorizontal,
   Plus,
   Search,
@@ -35,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -540,18 +540,40 @@ function InvoicesPage() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell className="text-center" colSpan={9}>
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                      <span className="text-muted-foreground">
-                        Loading invoices...
-                      </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-                // biome-ignore lint/style/noNestedTernary: Auto-fix
-              ) : invoices.length === 0 ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loaders
+                  <TableRow key={`skeleton-${i}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-4" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-20" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="ml-auto h-8 w-8" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : // biome-ignore lint/style/noNestedTernary: Auto-fix
+              invoices.length === 0 ? (
                 <TableRow>
                   <TableCell className="text-center" colSpan={9}>
                     <div className="flex flex-col items-center justify-center py-12">

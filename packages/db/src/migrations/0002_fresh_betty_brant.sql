@@ -1,0 +1,2 @@
+-- This migration was already applied to the database
+-- Empty placeholder to keep migration journal in sync

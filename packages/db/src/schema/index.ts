@@ -21,6 +21,8 @@ export * from "./core";
 export * from "./deadlines";
 // Document management
 export * from "./documents";
+// Email templates
+export * from "./email-templates";
 // Invoicing and billing
 export * from "./invoices";
 // Knowledge base
