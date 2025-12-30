@@ -139,7 +139,11 @@ function DashboardPage() {
               Schedule
             </Button>
           </Link>
-          <Link className="ml-auto" to="/app/notifications">
+          <Link
+            className="ml-auto"
+            search={{ tab: "notifications" }}
+            to="/app/settings"
+          >
             <Button className="relative" size="sm" variant="outline">
               <Bell className="h-4 w-4" />
               {unreadCount > 0 ? (
