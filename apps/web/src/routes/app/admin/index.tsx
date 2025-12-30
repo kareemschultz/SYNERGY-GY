@@ -199,9 +199,8 @@ function AdminDashboardPage() {
             />
             <QuickActionCard
               description="Document templates for client matters"
-              href="/app/admin/document-templates"
+              href="/app/documents/templates"
               icon={FileText}
-              isDisabled
               title="Document Templates"
             />
           </div>
