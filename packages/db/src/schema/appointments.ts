@@ -70,6 +70,16 @@ export const appointmentType = pgTable(
     requiresApproval: boolean("requires_approval").default(true).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
+
+    // Public booking settings
+    isPublicBooking: boolean("is_public_booking").default(false).notNull(),
+    publicBookingToken: text("public_booking_token").unique(), // URL token for /book/:token
+    publicBookingDescription: text("public_booking_description"), // Description shown on public page
+    bookingInstructions: text("booking_instructions"), // Instructions for people booking
+    maxBookingsPerDay: integer("max_bookings_per_day"), // Optional daily limit
+    minAdvanceNoticeHours: integer("min_advance_notice_hours").default(24), // Minimum hours before appointment
+    maxAdvanceBookingDays: integer("max_advance_booking_days").default(30), // How far ahead can book
+
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -79,6 +89,9 @@ export const appointmentType = pgTable(
   (table) => [
     index("appointment_type_business_idx").on(table.business),
     index("appointment_type_is_active_idx").on(table.isActive),
+    index("appointment_type_public_booking_token_idx").on(
+      table.publicBookingToken
+    ),
   ]
 );
 
@@ -152,9 +165,9 @@ export const appointment = pgTable(
     appointmentTypeId: text("appointment_type_id")
       .notNull()
       .references(() => appointmentType.id, { onDelete: "restrict" }),
-    clientId: text("client_id")
-      .notNull()
-      .references(() => client.id, { onDelete: "restrict" }),
+    clientId: text("client_id").references(() => client.id, {
+      onDelete: "restrict",
+    }), // Optional for public bookings
     matterId: text("matter_id").references(() => matter.id, {
       onDelete: "set null",
     }),
@@ -180,6 +193,13 @@ export const appointment = pgTable(
 
     // Status tracking
     status: appointmentStatusEnum("status").default("REQUESTED").notNull(),
+
+    // Public booking info (for bookings without client account)
+    isPublicBooking: boolean("is_public_booking").default(false).notNull(),
+    publicBookerName: text("public_booker_name"), // Name of person booking
+    publicBookerEmail: text("public_booker_email"), // Email for confirmations
+    publicBookerPhone: text("public_booker_phone"), // Phone number
+    publicBookingToken: text("public_booking_token").unique(), // Token for managing booking
 
     // Request tracking (for client-initiated appointments)
     requestedByPortalUserId: text("requested_by_portal_user_id"), // If client booked via portal
@@ -225,6 +245,8 @@ export const appointment = pgTable(
     index("appointment_scheduled_at_idx").on(table.scheduledAt),
     index("appointment_assigned_staff_id_idx").on(table.assignedStaffId),
     index("appointment_status_idx").on(table.status),
+    index("appointment_public_booking_token_idx").on(table.publicBookingToken),
+    index("appointment_is_public_booking_idx").on(table.isPublicBooking),
   ]
 );
 

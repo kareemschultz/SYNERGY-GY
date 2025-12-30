@@ -19,6 +19,7 @@ import { knowledgeBaseRouter } from "./knowledge-base";
 import { mattersRouter } from "./matters";
 import { notificationsRouter } from "./notifications";
 import { portalRouter } from "./portal";
+import { publicBookingRouter } from "./public-booking";
 import { reportsRouter } from "./reports";
 import { serviceCatalogRouter } from "./service-catalog";
 import { settingsRouter } from "./settings";
@@ -52,6 +53,7 @@ export const appRouter = {
   knowledgeBase: knowledgeBaseRouter,
   matters: mattersRouter,
   portal: portalRouter,
+  publicBooking: publicBookingRouter,
   reports: reportsRouter,
   serviceCatalog: serviceCatalogRouter,
   settings: settingsRouter,

@@ -134,6 +134,18 @@ export type AppointmentReminderData = {
   portalUrl: string;
 };
 
+export type BookingConfirmationData = {
+  recipientEmail: string;
+  recipientName: string;
+  appointmentType: string;
+  scheduledAt: Date;
+  durationMinutes: number;
+  locationType: string;
+  status: "REQUESTED" | "CONFIRMED";
+  bookingToken: string;
+  business: string;
+};
+
 // Email service class
 class EmailService {
   private resend: Resend | null = null;
@@ -425,6 +437,23 @@ class EmailService {
           contentType: data.attachment.contentType,
         },
       ],
+    });
+  }
+
+  /**
+   * Send booking confirmation email
+   */
+  async sendBookingConfirmation(data: BookingConfirmationData): Promise<void> {
+    const html = this.getBookingConfirmationTemplate(data);
+    const text = this.getBookingConfirmationTextTemplate(data);
+
+    const statusLabel =
+      data.status === "CONFIRMED" ? "Confirmed" : "Request Received";
+    await this.sendEmail({
+      to: data.recipientEmail,
+      subject: `Appointment ${statusLabel}: ${data.appointmentType}`,
+      html,
+      text,
     });
   }
 
@@ -1138,6 +1167,129 @@ Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
+
+  private getBookingConfirmationTemplate(
+    data: BookingConfirmationData
+  ): string {
+    const dateFormatted = data.scheduledAt.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const timeFormatted = data.scheduledAt.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const locationDisplayMap = {
+      IN_PERSON: "In Person",
+      VIDEO: "Video Call",
+      PHONE: "Phone Call",
+    } as const;
+    const locationDisplay =
+      locationDisplayMap[data.locationType] ?? "Phone Call";
+
+    const statusMessage =
+      data.status === "CONFIRMED"
+        ? "Your appointment has been confirmed!"
+        : "Your appointment request has been received and is pending confirmation.";
+
+    const manageUrl = `${this.appUrl}/book/manage/${data.bookingToken}`;
+
+    const content = `
+      <h2>${data.status === "CONFIRMED" ? "Appointment Confirmed" : "Appointment Request Received"}</h2>
+      <p>Hello ${data.recipientName},</p>
+      <p>${statusMessage}</p>
+
+      <div class="info-box">
+        <p><strong>Appointment Type:</strong> ${data.appointmentType}</p>
+        <p><strong>Date:</strong> ${dateFormatted}</p>
+        <p><strong>Time:</strong> ${timeFormatted}</p>
+        <p><strong>Duration:</strong> ${data.durationMinutes} minutes</p>
+        <p><strong>Format:</strong> ${locationDisplay}</p>
+        <p><strong>Status:</strong> ${data.status === "CONFIRMED" ? "Confirmed" : "Pending Approval"}</p>
+      </div>
+
+      ${
+        data.status === "REQUESTED"
+          ? `
+      <div class="warning">
+        <strong>Note:</strong> This appointment is pending staff approval. You will receive a confirmation email once approved.
+      </div>
+      `
+          : ""
+      }
+
+      <p>You can manage your booking using the button below:</p>
+      <center>
+        <a href="${manageUrl}" class="button">Manage Booking</a>
+      </center>
+
+      <p style="font-size: 14px; color: #64748b;">
+        Keep this email for your records. You can use the link above to view details or cancel if needed.
+      </p>
+    `;
+    return this.getEmailLayout(content, "Booking Confirmation");
+  }
+
+  private getBookingConfirmationTextTemplate(
+    data: BookingConfirmationData
+  ): string {
+    const dateFormatted = data.scheduledAt.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const timeFormatted = data.scheduledAt.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const locationDisplayMap = {
+      IN_PERSON: "In Person",
+      VIDEO: "Video Call",
+      PHONE: "Phone Call",
+    } as const;
+    const locationDisplay =
+      locationDisplayMap[data.locationType] ?? "Phone Call";
+
+    const statusMessage =
+      data.status === "CONFIRMED"
+        ? "Your appointment has been confirmed!"
+        : "Your appointment request has been received and is pending confirmation.";
+
+    const manageUrl = `${this.appUrl}/book/manage/${data.bookingToken}`;
+
+    return `
+${data.status === "CONFIRMED" ? "Appointment Confirmed" : "Appointment Request Received"}
+
+Hello ${data.recipientName},
+
+${statusMessage}
+
+Appointment Details:
+- Type: ${data.appointmentType}
+- Date: ${dateFormatted}
+- Time: ${timeFormatted}
+- Duration: ${data.durationMinutes} minutes
+- Format: ${locationDisplay}
+- Status: ${data.status === "CONFIRMED" ? "Confirmed" : "Pending Approval"}
+
+${data.status === "REQUESTED" ? "Note: This appointment is pending staff approval. You will receive a confirmation email once approved.\n" : ""}
+Manage your booking at: ${manageUrl}
+
+Keep this email for your records. You can use the link above to view details or cancel if needed.
+
+---
+GK-Nexus
+Green Crescent Management Consultancy & KAJ Accountancy Services
+${this.appUrl}
+    `;
+  }
 }
 
 // Export singleton instance
@@ -1170,3 +1322,5 @@ export const sendAppointmentReminder = (data: AppointmentReminderData) =>
   emailService.sendAppointmentReminder(data);
 export const sendScheduledReport = (data: ScheduledReportEmailData) =>
   emailService.sendScheduledReport(data);
+export const sendBookingConfirmation = (data: BookingConfirmationData) =>
+  emailService.sendBookingConfirmation(data);
