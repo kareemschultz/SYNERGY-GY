@@ -261,12 +261,16 @@ export const knowledgeBaseRouter = {
       });
 
       if (!item) {
-        throw new Error("Knowledge base item not found");
+        throw new ORPCError("NOT_FOUND", {
+          message: "Knowledge base item not found",
+        });
       }
 
       // Check staff-only access
       if (item.isStaffOnly && !context.session?.user) {
-        throw new Error("This resource is only available to staff");
+        throw new ORPCError("FORBIDDEN", {
+          message: "This resource is only available to staff",
+        });
       }
 
       return item;
@@ -291,13 +295,17 @@ export const knowledgeBaseRouter = {
       });
 
       if (!item) {
-        throw new Error("Knowledge base item not found");
+        throw new ORPCError("NOT_FOUND", {
+          message: "Knowledge base item not found",
+        });
       }
 
       // Check staff-only access - use session user for staff check
       const user = context.session?.user;
       if (item.isStaffOnly && !user) {
-        throw new Error("This resource is only available to staff");
+        throw new ORPCError("FORBIDDEN", {
+          message: "This resource is only available to staff",
+        });
       }
 
       // Log download - use session user ID if available
@@ -341,11 +349,15 @@ export const knowledgeBaseRouter = {
       });
 
       if (!item) {
-        throw new Error("Knowledge base item not found");
+        throw new ORPCError("NOT_FOUND", {
+          message: "Knowledge base item not found",
+        });
       }
 
       if (!item.supportsAutoFill) {
-        throw new Error("This item does not support auto-fill");
+        throw new ORPCError("BAD_REQUEST", {
+          message: "This item does not support auto-fill",
+        });
       }
 
       // Fetch client data
@@ -450,7 +462,9 @@ export const knowledgeBaseRouter = {
     .handler(async ({ input, context }) => {
       const staffId = context.staff?.id;
       if (!staffId) {
-        throw new Error("Staff profile not found");
+        throw new ORPCError("NOT_FOUND", {
+          message: "Staff profile not found",
+        });
       }
 
       const [created] = await db
@@ -510,7 +524,9 @@ export const knowledgeBaseRouter = {
 
       const staffId = context.staff?.id;
       if (!staffId) {
-        throw new Error("Staff profile not found");
+        throw new ORPCError("NOT_FOUND", {
+          message: "Staff profile not found",
+        });
       }
 
       const [updated] = await db

@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -74,7 +75,7 @@ export const portalUser = pgTable(
     // Activity tracking
     lastLoginAt: timestamp("last_login_at"),
     lastActivityAt: timestamp("last_activity_at"),
-    loginAttempts: text("login_attempts").default("0").notNull(), // Track failed attempts
+    loginAttempts: integer("login_attempts").default(0).notNull(), // Track failed attempts
 
     // Notification preferences
     notificationPreferences: jsonb("notification_preferences").default({

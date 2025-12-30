@@ -19,6 +19,7 @@
  */
 
 import { db, taxCalculations } from "@SYNERGY-GY/db";
+import { ORPCError } from "@orpc/server";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure } from "../index";
@@ -611,7 +612,9 @@ export const taxCalculatorsRouter = {
     .handler(async ({ input, context }) => {
       const userId = context.session?.user?.id;
       if (!userId) {
-        throw new Error("User not authenticated");
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "User not authenticated",
+        });
       }
 
       const conditions = [eq(taxCalculations.userId, userId)];
@@ -643,7 +646,9 @@ export const taxCalculatorsRouter = {
     .handler(async ({ input, context }) => {
       const userId = context.session?.user?.id;
       if (!userId) {
-        throw new Error("User not authenticated");
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "User not authenticated",
+        });
       }
 
       const [calculation] = await db

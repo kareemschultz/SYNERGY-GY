@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Missing Report Types Implementation** - December 29, 2024
+  - Added `CLIENT_ACTIVITY` report: Shows matters, documents, and activity per client
+  - Added `MATTER_REVENUE` report: Revenue breakdown by service type and business
+  - Both reports support filtering by business, client, and date range
+  - Added to both execute and export endpoints for full functionality
+  - **File**: `packages/api/src/routers/reports.ts`
+
 - **Staff Account Setup Toggle** - December 29, 2024
   - Added toggle to choose between "Send email invite" and "Set password now" when creating staff
   - Email invite (default): Staff receives secure link to set their own password
@@ -34,6 +41,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **File**: `apps/web/e2e/helpers/auth.ts`
 
 ### Fixed
+
+- **Security Hardening** - December 29, 2024
+  - CORS origin now required in production - throws error if `CORS_ORIGIN` not set
+  - Cookie `sameSite` changed from "none" to "strict" in production (prevents CSRF)
+  - `secure` cookie flag now properly set based on environment
+  - Changed `loginAttempts` from `text` to `integer` type in portal schema
+  - **Files**: `packages/auth/src/index.ts`, `packages/db/src/schema/portal.ts`
+
+- **API Error Handling Consistency** - December 29, 2024
+  - Replaced all `throw new Error()` with `throw new ORPCError()` in API routers
+  - Proper HTTP status codes: NOT_FOUND (404), BAD_REQUEST (400), UNAUTHORIZED (401), FORBIDDEN (403), CONFLICT (409)
+  - Consistent error response format across all endpoints
+  - **Files**: `packages/api/src/routers/training.ts`, `packages/api/src/routers/knowledge-base.ts`, `packages/api/src/routers/tax-calculators.ts`, `packages/api/src/routers/backup.ts`
 
 - **Email Template & Environment Configuration** - December 29, 2024
   - Fixed incorrect business name: changed "Grace Cameron Management Consultancy" to "Green Crescent Management Consultancy" in all email templates and document templates

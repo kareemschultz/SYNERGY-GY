@@ -615,6 +615,169 @@ export const reportsRouter = {
           break;
         }
 
+        case "CLIENT_ACTIVITY": {
+          // Client Activity Report - matters, documents, and activity per client
+          const clientConditions = [
+            sql`${client.businesses} && ARRAY[${sql.join(businessFilter, sql`, `)}]::text[]`,
+          ];
+
+          if (input.filters?.clientId) {
+            clientConditions.push(eq(client.id, input.filters.clientId));
+          }
+
+          // Get clients with their matter counts
+          const clientsWithActivity = await db
+            .select({
+              id: client.id,
+              displayName: client.displayName,
+              email: client.email,
+              type: client.type,
+              status: client.status,
+              businesses: client.businesses,
+              createdAt: client.createdAt,
+            })
+            .from(client)
+            .where(and(...clientConditions))
+            .orderBy(desc(client.createdAt));
+
+          // Get matter counts per client
+          const matterCountsByClient = await db
+            .select({
+              clientId: matter.clientId,
+              total: count(),
+              completed: sql<number>`COUNT(*) FILTER (WHERE ${matter.status} = 'COMPLETE')`,
+              inProgress: sql<number>`COUNT(*) FILTER (WHERE ${matter.status} = 'IN_PROGRESS')`,
+            })
+            .from(matter)
+            .where(
+              sql`${matter.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
+            )
+            .groupBy(matter.clientId);
+
+          const matterCountMap = matterCountsByClient.reduce(
+            (acc, row) => {
+              acc[row.clientId] = {
+                total: row.total,
+                completed: Number(row.completed),
+                inProgress: Number(row.inProgress),
+              };
+              return acc;
+            },
+            {} as Record<
+              string,
+              { total: number; completed: number; inProgress: number }
+            >
+          );
+
+          const clientActivityData = clientsWithActivity.map((c) => ({
+            ...c,
+            totalMatters: matterCountMap[c.id]?.total || 0,
+            completedMatters: matterCountMap[c.id]?.completed || 0,
+            inProgressMatters: matterCountMap[c.id]?.inProgress || 0,
+          }));
+
+          columns = [
+            { key: "displayName", label: "Client Name" },
+            { key: "email", label: "Email" },
+            { key: "type", label: "Type" },
+            { key: "status", label: "Status" },
+            { key: "totalMatters", label: "Total Matters", type: "number" },
+            {
+              key: "completedMatters",
+              label: "Completed",
+              type: "number",
+            },
+            {
+              key: "inProgressMatters",
+              label: "In Progress",
+              type: "number",
+            },
+          ];
+
+          data = clientActivityData;
+          summary = {
+            totalClients: clientActivityData.length,
+            totalMatters: clientActivityData.reduce(
+              (sum, c) => sum + c.totalMatters,
+              0
+            ),
+            completedMatters: clientActivityData.reduce(
+              (sum, c) => sum + c.completedMatters,
+              0
+            ),
+          };
+          break;
+        }
+
+        case "MATTER_REVENUE": {
+          // Matter Revenue Report - revenue breakdown by service type and business
+          const matterRevenueConditions = [
+            sql`${matter.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`,
+          ];
+
+          if (input.filters?.fromDate) {
+            matterRevenueConditions.push(
+              gte(matter.createdAt, new Date(input.filters.fromDate))
+            );
+          }
+          if (input.filters?.toDate) {
+            matterRevenueConditions.push(
+              lte(matter.createdAt, new Date(input.filters.toDate))
+            );
+          }
+          if (input.filters?.clientId) {
+            matterRevenueConditions.push(
+              eq(matter.clientId, input.filters.clientId)
+            );
+          }
+
+          const matterRevenueData = await db
+            .select({
+              business: matter.business,
+              status: matter.status,
+              count: count(),
+              estimatedFee: sql<string>`COALESCE(SUM(CAST(${matter.estimatedFee} AS DECIMAL)), 0)`,
+              actualFee: sql<string>`COALESCE(SUM(CAST(${matter.actualFee} AS DECIMAL)), 0)`,
+              paidCount: sql<number>`COUNT(*) FILTER (WHERE ${matter.isPaid} = true)`,
+            })
+            .from(matter)
+            .where(and(...matterRevenueConditions))
+            .groupBy(matter.business, matter.status);
+
+          columns = [
+            { key: "business", label: "Business" },
+            { key: "status", label: "Status" },
+            { key: "count", label: "Matters", type: "number" },
+            { key: "estimatedFee", label: "Estimated Fees", type: "currency" },
+            { key: "actualFee", label: "Actual Fees", type: "currency" },
+            { key: "paidCount", label: "Paid", type: "number" },
+          ];
+
+          data = matterRevenueData.map((row) => ({
+            ...row,
+            paidCount: Number(row.paidCount),
+          }));
+          summary = {
+            totalMatters: matterRevenueData.reduce(
+              (sum, row) => sum + row.count,
+              0
+            ),
+            totalEstimated: matterRevenueData.reduce(
+              (sum, row) => sum + Number.parseFloat(row.estimatedFee),
+              0
+            ),
+            totalActual: matterRevenueData.reduce(
+              (sum, row) => sum + Number.parseFloat(row.actualFee),
+              0
+            ),
+            totalPaid: matterRevenueData.reduce(
+              (sum, row) => sum + Number(row.paidCount),
+              0
+            ),
+          };
+          break;
+        }
+
         case "STAFF_PRODUCTIVITY": {
           // Staff Productivity Report
           const staffData = await db
@@ -1106,6 +1269,156 @@ export const reportsRouter = {
           data = deadlinesWithStatus as Record<string, unknown>[];
           summary = {
             totalDeadlines: deadlinesWithStatus.length,
+          };
+          break;
+        }
+
+        case "CLIENT_ACTIVITY": {
+          // Client Activity Report - matters per client (export version)
+          const clientConditions = [
+            sql`${client.businesses} && ARRAY[${sql.join(businessFilter, sql`, `)}]::text[]`,
+          ];
+
+          if (input.filters?.clientId) {
+            clientConditions.push(eq(client.id, input.filters.clientId));
+          }
+
+          const clientsWithActivity = await db
+            .select({
+              id: client.id,
+              displayName: client.displayName,
+              email: client.email,
+              type: client.type,
+              status: client.status,
+            })
+            .from(client)
+            .where(and(...clientConditions))
+            .orderBy(desc(client.createdAt));
+
+          const matterCountsByClient = await db
+            .select({
+              clientId: matter.clientId,
+              total: count(),
+              completed: sql<number>`COUNT(*) FILTER (WHERE ${matter.status} = 'COMPLETE')`,
+              inProgress: sql<number>`COUNT(*) FILTER (WHERE ${matter.status} = 'IN_PROGRESS')`,
+            })
+            .from(matter)
+            .where(
+              sql`${matter.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
+            )
+            .groupBy(matter.clientId);
+
+          const matterCountMap = matterCountsByClient.reduce(
+            (acc, row) => {
+              acc[row.clientId] = {
+                total: row.total,
+                completed: Number(row.completed),
+                inProgress: Number(row.inProgress),
+              };
+              return acc;
+            },
+            {} as Record<
+              string,
+              { total: number; completed: number; inProgress: number }
+            >
+          );
+
+          const clientActivityData = clientsWithActivity.map((c) => ({
+            displayName: c.displayName,
+            email: c.email,
+            type: c.type,
+            status: c.status,
+            totalMatters: matterCountMap[c.id]?.total || 0,
+            completedMatters: matterCountMap[c.id]?.completed || 0,
+            inProgressMatters: matterCountMap[c.id]?.inProgress || 0,
+          }));
+
+          columns = [
+            { key: "displayName", label: "Client Name" },
+            { key: "email", label: "Email" },
+            { key: "type", label: "Type" },
+            { key: "status", label: "Status" },
+            { key: "totalMatters", label: "Total Matters", type: "number" },
+            { key: "completedMatters", label: "Completed", type: "number" },
+            { key: "inProgressMatters", label: "In Progress", type: "number" },
+          ];
+
+          data = clientActivityData as Record<string, unknown>[];
+          summary = {
+            totalClients: clientActivityData.length,
+            totalMatters: clientActivityData.reduce(
+              (sum, c) => sum + c.totalMatters,
+              0
+            ),
+          };
+          break;
+        }
+
+        case "MATTER_REVENUE": {
+          // Matter Revenue Report (export version)
+          const matterRevenueConditions = [
+            sql`${matter.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`,
+          ];
+
+          if (input.filters?.fromDate) {
+            matterRevenueConditions.push(
+              gte(matter.createdAt, new Date(input.filters.fromDate))
+            );
+          }
+          if (input.filters?.toDate) {
+            matterRevenueConditions.push(
+              lte(matter.createdAt, new Date(input.filters.toDate))
+            );
+          }
+          if (input.filters?.clientId) {
+            matterRevenueConditions.push(
+              eq(matter.clientId, input.filters.clientId)
+            );
+          }
+
+          const matterRevenueData = await db
+            .select({
+              business: matter.business,
+              status: matter.status,
+              count: count(),
+              estimatedFee: sql<string>`COALESCE(SUM(CAST(${matter.estimatedFee} AS DECIMAL)), 0)`,
+              actualFee: sql<string>`COALESCE(SUM(CAST(${matter.actualFee} AS DECIMAL)), 0)`,
+              paidCount: sql<number>`COUNT(*) FILTER (WHERE ${matter.isPaid} = true)`,
+            })
+            .from(matter)
+            .where(and(...matterRevenueConditions))
+            .groupBy(matter.business, matter.status);
+
+          columns = [
+            { key: "business", label: "Business" },
+            { key: "status", label: "Status" },
+            { key: "count", label: "Matters", type: "number" },
+            { key: "estimatedFee", label: "Estimated Fees", type: "currency" },
+            { key: "actualFee", label: "Actual Fees", type: "currency" },
+            { key: "paidCount", label: "Paid", type: "number" },
+          ];
+
+          data = matterRevenueData.map((row) => ({
+            business: row.business,
+            status: row.status,
+            count: row.count,
+            estimatedFee: row.estimatedFee,
+            actualFee: row.actualFee,
+            paidCount: Number(row.paidCount),
+          })) as Record<string, unknown>[];
+          summary = {
+            totalMatters: matterRevenueData.reduce(
+              (sum, row) => sum + row.count,
+              0
+            ),
+            totalEstimated: matterRevenueData.reduce(
+              (sum, row) => sum + Number.parseFloat(row.estimatedFee),
+              0
+            ),
+            totalActual: matterRevenueData.reduce(
+              (sum, row) => sum + Number.parseFloat(row.actualFee),
+              0
+            ),
           };
           break;
         }

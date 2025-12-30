@@ -225,7 +225,9 @@ export const backupRouter = {
         });
 
         if (!result.success) {
-          throw new Error(result.error || "Backup failed");
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: result.error || "Backup failed",
+          });
         }
 
         // Update backup record with success

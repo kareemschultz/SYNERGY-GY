@@ -16,6 +16,7 @@ import {
   insertCourseSchema,
   insertEnrollmentSchema,
 } from "@SYNERGY-GY/db";
+import { ORPCError } from "@orpc/server";
 import { and, count, desc, eq, gte, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -119,7 +120,7 @@ export const trainingRouter = {
         .limit(1);
 
       if (!course) {
-        throw new Error("Course not found");
+        throw new ORPCError("NOT_FOUND", { message: "Course not found" });
       }
 
       // Get schedules for this course
@@ -192,7 +193,7 @@ export const trainingRouter = {
         .returning();
 
       if (!course) {
-        throw new Error("Course not found");
+        throw new ORPCError("NOT_FOUND", { message: "Course not found" });
       }
 
       return course;
@@ -215,9 +216,10 @@ export const trainingRouter = {
         );
 
       if ((schedulesWithEnrollments[0]?.count ?? 0) > 0) {
-        throw new Error(
-          "Cannot delete course with existing enrollments. Consider deactivating instead."
-        );
+        throw new ORPCError("BAD_REQUEST", {
+          message:
+            "Cannot delete course with existing enrollments. Consider deactivating instead.",
+        });
       }
 
       await db
@@ -322,7 +324,7 @@ export const trainingRouter = {
         .limit(1);
 
       if (!schedule) {
-        throw new Error("Schedule not found");
+        throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
       }
 
       // Get enrollments for this schedule
@@ -369,7 +371,7 @@ export const trainingRouter = {
         .limit(1);
 
       if (!course) {
-        throw new Error("Course not found");
+        throw new ORPCError("NOT_FOUND", { message: "Course not found" });
       }
 
       const id = nanoid();
@@ -406,7 +408,7 @@ export const trainingRouter = {
         .returning();
 
       if (!schedule) {
-        throw new Error("Schedule not found");
+        throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
       }
 
       return schedule;
@@ -426,7 +428,7 @@ export const trainingRouter = {
         .returning();
 
       if (!schedule) {
-        throw new Error("Schedule not found");
+        throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
       }
 
       // Update all enrollments to cancelled
@@ -554,19 +556,23 @@ export const trainingRouter = {
         .limit(1);
 
       if (!scheduleData) {
-        throw new Error("Schedule not found");
+        throw new ORPCError("NOT_FOUND", { message: "Schedule not found" });
       }
 
       if (scheduleData.status === "CANCELLED") {
-        throw new Error("Cannot enroll in cancelled schedule");
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Cannot enroll in cancelled schedule",
+        });
       }
 
       if (scheduleData.status === "COMPLETED") {
-        throw new Error("Cannot enroll in completed schedule");
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Cannot enroll in completed schedule",
+        });
       }
 
       if (scheduleData.enrollmentCount >= scheduleData.maxParticipants) {
-        throw new Error("Schedule is full");
+        throw new ORPCError("BAD_REQUEST", { message: "Schedule is full" });
       }
 
       // Check if client is already enrolled
@@ -582,7 +588,9 @@ export const trainingRouter = {
         .limit(1);
 
       if (existing) {
-        throw new Error("Client is already enrolled in this schedule");
+        throw new ORPCError("CONFLICT", {
+          message: "Client is already enrolled in this schedule",
+        });
       }
 
       const id = nanoid();
@@ -625,7 +633,7 @@ export const trainingRouter = {
         .returning();
 
       if (!enrollment) {
-        throw new Error("Enrollment not found");
+        throw new ORPCError("NOT_FOUND", { message: "Enrollment not found" });
       }
 
       return enrollment;
@@ -643,15 +651,19 @@ export const trainingRouter = {
         .limit(1);
 
       if (!enrollment) {
-        throw new Error("Enrollment not found");
+        throw new ORPCError("NOT_FOUND", { message: "Enrollment not found" });
       }
 
       if (enrollment.status !== "ATTENDED") {
-        throw new Error("Can only issue certificates for attended enrollments");
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Can only issue certificates for attended enrollments",
+        });
       }
 
       if (enrollment.certificateNumber) {
-        throw new Error("Certificate already issued");
+        throw new ORPCError("CONFLICT", {
+          message: "Certificate already issued",
+        });
       }
 
       const certificateNumber = await generateCertificateNumber();
@@ -683,7 +695,7 @@ export const trainingRouter = {
         .returning();
 
       if (!enrollment) {
-        throw new Error("Enrollment not found");
+        throw new ORPCError("NOT_FOUND", { message: "Enrollment not found" });
       }
 
       return enrollment;
