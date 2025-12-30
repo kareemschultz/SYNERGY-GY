@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Public Booking System** - December 30, 2024
+  - Complete public booking workflow for clients without accounts
+  - New `/book/:token` route with multi-step wizard (Date → Time → Details → Confirmation)
+  - New `/book/manage` route for users to view/cancel bookings using their reference token
+  - Database schema updates: `isPublicBooking`, `publicBookingToken`, booking limits on `appointmentType`
+  - New API endpoints in `publicBookingRouter`: getBookingPage, getAvailableSlots, createBooking, getBookingStatus, cancelBooking
+  - Availability slot generation based on staff schedules, overrides, and existing appointments
+  - Booking confirmation emails with reference tokens
+  - Support for in-person, phone, and video appointment types
+  - Configurable booking window (min advance notice, max advance booking days, daily limits)
+  - **New Files**: `apps/web/src/routes/book/$token.tsx`, `apps/web/src/routes/book/manage.tsx`, `packages/api/src/routers/public-booking.ts`
+  - **Modified**: `packages/db/src/schema/appointments.ts`, `packages/api/src/utils/email.ts`
+
 - **Knowledge Base Form Upload** - December 29, 2024
   - Enabled the previously disabled Upload button for Knowledge Base forms
   - New upload dialog for selecting and uploading PDF files
