@@ -1183,11 +1183,11 @@ ${this.appUrl}
       hour12: true,
     });
 
-    const locationDisplayMap = {
+    const locationDisplayMap: Record<string, string> = {
       IN_PERSON: "In Person",
       VIDEO: "Video Call",
       PHONE: "Phone Call",
-    } as const;
+    };
     const locationDisplay =
       locationDisplayMap[data.locationType] ?? "Phone Call";
 
@@ -1249,11 +1249,11 @@ ${this.appUrl}
       hour12: true,
     });
 
-    const locationDisplayMap = {
+    const locationDisplayMap: Record<string, string> = {
       IN_PERSON: "In Person",
       VIDEO: "Video Call",
       PHONE: "Phone Call",
-    } as const;
+    };
     const locationDisplay =
       locationDisplayMap[data.locationType] ?? "Phone Call";
 

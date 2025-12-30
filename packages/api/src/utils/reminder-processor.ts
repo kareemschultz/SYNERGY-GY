@@ -77,7 +77,9 @@ async function processReminder(
     } | null;
     assignedStaff: {
       id: string;
-      name: string;
+      user: {
+        name: string;
+      };
     } | null;
   }
 ): Promise<boolean> {
@@ -103,7 +105,7 @@ async function processReminder(
     durationMinutes: appointmentData.durationMinutes,
     locationType: appointmentData.locationType,
     location: appointmentData.location ?? undefined,
-    assignedStaff: appointmentData.assignedStaff?.name,
+    assignedStaff: appointmentData.assignedStaff?.user?.name,
     reminderType: getReminderType(reminder.reminderMinutesBefore),
     portalUrl: `${PORTAL_URL}/portal/appointments`,
   };
@@ -176,7 +178,13 @@ async function checkAndProcessReminders(): Promise<void> {
         assignedStaff: {
           columns: {
             id: true,
-            name: true,
+          },
+          with: {
+            user: {
+              columns: {
+                name: true,
+              },
+            },
           },
         },
       },

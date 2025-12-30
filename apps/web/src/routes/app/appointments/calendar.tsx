@@ -55,11 +55,13 @@ type CalendarAppointment = {
   status: AppointmentStatus;
   locationType: "IN_PERSON" | "PHONE" | "VIDEO";
   location?: string | null;
+  isPublicBooking?: boolean;
+  publicBookerName?: string | null;
   client: {
     id: string;
     displayName: string;
     phone?: string | null;
-  };
+  } | null;
   appointmentType: {
     id: string;
     name: string;
@@ -263,7 +265,9 @@ function AppointmentsCalendarPage() {
                         <span className="font-medium">
                           {format(new Date(apt.scheduledAt), "HH:mm")}
                         </span>{" "}
-                        {apt.client.displayName}
+                        {apt.client?.displayName ??
+                          apt.publicBookerName ??
+                          "Unknown"}
                       </button>
                     ))}
                     {dayAppointments.length > 3 ? (
@@ -328,9 +332,17 @@ function AppointmentsCalendarPage() {
 
               <div className="space-y-3 text-sm">
                 <div>
-                  <p className="font-medium text-muted-foreground">Client</p>
-                  <p>{selectedAppointment.client.displayName}</p>
-                  {selectedAppointment.client.phone ? (
+                  <p className="font-medium text-muted-foreground">
+                    {selectedAppointment.isPublicBooking
+                      ? "Booked By"
+                      : "Client"}
+                  </p>
+                  <p>
+                    {selectedAppointment.client?.displayName ??
+                      selectedAppointment.publicBookerName ??
+                      "Unknown"}
+                  </p>
+                  {selectedAppointment.client?.phone ? (
                     <p className="text-muted-foreground">
                       {selectedAppointment.client.phone}
                     </p>

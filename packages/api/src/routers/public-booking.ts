@@ -143,7 +143,10 @@ async function generateAvailableSlots(
   assignedStaffId?: string
 ): Promise<{ time: string; available: boolean }[]> {
   const dayOfWeek = date.getDay();
-  const dateStr = date.toISOString().split("T")[0];
+  const dateStr = date.toISOString().split("T")[0] ?? "";
+  if (!dateStr) {
+    return [];
+  }
   const duration = appointmentTypeData.defaultDurationMinutes;
 
   // Get staff availability for this day

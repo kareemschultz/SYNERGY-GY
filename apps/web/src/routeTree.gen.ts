@@ -27,6 +27,8 @@ import { Route as PortalForgotPasswordRouteImport } from './routes/portal/forgot
 import { Route as PortalFinancialsRouteImport } from './routes/portal/financials'
 import { Route as PortalDocumentsRouteImport } from './routes/portal/documents'
 import { Route as PortalAppointmentsRouteImport } from './routes/portal/appointments'
+import { Route as BookManageRouteImport } from './routes/book/manage'
+import { Route as BookTokenRouteImport } from './routes/book/$token'
 import { Route as AppTrainingIndexRouteImport } from './routes/app/training/index'
 import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
 import { Route as AppServicesIndexRouteImport } from './routes/app/services/index'
@@ -173,6 +175,16 @@ const PortalDocumentsRoute = PortalDocumentsRouteImport.update({
 const PortalAppointmentsRoute = PortalAppointmentsRouteImport.update({
   id: '/portal/appointments',
   path: '/portal/appointments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookManageRoute = BookManageRouteImport.update({
+  id: '/book/manage',
+  path: '/book/manage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookTokenRoute = BookTokenRouteImport.update({
+  id: '/book/$token',
+  path: '/book/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppTrainingIndexRoute = AppTrainingIndexRouteImport.update({
@@ -477,6 +489,8 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/book/$token': typeof BookTokenRoute
+  '/book/manage': typeof BookManageRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/financials': typeof PortalFinancialsRoute
@@ -553,6 +567,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/book/$token': typeof BookTokenRoute
+  '/book/manage': typeof BookManageRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/financials': typeof PortalFinancialsRoute
@@ -631,6 +647,8 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
+  '/book/$token': typeof BookTokenRoute
+  '/book/manage': typeof BookManageRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/financials': typeof PortalFinancialsRoute
@@ -710,6 +728,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/dashboard'
     | '/login'
+    | '/book/$token'
+    | '/book/manage'
     | '/portal/appointments'
     | '/portal/documents'
     | '/portal/financials'
@@ -786,6 +806,8 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/book/$token'
+    | '/book/manage'
     | '/portal/appointments'
     | '/portal/documents'
     | '/portal/financials'
@@ -863,6 +885,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/dashboard'
     | '/login'
+    | '/book/$token'
+    | '/book/manage'
     | '/portal/appointments'
     | '/portal/documents'
     | '/portal/financials'
@@ -941,6 +965,8 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
+  BookTokenRoute: typeof BookTokenRoute
+  BookManageRoute: typeof BookManageRoute
   PortalAppointmentsRoute: typeof PortalAppointmentsRoute
   PortalDocumentsRoute: typeof PortalDocumentsRoute
   PortalFinancialsRoute: typeof PortalFinancialsRoute
@@ -1083,6 +1109,20 @@ declare module '@tanstack/react-router' {
       path: '/portal/appointments'
       fullPath: '/portal/appointments'
       preLoaderRoute: typeof PortalAppointmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/book/manage': {
+      id: '/book/manage'
+      path: '/book/manage'
+      fullPath: '/book/manage'
+      preLoaderRoute: typeof BookManageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/book/$token': {
+      id: '/book/$token'
+      path: '/book/$token'
+      fullPath: '/book/$token'
+      preLoaderRoute: typeof BookTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/training/': {
@@ -1624,6 +1664,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
+  BookTokenRoute: BookTokenRoute,
+  BookManageRoute: BookManageRoute,
   PortalAppointmentsRoute: PortalAppointmentsRoute,
   PortalDocumentsRoute: PortalDocumentsRoute,
   PortalFinancialsRoute: PortalFinancialsRoute,

@@ -707,7 +707,7 @@ export const portalRouter = {
         }
 
         // Check login attempts (simple rate limiting)
-        const attempts = Number.parseInt(user.loginAttempts, 10);
+        const attempts = user.loginAttempts;
         if (attempts >= MAX_LOGIN_ATTEMPTS) {
           const lastActivity = user.lastActivityAt || user.updatedAt;
           const lockoutEnd = new Date(
@@ -723,7 +723,7 @@ export const portalRouter = {
           // Reset attempts after lockout period
           await db
             .update(portalUser)
-            .set({ loginAttempts: "0" })
+            .set({ loginAttempts: 0 })
             .where(eq(portalUser.id, user.id));
         }
 
@@ -738,7 +738,7 @@ export const portalRouter = {
           await db
             .update(portalUser)
             .set({
-              loginAttempts: String(attempts + 1),
+              loginAttempts: attempts + 1,
               lastActivityAt: new Date(),
             })
             .where(eq(portalUser.id, user.id));
@@ -786,7 +786,7 @@ export const portalRouter = {
           .set({
             lastLoginAt: new Date(),
             lastActivityAt: new Date(),
-            loginAttempts: "0", // Reset on successful login
+            loginAttempts: 0, // Reset on successful login
           })
           .where(eq(portalUser.id, user.id));
 
@@ -912,7 +912,7 @@ export const portalRouter = {
           .update(portalUser)
           .set({
             passwordHash,
-            loginAttempts: "0", // Reset login attempts
+            loginAttempts: 0, // Reset login attempts
           })
           .where(eq(portalUser.id, resetToken.portalUserId));
 

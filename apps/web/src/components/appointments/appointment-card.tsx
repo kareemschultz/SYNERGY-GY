@@ -32,12 +32,16 @@ type Appointment = {
   locationType: "IN_PERSON" | "PHONE" | "VIDEO";
   location?: string | null;
   preAppointmentNotes?: string | null;
+  isPublicBooking?: boolean;
+  publicBookerName?: string | null;
+  publicBookerEmail?: string | null;
+  publicBookerPhone?: string | null;
   client: {
     id: string;
     displayName: string;
     email?: string | null;
     phone?: string | null;
-  };
+  } | null;
   appointmentType: {
     id: string;
     name: string;
@@ -75,6 +79,79 @@ const locationLabels = {
   VIDEO: "Video Call",
 };
 
+// Extracted dropdown to reduce cognitive complexity
+function AppointmentActionsMenu({
+  appointmentId,
+  canConfirm,
+  canComplete,
+  canCancel,
+  onViewDetails,
+  onConfirm,
+  onComplete,
+  onNoShow,
+  onReschedule,
+  onCancel,
+}: {
+  appointmentId: string;
+  canConfirm: boolean;
+  canComplete: boolean;
+  canCancel: boolean;
+  onViewDetails?: (id: string) => void;
+  onConfirm?: (id: string) => void;
+  onComplete?: (id: string) => void;
+  onNoShow?: (id: string) => void;
+  onReschedule?: (id: string) => void;
+  onCancel?: (id: string) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button aria-label="Actions" size="icon" variant="ghost">
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {onViewDetails !== undefined ? (
+          <DropdownMenuItem onClick={() => onViewDetails(appointmentId)}>
+            View Details
+          </DropdownMenuItem>
+        ) : null}
+        {canConfirm === true && onConfirm !== undefined ? (
+          <DropdownMenuItem onClick={() => onConfirm(appointmentId)}>
+            Confirm
+          </DropdownMenuItem>
+        ) : null}
+        {canComplete === true && onComplete !== undefined ? (
+          <DropdownMenuItem onClick={() => onComplete(appointmentId)}>
+            Mark Complete
+          </DropdownMenuItem>
+        ) : null}
+        {canComplete === true && onNoShow !== undefined ? (
+          <DropdownMenuItem onClick={() => onNoShow(appointmentId)}>
+            Mark No Show
+          </DropdownMenuItem>
+        ) : null}
+        {onReschedule !== undefined ? (
+          <DropdownMenuItem onClick={() => onReschedule(appointmentId)}>
+            Reschedule
+          </DropdownMenuItem>
+        ) : null}
+        {canCancel === true && onCancel !== undefined ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => onCancel(appointmentId)}
+            >
+              Cancel
+            </DropdownMenuItem>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function AppointmentCard({
   appointment,
   onConfirm,
@@ -107,57 +184,33 @@ export function AppointmentCard({
         </div>
         <div className="flex items-center gap-2">
           <AppointmentStatusBadge status={appointment.status} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button aria-label="Actions" size="icon" variant="ghost">
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {onViewDetails ? (
-                <DropdownMenuItem onClick={() => onViewDetails(appointment.id)}>
-                  View Details
-                </DropdownMenuItem>
-              ) : null}
-              {Boolean(canConfirm) && onConfirm ? (
-                <DropdownMenuItem onClick={() => onConfirm(appointment.id)}>
-                  Confirm
-                </DropdownMenuItem>
-              ) : null}
-              {Boolean(canComplete) && onComplete ? (
-                <DropdownMenuItem onClick={() => onComplete(appointment.id)}>
-                  Mark Complete
-                </DropdownMenuItem>
-              ) : null}
-              {Boolean(canComplete) && onNoShow ? (
-                <DropdownMenuItem onClick={() => onNoShow(appointment.id)}>
-                  Mark No Show
-                </DropdownMenuItem>
-              ) : null}
-              {onReschedule ? (
-                <DropdownMenuItem onClick={() => onReschedule(appointment.id)}>
-                  Reschedule
-                </DropdownMenuItem>
-              ) : null}
-              {Boolean(canCancel) && onCancel ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => onCancel(appointment.id)}
-                  >
-                    Cancel
-                  </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <AppointmentActionsMenu
+            appointmentId={appointment.id}
+            canCancel={canCancel}
+            canComplete={canComplete}
+            canConfirm={canConfirm}
+            onCancel={onCancel}
+            onComplete={onComplete}
+            onConfirm={onConfirm}
+            onNoShow={onNoShow}
+            onReschedule={onReschedule}
+            onViewDetails={onViewDetails}
+          />
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center gap-2 text-sm">
           <User className="size-4 text-muted-foreground" />
-          <span className="font-medium">{appointment.client.displayName}</span>
+          <span className="font-medium">
+            {appointment.client?.displayName ??
+              appointment.publicBookerName ??
+              "Unknown"}
+          </span>
+          {appointment.isPublicBooking ? (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground text-xs">
+              Public
+            </span>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap gap-4 text-muted-foreground text-sm">

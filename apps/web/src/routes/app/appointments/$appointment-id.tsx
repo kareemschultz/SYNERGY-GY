@@ -244,7 +244,7 @@ function AppointmentDetailPage() {
             ) : null}
           </div>
         }
-        description={`${appointment.appointmentType.name} with ${appointment.client.displayName}`}
+        description={`${appointment.appointmentType.name} with ${appointment.client?.displayName ?? appointment.publicBookerName ?? "Unknown"}`}
         title={appointment.title}
       />
 
@@ -406,37 +406,50 @@ function AppointmentDetailPage() {
                   <p className="font-medium text-muted-foreground text-sm">
                     Name
                   </p>
-                  <Link
-                    className="text-primary hover:underline"
-                    params={{ clientId: appointment.client.id }}
-                    to="/app/clients/$clientId"
-                  >
-                    {appointment.client.displayName}
-                  </Link>
+                  {appointment.client ? (
+                    <Link
+                      className="text-primary hover:underline"
+                      params={{ clientId: appointment.client.id }}
+                      to="/app/clients/$clientId"
+                    >
+                      {appointment.client.displayName}
+                    </Link>
+                  ) : (
+                    <span>{appointment.publicBookerName ?? "Unknown"}</span>
+                  )}
+                  {appointment.isPublicBooking ? (
+                    <Badge className="ml-2" variant="secondary">
+                      Public Booking
+                    </Badge>
+                  ) : null}
                 </div>
-                {appointment.client.email ? (
+                {(appointment.client?.email ??
+                appointment.publicBookerEmail) ? (
                   <div>
                     <p className="font-medium text-muted-foreground text-sm">
                       Email
                     </p>
                     <a
                       className="text-primary hover:underline"
-                      href={`mailto:${appointment.client.email}`}
+                      href={`mailto:${appointment.client?.email ?? appointment.publicBookerEmail}`}
                     >
-                      {appointment.client.email}
+                      {appointment.client?.email ??
+                        appointment.publicBookerEmail}
                     </a>
                   </div>
                 ) : null}
-                {appointment.client.phone ? (
+                {(appointment.client?.phone ??
+                appointment.publicBookerPhone) ? (
                   <div>
                     <p className="font-medium text-muted-foreground text-sm">
                       Phone
                     </p>
                     <a
                       className="text-primary hover:underline"
-                      href={`tel:${appointment.client.phone}`}
+                      href={`tel:${appointment.client?.phone ?? appointment.publicBookerPhone}`}
                     >
-                      {appointment.client.phone}
+                      {appointment.client?.phone ??
+                        appointment.publicBookerPhone}
                     </a>
                   </div>
                 ) : null}
@@ -642,7 +655,10 @@ function AppointmentDetailPage() {
             <AlertDialogTitle>Cancel Appointment?</AlertDialogTitle>
             <AlertDialogDescription>
               This will cancel the appointment with{" "}
-              {appointment.client.displayName}. This action cannot be undone.
+              {appointment.client?.displayName ??
+                appointment.publicBookerName ??
+                "the client"}
+              . This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-2">
