@@ -41,6 +41,11 @@ import { rateLimiter } from "hono-rate-limiter";
 // Run initial setup to create first owner account (if needed)
 await runInitialSetup();
 
+// Run auto-seed to populate essential templates and categories
+// This is idempotent - safe to run on every startup
+const { runAutoSeed } = await import("@SYNERGY-GY/api/utils/auto-seed");
+await runAutoSeed();
+
 // Start backup scheduler for automatic backups
 startBackupScheduler();
 
