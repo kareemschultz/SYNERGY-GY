@@ -44,6 +44,33 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
+
+// Types for reports data
+type ReportItem = {
+  code: string;
+  name: string;
+  description: string;
+  category: string;
+};
+
+type ReportsListResponse = {
+  reports: ReportItem[];
+};
+
+type CategoryItem = {
+  value: string;
+  label: string;
+};
+
+type ClientItem = {
+  id: string;
+  displayName: string;
+};
+
+type ClientsListResponse = {
+  clients: ClientItem[];
+};
 
 export const Route = createFileRoute("/app/reports/")({
   component: ReportsPage,
@@ -94,7 +121,7 @@ function ReportsPage() {
 
   // Fetch available reports
   const {
-    data: reportsData,
+    data: reportsDataRaw,
     isLoading,
     error,
   } = useQuery({
@@ -114,15 +141,17 @@ function ReportsPage() {
         search: searchQuery || undefined,
       }),
   });
+  const reportsData = unwrapOrpc<ReportsListResponse>(reportsDataRaw);
 
   // Fetch categories
-  const { data: categoriesData } = useQuery({
+  const { data: categoriesDataRaw } = useQuery({
     queryKey: ["report-categories"],
     queryFn: () => client.reports.categories(),
   });
+  const categoriesData = unwrapOrpc<CategoryItem[]>(categoriesDataRaw);
 
   // Fetch clients for filter dropdown (limit: 100 is max allowed by schema)
-  const { data: clientsData } = useQuery({
+  const { data: clientsDataRaw } = useQuery({
     queryKey: ["clients-for-filter"],
     queryFn: () =>
       client.clients.list({
@@ -132,19 +161,38 @@ function ReportsPage() {
         sortOrder: "asc",
       }),
   });
+  const clientsData = unwrapOrpc<ClientsListResponse>(clientsDataRaw);
+
+  // Types for mutation responses
+  type ExecuteReportResponse = {
+    columns: Array<{ key: string; label: string; type?: string }>;
+    data: unknown[];
+    summary: Record<string, unknown>;
+    rowCount: number;
+  };
+
+  type ExportReportResponse = {
+    file: string;
+    contentType: string;
+    filename: string;
+    format: string;
+    rowCount: number;
+  };
 
   // Execute report mutation
   const executeReportMutation = useMutation({
-    mutationFn: (params: {
+    mutationFn: async (params: {
       reportCode: string;
       format: "PDF" | "EXCEL" | "CSV";
       filters?: ReportFilters;
-    }) =>
-      client.reports.execute({
+    }) => {
+      const response = await client.reports.execute({
         reportCode: params.reportCode,
         format: params.format,
         filters: params.filters,
-      }),
+      });
+      return unwrapOrpc<ExecuteReportResponse>(response);
+    },
     onSuccess: (data) => {
       setReportResults({
         columns: data.columns,
@@ -161,16 +209,18 @@ function ReportsPage() {
 
   // Export report mutation
   const exportReportMutation = useMutation({
-    mutationFn: (params: {
+    mutationFn: async (params: {
       reportCode: string;
       format: "PDF" | "EXCEL" | "CSV";
       filters?: ReportFilters;
-    }) =>
-      client.reports.export({
+    }) => {
+      const response = await client.reports.export({
         reportCode: params.reportCode,
         format: params.format,
         filters: params.filters,
-      }),
+      });
+      return unwrapOrpc<ExportReportResponse>(response);
+    },
     onSuccess: (data) => {
       // Convert base64 to blob and download
       const binaryString = atob(data.file);

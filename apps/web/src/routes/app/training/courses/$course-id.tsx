@@ -45,10 +45,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app/training/courses/$course-id")({
   component: CourseDetailPage,
 });
+
+// Type definition for course data
+type CourseData = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  duration: number;
+  maxParticipants: number;
+  price: number;
+  isActive: boolean;
+  createdAt: string;
+  schedules: Array<{
+    id: string;
+    startDate: string;
+    endDate: string;
+    location: string;
+    instructor: string;
+    status: string;
+    enrollmentCount: number;
+  }>;
+};
 
 const CATEGORY_LABELS: Record<string, string> = {
   HUMAN_RESOURCES: "Human Resources",
@@ -76,10 +99,11 @@ function CourseDetailPage() {
     instructor: "",
   });
 
-  const { data: course, isLoading } = useQuery({
+  const { data: courseRaw, isLoading } = useQuery({
     queryKey: ["training-course", courseId],
     queryFn: () => client.training.getCourse({ id: courseId }),
   });
+  const course = unwrapOrpc<CourseData>(courseRaw);
 
   const createScheduleMutation = useMutation({
     mutationFn: (data: {

@@ -109,9 +109,9 @@ export const clientServicesRouter = {
       });
 
       if (serviceDefinitions.length !== serviceIds.length) {
-        throw new Error(
-          `Invalid service IDs: expected ${serviceIds.length}, found ${serviceDefinitions.length}`
-        );
+        throw new ORPCError("BAD_REQUEST", {
+          message: `Invalid service IDs: expected ${serviceIds.length}, found ${serviceDefinitions.length}`,
+        });
       }
 
       // Create service selection records
@@ -264,7 +264,9 @@ export const clientServicesRouter = {
       });
 
       if (!selection) {
-        throw new Error("Service selection not found");
+        throw new ORPCError("NOT_FOUND", {
+          message: "Service selection not found",
+        });
       }
 
       // Fetch the document
@@ -273,7 +275,9 @@ export const clientServicesRouter = {
       });
 
       if (!doc) {
-        throw new Error("Document not found");
+        throw new ORPCError("NOT_FOUND", {
+          message: "Document not found",
+        });
       }
 
       // Add to uploadedDocuments array

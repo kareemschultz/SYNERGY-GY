@@ -22,8 +22,8 @@ import {
 type ScheduleTableProps = {
   schedules: Array<{
     id: string;
-    startDate: Date;
-    endDate: Date;
+    startDate: string | Date;
+    endDate: string | Date;
     location: string;
     instructor: string;
     status: string;

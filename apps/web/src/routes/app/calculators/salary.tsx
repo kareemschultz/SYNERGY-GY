@@ -44,6 +44,23 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
+
+// Types for tax rates response
+type TaxRatesResponse = {
+  paye: {
+    firstBracketRate: number;
+    firstBracketThreshold: number;
+    secondBracketRate: number;
+  };
+  nis: {
+    employeeRate: number;
+    monthlyCeiling: number;
+  };
+  salary: {
+    gratuityRate: number;
+  };
+};
 
 export const Route = createFileRoute("/app/calculators/salary")({
   component: SalaryCalculator,
@@ -144,13 +161,14 @@ function SalaryCalculator() {
   const [result, setResult] = useState<SalaryResult | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const { data: taxRates } = useQuery({
+  const { data: taxRatesRaw } = useQuery({
     queryKey: ["taxRates"],
     queryFn: () => client.taxCalculators.getTaxRates(),
   });
+  const taxRates = unwrapOrpc<TaxRatesResponse>(taxRatesRaw);
 
   const calculateMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       grossSalary: number;
       frequency: PayFrequency;
       includeGratuity: boolean;
@@ -158,7 +176,10 @@ function SalaryCalculator() {
       qualificationLevel?: QualificationLevel;
       numberOfChildren?: number;
       otherDeductions?: number;
-    }) => client.taxCalculators.calculateSalary(data),
+    }) => {
+      const response = await client.taxCalculators.calculateSalary(data);
+      return unwrapOrpc<SalaryResult>(response);
+    },
     onSuccess: (data) => {
       setResult(data);
     },

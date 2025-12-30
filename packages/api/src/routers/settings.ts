@@ -1,4 +1,5 @@
 import { db, user } from "@SYNERGY-GY/db";
+import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure } from "../index";
@@ -18,7 +19,9 @@ export const settingsRouter = {
   getProfile: protectedProcedure.handler(async ({ context }) => {
     const userId = context.session?.user?.id;
     if (!userId) {
-      throw new Error("User not authenticated");
+      throw new ORPCError("UNAUTHORIZED", {
+        message: "User not authenticated",
+      });
     }
 
     const userData = await db.query.user.findFirst({
@@ -33,7 +36,9 @@ export const settingsRouter = {
     });
 
     if (!userData) {
-      throw new Error("User not found");
+      throw new ORPCError("NOT_FOUND", {
+        message: "User not found",
+      });
     }
 
     return userData;
@@ -45,7 +50,9 @@ export const settingsRouter = {
     .handler(async ({ context, input }) => {
       const userId = context.session?.user?.id;
       if (!userId) {
-        throw new Error("User not authenticated");
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "User not authenticated",
+        });
       }
 
       await db
@@ -66,7 +73,9 @@ export const settingsRouter = {
   getActiveSessions: protectedProcedure.handler(async ({ context }) => {
     const userId = context.session?.user?.id;
     if (!userId) {
-      throw new Error("User not authenticated");
+      throw new ORPCError("UNAUTHORIZED", {
+        message: "User not authenticated",
+      });
     }
 
     const sessions = await db.query.session.findMany({
@@ -98,12 +107,16 @@ export const settingsRouter = {
     .handler(async ({ context, input }) => {
       const userId = context.session?.user?.id;
       if (!userId) {
-        throw new Error("User not authenticated");
+        throw new ORPCError("UNAUTHORIZED", {
+          message: "User not authenticated",
+        });
       }
 
       // Prevent revoking current session
       if (input.sessionId === context.session?.session.id) {
-        throw new Error("Cannot revoke current session");
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Cannot revoke current session",
+        });
       }
 
       const { session: sessionTable } = await import(

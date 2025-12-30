@@ -26,6 +26,31 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
+
+// Types for document data
+type FulfillmentProgress = {
+  total: number;
+  uploaded: number;
+};
+
+type ServiceDocument = {
+  id: string;
+  serviceName: string;
+  status: string;
+  requiredDocuments: string[];
+  uploadedDocuments: Array<{ requirementName: string; documentId: string }>;
+};
+
+type DocumentItem = {
+  id: string;
+  originalName: string;
+  category: string;
+  fileSize: number;
+  createdAt: string;
+  expirationDate?: string;
+  client?: { id: string } | null;
+};
 
 type ClientDocumentsTabProps = {
   clientId: string;
@@ -89,23 +114,30 @@ function getExpirationUrgency(daysUntil: number): {
 export function ClientDocumentsTab({ clientId }: ClientDocumentsTabProps) {
   const [view, setView] = useState("service");
 
-  const { data: progress } = useQuery({
+  const { data: progressRaw } = useQuery({
     queryKey: ["clientServices", "getFulfillmentProgress", clientId],
     queryFn: () => client.clientServices.getFulfillmentProgress({ clientId }),
   });
-  const { data: services } = useQuery({
+  const progress = unwrapOrpc<FulfillmentProgress>(progressRaw);
+
+  const { data: servicesRaw } = useQuery({
     queryKey: ["clientServices", "getByClient", clientId],
     queryFn: () => client.clientServices.getByClient({ clientId }),
   });
-  const { data: allDocuments } = useQuery({
+  const services = unwrapOrpc<ServiceDocument[]>(servicesRaw);
+
+  const { data: allDocumentsRaw } = useQuery({
     queryKey: ["documents", "getByClient", clientId],
     queryFn: () => client.documents.getByClient({ clientId }),
   });
-  const { data: expiringDocuments, isLoading: expiringLoading } = useQuery({
+  const allDocuments = unwrapOrpc<DocumentItem[]>(allDocumentsRaw);
+
+  const { data: expiringDocumentsRaw, isLoading: expiringLoading } = useQuery({
     queryKey: ["documents", "getExpiring", 90],
     queryFn: () => client.documents.getExpiring({ daysAhead: 90 }),
     enabled: view === "expiring",
   });
+  const expiringDocuments = unwrapOrpc<DocumentItem[]>(expiringDocumentsRaw);
 
   // Filter expiring documents for this client
   const clientExpiringDocs = expiringDocuments?.filter(

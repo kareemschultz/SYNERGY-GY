@@ -25,6 +25,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { client, queryClient } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
+
+// Types for calendar data
+type CalendarDeadline = {
+  id: string;
+  title: string;
+  dueDate: Date;
+  type: string;
+  priority: string;
+  isCompleted: boolean;
+  recurrencePattern?: string;
+  parentDeadlineId?: string | null;
+  client?: { id: string; displayName: string } | null;
+  matter?: { id: string; referenceNumber: string } | null;
+};
+
+type DeadlineStats = {
+  overdue: number;
+  dueThisWeek: number;
+  completedThisMonth: number;
+  totalPending: number;
+};
 
 export const Route = createFileRoute("/app/calendar/")({
   component: CalendarPage,
@@ -84,7 +106,7 @@ function CalendarPage() {
     0
   );
 
-  const { data: calendarData, isLoading } = useQuery({
+  const { data: calendarDataRaw, isLoading } = useQuery({
     queryKey: [
       "calendarData",
       firstDay.toISOString(),
@@ -101,21 +123,25 @@ function CalendarPage() {
             : (businessFilter as "GCMC" | "KAJ"),
       }),
   });
+  const calendarData = unwrapOrpc<CalendarDeadline[]>(calendarDataRaw);
 
-  const { data: stats } = useQuery({
+  const { data: statsRaw } = useQuery({
     queryKey: ["deadlineStats"],
     queryFn: () => client.deadlines.getStats(),
   });
+  const stats = unwrapOrpc<DeadlineStats>(statsRaw);
 
-  const { data: overdue } = useQuery({
+  const { data: overdueRaw } = useQuery({
     queryKey: ["overdueDeadlines"],
     queryFn: () => client.deadlines.getOverdue(),
   });
+  const overdue = unwrapOrpc<CalendarDeadline[]>(overdueRaw);
 
-  const { data: upcoming } = useQuery({
+  const { data: upcomingRaw } = useQuery({
     queryKey: ["upcomingDeadlines"],
     queryFn: () => client.deadlines.getUpcoming({ days: 7, limit: 10 }),
   });
+  const upcoming = unwrapOrpc<CalendarDeadline[]>(upcomingRaw);
 
   const completeMutation = useMutation({
     mutationFn: (id: string) => client.deadlines.complete({ id }),

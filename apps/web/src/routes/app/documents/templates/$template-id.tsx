@@ -30,6 +30,17 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ALL_PLACEHOLDERS } from "@/lib/template-placeholders";
 import { client, queryClient } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
+
+// Type for template data
+type TemplateData = {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  business: string | null;
+  content: string;
+};
 
 export const Route = createFileRoute("/app/documents/templates/$template-id")({
   component: TemplateDetailPage,
@@ -47,13 +58,14 @@ function TemplateDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
 
   const {
-    data: template,
+    data: templateRaw,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["template", templateId],
     queryFn: () => client.documents.templates.getById({ id: templateId }),
   });
+  const template = unwrapOrpc<TemplateData>(templateRaw);
 
   // Populate form when template loads
   useEffect(() => {

@@ -33,10 +33,38 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { client } from "@/utils/orpc";
+import { unwrapOrpc } from "@/utils/orpc-response";
 
 export const Route = createFileRoute("/app/analytics/")({
   component: AnalyticsPage,
 });
+
+// Type definitions for analytics data
+type KPIsData = {
+  clients: { total: number; growth: number; newThisMonth: number };
+  matters: { total: number; completedThisMonth: number };
+  deadlines: { completionRate: number; overdue: number };
+  revenue: { ytd: number; thisMonth: number; growth: number };
+};
+
+type TrendData = {
+  month: string;
+  revenue: number;
+  clients: number;
+  matters: number;
+}[];
+
+type ChartData = {
+  name: string;
+  value: number;
+  fill?: string;
+}[];
+
+type StaffWorkloadData = {
+  name: string;
+  activeMatters: number;
+  pendingDeadlines: number;
+}[];
 
 // Color palette for charts
 const COLORS = [
@@ -74,7 +102,7 @@ function AnalyticsPage() {
 
   // Fetch KPIs
   const {
-    data: kpis,
+    data: kpisRaw,
     isLoading: kpisLoading,
     isError: kpisError,
     error: kpisErrorDetails,
@@ -84,13 +112,13 @@ function AnalyticsPage() {
   });
 
   // Fetch monthly trends
-  const { data: trends, isLoading: trendsLoading } = useQuery({
+  const { data: trendsRaw, isLoading: trendsLoading } = useQuery({
     queryKey: ["analytics", "getMonthlyTrends", 12],
     queryFn: () => client.analytics.getMonthlyTrends({ months: 12 }),
   });
 
   // Fetch matters by status
-  const { data: mattersByStatus, isLoading: mattersLoading } = useQuery({
+  const { data: mattersByStatusRaw, isLoading: mattersLoading } = useQuery({
     queryKey: ["dashboard", "getMattersByStatus"],
     queryFn: () => client.dashboard.getMattersByStatus(),
   });
@@ -101,34 +129,46 @@ function AnalyticsPage() {
   };
 
   // Fetch matters by business
-  const { data: mattersByBusiness } = useQuery({
+  const { data: mattersByBusinessRaw } = useQuery({
     queryKey: ["dashboard", "getMattersByBusiness"],
     queryFn: () => client.dashboard.getMattersByBusiness(),
   });
 
   // Fetch deadline distribution
-  const { data: deadlineDistribution } = useQuery({
+  const { data: deadlineDistributionRaw } = useQuery({
     queryKey: ["analytics", "getDeadlineDistribution"],
     queryFn: () => client.analytics.getDeadlineDistribution(),
   });
 
   // Fetch client type distribution
-  const { data: clientTypes } = useQuery({
+  const { data: clientTypesRaw } = useQuery({
     queryKey: ["analytics", "getClientTypeDistribution"],
     queryFn: () => client.analytics.getClientTypeDistribution(),
   });
 
   // Fetch revenue by business
-  const { data: revenueByBusiness } = useQuery({
+  const { data: revenueByBusinessRaw } = useQuery({
     queryKey: ["analytics", "getRevenueByBusiness"],
     queryFn: () => client.analytics.getRevenueByBusiness(),
   });
 
   // Fetch staff workload
-  const { data: staffWorkload } = useQuery({
+  const { data: staffWorkloadRaw } = useQuery({
     queryKey: ["analytics", "getStaffWorkload"],
     queryFn: () => client.analytics.getStaffWorkload(),
   });
+
+  // Unwrap oRPC response envelopes
+  const kpis = unwrapOrpc<KPIsData>(kpisRaw);
+  const trends = unwrapOrpc<TrendData>(trendsRaw);
+  const mattersByStatus =
+    unwrapOrpc<Record<string, number>>(mattersByStatusRaw);
+  const mattersByBusiness =
+    unwrapOrpc<Record<string, number>>(mattersByBusinessRaw);
+  const deadlineDistribution = unwrapOrpc<ChartData>(deadlineDistributionRaw);
+  const clientTypes = unwrapOrpc<ChartData>(clientTypesRaw);
+  const revenueByBusiness = unwrapOrpc<ChartData>(revenueByBusinessRaw);
+  const staffWorkload = unwrapOrpc<StaffWorkloadData>(staffWorkloadRaw);
 
   // Transform matters by status for pie chart
   const matterStatusData = mattersByStatus
