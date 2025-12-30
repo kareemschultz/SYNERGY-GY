@@ -4,8 +4,10 @@ import {
   BookOpen,
   Briefcase,
   Download,
+  FileText,
   Loader2,
   Mail,
+  MailCheck,
   Shield,
   UserCheck,
   UserCog,
@@ -177,10 +179,30 @@ function AdminDashboardPage() {
               title="Services Management"
             />
             <QuickActionCard
+              description="Manage email notification templates"
+              href="/app/admin/email-templates"
+              icon={MailCheck}
+              title="Email Templates"
+            />
+          </div>
+        </div>
+
+        {/* Quick Actions - Client & Portal */}
+        <div className="mb-8">
+          <h2 className="mb-4 font-semibold text-lg">Client & Portal</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <QuickActionCard
               description="Manage client portal access invitations"
               href="/app/admin/portal-invites"
               icon={Mail}
               title="Portal Invites"
+            />
+            <QuickActionCard
+              description="Document templates for client matters"
+              href="/app/admin/document-templates"
+              icon={FileText}
+              isDisabled
+              title="Document Templates"
             />
           </div>
         </div>
