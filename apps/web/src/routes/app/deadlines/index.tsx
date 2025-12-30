@@ -566,7 +566,7 @@ function DeadlinesPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {templates.map((template) => (
+                {templates?.map((template) => (
                   <Button
                     key={template.id}
                     onClick={() =>
