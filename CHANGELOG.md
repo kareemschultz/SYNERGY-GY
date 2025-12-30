@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Appointment Reminder Processor** - December 29, 2024
+  - Automated reminder processor that checks every 5 minutes for scheduled reminders
+  - Sends email reminders to clients 24h, 2h, and 1h before appointments
+  - Supports IN_PERSON, VIDEO, and PHONE appointment types
+  - Gracefully handles edge cases: missing emails, cancelled appointments, orphaned reminders
+  - Added appointment reminder email templates (HTML and plain text)
+  - **New Files**: `packages/api/src/utils/reminder-processor.ts`
+  - **Modified**: `packages/api/src/utils/email.ts`, `apps/server/src/index.ts`
+
 - **Missing Report Types Implementation** - December 29, 2024
   - Added `CLIENT_ACTIVITY` report: Shows matters, documents, and activity per client
   - Added `MATTER_REVENUE` report: Revenue breakdown by service type and business

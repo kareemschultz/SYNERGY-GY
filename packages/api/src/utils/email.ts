@@ -100,6 +100,20 @@ export type DeadlineApproachingData = {
   portalUrl: string;
 };
 
+export type AppointmentReminderData = {
+  recipientEmail: string;
+  recipientName: string;
+  appointmentTitle: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  durationMinutes: number;
+  locationType: string;
+  location?: string;
+  assignedStaff?: string;
+  reminderType: "24h" | "2h" | "1h";
+  portalUrl: string;
+};
+
 // Email service class
 class EmailService {
   private resend: Resend | null = null;
@@ -335,6 +349,25 @@ class EmailService {
     await this.sendEmail({
       to: data.recipientEmail,
       subject: `Deadline Approaching: ${data.deadlineTitle}`,
+      html,
+      text,
+    });
+  }
+
+  /**
+   * Send appointment reminder notification
+   */
+  async sendAppointmentReminder(data: AppointmentReminderData): Promise<void> {
+    const html = this.getAppointmentReminderTemplate(data);
+    const text = this.getAppointmentReminderTextTemplate(data);
+
+    const reminderLabel =
+      data.reminderType === "24h"
+        ? "Tomorrow"
+        : `In ${data.reminderType === "2h" ? "2 Hours" : "1 Hour"}`;
+    await this.sendEmail({
+      to: data.recipientEmail,
+      subject: `Appointment Reminder (${reminderLabel}): ${data.appointmentTitle}`,
       html,
       text,
     });
@@ -668,6 +701,48 @@ class EmailService {
     return this.getEmailLayout(content, "Deadline Approaching");
   }
 
+  private getAppointmentReminderTemplate(
+    data: AppointmentReminderData
+  ): string {
+    const reminderLabels = {
+      "24h": "tomorrow",
+      "2h": "in 2 hours",
+      "1h": "in 1 hour",
+    } as const;
+    const reminderLabel = reminderLabels[data.reminderType];
+    const urgencyClass = data.reminderType === "24h" ? "info-box" : "warning";
+
+    let locationDisplay = "Phone Call";
+    if (data.locationType === "IN_PERSON") {
+      locationDisplay = data.location
+        ? `In Person at ${data.location}`
+        : "In Person";
+    } else if (data.locationType === "VIDEO") {
+      locationDisplay = data.location
+        ? `Video Call - ${data.location}`
+        : "Video Call";
+    }
+
+    const content = `
+      <h2>Appointment Reminder</h2>
+      <p>Hello ${data.recipientName},</p>
+      <p>This is a friendly reminder that you have an appointment ${reminderLabel}:</p>
+      <div class="${urgencyClass}">
+        <p><strong>${data.appointmentTitle}</strong></p>
+        <p><strong>Date:</strong> ${data.appointmentDate}</p>
+        <p><strong>Time:</strong> ${data.appointmentTime}</p>
+        <p><strong>Duration:</strong> ${data.durationMinutes} minutes</p>
+        <p><strong>Type:</strong> ${locationDisplay}</p>
+        ${data.assignedStaff ? `<p><strong>With:</strong> ${data.assignedStaff}</p>` : ""}
+      </div>
+      <center>
+        <a href="${data.portalUrl}" class="button">View in Portal</a>
+      </center>
+      <p>If you need to reschedule or cancel, please contact us as soon as possible.</p>
+    `;
+    return this.getEmailLayout(content, "Appointment Reminder");
+  }
+
   // ===========================
   // Plain Text Email Templates
   // ===========================
@@ -923,6 +998,51 @@ Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
+
+  private getAppointmentReminderTextTemplate(
+    data: AppointmentReminderData
+  ): string {
+    const reminderLabels = {
+      "24h": "tomorrow",
+      "2h": "in 2 hours",
+      "1h": "in 1 hour",
+    } as const;
+    const reminderLabel = reminderLabels[data.reminderType];
+
+    let locationDisplay = "Phone Call";
+    if (data.locationType === "IN_PERSON") {
+      locationDisplay = data.location
+        ? `In Person at ${data.location}`
+        : "In Person";
+    } else if (data.locationType === "VIDEO") {
+      locationDisplay = data.location
+        ? `Video Call - ${data.location}`
+        : "Video Call";
+    }
+
+    return `
+Appointment Reminder
+
+Hello ${data.recipientName},
+
+This is a friendly reminder that you have an appointment ${reminderLabel}:
+
+${data.appointmentTitle}
+Date: ${data.appointmentDate}
+Time: ${data.appointmentTime}
+Duration: ${data.durationMinutes} minutes
+Type: ${locationDisplay}${data.assignedStaff ? `\nWith: ${data.assignedStaff}` : ""}
+
+View in portal at: ${data.portalUrl}
+
+If you need to reschedule or cancel, please contact us as soon as possible.
+
+---
+GK-Nexus
+Green Crescent Management Consultancy & KAJ Accountancy Services
+${this.appUrl}
+    `;
+  }
 }
 
 // Export singleton instance
@@ -951,3 +1071,5 @@ export const sendMatterCreatedNotification = (
 ) => emailService.sendMatterCreatedNotification(data);
 export const sendDeadlineApproaching = (data: DeadlineApproachingData) =>
   emailService.sendDeadlineApproaching(data);
+export const sendAppointmentReminder = (data: AppointmentReminderData) =>
+  emailService.sendAppointmentReminder(data);

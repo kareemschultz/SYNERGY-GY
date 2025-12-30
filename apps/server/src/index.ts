@@ -44,6 +44,11 @@ await runInitialSetup();
 // Start backup scheduler for automatic backups
 startBackupScheduler();
 
+// Start appointment reminder processor for sending scheduled reminders
+import("@SYNERGY-GY/api/utils/reminder-processor").then(
+  ({ startReminderProcessor }) => startReminderProcessor()
+);
+
 // Storage configuration
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./data/uploads";
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
