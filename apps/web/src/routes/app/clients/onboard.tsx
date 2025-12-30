@@ -153,7 +153,6 @@ function ClientOnboardingWizard() {
       }, 1500);
     },
     onError: (error) => {
-      console.error(error);
       toast.error(error.message || "Failed to create client");
     },
   });

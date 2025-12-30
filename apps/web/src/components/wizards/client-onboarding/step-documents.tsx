@@ -79,19 +79,9 @@ export function StepDocuments({ data, onUpdate }: StepDocumentsProps) {
           }));
 
         setServicesWithDocs(services);
-
-        // Log any failed service lookups
-        const failedResults = results.filter(
-          (result) => result.status === "rejected"
-        );
-        if (failedResults.length > 0) {
-          console.warn(
-            `Failed to fetch ${failedResults.length} service(s):`,
-            failedResults
-          );
-        }
-      } catch (error) {
-        console.error("Failed to fetch service details:", error);
+        // Some services may have failed to fetch - continue with available ones
+      } catch (_error) {
+        // Failed to fetch service details - continue without them
       } finally {
         setIsLoadingServices(false);
       }

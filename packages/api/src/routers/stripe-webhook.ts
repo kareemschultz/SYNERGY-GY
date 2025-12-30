@@ -5,10 +5,223 @@
  * This is a Hono route handler, not an oRPC procedure.
  */
 
-import { db, invoice, invoicePayment } from "@SYNERGY-GY/db";
+import {
+  db,
+  invoice,
+  invoiceLineItem,
+  invoicePayment,
+  recurringInvoice,
+  recurringInvoiceLineItem,
+} from "@SYNERGY-GY/db";
 import { eq } from "drizzle-orm";
 import type { Context } from "hono";
 import type Stripe from "stripe";
+
+/**
+ * Generate next invoice number
+ */
+async function generateInvoiceNumber(
+  business: "GCMC" | "KAJ"
+): Promise<string> {
+  const year = new Date().getFullYear();
+  const prefix = business === "GCMC" ? "GC" : "KJ";
+
+  // Get the latest invoice number for this year and business
+  const latestInvoice = await db.query.invoice.findFirst({
+    where: eq(invoice.business, business),
+    orderBy: (inv, { desc }) => [desc(inv.createdAt)],
+  });
+
+  let sequence = 1;
+  if (latestInvoice?.invoiceNumber) {
+    const match = latestInvoice.invoiceNumber.match(
+      new RegExp(`${prefix}-${year}-(\\d+)`)
+    );
+    if (match?.[1]) {
+      sequence = Number.parseInt(match[1], 10) + 1;
+    }
+  }
+
+  return `${prefix}-${year}-${sequence.toString().padStart(4, "0")}`;
+}
+
+/**
+ * Calculate next invoice date based on interval
+ */
+function calculateNextInvoiceDate(
+  currentDate: Date,
+  interval: "WEEKLY" | "BIWEEKLY" | "MONTHLY" | "QUARTERLY" | "YEARLY"
+): Date {
+  const nextDate = new Date(currentDate);
+
+  switch (interval) {
+    case "WEEKLY":
+      nextDate.setDate(nextDate.getDate() + 7);
+      break;
+    case "BIWEEKLY":
+      nextDate.setDate(nextDate.getDate() + 14);
+      break;
+    case "MONTHLY":
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+    case "QUARTERLY":
+      nextDate.setMonth(nextDate.getMonth() + 3);
+      break;
+    case "YEARLY":
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      break;
+    default: {
+      // Exhaustive check - should never reach here
+      const _exhaustive: never = interval;
+      throw new Error(`Unknown interval: ${_exhaustive}`);
+    }
+  }
+
+  return nextDate;
+}
+
+/**
+ * Handle recurring payment - generates invoice from recurring template
+ */
+async function handleRecurringPayment(subscriptionId: string): Promise<void> {
+  // Find the recurring invoice template by Stripe subscription ID
+  const recurringInv = await db.query.recurringInvoice.findFirst({
+    where: eq(recurringInvoice.stripeSubscriptionId, subscriptionId),
+  });
+
+  if (!recurringInv) {
+    console.warn(
+      `[StripeWebhook] No recurring invoice found for subscription: ${subscriptionId}`
+    );
+    return;
+  }
+
+  if (recurringInv.status !== "ACTIVE") {
+    console.log(
+      `[StripeWebhook] Recurring invoice is not active: ${recurringInv.id}`
+    );
+    return;
+  }
+
+  // Get the recurring invoice line items
+  const lineItems = await db.query.recurringInvoiceLineItem.findMany({
+    where: eq(recurringInvoiceLineItem.recurringInvoiceId, recurringInv.id),
+    orderBy: (item, { asc }) => [asc(item.sortOrder)],
+  });
+
+  // Generate new invoice number
+  const invoiceNumber = await generateInvoiceNumber(recurringInv.business);
+
+  // Calculate totals
+  const subtotal = lineItems.reduce(
+    (sum, item) => sum + Number.parseFloat(item.amount),
+    0
+  );
+  const taxAmount = Number.parseFloat(recurringInv.taxAmount);
+  const totalAmount = subtotal + taxAmount;
+  const today = new Date().toISOString().split("T")[0] ?? "";
+  const dueDate =
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0] ?? "";
+
+  // Create new invoice
+  const [newInvoice] = await db
+    .insert(invoice)
+    .values({
+      invoiceNumber,
+      business: recurringInv.business,
+      clientId: recurringInv.clientId,
+      matterId: recurringInv.matterId,
+      status: "SENT",
+      invoiceDate: today,
+      dueDate,
+      subtotal: subtotal.toFixed(2),
+      taxAmount: taxAmount.toFixed(2),
+      totalAmount: totalAmount.toFixed(2),
+      amountPaid: "0",
+      amountDue: totalAmount.toFixed(2),
+      notes: recurringInv.notes,
+      terms: recurringInv.terms,
+      createdById: recurringInv.createdById,
+    })
+    .returning();
+
+  if (!newInvoice) {
+    console.error(
+      `[StripeWebhook] Failed to create invoice for recurring: ${recurringInv.id}`
+    );
+    return;
+  }
+
+  // Create line items
+  if (lineItems.length > 0) {
+    await db.insert(invoiceLineItem).values(
+      lineItems.map((item, idx) => ({
+        invoiceId: newInvoice.id,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        amount: item.amount,
+        serviceTypeId: item.serviceTypeId,
+        sortOrder: idx,
+      }))
+    );
+  }
+
+  // Calculate next invoice date
+  const nextDate = calculateNextInvoiceDate(new Date(), recurringInv.interval);
+
+  // Check if we've reached the end date
+  const shouldComplete =
+    recurringInv.endDate && new Date(nextDate) > new Date(recurringInv.endDate);
+
+  // Update recurring invoice
+  await db
+    .update(recurringInvoice)
+    .set({
+      invoicesGenerated: recurringInv.invoicesGenerated + 1,
+      lastInvoiceId: newInvoice.id,
+      lastGeneratedAt: new Date(),
+      nextInvoiceDate: nextDate.toISOString().split("T")[0],
+      status: shouldComplete ? "COMPLETED" : "ACTIVE",
+    })
+    .where(eq(recurringInvoice.id, recurringInv.id));
+
+  console.log(
+    `[StripeWebhook] Generated invoice ${invoiceNumber} from recurring template ${recurringInv.id}`
+  );
+}
+
+/**
+ * Handle subscription cancellation - marks recurring invoice as cancelled
+ */
+async function handleSubscriptionCancelled(
+  subscriptionId: string
+): Promise<void> {
+  // Find and update the recurring invoice
+  const recurringInv = await db.query.recurringInvoice.findFirst({
+    where: eq(recurringInvoice.stripeSubscriptionId, subscriptionId),
+  });
+
+  if (!recurringInv) {
+    console.warn(
+      `[StripeWebhook] No recurring invoice found for cancelled subscription: ${subscriptionId}`
+    );
+    return;
+  }
+
+  await db
+    .update(recurringInvoice)
+    .set({
+      status: "CANCELLED",
+    })
+    .where(eq(recurringInvoice.id, recurringInv.id));
+
+  console.log(
+    `[StripeWebhook] Marked recurring invoice ${recurringInv.id} as CANCELLED`
+  );
+}
 
 /**
  * Handle checkout session completed - records payment for invoice
@@ -128,7 +341,9 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
         console.log(
           `[StripeWebhook] Recurring payment succeeded for subscription ${subscriptionId}`
         );
-        // TODO: Handle recurring invoice generation
+        if (subscriptionId) {
+          await handleRecurringPayment(subscriptionId);
+        }
         break;
       }
 
@@ -137,7 +352,9 @@ export async function handleStripeWebhook(c: Context): Promise<Response> {
         console.log(
           `[StripeWebhook] Subscription cancelled: ${subscriptionId}`
         );
-        // TODO: Update recurring invoice status to CANCELLED
+        if (subscriptionId) {
+          await handleSubscriptionCancelled(subscriptionId);
+        }
         break;
       }
 

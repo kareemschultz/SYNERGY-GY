@@ -588,8 +588,8 @@ function PublicBookingPage() {
           date: dateStr,
         });
         setAvailableSlots(result.slots || []);
-      } catch (err) {
-        console.error("[Booking] Failed to fetch slots:", err);
+      } catch (_err) {
+        // Failed to fetch slots - show empty list
         setAvailableSlots([]);
       } finally {
         setIsFetchingSlots(false);

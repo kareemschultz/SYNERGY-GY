@@ -106,8 +106,8 @@ export const link = new RPCLink({
         method: "POST",
         credentials: "include",
       });
-    } catch (e) {
-      console.error("[oRPC] URL parsing error:", e);
+    } catch (_e) {
+      // URL parsing error - fallback to original URL
       return fetch(urlString, {
         ...options,
         method: "POST",

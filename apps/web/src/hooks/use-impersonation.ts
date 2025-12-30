@@ -58,8 +58,8 @@ export function useImpersonation() {
     if (token) {
       try {
         await endImpersonationMutation.mutateAsync({ token });
-      } catch (e) {
-        console.error("Failed to end impersonation session cleanly", e);
+      } catch (_e) {
+        // Ignore error - cleanup will proceed regardless
       }
       sessionStorage.removeItem("impersonation_token");
       sessionStorage.removeItem("impersonated_client_id");

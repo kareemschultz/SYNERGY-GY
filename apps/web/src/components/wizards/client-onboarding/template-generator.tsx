@@ -153,8 +153,8 @@ export function TemplateGenerator({
       onTemplateGenerated?.(generated.fileName, generated.content);
       setPreviewOpen(false);
       setSelectedTemplate(null);
-    } catch (error) {
-      console.error("Failed to generate template:", error);
+    } catch (_error) {
+      // Template generation failed - user can retry
     }
   };
 

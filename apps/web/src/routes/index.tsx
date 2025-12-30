@@ -22,9 +22,8 @@ function RootRedirect() {
           // No session, redirect to login
           window.location.href = "/login";
         }
-      } catch (error) {
+      } catch (_error) {
         // Error checking auth, default to login
-        console.error("Auth check failed:", error);
         window.location.href = "/login";
       }
     }
