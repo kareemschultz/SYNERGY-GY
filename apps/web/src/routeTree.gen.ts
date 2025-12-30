@@ -39,6 +39,7 @@ import { Route as AppMattersIndexRouteImport } from './routes/app/matters/index'
 import { Route as AppKnowledgeBaseIndexRouteImport } from './routes/app/knowledge-base/index'
 import { Route as AppInvoicesIndexRouteImport } from './routes/app/invoices/index'
 import { Route as AppDocumentsIndexRouteImport } from './routes/app/documents/index'
+import { Route as AppDeadlinesIndexRouteImport } from './routes/app/deadlines/index'
 import { Route as AppClientsIndexRouteImport } from './routes/app/clients/index'
 import { Route as AppCalendarIndexRouteImport } from './routes/app/calendar/index'
 import { Route as AppCalculatorsIndexRouteImport } from './routes/app/calculators/index'
@@ -238,6 +239,11 @@ const AppInvoicesIndexRoute = AppInvoicesIndexRouteImport.update({
 const AppDocumentsIndexRoute = AppDocumentsIndexRouteImport.update({
   id: '/documents/',
   path: '/documents/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDeadlinesIndexRoute = AppDeadlinesIndexRouteImport.update({
+  id: '/deadlines/',
+  path: '/deadlines/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppClientsIndexRoute = AppClientsIndexRouteImport.update({
@@ -561,6 +567,7 @@ export interface FileRoutesByFullPath {
   '/app/calculators': typeof AppCalculatorsIndexRoute
   '/app/calendar': typeof AppCalendarIndexRoute
   '/app/clients': typeof AppClientsIndexRoute
+  '/app/deadlines': typeof AppDeadlinesIndexRoute
   '/app/documents': typeof AppDocumentsIndexRoute
   '/app/invoices': typeof AppInvoicesIndexRoute
   '/app/knowledge-base': typeof AppKnowledgeBaseIndexRoute
@@ -642,6 +649,7 @@ export interface FileRoutesByTo {
   '/app/calculators': typeof AppCalculatorsIndexRoute
   '/app/calendar': typeof AppCalendarIndexRoute
   '/app/clients': typeof AppClientsIndexRoute
+  '/app/deadlines': typeof AppDeadlinesIndexRoute
   '/app/documents': typeof AppDocumentsIndexRoute
   '/app/invoices': typeof AppInvoicesIndexRoute
   '/app/knowledge-base': typeof AppKnowledgeBaseIndexRoute
@@ -725,6 +733,7 @@ export interface FileRoutesById {
   '/app/calculators/': typeof AppCalculatorsIndexRoute
   '/app/calendar/': typeof AppCalendarIndexRoute
   '/app/clients/': typeof AppClientsIndexRoute
+  '/app/deadlines/': typeof AppDeadlinesIndexRoute
   '/app/documents/': typeof AppDocumentsIndexRoute
   '/app/invoices/': typeof AppInvoicesIndexRoute
   '/app/knowledge-base/': typeof AppKnowledgeBaseIndexRoute
@@ -809,6 +818,7 @@ export interface FileRouteTypes {
     | '/app/calculators'
     | '/app/calendar'
     | '/app/clients'
+    | '/app/deadlines'
     | '/app/documents'
     | '/app/invoices'
     | '/app/knowledge-base'
@@ -890,6 +900,7 @@ export interface FileRouteTypes {
     | '/app/calculators'
     | '/app/calendar'
     | '/app/clients'
+    | '/app/deadlines'
     | '/app/documents'
     | '/app/invoices'
     | '/app/knowledge-base'
@@ -972,6 +983,7 @@ export interface FileRouteTypes {
     | '/app/calculators/'
     | '/app/calendar/'
     | '/app/clients/'
+    | '/app/deadlines/'
     | '/app/documents/'
     | '/app/invoices/'
     | '/app/knowledge-base/'
@@ -1231,6 +1243,13 @@ declare module '@tanstack/react-router' {
       path: '/documents'
       fullPath: '/app/documents'
       preLoaderRoute: typeof AppDocumentsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/deadlines/': {
+      id: '/app/deadlines/'
+      path: '/deadlines'
+      fullPath: '/app/deadlines'
+      preLoaderRoute: typeof AppDeadlinesIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/clients/': {
@@ -1637,6 +1656,7 @@ interface AppRouteChildren {
   AppCalculatorsIndexRoute: typeof AppCalculatorsIndexRoute
   AppCalendarIndexRoute: typeof AppCalendarIndexRoute
   AppClientsIndexRoute: typeof AppClientsIndexRoute
+  AppDeadlinesIndexRoute: typeof AppDeadlinesIndexRoute
   AppDocumentsIndexRoute: typeof AppDocumentsIndexRoute
   AppInvoicesIndexRoute: typeof AppInvoicesIndexRoute
   AppKnowledgeBaseIndexRoute: typeof AppKnowledgeBaseIndexRoute
@@ -1696,6 +1716,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCalculatorsIndexRoute: AppCalculatorsIndexRoute,
   AppCalendarIndexRoute: AppCalendarIndexRoute,
   AppClientsIndexRoute: AppClientsIndexRoute,
+  AppDeadlinesIndexRoute: AppDeadlinesIndexRoute,
   AppDocumentsIndexRoute: AppDocumentsIndexRoute,
   AppInvoicesIndexRoute: AppInvoicesIndexRoute,
   AppKnowledgeBaseIndexRoute: AppKnowledgeBaseIndexRoute,

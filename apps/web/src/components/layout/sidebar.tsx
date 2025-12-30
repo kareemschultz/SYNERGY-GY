@@ -4,6 +4,7 @@ import {
   Building2,
   Calculator,
   Calendar,
+  CalendarClock,
   Clock,
   FileBarChart2,
   FileText,
@@ -69,6 +70,11 @@ const mainNavItems: NavItem[] = [
     title: "Appointments",
     href: "/app/appointments",
     icon: Clock,
+  },
+  {
+    title: "Deadlines",
+    href: "/app/deadlines",
+    icon: CalendarClock,
   },
   {
     title: "Services",
