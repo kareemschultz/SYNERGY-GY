@@ -98,7 +98,7 @@ const templates: TemplateData[] = [
     description: "Cover letter for work permit application submission",
     category: "LETTER",
     business: "GCMC",
-    content: `GRACE CAMERON MANAGEMENT CONSULTANCY
+    content: `GREEN CRESCENT MANAGEMENT CONSULTANCY
 Georgetown, Guyana
 Tel: [Phone] | Email: [Email]
 
@@ -134,7 +134,7 @@ Yours faithfully,
 
 {{staff.name}}
 {{staff.title}}
-Grace Cameron Management Consultancy`,
+Green Crescent Management Consultancy`,
     placeholders: [...commonPlaceholders],
     sortOrder: 1,
   },
@@ -143,7 +143,7 @@ Grace Cameron Management Consultancy`,
     description: "Cover letter for citizenship application",
     category: "LETTER",
     business: "GCMC",
-    content: `GRACE CAMERON MANAGEMENT CONSULTANCY
+    content: `GREEN CRESCENT MANAGEMENT CONSULTANCY
 Georgetown, Guyana
 
 {{date.today}}
@@ -177,7 +177,7 @@ Yours faithfully,
 
 {{staff.name}}
 {{staff.title}}
-Grace Cameron Management Consultancy`,
+Green Crescent Management Consultancy`,
     placeholders: commonPlaceholders,
     sortOrder: 2,
   },
@@ -232,7 +232,7 @@ Yours faithfully,
 This Agreement is made on {{date.today}}
 
 BETWEEN:
-Grace Cameron Management Consultancy ("the Consultant")
+Green Crescent Management Consultancy ("the Consultant")
 AND
 {{client.displayName}} ("the Client")
 
@@ -325,7 +325,7 @@ WITNESS:
     description: "Certificate for completed training programs",
     category: "CERTIFICATE",
     business: "GCMC",
-    content: `GRACE CAMERON MANAGEMENT CONSULTANCY
+    content: `GREEN CRESCENT MANAGEMENT CONSULTANCY
 
 CERTIFICATE OF COMPLETION
 
@@ -348,9 +348,9 @@ Topics Covered:
 Issued on {{date.today}} at Georgetown, Guyana
 
 _______________________
-Grace Cameron
+Green Crescent Management
 Director
-Grace Cameron Management Consultancy`,
+Green Crescent Management Consultancy`,
     placeholders: commonPlaceholders,
     sortOrder: 20,
   },
@@ -361,7 +361,7 @@ Grace Cameron Management Consultancy`,
     description: "Initial client intake form for immigration services",
     category: "FORM",
     business: "GCMC",
-    content: `GRACE CAMERON MANAGEMENT CONSULTANCY
+    content: `GREEN CRESCENT MANAGEMENT CONSULTANCY
 CLIENT INTAKE FORM - IMMIGRATION SERVICES
 
 Date: {{date.today}}

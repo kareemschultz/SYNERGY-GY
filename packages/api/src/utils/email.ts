@@ -445,7 +445,7 @@ class EmailService {
     </div>
     <div class="footer">
       <p>This email was sent by GK-Nexus</p>
-      <p>Grace Cameron Management Consultancy &amp; KAJ Accountancy Services</p>
+      <p>Green Crescent Management Consultancy &amp; KAJ Accountancy Services</p>
       <p>
         <a href="${this.appUrl}">Visit Portal</a> |
         <a href="${this.appUrl}/support">Get Support</a>
@@ -697,7 +697,7 @@ If you didn't expect this invitation, you can safely ignore this email.
 
 ---
 GK-Nexus
-Grace Cameron Management Consultancy & KAJ Accountancy Services
+Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
@@ -726,7 +726,7 @@ If you have any questions or need assistance, please don't hesitate to reach out
 
 ---
 GK-Nexus
-Grace Cameron Management Consultancy & KAJ Accountancy Services
+Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
@@ -749,7 +749,7 @@ For security reasons, this link can only be used once.
 
 ---
 GK-Nexus
-Grace Cameron Management Consultancy & KAJ Accountancy Services
+Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
@@ -776,7 +776,7 @@ Once your account is set up, you'll have access to the GK-Nexus management syste
 
 ---
 GK-Nexus
-Grace Cameron Management Consultancy & KAJ Accountancy Services
+Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
@@ -800,7 +800,7 @@ If you have any questions about this request, please contact us through the port
 
 ---
 GK-Nexus
-Grace Cameron Management Consultancy & KAJ Accountancy Services
+Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
@@ -825,7 +825,7 @@ You can view all your uploaded documents in your portal at any time.
 
 ---
 GK-Nexus
-Grace Cameron Management Consultancy & KAJ Accountancy Services
+Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
@@ -848,7 +848,7 @@ View full message at: ${data.portalUrl}
 
 ---
 GK-Nexus
-Grace Cameron Management Consultancy & KAJ Accountancy Services
+Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
@@ -872,7 +872,7 @@ Review document at: ${data.reviewUrl}
 
 ---
 GK-Nexus
-Grace Cameron Management Consultancy & KAJ Accountancy Services
+Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
@@ -894,7 +894,7 @@ View in portal at: ${data.portalUrl}
 
 ---
 GK-Nexus
-Grace Cameron Management Consultancy & KAJ Accountancy Services
+Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }
@@ -919,7 +919,7 @@ View details at: ${data.portalUrl}
 
 ---
 GK-Nexus
-Grace Cameron Management Consultancy & KAJ Accountancy Services
+Green Crescent Management Consultancy & KAJ Accountancy Services
 ${this.appUrl}
     `;
   }

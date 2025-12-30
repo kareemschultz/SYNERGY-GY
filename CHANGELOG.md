@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Email Template & Environment Configuration** - December 29, 2024
+  - Fixed incorrect business name: changed "Grace Cameron Management Consultancy" to "Green Crescent Management Consultancy" in all email templates and document templates
+  - Fixed production URLs: updated `BETTER_AUTH_URL`, `CORS_ORIGIN`, and `VITE_SERVER_URL` from localhost to production domain
+  - Ensures all email hyperlinks and business names display correctly in production
+  - **Files**: `packages/api/src/utils/email.ts`, `packages/db/src/seed-document-templates.ts`, `.env`
+
 - **E2E Test Network Stability** - December 24, 2024
   - Fixed `net::ERR_NETWORK_CHANGED` errors causing blank pages in Playwright tests
   - Added Chromium launch args: `--disable-dev-shm-usage`, `--no-sandbox`, `--dns-prefetch-disable`
