@@ -3,9 +3,9 @@ import { RPCLink } from "@orpc/client/fetch";
 import Constants from "expo-constants";
 import { getAuthToken, getPortalToken } from "./auth";
 
-// Type for the API client - using Record for flexibility with the backend types
 // In production, import the actual router type from @SYNERGY-GY/api
-type AppClient = Record<string, unknown>;
+// biome-ignore lint/suspicious/noExplicitAny: oRPC clients require any for dynamic method chaining
+type AppClient = any;
 
 /**
  * API base URL from environment or Expo constants.
