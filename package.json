@@ -73,5 +73,9 @@
       "bun x ultracite fix"
     ]
   },
+  "overrides": {
+    "@types/react": "~19.1.10",
+    "@types/react-dom": "~19.1.10"
+  },
   "packageManager": "bun@1.2.18"
 }
