@@ -17,7 +17,8 @@ test.describe("Calendar & Deadlines", () => {
   });
 
   test("should navigate to calendar page", async ({ page }) => {
-    await page.getByRole("link", { name: "Calendar" }).click();
+    // Use exact: true to avoid matching "View calendar" link
+    await page.getByRole("link", { name: "Calendar", exact: true }).click();
     await expect(page).toHaveURL(CALENDAR_URL_REGEX);
   });
 

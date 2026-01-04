@@ -3,7 +3,7 @@ import {
   matter,
   matterChecklist,
   matterNote,
-  serviceCatalog,
+  serviceType,
 } from "@SYNERGY-GY/db";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
@@ -323,10 +323,24 @@ export const mattersRouter = {
       // Generate reference number
       const referenceNumber = await generateReferenceNumber(input.business);
 
-      // Get default checklist items from service catalog
-      const svcType = await db.query.serviceCatalog.findFirst({
-        where: eq(serviceCatalog.id, input.serviceTypeId),
+      // Get default checklist items from service type
+      const svcType = await db.query.serviceType.findFirst({
+        where: eq(serviceType.id, input.serviceTypeId),
       });
+
+      // Validate service type exists and matches business
+      if (!svcType) {
+        throw new ORPCError("BAD_REQUEST", {
+          message:
+            "Invalid service type. Please select a valid service from the dropdown.",
+        });
+      }
+
+      if (svcType.business !== input.business) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: `Service type "${svcType.name}" is not available for ${input.business}. Please select a service from the correct business.`,
+        });
+      }
 
       const [newMatter] = await db
         .insert(matter)
@@ -345,9 +359,9 @@ export const mattersRouter = {
         });
       }
 
-      // Create default checklist items from document requirements
-      if (svcType?.documentRequirements?.length) {
-        const checklistItems = svcType.documentRequirements.map(
+      // Create default checklist items from service type
+      if (svcType.defaultChecklistItems?.length) {
+        const checklistItems = svcType.defaultChecklistItems.map(
           (item: string, index: number) => ({
             matterId: newMatter.id,
             item,
@@ -399,40 +413,32 @@ export const mattersRouter = {
       return updated;
     }),
 
-  // Get service types for dropdown (uses serviceCatalog table)
+  // Get service types for dropdown (uses serviceType table - FK constraint)
   getServiceTypes: staffProcedure
     .input(z.object({ business: z.enum(businessValues).optional() }))
     .handler(async ({ input, context }) => {
       const accessibleBusinesses = getAccessibleBusinesses(context.staff);
       const businessFilter = input.business || accessibleBusinesses;
 
-      const services = await db.query.serviceCatalog.findMany({
+      const services = await db.query.serviceType.findMany({
         where: and(
-          eq(serviceCatalog.isActive, true),
+          eq(serviceType.isActive, true),
           Array.isArray(businessFilter)
-            ? sql`${serviceCatalog.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
-            : eq(serviceCatalog.business, businessFilter)
+            ? sql`${serviceType.business}::text = ANY(ARRAY[${sql.join(businessFilter, sql`, `)}]::text[])`
+            : eq(serviceType.business, businessFilter)
         ),
-        orderBy: [
-          asc(serviceCatalog.sortOrder),
-          asc(serviceCatalog.displayName),
-        ],
-        with: {
-          category: true,
-        },
+        orderBy: [asc(serviceType.sortOrder), asc(serviceType.name)],
       });
 
       // Map to expected format for frontend compatibility
       return services.map((s) => ({
         id: s.id,
-        name: s.displayName,
-        category:
-          (s.category as { displayName?: string } | null)?.displayName ||
-          "Other",
+        name: s.name,
+        category: s.category || "Other",
         business: s.business,
-        description: s.shortDescription || s.description,
+        description: s.description,
         estimatedDays: s.estimatedDays,
-        defaultFee: s.basePrice,
+        defaultFee: s.defaultFee,
         isActive: s.isActive,
         sortOrder: s.sortOrder,
       }));

@@ -5,6 +5,8 @@ import { login } from "./helpers/auth";
 const CLIENT_DETAIL_URL_REGEX = /\/app\/clients\//;
 const UNEMPLOYED_REGEX = /unemployed/i;
 const CLIENT_WIZARD_REGEX = /wizard|client wizard/i;
+const EMPLOYMENT_INFO_REGEX = /Employment Information/i;
+const SERVICES_COUNT_REGEX = /\d+\s+services?/i;
 
 test.describe("Client Management", () => {
   test.beforeEach(async ({ page }) => {
@@ -71,50 +73,118 @@ test.describe("Client Management", () => {
     // Step 4: Identification (Optional)
     await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 5: Employment (Optional - depends on type, Individual usually has it)
+    // Step 5: Employment (Required for individuals)
+    // Note: The step is titled "Employment & Income" in progress bar, but heading is "Employment Information"
     const employmentHeading = page.getByRole("heading", {
-      name: "Employment & Income",
+      name: EMPLOYMENT_INFO_REGEX,
     });
     if (
-      await employmentHeading.isVisible({ timeout: 2000 }).catch(() => false)
+      await employmentHeading.isVisible({ timeout: 3000 }).catch(() => false)
     ) {
-      // Click on employment status dropdown
-      const statusTrigger = page.getByRole("combobox").first();
-      if (await statusTrigger.isVisible()) {
-        await statusTrigger.click();
-        // Select an option
-        const unemployedOption = page.getByRole("option", {
-          name: UNEMPLOYED_REGEX,
-        });
-        if (
-          await unemployedOption.isVisible({ timeout: 2000 }).catch(() => false)
-        ) {
-          await unemployedOption.click();
-        } else {
-          // Just press escape to close dropdown
-          await page.keyboard.press("Escape");
-        }
-      }
+      // Select Employment Status (required field)
+      const statusTrigger = page.locator("#employmentStatus");
+      await statusTrigger.click();
+      // Select Unemployed option
+      const unemployedOption = page.getByRole("option", {
+        name: UNEMPLOYED_REGEX,
+      });
+      await unemployedOption.click();
+      await page.waitForTimeout(500);
       await page.getByRole("button", { name: "Continue" }).click();
     }
 
-    // Step 6: Services
-    // Select GCMC business
+    // Steps 6-7: Navigate through optional steps (Beneficial Ownership, AML/KYC)
+    // Keep clicking Continue/Skip until we see the GCMC business button (Services step)
     const gcmcButton = page.getByRole("button", { name: "GCMC" });
-    if (await gcmcButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await gcmcButton.click();
+
+    // Try up to 5 times to navigate through optional steps
+    for (let attempt = 0; attempt < 5; attempt++) {
+      // Check if we've reached the Services step
+      if (await gcmcButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+        break;
+      }
+
+      // Try Continue button first
+      const continueBtn = page.getByRole("button", { name: "Continue" });
+      if (await continueBtn.isEnabled({ timeout: 500 }).catch(() => false)) {
+        await continueBtn.click();
+        await page.waitForTimeout(500);
+        continue;
+      }
+
+      // Try Skip button if Continue is disabled
+      const skipBtn = page.getByRole("button", { name: "Skip" });
+      if (await skipBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+        await skipBtn.click();
+        await page.waitForTimeout(500);
+      }
     }
 
-    // Wait for services to load (longer wait)
-    await page.waitForTimeout(2000);
+    // Step 8: Services - Now we should see the GCMC button
+    await gcmcButton.waitFor({ state: "visible", timeout: 5000 });
+    await gcmcButton.click();
 
-    // Just click the first checkbox available
+    // Wait for GCMC services section to appear (shows after selecting business)
+    // The section title contains "GCMC Services" or just the services checkboxes
+    await page.waitForTimeout(2000); // Give React time to update state and re-render
+
+    // Look for the GCMC Services section title (use first() to avoid strict mode)
+    const gcmcServicesSection = page.getByText("GCMC Services").first();
+    await gcmcServicesSection.waitFor({ state: "visible", timeout: 10_000 });
+
+    // Scroll the services section into view
+    await gcmcServicesSection.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(1000);
+
+    // Services are displayed in accordion categories (e.g., "Training & Development - 4 services")
+    // Click the first accordion to expand it and reveal service checkboxes
+    const categoryAccordion = page
+      .locator('[data-orientation="vertical"]')
+      .locator("button")
+      .first();
+
+    // Alternative: find by the pattern "X services"
+    const servicesAccordion = page.getByText(SERVICES_COUNT_REGEX).first();
+    if (
+      await servicesAccordion.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
+      await servicesAccordion.scrollIntoViewIfNeeded();
+      await servicesAccordion.click();
+      await page.waitForTimeout(500);
+    } else if (
+      await categoryAccordion.isVisible({ timeout: 2000 }).catch(() => false)
+    ) {
+      await categoryAccordion.scrollIntoViewIfNeeded();
+      await categoryAccordion.click();
+      await page.waitForTimeout(500);
+    }
+
+    // Now try to find service checkboxes inside the expanded accordion
     const checkboxes = page.locator('button[role="checkbox"]');
-    const checkboxCount = await checkboxes.count();
-    if (checkboxCount > 0) {
-      await checkboxes.first().click();
-      await page.waitForTimeout(500); // Wait for state to update
+
+    // Wait for checkboxes to appear after accordion expansion
+    let checkboxCount = 0;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      checkboxCount = await checkboxes.count();
+      if (checkboxCount > 0) {
+        break;
+      }
+      await page.waitForTimeout(500);
     }
+
+    if (checkboxCount > 0) {
+      // Click the first checkbox to select a service
+      await checkboxes.first().scrollIntoViewIfNeeded();
+      await checkboxes.first().click();
+      await page.waitForTimeout(500);
+    } else {
+      // If still no checkboxes, throw descriptive error
+      throw new Error(
+        "No service checkboxes found after expanding accordion - check ServiceCategoryAccordion component"
+      );
+    }
+
+    await page.waitForTimeout(500);
 
     // Wait for Continue button to become enabled
     await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled({
@@ -122,14 +192,17 @@ test.describe("Client Management", () => {
     });
     await page.getByRole("button", { name: "Continue" }).click();
 
-    // Step 7: Documents (Optional)
+    // Step 9: Documents (Optional)
     await page.getByRole("button", { name: "Continue" }).click();
 
     // Review & Submit
     await page.getByRole("button", { name: "Create Client" }).click();
 
     // Expect redirection to Client Detail (with longer timeout for creation)
-    await expect(page.getByText("Client created successfully")).toBeVisible({
+    // Use first() to handle toast + heading both showing success message
+    await expect(
+      page.getByText("Client created successfully").first()
+    ).toBeVisible({
       timeout: 15_000,
     });
     await expect(page).toHaveURL(CLIENT_DETAIL_URL_REGEX, { timeout: 10_000 });

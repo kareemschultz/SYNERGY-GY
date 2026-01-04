@@ -927,6 +927,81 @@ if (input.filters?.clientId) {
 
 ---
 
+## Service Catalog Architecture (CRITICAL)
+
+### Dual Service Tables
+
+This codebase has **two service tables** with different purposes:
+
+| Table | Location | Purpose | Used By |
+|-------|----------|---------|---------|
+| `serviceType` | `services.ts` | FK target for matters | `matter.serviceTypeId` |
+| `serviceCatalog` | `service-catalog.ts` | Rich service definitions with pricing | Knowledge base, client services |
+
+**CRITICAL**: When creating matters, use `serviceType` IDs from `getServiceTypes`:
+
+```typescript
+// ✅ CORRECT - matters.getServiceTypes returns serviceType IDs
+const services = await db.query.serviceType.findMany({ ... });
+
+// ❌ WRONG - serviceCatalog IDs will cause FK constraint violation
+const services = await db.query.serviceCatalog.findMany({ ... });
+```
+
+### Checklist Items Source
+
+- `serviceType.defaultChecklistItems` - For matter checklist (simple string array)
+- `serviceCatalog.documentRequirements` - For knowledge base (rich document requirements)
+
+---
+
+## User-Friendly Error Messages (MANDATORY)
+
+### Portal Impersonation Errors
+
+Always provide actionable error messages that explain:
+1. What went wrong
+2. Why it happened
+3. What to do next
+
+```typescript
+// ❌ BAD - vague error
+throw new ORPCError("BAD_REQUEST", {
+  message: "Client does not have an active portal account",
+});
+
+// ✅ GOOD - actionable error
+throw new ORPCError("BAD_REQUEST", {
+  message: `Client "${clientRecord.displayName}" does not have a portal account. To enable impersonation, first send them a portal invite from their client profile page.`,
+});
+```
+
+### Error Message Patterns
+
+```typescript
+// Not found - explain the resource and potential cause
+throw new ORPCError("NOT_FOUND", {
+  message: "Client not found. The client may have been deleted.",
+});
+
+// Status-specific errors - guide the user
+const statusMessage =
+  status === "INVITED"
+    ? "The client has been invited but hasn't completed registration yet. Please ask them to check their email for the portal invite."
+    : status === "SUSPENDED"
+      ? "The client's portal account has been suspended. Contact an administrator to reactivate it."
+      : "The client's portal account is not active.";
+
+throw new ORPCError("BAD_REQUEST", { message: statusMessage });
+
+// Validation errors - show what's expected
+throw new ORPCError("BAD_REQUEST", {
+  message: `Service type "${svcType.name}" is not available for ${input.business}. Please select a service from the correct business.`,
+});
+```
+
+---
+
 ## Anti-Patterns to Avoid
 
 | Anti-Pattern | Correct Approach |
@@ -958,6 +1033,9 @@ if (input.filters?.clientId) {
 | Mutation `onSuccess` ignoring return value | Unwrap in `mutationFn` and use return value in `onSuccess` |
 | `cn(condition && "class")` | `cn(condition ? "class" : "")` - Biome requires explicit empty string |
 | Nested ternary for loading/error/data | Extract to helper function with early returns (see below) |
+| `db.query.serviceCatalog` for matter service types | `db.query.serviceType` - matter FK references serviceType |
+| Vague error message: "Not found" | Actionable: "Client not found. May have been deleted." |
+| `svcType?.documentRequirements` for matter checklist | `svcType?.defaultChecklistItems` - use serviceType field |
 
 ### Avoiding Nested Ternaries with Helper Functions
 

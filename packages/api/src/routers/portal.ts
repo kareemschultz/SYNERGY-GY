@@ -1852,24 +1852,62 @@ export const portalRouter = {
         })
       )
       .handler(async ({ input, context }) => {
-        // Verify client has active portal account
-        const [portalAccount] = await db
-          .select()
-          .from(portalUser)
-          .where(
-            and(
-              eq(portalUser.clientId, input.clientId),
-              eq(portalUser.isActive, true),
-              eq(portalUser.status, "ACTIVE")
-            )
-          )
+        // First verify the client exists
+        const [clientRecord] = await db
+          .select({ id: client.id, displayName: client.displayName })
+          .from(client)
+          .where(eq(client.id, input.clientId))
           .limit(1);
 
-        if (!portalAccount) {
-          throw new ORPCError("BAD_REQUEST", {
-            message: "Client does not have an active portal account",
+        if (!clientRecord) {
+          throw new ORPCError("NOT_FOUND", {
+            message: "Client not found. The client may have been deleted.",
           });
         }
+
+        // Check for any portal account (active or not)
+        const [anyPortalAccount] = await db
+          .select({
+            id: portalUser.id,
+            isActive: portalUser.isActive,
+            status: portalUser.status,
+          })
+          .from(portalUser)
+          .where(eq(portalUser.clientId, input.clientId))
+          .limit(1);
+
+        if (!anyPortalAccount) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: `Client "${clientRecord.displayName}" does not have a portal account. To enable impersonation, first send them a portal invite from their client profile page.`,
+          });
+        }
+
+        // Check if portal account is active
+        if (
+          !anyPortalAccount.isActive ||
+          anyPortalAccount.status !== "ACTIVE"
+        ) {
+          // Get status-specific error message using helper function
+          const getStatusMessage = (status: string | null): string => {
+            if (status === "INVITED") {
+              return "The client has been invited but hasn't completed registration yet. Please ask them to check their email for the portal invite.";
+            }
+            if (status === "SUSPENDED") {
+              return "The client's portal account has been suspended. Contact an administrator to reactivate it.";
+            }
+            if (status === "DEACTIVATED") {
+              return "The client's portal account has been deactivated. Contact an administrator to reactivate it.";
+            }
+            return "The client's portal account is not active.";
+          };
+
+          throw new ORPCError("BAD_REQUEST", {
+            message: getStatusMessage(anyPortalAccount.status),
+          });
+        }
+
+        // Portal account is active - use it for impersonation
+        const portalAccount = anyPortalAccount;
 
         // Generate secure token with 30-minute expiry
         const token = crypto.randomUUID();
